@@ -19,8 +19,13 @@ repository = ""
 
 license = "Apache-2.0"
 
-keywords = []
+keywords = [ ]
 
-preferred_target = "wasm"
+preferred_target = "native"
 
 description = ""
+
+import {
+  "colmugx/reader@0.3.0",
+  "moonbitlang/async@0.20.4",
+}
