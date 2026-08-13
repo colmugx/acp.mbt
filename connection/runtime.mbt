@@ -548,16 +548,26 @@ priv enum RuntimeWriterItem {
 
 ///|
 /// Events delivered to the one reducer/dispatch loop.
-priv enum RuntimeEvent {
+priv enum RuntimeEventOf[C] {
   RuntimeChunk(Bytes)
   RuntimeEof
   RuntimeReaderFailed(RuntimeError)
   RuntimeWriterFailed(RuntimeError)
-  RuntimeHandlerCompleted(Int, RequestId, RuntimeHandlerResult)
+  RuntimeHandlerCompleted(Int, RequestId, C)
   RuntimeHandlerFailed(Int, RequestId)
   RuntimeNotificationCompleted(Int)
   RuntimeNotificationFailed(Int)
   RuntimeNotificationCancelled(Int)
+}
+
+///|
+type RuntimeEvent = RuntimeEventOf[RuntimeHandlerResult]
+
+///|
+fn runtime_identity_handler_result(
+  result : RuntimeHandlerResult,
+) -> RuntimeHandlerResult {
+  result
 }
 
 ///|
@@ -691,9 +701,9 @@ fn[E] runtime_event_put(
 }
 
 ///|
-async fn runtime_reader_loop(
+async fn[C] runtime_reader_loop(
   port : RuntimeReaderPort,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
   limit : Int,
   read_chunk_bytes : Int,
 ) -> Unit {
@@ -728,11 +738,11 @@ async fn runtime_reader_loop(
 }
 
 ///|
-async fn runtime_writer_loop(
+async fn[C] runtime_writer_loop(
   port : RuntimeWriterPort,
   queue : @aqueue.Queue[RuntimeWriterItem],
   trace : (RuntimeTraceEvent) -> Unit,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
   limit : Int,
   shutdown : Ref[Bool],
 ) -> Unit {
@@ -769,12 +779,13 @@ async fn runtime_writer_loop(
 }
 
 ///|
-async fn runtime_request_task(
+async fn[C] runtime_request_task(
   task_token : Int,
   request : JsonRpcRequest,
   shutdown : Ref[Bool],
   handlers : RuntimeHandlerPort,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  result_to_event : (RuntimeHandlerResult) -> C,
   limit : Int,
 ) -> Unit {
   let result = (handlers.request)(request) catch {
@@ -786,7 +797,7 @@ async fn runtime_request_task(
             RuntimeHandlerCompleted(
               task_token,
               request.id,
-              HandlerError(JsonRpcError::request_cancelled()),
+              result_to_event(HandlerError(JsonRpcError::request_cancelled())),
             ),
             limit,
           )
@@ -806,19 +817,19 @@ async fn runtime_request_task(
   if !shutdown.val {
     runtime_event_put(
       events,
-      RuntimeHandlerCompleted(task_token, request.id, result),
+      RuntimeHandlerCompleted(task_token, request.id, result_to_event(result)),
       limit,
     )
   }
 }
 
 ///|
-async fn runtime_notification_task(
+async fn[C] runtime_notification_task(
   task_token : Int,
   notification : JsonRpcNotification,
   shutdown : Ref[Bool],
   handlers : RuntimeHandlerPort,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
   limit : Int,
 ) -> Unit {
   (handlers.notification)(notification) catch {
@@ -1022,13 +1033,14 @@ async fn runtime_emit_command(
 }
 
 ///|
-async fn[G] runtime_apply_step(
+async fn[G, C] runtime_apply_step(
   group : @async.TaskGroup[G],
   step : ConnectionStep,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  result_to_event : (RuntimeHandlerResult) -> C,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1046,6 +1058,7 @@ async fn[G] runtime_apply_step(
             shutdown,
             ports.handlers,
             events,
+            result_to_event,
             options.queue_capacity,
           )
         })
@@ -1102,14 +1115,15 @@ async fn[G] runtime_apply_step(
 }
 
 ///|
-async fn[G] runtime_apply_message(
+async fn[G, C] runtime_apply_message(
   group : @async.TaskGroup[G],
   state : ConnectionState,
   frame : String,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  result_to_event : (RuntimeHandlerResult) -> C,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1138,7 +1152,8 @@ async fn[G] runtime_apply_message(
     }
   }
   let (next_tasks, next_token) = runtime_apply_step(
-    group, step, writer_queue, options, ports, events, tasks, next_task_token, shutdown,
+    group, step, writer_queue, options, ports, events, result_to_event, tasks, next_task_token,
+    shutdown,
   )
   (step.state, next_tasks, next_token)
 }
@@ -1205,14 +1220,14 @@ async fn runtime_apply_close_step(
 /// Run the reducer's close transition before stopping native tasks. The
 /// reducer remains the sole owner of pending protocol state; this function
 /// only interprets the resulting commands and then cancels runtime work.
-async fn[G] runtime_close_connection(
+async fn[G, C] runtime_close_connection(
   _group : @async.TaskGroup[G],
   state : ConnectionState,
   reason : String,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  _events : @aqueue.Queue[RuntimeEvent],
+  _events : @aqueue.Queue[RuntimeEventOf[C]],
   tasks : Array[RuntimeTaskControl],
   _next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1239,7 +1254,7 @@ async fn[G] runtime_close_connection(
 /// Close after a primary runtime failure. A cleanup failure is represented as
 /// a category pair so neither the original failure nor cleanup failure is
 /// silently discarded, and no arbitrary error payload crosses the boundary.
-async fn[G, T] runtime_fail_and_close(
+async fn[G, C, T] runtime_fail_and_close(
   group : @async.TaskGroup[G],
   state : ConnectionState,
   reason : String,
@@ -1247,7 +1262,7 @@ async fn[G, T] runtime_fail_and_close(
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1266,9 +1281,9 @@ async fn[G, T] runtime_fail_and_close(
 /// Read one owner-loop event and normalize queue closure to the runtime's
 /// structured error. Keeping this seam separate makes queue shutdown
 /// observable without duplicating close handling in the main loop.
-async fn runtime_event_get(
-  events : @aqueue.Queue[RuntimeEvent],
-) -> RuntimeEvent raise RuntimeError {
+async fn[C] runtime_event_get(
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+) -> RuntimeEventOf[C] raise RuntimeError {
   events.get() catch {
     _ => raise EventQueueClosed
   }
@@ -1287,15 +1302,17 @@ priv struct RuntimeEventStep {
 /// The single owner-loop event seam. Every reader, writer, handler, and
 /// notification event is admitted here; late task events are traced and
 /// ignored, while primary failures close through one typed path.
-async fn[G] runtime_apply_event(
-  event : RuntimeEvent,
+async fn[G, C] runtime_apply_event_of(
+  event : RuntimeEventOf[C],
   state : ConnectionState,
   decoder : FramingState,
   group : @async.TaskGroup[G],
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  result_to_event : (RuntimeHandlerResult) -> C,
+  event_to_result : (C) -> RuntimeHandlerResult,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1328,8 +1345,8 @@ async fn[G] runtime_apply_event(
       let mut next_token = next_task_token
       for frame in frame_step.frames {
         let next = runtime_apply_message(
-          group, next_state, frame, writer_queue, options, ports, events, next_tasks,
-          next_token, shutdown,
+          group, next_state, frame, writer_queue, options, ports, events, result_to_event,
+          next_tasks, next_token, shutdown,
         ) catch {
           error =>
             runtime_fail_and_close(
@@ -1436,7 +1453,7 @@ async fn[G] runtime_apply_event(
               }
             }
             Some(_) => {
-              let incoming = match result {
+              let incoming = match event_to_result(result) {
                 HandlerSuccess(result) => IncomingCompleted(id~, result~)
                 HandlerError(error) => IncomingFailed(id~, error~)
               }
@@ -1468,8 +1485,8 @@ async fn[G] runtime_apply_event(
                 }
               }
               let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, events, remaining_tasks,
-                next_task_token, shutdown,
+                group, step, writer_queue, options, ports, events, result_to_event,
+                remaining_tasks, next_task_token, shutdown,
               ) catch {
                 error =>
                   runtime_fail_and_close(
@@ -1596,8 +1613,8 @@ async fn[G] runtime_apply_event(
                   )
               }
               let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, events, remaining_tasks,
-                next_task_token, shutdown,
+                group, step, writer_queue, options, ports, events, result_to_event,
+                remaining_tasks, next_task_token, shutdown,
               ) catch {
                 error =>
                   runtime_fail_and_close(
@@ -1770,6 +1787,29 @@ async fn[G] runtime_apply_event(
       { state, decoder, tasks: [], next_task_token, stop: true }
     }
   }
+}
+
+///|
+/// Legacy handler-event wrapper. The existing runtime and white-box harness
+/// use `RuntimeHandlerResult` directly; the generic seam above is kept behind
+/// this identity adapter so no legacy call site changes behavior.
+async fn[G] runtime_apply_event(
+  event : RuntimeEvent,
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEvent],
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+) -> RuntimeEventStep raise RuntimeError {
+  runtime_apply_event_of(
+    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
+    runtime_identity_handler_result, tasks, next_task_token, shutdown,
+  )
 }
 
 ///|
