@@ -53,7 +53,7 @@ test "terminal host methods round trip every wire shape" {
   )
 
   let exit_status : TerminalExitStatus = {
-    exit_code: Value(0UL),
+    exit_code: Value(4294967295UL),
     signal: Null,
     meta: terminal_test_meta(),
   }
@@ -193,5 +193,45 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
     _ => fail("expected empty terminal id rejection")
   } noraise {
     _ => fail("expected empty terminal id rejection")
+  }
+}
+
+///|
+test "terminal output byte limits preserve exact uint64 values and reject invalid numbers" {
+  let limits : Array[UInt64] = [9007199254740993UL, 18446744073709551615UL]
+  for limit in limits {
+    let create : TerminalCreateParams = {
+      session_id: "session-1",
+      command: "printf",
+      args: Omitted,
+      env: Omitted,
+      cwd: Omitted,
+      output_byte_limit: Value(limit),
+      meta: Omitted,
+    }
+    assert_eq(
+      terminal_create_params_from_json(terminal_create_params_to_json(create)),
+      create,
+    )
+  }
+
+  let invalid : Array[(String, String)] = [
+    (
+      "{\"sessionId\":\"s\",\"command\":\"echo\",\"outputByteLimit\":1.5}", "terminal/create.outputByteLimit",
+    ),
+    (
+      "{\"sessionId\":\"s\",\"command\":\"echo\",\"outputByteLimit\":18446744073709551616}",
+      "terminal/create.outputByteLimit",
+    ),
+  ]
+  for pair in invalid {
+    let (source, expected_path) = pair
+    try terminal_create_params_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path=actual_path, reason=_) =>
+        assert_eq(actual_path, expected_path)
+      _ => fail("expected invalid terminal uint64 value")
+    } noraise {
+      _ => fail("expected invalid terminal uint64 value to fail")
+    }
   }
 }

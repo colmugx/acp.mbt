@@ -171,6 +171,36 @@ test "tool locations and diffs enforce absolute paths and one-based lines" {
 }
 
 ///|
+test "tool location uint64 lines preserve exact values and reject invalid numbers" {
+  for line in [9007199254740993UL, 18446744073709551615UL] {
+    let location : ToolCallLocation = {
+      path: "/tmp/acp.txt",
+      line: Value(line),
+      meta: tool_test_omitted_json(),
+    }
+    assert_eq(
+      tool_call_location_from_json(tool_call_location_to_json(location)),
+      location,
+    )
+  }
+
+  let invalid : Array[(String, String)] = [
+    ("{\"path\":\"/tmp/x\",\"line\":1.5}", "location.line"),
+    ("{\"path\":\"/tmp/x\",\"line\":18446744073709551616}", "location.line"),
+  ]
+  for pair in invalid {
+    let (source, expected_path) = pair
+    try tool_call_location_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path=actual_path, reason=_) =>
+        assert_eq(actual_path, expected_path)
+      _ => fail("expected invalid tool location uint64 value")
+    } noraise {
+      _ => fail("expected invalid tool location uint64 value to fail")
+    }
+  }
+}
+
+///|
 test "permission options outcomes and request payload round trip" {
   let permission_kinds : Array[PermissionOptionKind] = [
     AllowOnce,

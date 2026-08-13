@@ -99,4 +99,58 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
   } noraise {
     _ => fail("expected unknown field rejection")
   }
+
+  try
+    read_text_file_params_to_json({
+      session_id: "s",
+      path: "/tmp/x",
+      line: Value(0UL),
+      limit: Omitted,
+      meta: Omitted,
+    })
+  catch {
+    InvalidField(path="line", reason=_) => ()
+    _ => fail("expected one-based line encoding rejection")
+  } noraise {
+    _ => fail("expected one-based line encoding rejection")
+  }
+}
+
+///|
+test "filesystem uint64 windows preserve exact values and reject invalid numbers" {
+  let source = "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"line\":9007199254740993,\"limit\":18446744073709551615}"
+  let decoded = read_text_file_params_from_json(protocol_parse_json(source))
+  assert_eq(decoded.line, Value(9007199254740993UL))
+  assert_eq(decoded.limit, Value(18446744073709551615UL))
+  assert_eq(
+    read_text_file_params_from_json(read_text_file_params_to_json(decoded)),
+    decoded,
+  )
+
+  let invalid : Array[(String, String)] = [
+    (
+      "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"line\":1.5}", "fs/read_text_file.line",
+    ),
+    (
+      "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"limit\":1e-3}", "fs/read_text_file.limit",
+    ),
+    (
+      "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"line\":18446744073709551616}",
+      "fs/read_text_file.line",
+    ),
+    (
+      "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"limit\":18446744073709551616}",
+      "fs/read_text_file.limit",
+    ),
+  ]
+  for pair in invalid {
+    let (source, expected_path) = pair
+    try read_text_file_params_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path=actual_path, reason=_) =>
+        assert_eq(actual_path, expected_path)
+      _ => fail("expected invalid filesystem uint64 value")
+    } noraise {
+      _ => fail("expected invalid filesystem uint64 value to fail")
+    }
+  }
 }
