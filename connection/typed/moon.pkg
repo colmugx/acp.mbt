@@ -1,0 +1,15 @@
+import {
+  "colmugx/acp/jsonrpc",
+}
+
+supported_targets = "native"
+
+import {
+  "colmugx/acp/connection",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "moonbitlang/async",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+} for "wbtest"
