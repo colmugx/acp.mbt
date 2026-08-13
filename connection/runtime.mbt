@@ -429,71 +429,6 @@ pub fn[S, I, C, E] runtime_owner_admit_notification(
 }
 
 ///|
-priv struct RuntimeOwnerRequestPlan[S, I] {
-  owner : RuntimeOwner[S, I]
-  event : ConnectionEvent
-  commands : Array[RuntimeOwnerCommand]
-}
-
-///|
-priv struct RuntimeOwnerNotificationPlan[S, I] {
-  owner : RuntimeOwner[S, I]
-  commands : Array[RuntimeOwnerCommand]
-}
-
-///|
-fn[S, I, C, E] runtime_owner_admit_request_plan(
-  owner : RuntimeOwner[S, I],
-  request : JsonRpcRequest,
-  port : RuntimeOwnerPort[S, I, C, E],
-) -> RuntimeOwnerRequestPlan[S, I] raise RuntimeError {
-  let (owner, action) = runtime_owner_admit_request(owner, request, port) catch {
-    Closed => raise ReducerFailed
-  }
-  match action {
-    RuntimeOwnerImmediate(completion~) => {
-      let event = match completion.response {
-        HandlerSuccess(result) => IncomingCompleted(id=request.id, result~)
-        HandlerError(error) => IncomingFailed(id=request.id, error~)
-      }
-      {
-        owner,
-        event,
-        commands: runtime_owner_plan_effects(
-          completion.effects,
-          port.plan_local_effect,
-        ),
-      }
-    }
-    RuntimeOwnerInvoke(_) => raise OwnerInvokeUnsupported
-  }
-}
-
-///|
-fn[S, I, C, E] runtime_owner_admit_notification_plan(
-  owner : RuntimeOwner[S, I],
-  notification : JsonRpcNotification,
-  port : RuntimeOwnerPort[S, I, C, E],
-) -> RuntimeOwnerNotificationPlan[S, I] raise RuntimeError {
-  let (owner, action) = runtime_owner_admit_notification(
-    owner, notification, port,
-  ) catch {
-    Closed => raise ReducerFailed
-  }
-  match action {
-    RuntimeOwnerNotificationImmediate(completion~) =>
-      {
-        owner,
-        commands: runtime_owner_plan_effects(
-          completion.effects,
-          port.plan_local_effect,
-        ),
-      }
-    RuntimeOwnerNotificationInvoke(_) => raise OwnerInvokeUnsupported
-  }
-}
-
-///|
 /// Execute only the immutable invocation and return a typed event. This is
 /// the only async operation in the generic owner seam.
 pub async fn[S, I, C, E] runtime_owner_execute(
@@ -522,6 +457,62 @@ pub fn[G, S, I, C, E] runtime_owner_spawn(
   port : RuntimeOwnerPort[S, I, C, E],
 ) -> @async.Task[RuntimeOwnerEvent[C]] {
   group.spawn(() => runtime_owner_execute(task, port))
+}
+
+///|
+/// Run one owner invocation and publish exactly one typed task event. The
+/// worker carries immutable invocation data only; failure conversion remains
+/// on the owner loop because `execute_failure` requires the current owner
+/// state.
+async fn[S, I, C, E] runtime_owner_execute_task(
+  task : RuntimeOwnerTask[I],
+  port : RuntimeOwnerPort[S, I, C, E],
+) -> RuntimeOwnerTaskEventOf[C] {
+  let completion = (port.execute)(task.invocation) catch {
+    error => {
+      if @async.is_cancellation_error(error) {
+        raise error
+      }
+      return RuntimeOwnerTaskFailed(
+        token=task.task_token,
+        request_id=task.request_id,
+        notification=task.notification,
+      )
+    }
+  }
+  RuntimeOwnerTaskCompleted(
+    event=if task.notification {
+      RuntimeOwnerNotificationCompleted(token=task.task_token, completion~)
+    } else {
+      match task.request_id {
+        Some(id) =>
+          RuntimeOwnerRequestCompleted(token=task.task_token, id~, completion~)
+        None => abort("runtime owner request has no request id")
+      }
+    },
+  )
+}
+
+///|
+/// Publish a task result into the connection's one event queue. Queue
+/// backpressure and closure remain runtime errors; neither is hidden inside a
+/// detached task.
+async fn[S, I, C, E] runtime_owner_task_loop(
+  task : RuntimeOwnerTask[I],
+  port : RuntimeOwnerPort[S, I, C, E],
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  shutdown : Ref[Bool],
+  limit : Int,
+) -> Unit {
+  let event = runtime_owner_execute_task(task, port)
+  // Async tasks are cooperatively scheduled.  There is no yield between the
+  // execute result and this check, so a completion produced before shutdown
+  // is always offered to the queue.  Results observed after shutdown are
+  // intentionally dropped as close-time cancellation; they are not a runtime
+  // completion and must not manufacture a second response.
+  if !shutdown.val {
+    runtime_event_put(events, RuntimeOwnerTaskEvent(event), limit)
+  }
 }
 
 ///|
@@ -692,11 +683,25 @@ priv enum RuntimeEventOf[C] {
   RuntimeEof
   RuntimeReaderFailed(RuntimeError)
   RuntimeWriterFailed(RuntimeError)
+  RuntimeOwnerTaskEvent(RuntimeOwnerTaskEventOf[C])
   RuntimeHandlerCompleted(Int, RequestId, C)
   RuntimeHandlerFailed(Int, RequestId)
   RuntimeNotificationCompleted(Int)
   RuntimeNotificationFailed(Int)
   RuntimeNotificationCancelled(Int)
+}
+
+///|
+/// The only event a generic owner task may publish to the connection queue.
+/// A task can publish either its typed completion or a redacted failure marker;
+/// the owner loop supplies `execute_failure` while it owns the current state.
+priv enum RuntimeOwnerTaskEventOf[C] {
+  RuntimeOwnerTaskCompleted(event~ : RuntimeOwnerEvent[C])
+  RuntimeOwnerTaskFailed(
+    token~ : Int,
+    request_id~ : RequestId?,
+    notification~ : Bool
+  )
 }
 
 ///|
@@ -766,6 +771,31 @@ priv struct RuntimeDispatchPort[G, D] {
 priv struct RuntimeOwnerDispatchContext[S, I, C, E] {
   owner : RuntimeOwner[S, I]
   port : RuntimeOwnerPort[S, I, C, E]
+  events : @aqueue.Queue[RuntimeEventOf[C]]
+  shutdown : Ref[Bool]
+  limit : Int
+}
+
+///|
+priv enum RuntimeOwnerTaskApply[D] {
+  RuntimeOwnerRequestCompletion(
+    context~ : D,
+    task_token~ : Int,
+    id~ : RequestId,
+    result~ : RuntimeHandlerResult,
+    commands~ : Array[RuntimeOwnerCommand]
+  )
+  RuntimeOwnerNotificationCompletion(
+    context~ : D,
+    task_token~ : Int,
+    commands~ : Array[RuntimeOwnerCommand]
+  )
+  RuntimeOwnerEventIgnored(
+    context~ : D,
+    task_token~ : Int,
+    request_id~ : RequestId?,
+    reason~ : RuntimeOwnerIgnore
+  )
 }
 
 ///|
@@ -774,30 +804,267 @@ fn[G, S, I, C, E] runtime_owner_dispatch_port() -> RuntimeDispatchPort[
   RuntimeOwnerDispatchContext[S, I, C, E],
 ] {
   {
-    request: (_group, _token, request, context) => {
-      let plan = runtime_owner_admit_request_plan(
+    request: (group, token, request, context) => {
+      let (owner, action) = runtime_owner_admit_request(
         context.owner,
         request,
         context.port,
-      )
-      RuntimeDispatchRequestImmediate(
-        context={ owner: plan.owner, port: context.port },
-        event=plan.event,
-        commands=plan.commands,
-      )
+      ) catch {
+        Closed => raise ReducerFailed
+      }
+      match action {
+        RuntimeOwnerImmediate(completion~) => {
+          let event = match completion.response {
+            HandlerSuccess(result) => IncomingCompleted(id=request.id, result~)
+            HandlerError(error) => IncomingFailed(id=request.id, error~)
+          }
+          RuntimeDispatchRequestImmediate(
+            context={ ..context, owner, },
+            event~,
+            commands=runtime_owner_plan_effects(
+              completion.effects,
+              context.port.plan_local_effect,
+            ),
+          )
+        }
+        RuntimeOwnerInvoke(task~) => {
+          if task.task_token != token {
+            raise TaskRequestMismatch
+          }
+          let spawned = group.spawn(() => {
+            runtime_owner_task_loop(
+              task,
+              context.port,
+              context.events,
+              context.shutdown,
+              context.limit,
+            )
+          })
+          RuntimeDispatchSpawned(
+            context={ ..context, owner, },
+            task={
+              task_token: task.task_token,
+              request_id: Some(request.id),
+              cancel: () => spawned.cancel(),
+            },
+            next_task_token=token + 1,
+          )
+        }
+      }
     },
-    notification: (_group, _token, notification, context) => {
-      let plan = runtime_owner_admit_notification_plan(
+    notification: (group, token, notification, context) => {
+      let (owner, action) = runtime_owner_admit_notification(
         context.owner,
         notification,
         context.port,
-      )
-      RuntimeDispatchNotificationImmediate(
-        context={ owner: plan.owner, port: context.port },
-        commands=plan.commands,
-      )
+      ) catch {
+        Closed => raise ReducerFailed
+      }
+      match action {
+        RuntimeOwnerNotificationImmediate(completion~) =>
+          RuntimeDispatchNotificationImmediate(
+            context={ ..context, owner, },
+            commands=runtime_owner_plan_effects(
+              completion.effects,
+              context.port.plan_local_effect,
+            ),
+          )
+        RuntimeOwnerNotificationInvoke(task~) => {
+          if task.task_token != token {
+            raise TaskRequestMismatch
+          }
+          let spawned = group.spawn(() => {
+            runtime_owner_task_loop(
+              task,
+              context.port,
+              context.events,
+              context.shutdown,
+              context.limit,
+            )
+          })
+          RuntimeDispatchSpawned(
+            context={ ..context, owner, },
+            task={
+              task_token: task.task_token,
+              request_id: None,
+              cancel: () => spawned.cancel(),
+            },
+            next_task_token=token + 1,
+          )
+        }
+      }
     },
   }
+}
+
+///|
+fn[S, I, C, E] runtime_owner_task_ignored(
+  context : RuntimeOwnerDispatchContext[S, I, C, E],
+  token : Int,
+  request_id : RequestId?,
+  reason : RuntimeOwnerIgnore,
+) -> RuntimeOwnerTaskApply[RuntimeOwnerDispatchContext[S, I, C, E]] raise RuntimeError {
+  match reason {
+    RequestIdMismatch(..) | TaskKindMismatch(_) => raise TaskRequestMismatch
+    _ =>
+      RuntimeOwnerEventIgnored(context~, task_token=token, request_id~, reason~)
+  }
+}
+
+///|
+/// Validate and apply one typed owner task event while the connection loop owns
+/// both reducer state and owner state. The runtime task control and the owner
+/// task are checked independently so a token, id, or request/notification kind
+/// mismatch fails before either reservation is consumed.
+fn[S, I, C, E] runtime_owner_apply_task_event(
+  event : RuntimeOwnerTaskEventOf[C],
+  state : ConnectionState,
+  context : RuntimeOwnerDispatchContext[S, I, C, E],
+  tasks : Array[RuntimeTaskControl],
+) -> RuntimeOwnerTaskApply[RuntimeOwnerDispatchContext[S, I, C, E]] raise RuntimeError {
+  let (token, request_id, notification, completion_event) = match event {
+    RuntimeOwnerTaskCompleted(event~) =>
+      match event {
+        RuntimeOwnerRequestCompleted(token~, id=actual, completion~) =>
+          (
+            token,
+            Some(actual),
+            false,
+            Some(RuntimeOwnerRequestCompleted(token~, id=actual, completion~)),
+          )
+        RuntimeOwnerNotificationCompleted(token~, completion~) =>
+          (
+            token,
+            None,
+            true,
+            Some(RuntimeOwnerNotificationCompleted(token~, completion~)),
+          )
+      }
+    RuntimeOwnerTaskFailed(token~, request_id~, notification~) =>
+      (token, request_id, notification, None)
+  }
+  let control = match runtime_find_task(tasks, token) {
+    None =>
+      return RuntimeOwnerEventIgnored(
+        context~,
+        task_token=token,
+        request_id~,
+        reason=UnknownTask(token~),
+      )
+    Some(control) => control
+  }
+  if control.request_id != request_id {
+    raise TaskRequestMismatch
+  }
+  let owner_task = match runtime_owner_find_task(context.owner, token) {
+    None =>
+      return RuntimeOwnerEventIgnored(
+        context~,
+        task_token=token,
+        request_id~,
+        reason=UnknownTask(token~),
+      )
+    Some(task) => task
+  }
+  if owner_task.notification != notification {
+    raise TaskRequestMismatch
+  }
+  match (owner_task.request_id, request_id) {
+    (Some(expected), Some(actual)) if expected == actual => ()
+    (None, None) if notification => ()
+    (Some(_), Some(_)) => raise TaskRequestMismatch
+    _ => raise TaskRequestMismatch
+  }
+  match request_id {
+    Some(id) =>
+      match connection_inbound_index(state.inbound, id) {
+        None =>
+          return RuntimeOwnerEventIgnored(
+            context~,
+            task_token=token,
+            request_id~,
+            reason=UnknownRequest(id~),
+          )
+        Some(_) => ()
+      }
+    None => ()
+  }
+  let completion_event = match completion_event {
+    Some(event) => event
+    None => {
+      let completion = (context.port.execute_failure)(
+        context.owner.state,
+        owner_task.invocation,
+      )
+      if notification {
+        RuntimeOwnerNotificationCompleted(token~, completion~)
+      } else {
+        match request_id {
+          Some(id) => RuntimeOwnerRequestCompleted(token~, id~, completion~)
+          None => raise TaskRequestMismatch
+        }
+      }
+    }
+  }
+  match completion_event {
+    RuntimeOwnerRequestCompleted(token~, id=actual, completion~) =>
+      match
+        runtime_owner_complete_request(
+          context.owner,
+          RuntimeOwnerRequestCompleted(token~, id=actual, completion~),
+          context.port,
+        ) {
+        RuntimeOwnerCompletionApplied(owner~, completion~) =>
+          RuntimeOwnerRequestCompletion(
+            context={ ..context, owner, },
+            task_token=token,
+            id=actual,
+            result=completion.response,
+            commands=runtime_owner_plan_effects(
+              completion.effects,
+              context.port.plan_local_effect,
+            ),
+          )
+        RuntimeOwnerCompletionIgnored(reason~) =>
+          runtime_owner_task_ignored(context, token, request_id, reason)
+      }
+    RuntimeOwnerNotificationCompleted(token~, completion~) =>
+      match
+        runtime_owner_complete_notification(
+          context.owner,
+          RuntimeOwnerNotificationCompleted(token~, completion~),
+          context.port,
+        ) {
+        RuntimeOwnerCompletionApplied(owner~, completion~) =>
+          RuntimeOwnerNotificationCompletion(
+            context={ ..context, owner, },
+            task_token=token,
+            commands=runtime_owner_plan_effects(
+              completion.effects,
+              context.port.plan_local_effect,
+            ),
+          )
+        RuntimeOwnerCompletionIgnored(reason~) =>
+          runtime_owner_task_ignored(context, token, request_id, reason)
+      }
+  }
+}
+
+///|
+fn[C, D] runtime_owner_event_unavailable(
+  _event : RuntimeOwnerTaskEventOf[C],
+  _state : ConnectionState,
+  _context : D,
+  _tasks : Array[RuntimeTaskControl],
+) -> RuntimeOwnerTaskApply[D] raise RuntimeError {
+  raise ReducerFailed
+}
+
+///|
+fn[C] runtime_owner_handler_result_unavailable(
+  _completion : C,
+) -> RuntimeHandlerResult {
+  abort("runtime owner queue received a legacy handler event")
 }
 
 ///|
@@ -872,7 +1139,6 @@ fn runtime_error_kind(error : RuntimeError) -> String {
     ReducerFailed => "reducer_failed"
     TaskControlMissing => "task_control_missing"
     TaskRequestMismatch => "task_request_mismatch"
-    OwnerInvokeUnsupported => "owner_invoke_unsupported"
     HandlerFailed => "handler_failed"
     NotificationFailed => "notification_failed"
     ResponseHandlerFailed => "response_handler_failed"
@@ -1703,6 +1969,236 @@ fn[D] runtime_event_step(
 }
 
 ///|
+/// Apply one request completion after its runtime task control has been
+/// removed. `owner_commands` are deliberately interpreted only after the
+/// reducer's response command, preserving response-before-effects order.
+async fn[G, C, D] runtime_apply_request_completion(
+  id : RequestId,
+  result : RuntimeHandlerResult,
+  owner_commands : Array[RuntimeOwnerCommand],
+  late_phase : String,
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
+  remaining_tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+) -> (RuntimeEventStep, D) raise RuntimeError {
+  match connection_inbound_index(state.inbound, id) {
+    None => {
+      (ports.trace)(
+        runtime_trace_event(
+          "inbound",
+          late_phase,
+          runtime_request_id_text(id),
+          "",
+          "late",
+        ),
+      )
+      runtime_event_step(
+        { state, decoder, tasks: remaining_tasks, next_task_token, stop: false },
+        dispatch_context,
+      )
+    }
+    Some(_) => {
+      let incoming = match result {
+        HandlerSuccess(result) => IncomingCompleted(id~, result~)
+        HandlerError(error) => IncomingFailed(id~, error~)
+      }
+      let step = connection_reduce(state, incoming) catch {
+        _ => {
+          (ports.trace)(
+            runtime_trace_event(
+              "inbound",
+              "handler_reducer_failed",
+              runtime_request_id_text(id),
+              "",
+              "reducer",
+            ),
+          )
+          runtime_fail_and_close(
+            group,
+            state,
+            "completion",
+            ReducerFailed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            remaining_tasks,
+            next_task_token,
+            shutdown,
+            false,
+          )
+        }
+      }
+      let state_ref = Ref::Ref(step.state)
+      let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
+        group, step, state_ref, writer_queue, options, ports, dispatch, dispatch_context,
+        remaining_tasks, next_task_token,
+      ) catch {
+        error =>
+          runtime_fail_and_close(
+            group,
+            state_ref.val,
+            "completion",
+            error,
+            writer_queue,
+            options,
+            ports,
+            events,
+            remaining_tasks,
+            next_task_token,
+            shutdown,
+            false,
+          )
+      }
+      match control {
+        RuntimeApplyContinue => {
+          let command_result = runtime_apply_owner_commands(
+            owner_commands, writer_queue, options, ports, updated_tasks,
+          ) catch {
+            error =>
+              runtime_fail_and_close(
+                group,
+                state_ref.val,
+                "completion",
+                error,
+                writer_queue,
+                options,
+                ports,
+                events,
+                updated_tasks,
+                updated_token,
+                shutdown,
+                false,
+              )
+          }
+          match command_result {
+            RuntimeOwnerCommandsComplete =>
+              runtime_event_step(
+                {
+                  state: state_ref.val,
+                  decoder,
+                  tasks: updated_tasks,
+                  next_task_token: updated_token,
+                  stop: false,
+                },
+                updated_context,
+              )
+            RuntimeOwnerCloseRequested(_) => {
+              runtime_close_connection(
+                group,
+                state_ref.val,
+                "owner",
+                writer_queue,
+                options,
+                ports,
+                events,
+                updated_tasks,
+                updated_token,
+                shutdown,
+                false,
+              )
+              runtime_event_step(
+                {
+                  state: state_ref.val,
+                  decoder,
+                  tasks: [],
+                  next_task_token: updated_token,
+                  stop: true,
+                },
+                updated_context,
+              )
+            }
+          }
+        }
+        RuntimeApplyOwnerClose(_) => {
+          runtime_close_connection(
+            group,
+            state_ref.val,
+            "owner",
+            writer_queue,
+            options,
+            ports,
+            events,
+            updated_tasks,
+            updated_token,
+            shutdown,
+            false,
+          )
+          runtime_event_step(
+            {
+              state: state_ref.val,
+              decoder,
+              tasks: [],
+              next_task_token: updated_token,
+              stop: true,
+            },
+            updated_context,
+          )
+        }
+      }
+    }
+  }
+}
+
+///|
+/// Apply a notification completion and its effects through the same owner
+/// command interpreter. There is intentionally no reducer response step.
+async fn[G, C, D] runtime_apply_notification_completion(
+  owner_commands : Array[RuntimeOwnerCommand],
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  dispatch_context : D,
+  remaining_tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+) -> (RuntimeEventStep, D) raise RuntimeError {
+  let command_result = runtime_apply_owner_commands(
+    owner_commands, writer_queue, options, ports, remaining_tasks,
+  ) catch {
+    error =>
+      runtime_fail_and_close(
+        group, state, "completion", error, writer_queue, options, ports, events,
+        remaining_tasks, next_task_token, shutdown, false,
+      )
+  }
+  match command_result {
+    RuntimeOwnerCommandsComplete => {
+      (ports.trace)(
+        runtime_trace_event("runtime", "task_completed", "", "", "notification"),
+      )
+      runtime_event_step(
+        { state, decoder, tasks: remaining_tasks, next_task_token, stop: false },
+        dispatch_context,
+      )
+    }
+    RuntimeOwnerCloseRequested(_) => {
+      runtime_close_connection(
+        group, state, "owner", writer_queue, options, ports, events, remaining_tasks,
+        next_task_token, shutdown, false,
+      )
+      runtime_event_step(
+        { state, decoder, tasks: [], next_task_token, stop: true },
+        dispatch_context,
+      )
+    }
+  }
+}
+
+///|
 /// The single owner-loop event seam. Every reader, writer, handler, and
 /// notification event is admitted here; late task events are traced and
 /// ignored, while primary failures close through one typed path.
@@ -1717,6 +2213,12 @@ async fn[G, C, D] runtime_apply_event_of(
   events : @aqueue.Queue[RuntimeEventOf[C]],
   event_to_result : (C) -> RuntimeHandlerResult,
   dispatch : RuntimeDispatchPort[G, D],
+  owner_event : (
+    RuntimeOwnerTaskEventOf[C],
+    ConnectionState,
+    D,
+    Array[RuntimeTaskControl],
+  ) -> RuntimeOwnerTaskApply[D] raise RuntimeError,
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
@@ -1819,6 +2321,110 @@ async fn[G, C, D] runtime_apply_event_of(
         group, state, "writer", error, writer_queue, options, ports, events, tasks,
         next_task_token, shutdown, true,
       )
+    }
+    RuntimeOwnerTaskEvent(task_event) => {
+      let applied = owner_event(task_event, state, next_context, tasks) catch {
+        error => {
+          (ports.trace)(
+            runtime_trace_event(
+              "runtime",
+              "owner_task_failed",
+              "",
+              "",
+              runtime_error_kind(error),
+            ),
+          )
+          runtime_fail_and_close(
+            group, state, "owner", error, writer_queue, options, ports, events, tasks,
+            next_task_token, shutdown, false,
+          )
+        }
+      }
+      match applied {
+        RuntimeOwnerEventIgnored(context~, task_token~, request_id~, reason~) => {
+          let (remaining_tasks, _) = runtime_take_task(tasks, task_token)
+          let phase = match reason {
+            Closed | UnknownTask(_) | UnknownRequest(_) | AlreadyCancelled(_) =>
+              "late_owner_completion_ignored"
+            RequestIdMismatch(..) | TaskKindMismatch(_) => "owner_task_mismatch"
+          }
+          (ports.trace)(
+            runtime_trace_event(
+              "inbound",
+              phase,
+              match request_id {
+                Some(id) => runtime_request_id_text(id)
+                None => ""
+              },
+              "",
+              "late",
+            ),
+          )
+          runtime_event_step(
+            {
+              state,
+              decoder,
+              tasks: remaining_tasks,
+              next_task_token,
+              stop: false,
+            },
+            context,
+          )
+        }
+        RuntimeOwnerRequestCompletion(
+          context~,
+          task_token~,
+          id~,
+          result~,
+          commands~
+        ) => {
+          let (remaining_tasks, taken) = runtime_take_task(tasks, task_token)
+          match taken {
+            None => {
+              (ports.trace)(
+                runtime_trace_event(
+                  "inbound",
+                  "late_owner_completion_ignored",
+                  runtime_request_id_text(id),
+                  "",
+                  "late",
+                ),
+              )
+              runtime_event_step(
+                { state, decoder, tasks, next_task_token, stop: false },
+                next_context,
+              )
+            }
+            Some(_) =>
+              runtime_apply_request_completion(
+                id, result, commands, "late_owner_completion_ignored", state, decoder,
+                group, writer_queue, options, ports, events, dispatch, context, remaining_tasks,
+                next_task_token, shutdown,
+              )
+          }
+        }
+        RuntimeOwnerNotificationCompletion(context~, task_token~, commands~) => {
+          let (remaining_tasks, taken) = runtime_take_task(tasks, task_token)
+          match taken {
+            None => {
+              (ports.trace)(
+                runtime_trace_event(
+                  "runtime", "late_owner_notification_ignored", "", "", "late",
+                ),
+              )
+              runtime_event_step(
+                { state, decoder, tasks, next_task_token, stop: false },
+                next_context,
+              )
+            }
+            Some(_) =>
+              runtime_apply_notification_completion(
+                commands, state, decoder, group, writer_queue, options, ports, events,
+                context, remaining_tasks, next_task_token, shutdown,
+              )
+          }
+        }
+      }
     }
     RuntimeHandlerCompleted(task_token, id, result) => {
       match runtime_find_task(tasks, task_token) {
@@ -2323,43 +2929,27 @@ async fn[G, C, D] runtime_apply_event_of(
 }
 
 ///|
-/// Private dispatch wrapper used by the native engine and the legacy adapter.
-async fn[G, D] runtime_apply_event_with_dispatch(
-  event : RuntimeEvent,
-  state : ConnectionState,
-  decoder : FramingState,
-  group : @async.TaskGroup[G],
-  writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  options : RuntimeOptions,
-  ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
-  dispatch : RuntimeDispatchPort[G, D],
-  dispatch_context : D,
-  tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
-  shutdown : Ref[Bool],
-) -> (RuntimeEventStep, D) raise RuntimeError {
-  runtime_apply_event_of(
-    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
-    dispatch, dispatch_context, tasks, next_task_token, shutdown,
-  )
-}
-
-///|
 /// Run the one native connection loop with a caller-selected dispatch state.
 /// The factory runs only after all connection-local queues and shutdown state
 /// exist, so every dispatch closure is scoped to this connection and the
 /// task-group type is the same one used by the owner loop.
-async fn[G, D] runtime_connection_engine_with_dispatch(
+async fn[G, C, D] runtime_connection_engine_with_dispatch_of(
   group : @async.TaskGroup[G],
   ports : RuntimePorts,
   options : RuntimeOptions,
-  dispatch_factory : (@aqueue.Queue[RuntimeEvent], Ref[Bool]) -> (
+  dispatch_factory : (@aqueue.Queue[RuntimeEventOf[C]], Ref[Bool]) -> (
     RuntimeDispatchPort[G, D],
     D,
   ),
+  event_to_result : (C) -> RuntimeHandlerResult,
+  owner_event : (
+    RuntimeOwnerTaskEventOf[C],
+    ConnectionState,
+    D,
+    Array[RuntimeTaskControl],
+  ) -> RuntimeOwnerTaskApply[D] raise RuntimeError,
 ) -> D {
-  let events : @aqueue.Queue[RuntimeEvent] = Queue(
+  let events : @aqueue.Queue[RuntimeEventOf[C]] = Queue(
     kind=Blocking(options.queue_capacity),
   )
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(
@@ -2408,9 +2998,9 @@ async fn[G, D] runtime_connection_engine_with_dispatch(
           false,
         )
     }
-    let (step, next_context) = runtime_apply_event_with_dispatch(
-      event, state, decoder, group, writer_queue, options, ports, events, dispatch,
-      dispatch_context, tasks, next_task_token, shutdown,
+    let (step, next_context) = runtime_apply_event_of(
+      event, state, decoder, group, writer_queue, options, ports, events, event_to_result,
+      dispatch, owner_event, dispatch_context, tasks, next_task_token, shutdown,
     )
     state = step.state
     decoder = step.decoder
@@ -2422,6 +3012,23 @@ async fn[G, D] runtime_connection_engine_with_dispatch(
     }
   }
   dispatch_context
+}
+
+///|
+/// Compatibility wrapper for the legacy handler result queue. It keeps the
+/// existing test seam and legacy runner on the same single generic engine.
+async fn[G, D] runtime_connection_engine_with_dispatch(
+  group : @async.TaskGroup[G],
+  ports : RuntimePorts,
+  options : RuntimeOptions,
+  dispatch_factory : (@aqueue.Queue[RuntimeEvent], Ref[Bool]) -> (
+    RuntimeDispatchPort[G, D],
+    D,
+  ),
+) -> D {
+  runtime_connection_engine_with_dispatch_of(
+    group, ports, options, dispatch_factory, runtime_identity_handler_result, runtime_owner_event_unavailable,
+  )
 }
 
 ///|
@@ -2457,16 +3064,23 @@ pub async fn[S, I, C, E] connection_runtime_run_owner(
 ) -> Unit {
   runtime_validate_options(options)
   let _ = @async.with_task_group(group => {
-    let _ = runtime_connection_engine_with_dispatch(group, ports, options, (
-      _events,
-      _shutdown,
-    ) => {
-      let context : RuntimeOwnerDispatchContext[S, I, C, E] = {
-        owner: runtime_owner_new(owner_port),
-        port: owner_port,
-      }
-      (runtime_owner_dispatch_port(), context)
-    })
+    let _ = runtime_connection_engine_with_dispatch_of(
+      group,
+      ports,
+      options,
+      (events, shutdown) => {
+        let context : RuntimeOwnerDispatchContext[S, I, C, E] = {
+          owner: runtime_owner_new(owner_port),
+          port: owner_port,
+          events,
+          shutdown,
+          limit: options.queue_capacity,
+        }
+        (runtime_owner_dispatch_port(), context)
+      },
+      runtime_owner_handler_result_unavailable,
+      runtime_owner_apply_task_event,
+    )
   })
 }
 

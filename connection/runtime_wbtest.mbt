@@ -46,9 +46,10 @@ async fn[G] runtime_apply_event(
     G,
     RuntimeLegacySpawnContext[RuntimeHandlerResult],
   ] = runtime_legacy_dispatch_port()
-  let (step, _) = runtime_apply_event_with_dispatch(
-    event, state, decoder, group, writer_queue, options, ports, events, dispatch,
-    dispatch_context, tasks, next_task_token, shutdown,
+  let (step, _) = runtime_apply_event_of(
+    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
+    dispatch, runtime_owner_event_unavailable, dispatch_context, tasks, next_task_token,
+    shutdown,
   )
   step
 }
@@ -1952,155 +1953,6 @@ fn runtime_owner_plan_test_local(
 }
 
 ///|
-fn runtime_owner_immediate_plan_test_port(
-  response : RuntimeHandlerResult,
-) -> RuntimeOwnerPort[
-  RuntimeOwnerTestState,
-  Int,
-  Int,
-  RuntimeOwnerPlanTestEffect,
-] {
-  {
-    initial_state: runtime_owner_test_state(),
-    admit_request: (state, id, _) => {
-      RuntimeOwnerRequestImmediate(completion={
-        state: {
-          ..state,
-          admitted: runtime_owner_test_push_id(state.admitted, id),
-        },
-        response,
-        effects: [
-          WireNotification(
-            notification=runtime_owner_effect_test_notification(),
-          ),
-          Local(effect=Expand),
-          WireNotification(notification=runtime_owner_test_notification()),
-        ],
-      })
-    },
-    admit_notification: (state, _) => {
-      RuntimeOwnerNotificationImmediate(completion={
-        state: {
-          ..state,
-          notifications: runtime_owner_test_push_int(state.notifications, 99),
-        },
-        effects: [
-          Local(effect=Expand),
-          WireNotification(notification=runtime_owner_test_notification()),
-        ],
-      })
-    },
-    execute: fn(value) { value },
-    execute_failure: (_, _) => -2,
-    execute_cancel: (_, _) => -3,
-    complete_request: (_, _, _, _) => {
-      abort("immediate request must not complete")
-    },
-    complete_notification: (_, _, _) => {
-      abort("immediate notification must not complete")
-    },
-    plan_local_effect: runtime_owner_plan_test_local,
-    cancel_request: (state, id, _) => {
-      (
-        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
-        -1,
-      )
-    },
-    abort: (state, task) => {
-      ..state,
-      aborted: runtime_owner_test_push_int(state.aborted, task.task_token()),
-    },
-  }
-}
-
-///|
-test "runtime owner request plan commits success and ordered commands" {
-  let id : RequestId = String("plan-success")
-  let result = Json::string("planned-success")
-  let port = runtime_owner_immediate_plan_test_port(HandlerSuccess(result))
-  let plan = runtime_owner_admit_request_plan(
-    runtime_owner_new(port),
-    runtime_owner_test_request(id),
-    port,
-  )
-  assert_eq(plan.owner.state().admitted, [id])
-  assert_eq(plan.event, IncomingCompleted(id~, result~))
-  assert_eq(plan.commands, [
-    RuntimeOwnerWriteNotification(
-      notification=runtime_owner_effect_test_notification(),
-    ),
-    RuntimeOwnerTrace(method_name="owner"),
-    RuntimeOwnerCancelInbound(request_id=Number(7)),
-    RuntimeOwnerWriteNotification(
-      notification=runtime_owner_test_notification(),
-    ),
-  ])
-}
-
-///|
-test "runtime owner request plan preserves handler error and request id" {
-  let id : RequestId = Number(32)
-  let error = JsonRpcError::internal_error()
-  let port = runtime_owner_immediate_plan_test_port(HandlerError(error))
-  let plan = runtime_owner_admit_request_plan(
-    runtime_owner_new(port),
-    runtime_owner_test_request(id),
-    port,
-  )
-  assert_eq(plan.owner.state().admitted, [id])
-  assert_eq(plan.event, IncomingFailed(id~, error~))
-}
-
-///|
-test "runtime owner notification plan has no response and preserves commands" {
-  let port = runtime_owner_immediate_plan_test_port(
-    HandlerSuccess(Json::null()),
-  )
-  let plan = runtime_owner_admit_notification_plan(
-    runtime_owner_new(port),
-    runtime_owner_test_notification(),
-    port,
-  )
-  assert_eq(plan.owner.state().notifications, [99])
-  assert_eq(plan.commands, [
-    RuntimeOwnerTrace(method_name="owner"),
-    RuntimeOwnerCancelInbound(request_id=Number(7)),
-    RuntimeOwnerWriteNotification(
-      notification=runtime_owner_test_notification(),
-    ),
-  ])
-}
-
-///|
-test "runtime owner pure plans reject invoke admission" {
-  let port = runtime_owner_test_port()
-  try
-    runtime_owner_admit_request_plan(
-      runtime_owner_new(port),
-      runtime_owner_test_request(Number(33)),
-      port,
-    )
-  catch {
-    OwnerInvokeUnsupported => ()
-    _ => fail("request invoke must raise OwnerInvokeUnsupported")
-  } noraise {
-    _ => fail("request invoke must raise")
-  }
-  try
-    runtime_owner_admit_notification_plan(
-      runtime_owner_new(port),
-      runtime_owner_test_notification(),
-      port,
-    )
-  catch {
-    OwnerInvokeUnsupported => ()
-    _ => fail("notification invoke must raise OwnerInvokeUnsupported")
-  } noraise {
-    _ => fail("notification invoke must raise")
-  }
-}
-
-///|
 async test "runtime owner runner emits immediate success response" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -2177,36 +2029,443 @@ async test "runtime owner runner emits notification effect without response" {
 }
 
 ///|
-async test "runtime owner runner rejects invoke and closes with structured failure" {
+async test "runtime owner runner completes concurrent requests in reverse order once" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let start_order : Array[Int] = []
+  let base = runtime_owner_test_port()
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+    ..base,
+    execute: value => {
+      started.put(value)
+      if value == 1 {
+        release_one.get()
+      } else {
+        release_two.get()
+      }
+      value
+    },
+  }
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  input.put(
+    Some(
+      @utf8.encode(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"owner\"}\n" +
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"owner\"}\n",
+      ),
+    ),
+  )
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      start_order.push(started.get())
+      start_order.push(started.get())
+      release_two.put(())
+      release_one.put(())
+      written.get()
+      written.get()
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  assert_eq(start_order, [1, 2])
+  assert_eq(output.length(), 2)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(2))
+      assert_eq(response.result, Json::number(2.0, repr="2"))
+    }
+    _ => fail("first reverse completion response must be request two")
+  }
+  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(1))
+      assert_eq(response.result, Json::number(1.0, repr="1"))
+    }
+    _ => fail("second reverse completion response must be request one")
+  }
+}
+
+///|
+async test "runtime owner execute failure becomes one typed error response" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
+  let error = JsonRpcError::internal_error()
+  let base = runtime_owner_test_port()
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+    ..base,
+    execute: _ => {
+      raise @jsonrpc.JsonRpcCodecError::ParseError(
+        message="owner execute fault",
+      )
+    },
+    execute_failure: (_, _) => -88,
+    complete_request: (state, _, _, completion) => {
+      state: {
+        ..state,
+        completed: runtime_owner_test_push_int(state.completed, completion),
+      },
+      response: if completion == -88 {
+        HandlerError(error)
+      } else {
+        HandlerSuccess(Json::null())
+      },
+      effects: [],
+    },
+  }
   let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
   input.put(
     Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":43,\"method\":\"owner\"}\n")),
   )
-  input.put(None)
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      written.get()
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(response)) => {
+      assert_eq(response.id, Number(43))
+      assert_eq(response.error, error)
+    }
+    _ => fail("owner execute failure must produce one typed error")
+  }
+}
+
+///|
+async test "runtime owner notification invoke applies effects without a response" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let notification = runtime_owner_effect_test_notification()
+  let base = runtime_owner_effect_test_port()
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, String] = {
+    ..base,
+    complete_notification: (state, _, completion) => {
+      state: {
+        ..state,
+        notifications: runtime_owner_test_push_int(
+          state.notifications,
+          completion,
+        ),
+      },
+      effects: [
+        WireNotification(notification~),
+        Local(effect="notification-effect"),
+      ],
+    },
+    plan_local_effect: effect => {
+      RuntimeOwnerCommands([RuntimeOwnerTrace(method_name=effect)])
+    },
+  }
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  input.put(Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"method\":\"owner\"}\n")))
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      written.get()
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Notification(actual) => assert_eq(actual, notification)
+    _ => fail("notification invoke must emit its wire effect only")
+  }
+  let local_effects = traces.filter(event => {
+    event.phase == "owner_trace" && event.method_name == "notification-effect"
+  })
+  assert_eq(local_effects.length(), 1)
+}
+
+///|
+async test "runtime owner task publication failure propagates from a closed queue" {
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  events.close()
+  let shutdown = Ref::Ref(false)
+  let task : RuntimeOwnerTask[Int] = {
+    task_token: 0,
+    request_id: Some(Number(1)),
+    invocation: 1,
+    notification: false,
+    cancel_requested: false,
+  }
   let mut raised = false
   try
-    connection_runtime_run_owner(
-      ports,
-      runtime_test_options(),
-      runtime_owner_test_port(),
-    )
+    @async.with_task_group(group => {
+      let child = group.spawn(() => {
+        runtime_owner_task_loop(
+          task,
+          runtime_owner_test_port(),
+          events,
+          shutdown,
+          1,
+        )
+      })
+      child.wait()
+    })
   catch {
-    @runtime.RuntimeError::OwnerInvokeUnsupported => raised = true
-    _ => fail("owner invoke must raise OwnerInvokeUnsupported")
+    @runtime.RuntimeError::EventQueueClosed => raised = true
+    _ => fail("closed owner event queue failure must propagate")
   } noraise {
-    _ => fail("owner invoke must raise")
+    _ => fail("closed owner event queue failure must raise")
   }
   assert_true(raised)
-  let dispatch_failures = traces.filter(event => {
-    event.phase == "dispatch_failed"
+}
+
+///|
+async test "runtime owner task publication backpressure propagates without hang" {
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Blocking(1))
+  events.put(RuntimeChunk(@utf8.encode("occupied")))
+  let shutdown = Ref::Ref(false)
+  let task : RuntimeOwnerTask[Int] = {
+    task_token: 0,
+    request_id: Some(Number(1)),
+    invocation: 1,
+    notification: false,
+    cancel_requested: false,
+  }
+  let mut raised_limit = 0
+  try
+    @async.with_task_group(group => {
+      let child = group.spawn(() => {
+        runtime_owner_task_loop(
+          task,
+          runtime_owner_test_port(),
+          events,
+          shutdown,
+          1,
+        )
+      })
+      child.wait()
+    })
+  catch {
+    @runtime.RuntimeError::EventQueueBackpressure(limit~) =>
+      raised_limit = limit
+    _ => fail("owner event queue backpressure must propagate")
+  } noraise {
+    _ => fail("owner event queue backpressure must raise")
+  }
+  assert_eq(raised_limit, 1)
+}
+
+///|
+async test "runtime owner runtime rejects token and id mismatch fail-fast" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let cancelled : Array[Unit] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: _ => (),
+  }
+  let owner_port = runtime_owner_test_port()
+  let request = runtime_owner_test_request(Number(1))
+  let owner = runtime_owner_new(owner_port)
+  let (owner, action) = runtime_owner_admit_request(owner, request, owner_port) catch {
+    _ => abort("mismatch owner admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("mismatch owner request must invoke")
+  }
+  let context : RuntimeOwnerDispatchContext[
+    RuntimeOwnerTestState,
+    Int,
+    Int,
+    Unit,
+  ] = {
+    owner,
+    port: owner_port,
+    events,
+    shutdown,
+    limit: runtime_test_options().queue_capacity,
+  }
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  let dispatch : RuntimeDispatchPort[
+    _,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  @async.with_task_group(group => {
+    let mut raised = false
+    try
+      runtime_apply_event_of(
+        RuntimeOwnerTaskEvent(
+          RuntimeOwnerTaskCompleted(
+            event=RuntimeOwnerRequestCompleted(
+              token=task.task_token(),
+              id=Number(99),
+              completion=1,
+            ),
+          ),
+        ),
+        state,
+        framing_state(max_frame_bytes=256),
+        group,
+        writer_queue,
+        runtime_test_options(),
+        ports,
+        events,
+        runtime_owner_handler_result_unavailable,
+        dispatch,
+        runtime_owner_apply_task_event,
+        context,
+        [
+          {
+            task_token: task.task_token(),
+            request_id: Some(Number(1)),
+            cancel: () => cancelled.push(()),
+          },
+        ],
+        1,
+        shutdown,
+      )
+    catch {
+      @runtime.RuntimeError::TaskRequestMismatch => raised = true
+      _ => fail("mismatched owner event must raise TaskRequestMismatch")
+    } noraise {
+      _ => fail("mismatched owner event must raise")
+    }
+    assert_true(raised)
   })
-  assert_eq(dispatch_failures.length(), 1)
-  assert_eq(dispatch_failures[0].error_kind, "owner_invoke_unsupported")
-  assert_eq(output.length(), 0)
+  assert_eq(cancelled.length(), 1)
+}
+
+///|
+async test "runtime owner runtime ignores a duplicate completion after settling" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let owner_port = runtime_owner_test_port()
+  let request = runtime_owner_test_request(Number(1))
+  let (owner, action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    request,
+    owner_port,
+  ) catch {
+    _ => abort("duplicate owner admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("duplicate owner request must invoke")
+  }
+  let context : RuntimeOwnerDispatchContext[
+    RuntimeOwnerTestState,
+    Int,
+    Int,
+    Unit,
+  ] = {
+    owner,
+    port: owner_port,
+    events,
+    shutdown,
+    limit: runtime_test_options().queue_capacity,
+  }
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  let dispatch : RuntimeDispatchPort[
+    _,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  let event = RuntimeOwnerTaskEvent(
+    RuntimeOwnerTaskCompleted(
+      event=RuntimeOwnerRequestCompleted(
+        token=task.task_token(),
+        id=Number(1),
+        completion=1,
+      ),
+    ),
+  )
+  @async.with_task_group(group => {
+    let (first, next_context) = runtime_apply_event_of(
+      event,
+      state,
+      framing_state(max_frame_bytes=256),
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      runtime_owner_handler_result_unavailable,
+      dispatch,
+      runtime_owner_apply_task_event,
+      context,
+      [
+        {
+          task_token: task.task_token(),
+          request_id: Some(Number(1)),
+          cancel: () => (),
+        },
+      ],
+      1,
+      shutdown,
+    )
+    assert_eq(first.tasks.length(), 0)
+    let (second, _) = runtime_apply_event_of(
+      event,
+      first.state,
+      first.decoder,
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      runtime_owner_handler_result_unavailable,
+      dispatch,
+      runtime_owner_apply_task_event,
+      next_context,
+      first.tasks,
+      first.next_task_token,
+      shutdown,
+    )
+    assert_eq(second.tasks.length(), 0)
+  })
+  match writer_queue.get() {
+    RuntimeFrame(_) => ()
+    RuntimeStop => fail("settled owner request must queue one response")
+  }
+  let duplicate = writer_queue.try_get() catch { _ => None }
+  match duplicate {
+    None => ()
+    Some(_) =>
+      fail("duplicate owner completion must not queue another response")
+  }
+  let late = traces.filter(event => {
+    event.phase == "late_owner_completion_ignored"
+  })
+  assert_eq(late.length(), 1)
 }
 
 ///|
@@ -2887,7 +3146,7 @@ async test "runtime dispatch threads updated context across events" {
         )
       },
     }
-    let (first, first_context) = runtime_apply_event_with_dispatch(
+    let (first, first_context) = runtime_apply_event_of(
       RuntimeChunk(
         @utf8.encode(
           "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"one\"}\n" +
@@ -2901,7 +3160,9 @@ async test "runtime dispatch threads updated context across events" {
       runtime_test_options(),
       ports,
       events,
+      runtime_identity_handler_result,
       dispatch,
+      runtime_owner_event_unavailable,
       0,
       [],
       0,

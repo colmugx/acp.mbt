@@ -31,7 +31,6 @@ pub(all) suberror RuntimeError {
   ReducerFailed
   TaskControlMissing
   TaskRequestMismatch
-  OwnerInvokeUnsupported
   HandlerFailed
   NotificationFailed
   ResponseHandlerFailed
