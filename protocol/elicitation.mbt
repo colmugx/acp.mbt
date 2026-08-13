@@ -117,17 +117,19 @@ fn elicitation_decode_non_negative_integer(
   value : Json,
   path~ : String,
 ) -> UInt64 raise ProtocolDecodeError {
-  let number = protocol_decode_number(value, path~)
-  if number.is_nan() || number.is_inf() {
-    raise InvalidField(path~, reason="expected a finite integer")
+  match value {
+    Number(number, repr~) =>
+      match protocol_parse_uint64_number(number, repr) {
+        Ok(value) => value
+        Err(NonFinite) =>
+          raise InvalidField(path~, reason="expected a finite integer")
+        Err(Fractional) =>
+          raise InvalidField(path~, reason="expected a non-negative integer")
+        Err(Malformed | OutOfRange | PrecisionUnavailable) =>
+          raise InvalidField(path~, reason="expected a uint64 integer")
+      }
+    _ => raise ExpectedNumber(path~)
   }
-  if number < 0.0 || number >= 18446744073709551616.0 {
-    raise InvalidField(path~, reason="expected a uint64 integer")
-  }
-  if number != number.floor() {
-    raise InvalidField(path~, reason="expected a non-negative integer")
-  }
-  number.to_uint64()
 }
 
 ///|
@@ -135,17 +137,19 @@ fn elicitation_decode_signed_integer(
   value : Json,
   path~ : String,
 ) -> Int64 raise ProtocolDecodeError {
-  let number = protocol_decode_number(value, path~)
-  if number.is_nan() || number.is_inf() {
-    raise InvalidField(path~, reason="expected a finite integer")
+  match value {
+    Number(number, repr~) =>
+      match protocol_parse_int64_number(number, repr) {
+        Ok(value) => value
+        Err(NonFinite) =>
+          raise InvalidField(path~, reason="expected a finite integer")
+        Err(Fractional) =>
+          raise InvalidField(path~, reason="expected an integer")
+        Err(Malformed | OutOfRange | PrecisionUnavailable) =>
+          raise InvalidField(path~, reason="expected an int64 integer")
+      }
+    _ => raise ExpectedNumber(path~)
   }
-  if number < -9223372036854775808.0 || number >= 9223372036854775808.0 {
-    raise InvalidField(path~, reason="expected an int64 integer")
-  }
-  if number != number.floor() {
-    raise InvalidField(path~, reason="expected an integer")
-  }
-  number.to_int64()
 }
 
 ///|
