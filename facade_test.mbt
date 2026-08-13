@@ -49,3 +49,70 @@ test "root facade exposes stable wire, message, runtime, and manifest APIs" {
   let error_response = JsonRpcResponse::error(id=response_id, error~)
   assert_true(error_response is Error(_))
 }
+
+///|
+async test "root facade exposes the generic owner runner seam" {
+  let owner_port : RuntimeOwnerPort[Unit, Unit, Unit, Unit] = {
+    initial_state: (),
+    admit_request: (_state, _id, _request) => {
+      RuntimeOwnerRequestImmediate(completion={
+        state: (),
+        response: HandlerSuccess(Json::null()),
+        effects: [],
+      })
+    },
+    admit_notification: (_state, _notification) => {
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [] })
+    },
+    execute: async fn(_invocation) {
+      @async.pause()
+      ()
+    },
+    execute_failure: (_state, _invocation) => (),
+    execute_cancel: (_state, _invocation) => (),
+    complete_request: (_state, _id, _invocation, _completion) => {
+      state: (),
+      response: HandlerSuccess(Json::null()),
+      effects: [],
+    },
+    complete_notification: (_state, _invocation, _completion) => {
+      state: (),
+      effects: [],
+    },
+    plan_local_effect: _effect => RuntimeOwnerNoCommands,
+    cancel_request: (_state, _id, _invocation) => ((), ()),
+    abort: (_state, _task) => (),
+  }
+  let ports : RuntimePorts = {
+    reader: {
+      read: async fn(_size) {
+        @async.pause()
+        None
+      },
+    },
+    writer: {
+      write: async fn(_frame) {
+        @async.pause()
+        ()
+      },
+    },
+    handlers: {
+      request: async fn(_request) {
+        @async.pause()
+        HandlerSuccess(Json::null())
+      },
+      notification: async fn(_notification) {
+        @async.pause()
+        ()
+      },
+      response: async fn(_response) {
+        @async.pause()
+        ()
+      },
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: _event => (),
+  }
+  connection_runtime_run_owner(ports, runtime_default_options(), owner_port)
+}

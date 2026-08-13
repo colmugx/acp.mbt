@@ -4,6 +4,7 @@ import {
   "colmugx/acp/agent/message" @agent_message,
   "colmugx/acp/client",
   "colmugx/acp/client/message" @client_message,
+  "colmugx/acp/connection",
   "colmugx/acp/jsonrpc",
   "colmugx/acp/method",
   "colmugx/acp/protocol",
@@ -14,3 +15,7 @@ import {
 }
 
 supported_targets = "native"
+
+import {
+  "moonbitlang/async",
+} for "test"

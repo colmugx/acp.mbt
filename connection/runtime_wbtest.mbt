@@ -1692,6 +1692,74 @@ fn runtime_owner_test_port() -> RuntimeOwnerPort[
 }
 
 ///|
+fn runtime_owner_run_immediate_port(
+  response : RuntimeHandlerResult,
+  request_effects : Array[RuntimeOwnerEffect[Unit]],
+  notification_effects : Array[RuntimeOwnerEffect[Unit]],
+) -> RuntimeOwnerPort[RuntimeOwnerTestState, Unit, Unit, Unit] {
+  {
+    initial_state: runtime_owner_test_state(),
+    admit_request: (state, id, _) => {
+      RuntimeOwnerRequestImmediate(completion={
+        state: {
+          ..state,
+          admitted: runtime_owner_test_push_id(state.admitted, id),
+        },
+        response,
+        effects: request_effects,
+      })
+    },
+    admit_notification: (state, _) => {
+      RuntimeOwnerNotificationImmediate(completion={
+        state: {
+          ..state,
+          notifications: runtime_owner_test_push_int(state.notifications, 1),
+        },
+        effects: notification_effects,
+      })
+    },
+    execute: fn(_) { () },
+    execute_failure: (_, _) => (),
+    execute_cancel: (_, _) => (),
+    complete_request: (_, _, _, _) => {
+      abort("owner immediate request must not complete asynchronously")
+    },
+    complete_notification: (_, _, _) => {
+      abort("owner immediate notification must not complete asynchronously")
+    },
+    plan_local_effect: _ => RuntimeOwnerNoCommands,
+    cancel_request: (state, _, _) => (state, ()),
+    abort: (state, _) => state,
+  }
+}
+
+///|
+fn runtime_owner_run_runtime_ports(
+  input : @aqueue.Queue[Bytes?],
+  output : Array[Bytes],
+  written : @aqueue.Queue[Unit],
+  traces : Array[RuntimeTraceEvent],
+) -> RuntimePorts {
+  {
+    reader: { read: _ => input.get() },
+    writer: {
+      write: frame => {
+        output.push(frame)
+        written.put(())
+      },
+    },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+}
+
+///|
 fn runtime_owner_test_request(id : RequestId) -> JsonRpcRequest {
   JsonRpcRequest::new(id~, method_name="owner") catch {
     _ => abort("owner request fixture must be valid")
@@ -1709,6 +1777,154 @@ fn runtime_owner_test_notification() -> JsonRpcNotification {
 fn runtime_owner_effect_test_notification() -> JsonRpcNotification {
   JsonRpcNotification::new(method_name="owner/update") catch {
     _ => abort("owner effect notification fixture must be valid")
+  }
+}
+
+///|
+async test "runtime applies owner commands in order" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(2))
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[RequestId] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let notification = runtime_owner_effect_test_notification()
+  let result = runtime_apply_owner_commands(
+    [
+      RuntimeOwnerWriteNotification(notification~),
+      RuntimeOwnerTrace(method_name="owner/work"),
+      RuntimeOwnerCancelInbound(request_id=Number(9)),
+    ],
+    writer_queue,
+    runtime_test_options(),
+    ports,
+    [
+      {
+        task_token: 9,
+        request_id: Some(Number(9)),
+        cancel: () => cancelled.push(Number(9)),
+      },
+    ],
+  )
+  match result {
+    RuntimeOwnerCommandsComplete => ()
+    RuntimeOwnerCloseRequested(_) => fail("owner commands must complete")
+  }
+  match writer_queue.get() {
+    RuntimeFrame(frame) =>
+      match jsonrpc_decode(@utf8.decode(frame.view())) {
+        Notification(actual) => assert_eq(actual, notification)
+        _ => fail("owner notification must be queued as a notification")
+      }
+    RuntimeStop => fail("owner notification must be queued before stop")
+  }
+  assert_eq(traces.length(), 1)
+  assert_eq(traces[0].direction, "runtime")
+  assert_eq(traces[0].phase, "owner_trace")
+  assert_eq(traces[0].request_id, "")
+  assert_eq(traces[0].method_name, "owner/work")
+  assert_eq(traces[0].error_kind, "owner")
+  assert_eq(cancelled, [Number(9)])
+}
+
+///|
+async test "runtime owner close command stops interpretation" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(2))
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let result = runtime_apply_owner_commands(
+    [
+      RuntimeOwnerClose(reason="owner requested close"),
+      RuntimeOwnerTrace(method_name="after-close"),
+      RuntimeOwnerWriteNotification(
+        notification=runtime_owner_effect_test_notification(),
+      ),
+    ],
+    writer_queue,
+    runtime_test_options(),
+    ports,
+    [],
+  )
+  match result {
+    RuntimeOwnerCloseRequested(reason~) =>
+      assert_eq(reason, "owner requested close")
+    RuntimeOwnerCommandsComplete => fail("owner close must return close result")
+  }
+  assert_eq(traces.length(), 0)
+  let queued = writer_queue.try_get() catch {
+    _ => fail("owner close queue inspection must succeed")
+  }
+  match queued {
+    None => ()
+    Some(_) => fail("commands after owner close must not be executed")
+  }
+}
+
+///|
+async test "runtime owner missing cancellation stops interpretation" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(2))
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let mut raised = false
+  try
+    runtime_apply_owner_commands(
+      [
+        RuntimeOwnerCancelInbound(request_id=Number(99)),
+        RuntimeOwnerTrace(method_name="after-missing-cancel"),
+        RuntimeOwnerWriteNotification(
+          notification=runtime_owner_effect_test_notification(),
+        ),
+      ],
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      [],
+    )
+  catch {
+    TaskControlMissing => raised = true
+    _ => fail("missing owner cancellation must raise TaskControlMissing")
+  } noraise {
+    _ => fail("missing owner cancellation must raise")
+  }
+  assert_true(raised)
+  assert_eq(traces.length(), 0)
+  let queued = writer_queue.try_get() catch {
+    _ => fail("owner missing-cancel queue inspection must succeed")
+  }
+  match queued {
+    None => ()
+    Some(_) => fail("commands after missing cancellation must not be executed")
   }
 }
 
@@ -1733,6 +1949,264 @@ fn runtime_owner_plan_test_local(
     Close =>
       RuntimeOwnerCommands([RuntimeOwnerClose(reason="owner requested close")])
   }
+}
+
+///|
+fn runtime_owner_immediate_plan_test_port(
+  response : RuntimeHandlerResult,
+) -> RuntimeOwnerPort[
+  RuntimeOwnerTestState,
+  Int,
+  Int,
+  RuntimeOwnerPlanTestEffect,
+] {
+  {
+    initial_state: runtime_owner_test_state(),
+    admit_request: (state, id, _) => {
+      RuntimeOwnerRequestImmediate(completion={
+        state: {
+          ..state,
+          admitted: runtime_owner_test_push_id(state.admitted, id),
+        },
+        response,
+        effects: [
+          WireNotification(
+            notification=runtime_owner_effect_test_notification(),
+          ),
+          Local(effect=Expand),
+          WireNotification(notification=runtime_owner_test_notification()),
+        ],
+      })
+    },
+    admit_notification: (state, _) => {
+      RuntimeOwnerNotificationImmediate(completion={
+        state: {
+          ..state,
+          notifications: runtime_owner_test_push_int(state.notifications, 99),
+        },
+        effects: [
+          Local(effect=Expand),
+          WireNotification(notification=runtime_owner_test_notification()),
+        ],
+      })
+    },
+    execute: fn(value) { value },
+    execute_failure: (_, _) => -2,
+    execute_cancel: (_, _) => -3,
+    complete_request: (_, _, _, _) => {
+      abort("immediate request must not complete")
+    },
+    complete_notification: (_, _, _) => {
+      abort("immediate notification must not complete")
+    },
+    plan_local_effect: runtime_owner_plan_test_local,
+    cancel_request: (state, id, _) => {
+      (
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        -1,
+      )
+    },
+    abort: (state, task) => {
+      ..state,
+      aborted: runtime_owner_test_push_int(state.aborted, task.task_token()),
+    },
+  }
+}
+
+///|
+test "runtime owner request plan commits success and ordered commands" {
+  let id : RequestId = String("plan-success")
+  let result = Json::string("planned-success")
+  let port = runtime_owner_immediate_plan_test_port(HandlerSuccess(result))
+  let plan = runtime_owner_admit_request_plan(
+    runtime_owner_new(port),
+    runtime_owner_test_request(id),
+    port,
+  )
+  assert_eq(plan.owner.state().admitted, [id])
+  assert_eq(plan.event, IncomingCompleted(id~, result~))
+  assert_eq(plan.commands, [
+    RuntimeOwnerWriteNotification(
+      notification=runtime_owner_effect_test_notification(),
+    ),
+    RuntimeOwnerTrace(method_name="owner"),
+    RuntimeOwnerCancelInbound(request_id=Number(7)),
+    RuntimeOwnerWriteNotification(
+      notification=runtime_owner_test_notification(),
+    ),
+  ])
+}
+
+///|
+test "runtime owner request plan preserves handler error and request id" {
+  let id : RequestId = Number(32)
+  let error = JsonRpcError::internal_error()
+  let port = runtime_owner_immediate_plan_test_port(HandlerError(error))
+  let plan = runtime_owner_admit_request_plan(
+    runtime_owner_new(port),
+    runtime_owner_test_request(id),
+    port,
+  )
+  assert_eq(plan.owner.state().admitted, [id])
+  assert_eq(plan.event, IncomingFailed(id~, error~))
+}
+
+///|
+test "runtime owner notification plan has no response and preserves commands" {
+  let port = runtime_owner_immediate_plan_test_port(
+    HandlerSuccess(Json::null()),
+  )
+  let plan = runtime_owner_admit_notification_plan(
+    runtime_owner_new(port),
+    runtime_owner_test_notification(),
+    port,
+  )
+  assert_eq(plan.owner.state().notifications, [99])
+  assert_eq(plan.commands, [
+    RuntimeOwnerTrace(method_name="owner"),
+    RuntimeOwnerCancelInbound(request_id=Number(7)),
+    RuntimeOwnerWriteNotification(
+      notification=runtime_owner_test_notification(),
+    ),
+  ])
+}
+
+///|
+test "runtime owner pure plans reject invoke admission" {
+  let port = runtime_owner_test_port()
+  try
+    runtime_owner_admit_request_plan(
+      runtime_owner_new(port),
+      runtime_owner_test_request(Number(33)),
+      port,
+    )
+  catch {
+    OwnerInvokeUnsupported => ()
+    _ => fail("request invoke must raise OwnerInvokeUnsupported")
+  } noraise {
+    _ => fail("request invoke must raise")
+  }
+  try
+    runtime_owner_admit_notification_plan(
+      runtime_owner_new(port),
+      runtime_owner_test_notification(),
+      port,
+    )
+  catch {
+    OwnerInvokeUnsupported => ()
+    _ => fail("notification invoke must raise OwnerInvokeUnsupported")
+  } noraise {
+    _ => fail("notification invoke must raise")
+  }
+}
+
+///|
+async test "runtime owner runner emits immediate success response" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  let owner_port = runtime_owner_run_immediate_port(
+    HandlerSuccess(Json::string("owner-success")),
+    [],
+    [],
+  )
+  input.put(
+    Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":41,\"method\":\"owner\"}\n")),
+  )
+  input.put(None)
+  connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(41))
+      assert_eq(response.result, Json::string("owner-success"))
+    }
+    _ => fail("owner runner must emit the immediate success response")
+  }
+}
+
+///|
+async test "runtime owner runner emits immediate handler error response" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  let error = JsonRpcError::invalid_params()
+  let owner_port = runtime_owner_run_immediate_port(HandlerError(error), [], [])
+  input.put(
+    Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":42,\"method\":\"owner\"}\n")),
+  )
+  input.put(None)
+  connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(response)) => {
+      assert_eq(response.id, Number(42))
+      assert_eq(response.error, error)
+    }
+    _ => fail("owner runner must emit the immediate handler error")
+  }
+}
+
+///|
+async test "runtime owner runner emits notification effect without response" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let notification = JsonRpcNotification::new(method_name="owner/update") catch {
+    _ => abort("owner runner notification fixture must be valid")
+  }
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  let owner_port = runtime_owner_run_immediate_port(
+    HandlerSuccess(Json::null()),
+    [],
+    [WireNotification(notification~)],
+  )
+  input.put(Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"method\":\"owner\"}\n")))
+  input.put(None)
+  connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Notification(actual) => assert_eq(actual, notification)
+    _ => fail("owner notification effect must not produce a response")
+  }
+}
+
+///|
+async test "runtime owner runner rejects invoke and closes with structured failure" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  input.put(
+    Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":43,\"method\":\"owner\"}\n")),
+  )
+  input.put(None)
+  let mut raised = false
+  try
+    connection_runtime_run_owner(
+      ports,
+      runtime_test_options(),
+      runtime_owner_test_port(),
+    )
+  catch {
+    @runtime.RuntimeError::OwnerInvokeUnsupported => raised = true
+    _ => fail("owner invoke must raise OwnerInvokeUnsupported")
+  } noraise {
+    _ => fail("owner invoke must raise")
+  }
+  assert_true(raised)
+  let dispatch_failures = traces.filter(event => {
+    event.phase == "dispatch_failed"
+  })
+  assert_eq(dispatch_failures.length(), 1)
+  assert_eq(dispatch_failures[0].error_kind, "owner_invoke_unsupported")
+  assert_eq(output.length(), 0)
 }
 
 ///|
@@ -2438,6 +2912,88 @@ async test "runtime dispatch threads updated context across events" {
     assert_eq(first.tasks[0].task_token, 0)
     assert_eq(first.tasks[1].task_token, 1)
     assert_eq(first.next_task_token, 2)
+  })
+}
+
+///|
+async test "runtime applies immediate request completion before owner commands" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: _ => (),
+  }
+  let request = runtime_wbtest_request(Number(41))
+  let step = connection_reduce(connection_state(), IncomingRequest(request)) catch {
+    _ => abort("immediate request fixture must reduce")
+  }
+  @async.with_task_group(group => {
+    let dispatch : RuntimeDispatchPort[_, Int] = {
+      request: (_group, _token, request, context) => {
+        RuntimeDispatchRequestImmediate(
+          context=context + 1,
+          event=IncomingCompleted(
+            id=request.id,
+            result=Json::string("immediate-result"),
+          ),
+          commands=[
+            RuntimeOwnerWriteNotification(
+              notification=runtime_owner_test_notification(),
+            ),
+          ],
+        )
+      },
+      notification: (_group, _token, _notification, context) => {
+        RuntimeDispatchNotificationImmediate(context~, commands=[])
+      },
+    }
+    let state_ref = Ref::Ref(step.state)
+    let (tasks, token, context, control) = runtime_apply_step(
+      group,
+      step,
+      state_ref,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      dispatch,
+      0,
+      [],
+      0,
+    )
+    assert_eq(context, 1)
+    assert_eq(tasks.length(), 0)
+    assert_eq(token, 0)
+    match control {
+      RuntimeApplyContinue => ()
+      RuntimeApplyOwnerClose(_) => fail("immediate request must continue")
+    }
+    match writer_queue.get() {
+      RuntimeFrame(frame) =>
+        match jsonrpc_decode(@utf8.decode(frame.view())) {
+          Response(Success(response)) => {
+            assert_eq(response.id, Number(41))
+            assert_eq(response.result, Json::string("immediate-result"))
+          }
+          _ => fail("immediate request must queue its response first")
+        }
+      RuntimeStop => fail("immediate request must not stop writer")
+    }
+    match writer_queue.get() {
+      RuntimeFrame(frame) =>
+        match jsonrpc_decode(@utf8.decode(frame.view())) {
+          Notification(notification) =>
+            assert_eq(notification, runtime_owner_test_notification())
+          _ => fail("owner notification must follow immediate response")
+        }
+      RuntimeStop => fail("owner notification must remain queued")
+    }
   })
 }
 

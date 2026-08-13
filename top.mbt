@@ -457,6 +457,42 @@ pub using @client {
 }
 
 ///|
+/// Generic owner state, admission, completion, and effect APIs. The public
+/// runner is the only connection loop exposed by the stable facade; reducer
+/// steps and the legacy handler runner remain package-internal.
+pub using @connection {
+  connection_runtime_run_owner,
+  runtime_owner_admit_notification,
+  runtime_owner_admit_request,
+  runtime_owner_cancel_request,
+  runtime_owner_close,
+  runtime_owner_complete_notification,
+  runtime_owner_complete_request,
+  runtime_owner_execute,
+  runtime_owner_new,
+  runtime_owner_plan_effects,
+  runtime_owner_spawn,
+  type RuntimeOwner,
+  type RuntimeOwnerCancelResult,
+  type RuntimeOwnerCloseResult,
+  type RuntimeOwnerCommand,
+  type RuntimeOwnerCompletionResult,
+  type RuntimeOwnerEffect,
+  type RuntimeOwnerError,
+  type RuntimeOwnerEvent,
+  type RuntimeOwnerIgnore,
+  type RuntimeOwnerLocalPlan,
+  type RuntimeOwnerNotificationAction,
+  type RuntimeOwnerNotificationAdmission,
+  type RuntimeOwnerNotificationCompletion,
+  type RuntimeOwnerPort,
+  type RuntimeOwnerRequestAction,
+  type RuntimeOwnerRequestAdmission,
+  type RuntimeOwnerRequestCompletion,
+  type RuntimeOwnerTask,
+}
+
+///|
 /// Canonical composition and handler failures.
 pub using @acp_error {
   type AgentCompositionError,
