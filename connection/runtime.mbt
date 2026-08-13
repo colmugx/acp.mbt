@@ -2011,109 +2011,106 @@ async fn[G, D] runtime_apply_event_with_dispatch(
 }
 
 ///|
-/// Legacy handler-event wrapper. The existing runtime and white-box harness
-/// use `RuntimeHandlerResult` directly; the generic seam above is kept behind
-/// this identity adapter so no legacy call site changes behavior.
-async fn[G] runtime_apply_event(
-  event : RuntimeEvent,
-  state : ConnectionState,
-  decoder : FramingState,
+/// Run the one native connection loop with a caller-selected dispatch state.
+/// The factory runs only after all connection-local queues and shutdown state
+/// exist, so every dispatch closure is scoped to this connection and the
+/// task-group type is the same one used by the owner loop.
+async fn[G, D] runtime_connection_engine_with_dispatch(
   group : @async.TaskGroup[G],
-  writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEvent],
-  tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
-  shutdown : Ref[Bool],
-) -> RuntimeEventStep raise RuntimeError {
-  let dispatch_context : RuntimeLegacySpawnContext[RuntimeHandlerResult] = {
-    shutdown,
-    handlers: ports.handlers,
-    events,
-    result_to_event: runtime_identity_handler_result,
-    limit: options.queue_capacity,
-  }
-  let dispatch : RuntimeDispatchPort[
-    G,
-    RuntimeLegacySpawnContext[RuntimeHandlerResult],
-  ] = runtime_legacy_dispatch_port()
-  let (step, _) = runtime_apply_event_with_dispatch(
-    event, state, decoder, group, writer_queue, options, ports, events, dispatch,
-    dispatch_context, tasks, next_task_token, shutdown,
+  options : RuntimeOptions,
+  dispatch_factory : (@aqueue.Queue[RuntimeEvent], Ref[Bool]) -> (
+    RuntimeDispatchPort[G, D],
+    D,
+  ),
+) -> D {
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(
+    kind=Blocking(options.queue_capacity),
   )
-  step
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(
+    kind=Blocking(options.queue_capacity),
+  )
+  let shutdown = Ref::Ref(false)
+  let (dispatch, initial_context) = dispatch_factory(events, shutdown)
+  let mut dispatch_context = initial_context
+  group.spawn_bg(() => {
+    runtime_reader_loop(
+      ports.reader,
+      events,
+      options.queue_capacity,
+      options.read_chunk_bytes,
+    )
+  })
+  group.spawn_bg(() => {
+    runtime_writer_loop(
+      ports.writer,
+      writer_queue,
+      ports.trace,
+      events,
+      options.queue_capacity,
+      shutdown,
+    )
+  })
+  let mut state = connection_state()
+  let mut decoder = framing_state(max_frame_bytes=options.max_frame_bytes)
+  let mut tasks : Array[RuntimeTaskControl] = []
+  let mut next_task_token = 0
+  for ;; {
+    let event = runtime_event_get(events) catch {
+      _ =>
+        runtime_fail_and_close(
+          group,
+          state,
+          "event_queue",
+          EventQueueClosed,
+          writer_queue,
+          options,
+          ports,
+          events,
+          tasks,
+          next_task_token,
+          shutdown,
+          false,
+        )
+    }
+    let (step, next_context) = runtime_apply_event_with_dispatch(
+      event, state, decoder, group, writer_queue, options, ports, events, dispatch,
+      dispatch_context, tasks, next_task_token, shutdown,
+    )
+    state = step.state
+    decoder = step.decoder
+    tasks = step.tasks
+    next_task_token = step.next_task_token
+    dispatch_context = next_context
+    if step.stop {
+      break
+    }
+  }
+  dispatch_context
 }
 
 ///|
-/// Run one native connection. The input reader is unique, the reducer loop is
-/// unique, and stdout is owned by one serial writer task. All other work is
-/// represented by events in the bounded event queue.
+/// Run one native connection with the legacy handler dispatch adapter. The
+/// generic owner loop above remains the only reducer/event loop.
 async fn runtime_connection_engine(
   ports : RuntimePorts,
   options : RuntimeOptions,
 ) -> Unit {
   runtime_validate_options(options)
-  @async.with_task_group(group => {
-    let events : @aqueue.Queue[RuntimeEvent] = Queue(
-      kind=Blocking(options.queue_capacity),
-    )
-    let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(
-      kind=Blocking(options.queue_capacity),
-    )
-    let shutdown = Ref::Ref(false)
-    group.spawn_bg(() => {
-      runtime_reader_loop(
-        ports.reader,
-        events,
-        options.queue_capacity,
-        options.read_chunk_bytes,
-      )
-    })
-    group.spawn_bg(() => {
-      runtime_writer_loop(
-        ports.writer,
-        writer_queue,
-        ports.trace,
-        events,
-        options.queue_capacity,
+  let _ = @async.with_task_group(group => {
+    runtime_connection_engine_with_dispatch(group, ports, options, (
+      events,
+      shutdown,
+    ) => {
+      let context : RuntimeLegacySpawnContext[RuntimeHandlerResult] = {
         shutdown,
-      )
+        handlers: ports.handlers,
+        events,
+        result_to_event: runtime_identity_handler_result,
+        limit: options.queue_capacity,
+      }
+      (runtime_legacy_dispatch_port(), context)
     })
-    let mut state = connection_state()
-    let mut decoder = framing_state(max_frame_bytes=options.max_frame_bytes)
-    let mut tasks : Array[RuntimeTaskControl] = []
-    let mut next_task_token = 0
-    for ;; {
-      let event = runtime_event_get(events) catch {
-        _ =>
-          runtime_fail_and_close(
-            group,
-            state,
-            "event_queue",
-            EventQueueClosed,
-            writer_queue,
-            options,
-            ports,
-            events,
-            tasks,
-            next_task_token,
-            shutdown,
-            false,
-          )
-      }
-      let step = runtime_apply_event(
-        event, state, decoder, group, writer_queue, options, ports, events, tasks,
-        next_task_token, shutdown,
-      )
-      state = step.state
-      decoder = step.decoder
-      tasks = step.tasks
-      next_task_token = step.next_task_token
-      if step.stop {
-        break
-      }
-    }
   })
 }
 

@@ -20,6 +20,40 @@ fn runtime_wbtest_request(id : RequestId) -> JsonRpcRequest {
 }
 
 ///|
+/// Test-only legacy adapter for exercising individual event transitions. The
+/// production connection loop uses the generic engine directly.
+async fn[G] runtime_apply_event(
+  event : RuntimeEvent,
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEvent],
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+) -> RuntimeEventStep raise RuntimeError {
+  let dispatch_context : RuntimeLegacySpawnContext[RuntimeHandlerResult] = {
+    shutdown,
+    handlers: ports.handlers,
+    events,
+    result_to_event: runtime_identity_handler_result,
+    limit: options.queue_capacity,
+  }
+  let dispatch : RuntimeDispatchPort[
+    G,
+    RuntimeLegacySpawnContext[RuntimeHandlerResult],
+  ] = runtime_legacy_dispatch_port()
+  let (step, _) = runtime_apply_event_with_dispatch(
+    event, state, decoder, group, writer_queue, options, ports, events, dispatch,
+    dispatch_context, tasks, next_task_token, shutdown,
+  )
+  step
+}
+
+///|
 test "runtime renders a null request id without a sentinel" {
   assert_eq(runtime_request_id_text(Null), "null")
 }
@@ -2405,4 +2439,75 @@ async test "runtime dispatch threads updated context across events" {
     assert_eq(first.tasks[1].task_token, 1)
     assert_eq(first.next_task_token, 2)
   })
+}
+
+///|
+async test "runtime engine returns generic dispatch state after close" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let cancellations : Array[Unit] = []
+  let closes : Array[Unit] = []
+  let ports : RuntimePorts = {
+    reader: { read: _ => input.get() },
+    writer: { write: frame => output.push(frame) },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => if event.phase == "reducer_trace" { closes.push(()) },
+  }
+  input.put(
+    Some(
+      @utf8.encode(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"one\"}\n" +
+        "{\"jsonrpc\":\"2.0\",\"method\":\"two\"}\n",
+      ),
+    ),
+  )
+  input.put(None)
+  let context = @async.with_task_group(group => {
+    runtime_connection_engine_with_dispatch(
+      group,
+      ports,
+      runtime_test_options(),
+      (_events, _shutdown) => {
+        let dispatch : RuntimeDispatchPort[_, Int] = {
+          request: (_group, token, request, context) => {
+            RuntimeDispatchSpawned(
+              context=context + 1,
+              task={
+                task_token: token,
+                request_id: Some(request.id),
+                cancel: () => cancellations.push(()),
+              },
+              next_task_token=token + 1,
+            )
+          },
+          notification: (_group, token, _notification, context) => {
+            RuntimeDispatchSpawned(
+              context=context + 10,
+              task={
+                task_token: token,
+                request_id: None,
+                cancel: () => cancellations.push(()),
+              },
+              next_task_token=token + 1,
+            )
+          },
+        }
+        (dispatch, 0)
+      },
+    )
+  })
+  assert_eq(context, 11)
+  assert_eq(cancellations.length(), 2)
+  assert_eq(closes.length(), 1)
+  assert_eq(output.length(), 1)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(failure)) => assert_eq(failure.error.code, InternalError)
+    _ => fail("expected close to flush the pending request failure")
+  }
 }
