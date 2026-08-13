@@ -1741,7 +1741,7 @@ async fn[G] runtime_apply_event(
 /// Run one native connection. The input reader is unique, the reducer loop is
 /// unique, and stdout is owned by one serial writer task. All other work is
 /// represented by events in the bounded event queue.
-pub async fn connection_runtime_run(
+async fn runtime_connection_engine(
   ports : RuntimePorts,
   options : RuntimeOptions,
 ) -> Unit {
@@ -1807,4 +1807,12 @@ pub async fn connection_runtime_run(
       }
     }
   })
+}
+
+///|
+pub async fn connection_runtime_run(
+  ports : RuntimePorts,
+  options : RuntimeOptions,
+) -> Unit {
+  runtime_connection_engine(ports, options)
 }
