@@ -31,15 +31,14 @@ You can browse and install extra skills here:
 - `moon ide` provides project navigation helpers like `peek-def`, `outline`, and
   `find-references`. See $moonbit-agent-guide for details.
 
-- `moon info` is used to update the generated interface of the package, each
-  package has a generated interface file `.mbti`, it is a brief formal
-  description of the package. If nothing in `.mbti` changes, this means your
-  change does not bring the visible changes to the external package users, it is
-  typically a safe refactoring.
+- `moon info` generates the package interface artifact. The generated `.mbti`
+  files are automatic outputs, not hand-maintained specifications; do not
+  manually inspect, compare, or edit their contents. Public API behavior is
+  established by source, `moon ide` queries, and black-box consumer tests.
 
-- In the last step, run `moon info && moon fmt` to update the interface and
-  format the code. Check the diffs of `.mbti` file to see if the changes are
-  expected.
+- In the last step, run `rtk moon info --target native` and then `rtk moon fmt`.
+  Treat any `moon info` failure as a blocking error; successful generation is
+  the interface gate, and no manual `.mbti` content/diff review is required.
 
 - Run `moon test` to check tests pass. MoonBit supports snapshot testing; when
   changes affect outputs, run `moon test --update` to refresh snapshots.
@@ -51,3 +50,42 @@ You can browse and install extra skills here:
   scientific computations), prefer assertion tests. You can use
   `moon coverage analyze > uncovered.log` to see which parts of your code are
   not covered by tests.
+
+## ACP implementation direction
+
+- The implementation plan is rooted at
+  `docs/implementation-plan/README.md`; update it together with material scope,
+  protocol pin, package, target, or release-gate changes.
+- The module has two release facades:
+  `colmugx/acp` for stable ACP wire v1 and
+  `colmugx/acp/experimental` for the ACP v2 Draft baseline. The implementation
+  is recursively split into responsibility subpackages such as `agent/`,
+  `client/`, `connection/`, `jsonrpc/`, `method/`, `protocol/`, `runtime/`,
+  and `transport/`; each package directory has its own `moon.pkg`. These
+  implementation packages are not additional release/version facades.
+- Express responsibility with package directories, not filename prefixes. Do
+  not create files such as `connection_runtime.mbt`; put the leaf file under
+  the responsible package directory. Only `_test.mbt` and `_wbtest.mbt`
+  suffixes are allowed for test files. Do not create `v1/` or `v2/`
+  implementation directories; retain `experimental/` as the experimental
+  facade.
+- The root facade file `top.mbt` uses `pub using` to re-export all user-facing
+  public types, enums, errors, functions, and methods. Internal reducer,
+  broker, and runtime state must remain unexported.
+- The current supported target is native only. Protocol stdout must contain
+  newline-delimited ACP JSON-RPC frames only; diagnostics go to stderr or an
+  explicitly injected trace sink.
+- Keep a pure protocol reducer separated from native async effects. Runtime
+  code interprets reducer commands and reports success/failure back as events;
+  it must not duplicate lifecycle state.
+- Do not use builder/fluent-registration APIs. Compose immutable typed service
+  values, derive capabilities from service presence, and construct each
+  endpoint once with labeled arguments and fail-fast validation.
+- Do not use global mutable state, singletons, or a service locator. Use
+  `colmugx/reader` at the composition root for caller-owned immutable
+  dependency environments. Keep connection/session state explicit in the
+  reducer, runtime scope, or application store rather than Reader `Env`.
+- Stable v1 must pass its complete schema/method matrix and TypeScript/Rust
+  interoperability gates before v2 implementation begins.
+- `colmugx/acp` must remain independent from Posoco. Future
+  `posoco-ext-acp` owns the Posoco adapter and depends on both projects.
