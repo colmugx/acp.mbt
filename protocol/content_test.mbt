@@ -239,3 +239,78 @@ test "embedded blob resources validate payload shape and base64" {
     _ => fail("expected embedded resource without payload to fail")
   }
 }
+
+///|
+test "resource link size preserves exact signed int64 boundaries" {
+  let max = resource_link_from_json(
+    protocol_parse_json(
+      "{\"name\":\"max\",\"uri\":\"file:///max\",\"size\":9223372036854775807}",
+    ),
+  )
+  let min = resource_link_from_json(
+    protocol_parse_json(
+      "{\"name\":\"min\",\"uri\":\"file:///min\",\"size\":-9223372036854775808}",
+    ),
+  )
+  assert_eq(max.size, Value(9223372036854775807L))
+  assert_eq(min.size, Value(-9223372036854775808L))
+  assert_eq(resource_link_from_json(resource_link_to_json(max)), max)
+  assert_eq(resource_link_from_json(resource_link_to_json(min)), min)
+}
+
+///|
+test "resource link size preserves values above the binary-safe range" {
+  let large = resource_link_from_json(
+    protocol_parse_json(
+      "{\"name\":\"large\",\"uri\":\"file:///large\",\"size\":9007199254740993}",
+    ),
+  )
+  assert_eq(large.size, Value(9007199254740993L))
+  assert_eq(resource_link_from_json(resource_link_to_json(large)), large)
+
+  // The core JSON parser may return a rounded, repr-less Double for this
+  // decimal form.  The protocol must reject it rather than fabricate an
+  // Int64 from the rounded value.
+  try
+    resource_link_from_json(
+      protocol_parse_json(
+        "{\"name\":\"rounded\",\"uri\":\"file:///rounded\",\"size\":9007199254740993.0}",
+      ),
+    )
+  catch {
+    InvalidField(path="resource_link.size", reason=_) => ()
+    _ => fail("expected imprecise repr-less integer to fail")
+  } noraise {
+    _ => fail("expected imprecise repr-less integer to fail")
+  }
+}
+
+///|
+test "resource link size accepts integral exponents and rejects invalid int64 values" {
+  let positive_exponent = resource_link_from_json(
+    protocol_parse_json(
+      "{\"name\":\"positive\",\"uri\":\"file:///positive\",\"size\":1e+3}",
+    ),
+  )
+  let negative_exponent = resource_link_from_json(
+    protocol_parse_json(
+      "{\"name\":\"negative\",\"uri\":\"file:///negative\",\"size\":1000e-3}",
+    ),
+  )
+  assert_eq(positive_exponent.size, Value(1000L))
+  assert_eq(negative_exponent.size, Value(1L))
+
+  for
+    source in [
+      "{\"name\":\"fraction\",\"uri\":\"file:///fraction\",\"size\":1.5}", "{\"name\":\"fraction-exponent\",\"uri\":\"file:///fraction-exponent\",\"size\":1e-3}",
+      "{\"name\":\"positive-overflow\",\"uri\":\"file:///positive-overflow\",\"size\":9223372036854775808}",
+      "{\"name\":\"negative-overflow\",\"uri\":\"file:///negative-overflow\",\"size\":-9223372036854775809}",
+    ] {
+    try resource_link_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path="resource_link.size", reason=_) => ()
+      _ => fail("expected invalid signed int64 size")
+    } noraise {
+      _ => fail("expected invalid signed int64 size to fail")
+    }
+  }
+}
