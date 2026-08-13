@@ -8,3 +8,5 @@ target
 .agents
 
 **/pkg.generated.mbti
+/HANDOFF.md
+/docs/implementation-plan/
