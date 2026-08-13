@@ -329,6 +329,68 @@ fn[T] client_adapter_complete_result(
 }
 
 ///|
+fn client_adapter_permission_option_offered(
+  params : RequestPermissionRequest,
+  option_id : String,
+) -> Bool {
+  for option in params.options {
+    if option.option_id == option_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn client_adapter_permission_response(
+  state : ClientAdapterState,
+  id : RequestId,
+  response : RequestPermissionResponse,
+) -> ClientAdapterStep {
+  match client_adapter_encode(response, request_permission_response_to_json) {
+    Err(error) => client_adapter_response(state, id, error)
+    Ok(result) => client_adapter_success(state, id, result)
+  }
+}
+
+///|
+/// Permission cancellation is a normal ACP response, while an unknown
+/// selected option is a local invalid-params failure.  The admitted request
+/// remains the source of truth for the option membership check.
+fn client_adapter_complete_permission(
+  state : ClientAdapterState,
+  id : RequestId,
+  params : RequestPermissionRequest,
+  result : Result[RequestPermissionResponse, HandlerError],
+) -> ClientAdapterStep {
+  match result {
+    Err(Cancelled) =>
+      client_adapter_permission_response(state, id, {
+        outcome: Cancelled,
+        meta: Omitted,
+      })
+    Err(error) =>
+      client_adapter_response(state, id, client_adapter_handler_error(error))
+    Ok(response) => {
+      let valid = match response.outcome {
+        Cancelled => true
+        Selected(selected) =>
+          client_adapter_permission_option_offered(params, selected.option_id)
+      }
+      if valid {
+        client_adapter_permission_response(state, id, response)
+      } else {
+        client_adapter_response(
+          state,
+          id,
+          JsonRpcError::new(code=InvalidParams, message="invalid params"),
+        )
+      }
+    }
+  }
+}
+
+///|
 fn client_adapter_complete_notification(
   state : ClientAdapterState,
   method_name : String,
@@ -578,13 +640,10 @@ pub fn client_adapter_complete(
   completion : ClientAdapterCompletion,
 ) -> ClientAdapterStep raise ClientAdapterError {
   match invocation {
-    RequestPermissionInvocation(id~, params=_) =>
+    RequestPermissionInvocation(id~, params~) =>
       match completion {
         RequestPermissionCompleted(id=completion_id, result~) if completion_id ==
-          id =>
-          client_adapter_complete_result(
-            state, id, result, request_permission_response_to_json,
-          )
+          id => client_adapter_complete_permission(state, id, params, result)
         RequestPermissionCompleted(..) | _ =>
           raise CompletionMismatch(method_name="session/request_permission")
       }

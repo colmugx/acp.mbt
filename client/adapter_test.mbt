@@ -129,6 +129,52 @@ async fn client_adapter_test_application_cancelled(
 }
 
 ///|
+async fn client_adapter_test_permission_selected(
+  _request : RequestPermissionRequest,
+) -> RequestPermissionResponse {
+  @async.pause()
+  { outcome: Selected({ option_id: "allow", meta: Omitted }), meta: Omitted }
+}
+
+///|
+async fn client_adapter_test_permission_unknown(
+  _request : RequestPermissionRequest,
+) -> RequestPermissionResponse {
+  @async.pause()
+  { outcome: Selected({ option_id: "deny", meta: Omitted }), meta: Omitted }
+}
+
+///|
+async fn client_adapter_test_permission_cancelled(
+  _request : RequestPermissionRequest,
+) -> RequestPermissionResponse {
+  @async.pause()
+  raise HandlerError::Cancelled
+}
+
+///|
+async fn client_adapter_test_permission_failed(
+  _request : RequestPermissionRequest,
+) -> RequestPermissionResponse {
+  @async.pause()
+  raise HandlerError::Application(message="permission handler failed")
+}
+
+///|
+fn client_adapter_test_permission_endpoint(
+  handler : async (RequestPermissionRequest) -> RequestPermissionResponse,
+) -> ClientEndpoint {
+  let spec = client_spec(
+    info=client_service_test_info("permission-adapter"),
+    session=client_session_service(
+      session_update=client_service_test_update,
+      request_permission=handler,
+    ),
+  )
+  @reader.Reader::run(client_program(@reader.Reader::pure(spec)), ()).unwrap()
+}
+
+///|
 async fn client_adapter_test_secret_failure(
   _params : ReadTextFileParams,
 ) -> ReadTextFileResult {
@@ -271,6 +317,79 @@ async test "Client adapter admits, executes, and completes every request" {
     ),
   )
   ignore(client_adapter_test_success(url, Number(10)))
+}
+
+///|
+async test "Client adapter validates permission outcomes against the request" {
+  let request = client_adapter_test_request(
+    Number(40),
+    "session/request_permission",
+    "{\"sessionId\":\"session\",\"toolCall\":{\"toolCallId\":\"tool\"},\"options\":[{\"optionId\":\"allow\",\"name\":\"Allow\",\"kind\":\"allow_once\"}]}",
+  )
+
+  let valid_endpoint = client_adapter_test_permission_endpoint(
+    client_adapter_test_permission_selected,
+  )
+  let valid_state = client_adapter_test_state(valid_endpoint)
+  let valid = client_adapter_test_round_trip(
+    valid_state, valid_endpoint, request,
+  )
+  assert_eq(valid.state, valid_state)
+  let valid_response = request_permission_response_from_json(
+    client_adapter_test_success(valid, Number(40)),
+  )
+  match valid_response.outcome {
+    Selected(selected) => assert_eq(selected.option_id, "allow")
+    Cancelled => fail("offered permission option must remain selected")
+  }
+
+  let unknown_endpoint = client_adapter_test_permission_endpoint(
+    client_adapter_test_permission_unknown,
+  )
+  let unknown_state = client_adapter_test_state(unknown_endpoint)
+  let unknown = client_adapter_test_round_trip(
+    unknown_state, unknown_endpoint, request,
+  )
+  assert_eq(unknown.state, unknown_state)
+  assert_eq(client_adapter_test_error_code(unknown), InvalidParams)
+}
+
+///|
+async test "Client adapter turns permission cancellation into a response" {
+  let cancelled_endpoint = client_adapter_test_permission_endpoint(
+    client_adapter_test_permission_cancelled,
+  )
+  let cancelled_state = client_adapter_test_state(cancelled_endpoint)
+  let cancelled = client_adapter_test_round_trip(
+    cancelled_state,
+    cancelled_endpoint,
+    client_adapter_test_request(
+      Number(41),
+      "session/request_permission",
+      "{\"sessionId\":\"session\",\"toolCall\":{\"toolCallId\":\"tool\"},\"options\":[{\"optionId\":\"allow\",\"name\":\"Allow\",\"kind\":\"allow_once\"}]}",
+    ),
+  )
+  assert_eq(cancelled.state, cancelled_state)
+  let cancelled_response = request_permission_response_from_json(
+    client_adapter_test_success(cancelled, Number(41)),
+  )
+  assert_true(cancelled_response.outcome is Cancelled)
+
+  let failed_endpoint = client_adapter_test_permission_endpoint(
+    client_adapter_test_permission_failed,
+  )
+  let failed_state = client_adapter_test_state(failed_endpoint)
+  let failed = client_adapter_test_round_trip(
+    failed_state,
+    failed_endpoint,
+    client_adapter_test_request(
+      Number(42),
+      "session/request_permission",
+      "{\"sessionId\":\"session\",\"toolCall\":{\"toolCallId\":\"tool\"},\"options\":[{\"optionId\":\"allow\",\"name\":\"Allow\",\"kind\":\"allow_once\"}]}",
+    ),
+  )
+  assert_eq(failed.state, failed_state)
+  assert_eq(client_adapter_test_error_code(failed), InternalError)
 }
 
 ///|
@@ -780,6 +899,7 @@ using @protocol_data {
   type ReadTextFileResult,
   type RequestPermissionRequest,
   type RequestPermissionResponse,
+  request_permission_response_from_json,
   type TerminalCreateParams,
   type TerminalCreateResult,
   type TerminalKillParams,
