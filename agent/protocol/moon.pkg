@@ -1,0 +1,8 @@
+import {
+  "colmugx/acp/agent/message" @agent_message,
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol" @protocol_data,
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
