@@ -213,7 +213,7 @@ fn protocol_decode_uint64(
             reason="expected a non-negative 64-bit integer",
           )
       }
-    Number(number, ..) => protocol_decode_number_uint64(number, path~)
+    Number(number, repr~) => protocol_decode_number_uint64(number, repr, path~)
     _ =>
       raise InvalidField(path~, reason="expected a non-negative 64-bit integer")
   }
@@ -222,15 +222,282 @@ fn protocol_decode_uint64(
 ///|
 fn protocol_decode_number_uint64(
   number : Double,
+  repr : String?,
   path~ : String,
 ) -> UInt64 raise ProtocolDecodeError {
-  if number.is_nan() || number.is_inf() || number != number.floor() {
-    raise InvalidField(path~, reason="expected a non-negative 64-bit integer")
+  match protocol_parse_uint64_number(number, repr) {
+    Ok(value) => value
+    Err(Malformed | NonFinite | Fractional | OutOfRange | PrecisionUnavailable) =>
+      raise InvalidField(path~, reason="expected a non-negative 64-bit integer")
   }
-  if number < 0.0 || number >= 18446744073709551616.0 {
-    raise InvalidField(path~, reason="expected a non-negative 64-bit integer")
+}
+
+///|
+priv enum ProtocolUInt64NumberError {
+  Malformed
+  NonFinite
+  Fractional
+  OutOfRange
+  PrecisionUnavailable
+}
+
+///|
+/// Decode an unsigned integer-valued JSON number without trusting a rounded
+/// `Double`.  The JSON parser retains the original decimal representation in
+/// `repr` when the value is not losslessly represented by a finite `Double`.
+fn protocol_parse_uint64_number(
+  number : Double,
+  repr : String?,
+) -> Result[UInt64, ProtocolUInt64NumberError] {
+  match repr {
+    Some(text) => protocol_parse_uint64_repr(text)
+    None =>
+      if number.is_nan() || number.is_inf() {
+        Err(NonFinite)
+      } else if number != number.floor() {
+        Err(Fractional)
+      } else if number < 0.0 {
+        Err(OutOfRange)
+      } else if number > 9007199254740991.0 {
+        Err(PrecisionUnavailable)
+      } else {
+        Ok(number.to_uint64())
+      }
   }
-  number.to_uint64()
+}
+
+///|
+fn protocol_parse_uint64_repr(
+  text : String,
+) -> Result[UInt64, ProtocolUInt64NumberError] {
+  let chars = text.to_array()
+  let length = chars.length()
+  if length == 0 {
+    return Err(Malformed)
+  }
+  let mut index = 0
+  if chars[index] == '-' {
+    index += 1
+    if index == length {
+      return Err(Malformed)
+    }
+  }
+  let start = index
+  if chars[index] == '0' {
+    index += 1
+    if index < length && protocol_is_digit(chars[index]) {
+      return Err(Malformed)
+    }
+  } else if protocol_is_digit(chars[index]) {
+    index += 1
+    while index < length && protocol_is_digit(chars[index]) {
+      index += 1
+    }
+  } else {
+    return Err(Malformed)
+  }
+  let decimal_index : Int? = if index < length && chars[index] == '.' {
+    let decimal = index
+    index += 1
+    let fraction_start = index
+    while index < length && protocol_is_digit(chars[index]) {
+      index += 1
+    }
+    if index == fraction_start {
+      return Err(Malformed)
+    }
+    Some(decimal)
+  } else {
+    None
+  }
+  let exponent_index : Int? = if index < length &&
+    (chars[index] == 'e' || chars[index] == 'E') {
+    let exponent = index
+    index += 1
+    if index < length && (chars[index] == '+' || chars[index] == '-') {
+      index += 1
+    }
+    let exponent_start = index
+    while index < length && protocol_is_digit(chars[index]) {
+      index += 1
+    }
+    if index == exponent_start {
+      return Err(Malformed)
+    }
+    Some(exponent)
+  } else {
+    None
+  }
+  if index != length {
+    return Err(Malformed)
+  }
+  match (decimal_index, exponent_index) {
+    (None, None) => protocol_parse_uint64_text(text)
+    _ =>
+      protocol_parse_uint64_decimal(chars, start, decimal_index, exponent_index)
+  }
+}
+
+///|
+fn protocol_is_digit(value : Char) -> Bool {
+  let digit = value.to_int() - '0'
+  digit >= 0 && digit <= 9
+}
+
+///|
+fn protocol_parse_uint64_text(
+  text : String,
+) -> Result[UInt64, ProtocolUInt64NumberError] {
+  let chars = text.to_array()
+  let length = chars.length()
+  if length == 0 {
+    return Err(OutOfRange)
+  }
+  let negative = chars[0] == '-'
+  let start = if negative { 1 } else { 0 }
+  if start == length {
+    return Err(OutOfRange)
+  }
+  let max_value : UInt64 = 18446744073709551615UL
+  let mut value : UInt64 = 0UL
+  for index in start..<length {
+    let digit = chars[index].to_int() - '0'
+    if digit < 0 || digit > 9 {
+      return Err(OutOfRange)
+    }
+    let digit64 = digit.to_uint64()
+    if negative {
+      if digit64 != 0UL {
+        return Err(OutOfRange)
+      }
+    } else {
+      if value > max_value / 10UL ||
+        (value == max_value / 10UL && digit64 > 5UL) {
+        return Err(OutOfRange)
+      }
+      value = value * 10UL + digit64
+    }
+  }
+  Ok(value)
+}
+
+///|
+priv enum ProtocolDecimalShift {
+  Finite(negative~ : Bool, magnitude~ : Int)
+  Huge(negative~ : Bool)
+}
+
+///|
+fn protocol_decimal_shift(
+  chars : Array[Char],
+  start : Int,
+  end : Int,
+) -> ProtocolDecimalShift {
+  let negative = chars[start] == '-'
+  let digit_start = if negative || chars[start] == '+' {
+    start + 1
+  } else {
+    start
+  }
+  let mut magnitude = 0
+  let mut huge = false
+  for index in digit_start..<end {
+    if !huge {
+      let digit = chars[index].to_int() - '0'
+      if magnitude > 100000 / 10 || magnitude * 10 > 100000 - digit {
+        huge = true
+      } else {
+        magnitude = magnitude * 10 + digit
+      }
+    }
+  }
+  if huge {
+    Huge(negative~)
+  } else {
+    Finite(negative~, magnitude~)
+  }
+}
+
+///|
+fn protocol_trim_leading_zeroes(text : String) -> String {
+  let chars = text.to_array()
+  let mut first = 0
+  for index in 0..<chars.length() {
+    if chars[index] != '0' {
+      first = index
+      break
+    }
+    first = index + 1
+  }
+  if first == chars.length() {
+    "0"
+  } else {
+    text.sub(start=first).to_owned()
+  }
+}
+
+///|
+fn protocol_parse_uint64_decimal(
+  chars : Array[Char],
+  start : Int,
+  decimal_index : Int?,
+  exponent_index : Int?,
+) -> Result[UInt64, ProtocolUInt64NumberError] {
+  let mantissa_end = match exponent_index {
+    Some(index) => index
+    None => chars.length()
+  }
+  let fractional_digits = match decimal_index {
+    Some(index) => mantissa_end - index - 1
+    None => 0
+  }
+  let digits_builder = StringBuilder(size_hint=mantissa_end - start)
+  let mut nonzero = false
+  for index in start..<mantissa_end {
+    let digit = chars[index]
+    if digit != '.' {
+      digits_builder.write_char(digit)
+      if digit != '0' {
+        nonzero = true
+      }
+    }
+  }
+  if !nonzero {
+    return Ok(0UL)
+  }
+  let digits = protocol_trim_leading_zeroes(digits_builder.to_string())
+  let shift = match exponent_index {
+    Some(index) => protocol_decimal_shift(chars, index + 1, chars.length())
+    None => Finite(negative=false, magnitude=0)
+  }
+  let scale = match shift {
+    Finite(negative=true, magnitude~) => -magnitude - fractional_digits
+    Finite(negative=false, magnitude~) => magnitude - fractional_digits
+    Huge(negative=true) => return Err(Fractional)
+    Huge(negative=false) => return Err(OutOfRange)
+  }
+  if scale < 0 {
+    let remove = -scale
+    if remove >= digits.length() {
+      return Err(Fractional)
+    }
+    let digit_chars = digits.to_array()
+    for index in (digits.length() - remove)..<digits.length() {
+      if digit_chars[index] != '0' {
+        return Err(Fractional)
+      }
+    }
+    let integer_digits = digits.sub(end=digits.length() - remove).to_owned()
+    let sign = if start == 1 { "-" } else { "" }
+    protocol_parse_uint64_text(sign + integer_digits)
+  } else {
+    if digits.length() + scale > 20 {
+      return Err(OutOfRange)
+    }
+    let zeros = "0".repeat(scale)
+    let sign = if start == 1 { "-" } else { "" }
+    protocol_parse_uint64_text(sign + digits + zeros)
+  }
 }
 
 ///|
@@ -239,7 +506,7 @@ fn protocol_decode_wire_uint64(
   path~ : String,
 ) -> UInt64 raise ProtocolDecodeError {
   match value {
-    Number(number, ..) => protocol_decode_number_uint64(number, path~)
+    Number(number, repr~) => protocol_decode_number_uint64(number, repr, path~)
     _ => raise InvalidField(path~, reason="expected a non-negative integer")
   }
 }

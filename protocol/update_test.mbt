@@ -312,3 +312,48 @@ test "session update nested values validate types and paths" {
     _ => fail("expected relative session cwd to fail")
   }
 }
+
+///|
+test "usage update preserves exact uint64 numbers and round trips" {
+  let source = "{\"sessionUpdate\":\"usage_update\",\"used\":9007199254740993,\"size\":18446744073709551615}"
+  let update = session_update_from_json(protocol_parse_json(source))
+  match update {
+    UsageUpdate(value) => {
+      assert_eq(value.used, 9007199254740993UL)
+      assert_eq(value.size, 18446744073709551615UL)
+      assert_eq(
+        session_update_from_json(session_update_to_json(update)),
+        update,
+      )
+    }
+    _ => fail("expected usage update")
+  }
+}
+
+///|
+test "uint64 numbers accept exact integral exponents and reject invalid values" {
+  let exponent = protocol_parse_json(
+    "{\"sessionUpdate\":\"usage_update\",\"used\":1e+3,\"size\":1000e-3}",
+  )
+  let decoded = session_update_from_json(exponent)
+  match decoded {
+    UsageUpdate(value) => {
+      assert_eq(value.used, 1000UL)
+      assert_eq(value.size, 1UL)
+    }
+    _ => fail("expected usage update")
+  }
+  for
+    source in [
+      "{\"sessionUpdate\":\"usage_update\",\"used\":18446744073709551616,\"size\":1}",
+      "{\"sessionUpdate\":\"usage_update\",\"used\":-1,\"size\":1}", "{\"sessionUpdate\":\"usage_update\",\"used\":1.5,\"size\":1}",
+      "{\"sessionUpdate\":\"usage_update\",\"used\":1e-3,\"size\":1}",
+    ] {
+    try session_update_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path="sessionUpdate.used", reason=_) => ()
+      _ => fail("expected invalid uint64 usage value")
+    } noraise {
+      _ => fail("expected invalid uint64 usage value to fail")
+    }
+  }
+}
