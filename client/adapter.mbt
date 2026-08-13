@@ -102,6 +102,7 @@ using @session_protocol {
 /// Runtime intents emitted by the Client adapter.  These values are data
 /// only; cancellation itself is owned by the connection/reducer runtime.
 pub(all) enum ClientAdapterCommand {
+  CancelRequest(request_id~ : RequestId)
   TraceError(method_name~ : String, error~ : JsonRpcError)
 } derive(Eq, Debug)
 
@@ -411,14 +412,15 @@ fn client_adapter_admit_notification(
             invocation=ElicitationCompleteInvocation(params~),
           )
       }
-    CancelRequest(_) =>
+    CancelRequest(request_id) =>
       match client_adapter_reduce_notification(state, notification) {
         Err(error) =>
           Immediate(client_adapter_trace(state, "$/cancel_request", error))
         Ok(step) =>
-          // The reducer/runtime owns cancellation.  This adapter never emits
-          // a duplicate cancel command or starts a cancellation task.
-          Immediate({ state: { protocol: step.state }, outputs: [] })
+          Immediate({
+            state: { protocol: step.state },
+            outputs: [Command(CancelRequest(request_id~))],
+          })
       }
   }
 }

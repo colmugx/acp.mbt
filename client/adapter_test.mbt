@@ -318,7 +318,38 @@ async test "Client notifications stay side-effect free in the adapter" {
       ),
     ),
   )
-  assert_eq(cancel.outputs.length(), 0)
+  assert_eq(cancel.outputs.length(), 1)
+  match cancel.outputs[0] {
+    Command(CancelRequest(request_id=String("cancel-string"))) => ()
+    _ => fail("string cancellation must emit a cancel command")
+  }
+
+  let cancel_number = client_adapter_test_immediate(
+    client_adapter_admit(
+      state,
+      endpoint,
+      client_adapter_test_notification("$/cancel_request", "{\"requestId\":7}"),
+    ),
+  )
+  assert_eq(cancel_number.outputs.length(), 1)
+  match cancel_number.outputs[0] {
+    Command(CancelRequest(request_id=Number(7))) => ()
+    _ => fail("numeric cancellation must emit a cancel command")
+  }
+
+  let malformed_cancel = client_adapter_test_immediate(
+    client_adapter_admit(
+      state,
+      endpoint,
+      client_adapter_test_notification("$/cancel_request", "{}"),
+    ),
+  )
+  assert_eq(malformed_cancel.outputs.length(), 1)
+  match malformed_cancel.outputs[0] {
+    Command(TraceError(method_name="$/cancel_request", error~)) =>
+      assert_eq(error.code, InvalidParams)
+    _ => fail("malformed cancellation must remain a trace error")
+  }
 }
 
 ///|
