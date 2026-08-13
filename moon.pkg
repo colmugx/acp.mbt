@@ -1,12 +1,16 @@
 import {
+  "colmugx/acp/agent",
+  "colmugx/acp/error" @acp_error,
+  "colmugx/acp/agent/message" @agent_message,
+  "colmugx/acp/client",
+  "colmugx/acp/client/message" @client_message,
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/method",
+  "colmugx/acp/protocol",
+  "colmugx/acp/protocol/session",
+  "colmugx/acp/runtime",
+  "colmugx/acp/transport",
   "colmugx/reader",
-  "moonbitlang/async",
-  "moonbitlang/async/aqueue",
-  "moonbitlang/async/process",
-  "moonbitlang/async/stdio",
-  "moonbitlang/core/json",
-  "moonbitlang/core/encoding/utf8",
-  "moonbitlang/core/encoding/base64",
 }
 
 supported_targets = "native"
