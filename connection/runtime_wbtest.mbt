@@ -1643,6 +1643,7 @@ fn runtime_owner_test_port() -> RuntimeOwnerPort[
       },
       effects: [],
     },
+    plan_local_effect: _ => RuntimeOwnerNoCommands,
     cancel_request: (state, id, _) => {
       (
         { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
@@ -1674,6 +1675,29 @@ fn runtime_owner_test_notification() -> JsonRpcNotification {
 fn runtime_owner_effect_test_notification() -> JsonRpcNotification {
   JsonRpcNotification::new(method_name="owner/update") catch {
     _ => abort("owner effect notification fixture must be valid")
+  }
+}
+
+///|
+enum RuntimeOwnerPlanTestEffect {
+  NoCommands
+  Expand
+  Close
+} derive(Eq, Debug)
+
+///|
+fn runtime_owner_plan_test_local(
+  effect : RuntimeOwnerPlanTestEffect,
+) -> RuntimeOwnerLocalPlan {
+  match effect {
+    NoCommands => RuntimeOwnerNoCommands
+    Expand =>
+      RuntimeOwnerCommands([
+        RuntimeOwnerTrace(method_name="owner"),
+        RuntimeOwnerCancelInbound(request_id=Number(7)),
+      ])
+    Close =>
+      RuntimeOwnerCommands([RuntimeOwnerClose(reason="owner requested close")])
   }
 }
 
@@ -1722,6 +1746,7 @@ fn runtime_owner_effect_test_port() -> RuntimeOwnerPort[
       },
       effects: [Local(effect="notification-effect")],
     },
+    plan_local_effect: _ => RuntimeOwnerNoCommands,
     cancel_request: (state, id, _) => {
       (
         { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
@@ -1811,6 +1836,58 @@ test "runtime owner completions atomically return wire and local effects" {
     Local(effect~) => assert_eq(effect, "notification-effect")
     _ => fail("notification completion must retain local effect")
   }
+}
+
+///|
+test "runtime owner effect plan preserves wire order and expands local effects" {
+  let first = runtime_owner_effect_test_notification()
+  let second = JsonRpcNotification::new(method_name="owner/next") catch {
+    _ => abort("second owner effect notification fixture must be valid")
+  }
+  let effects : Array[RuntimeOwnerEffect[RuntimeOwnerPlanTestEffect]] = [
+    WireNotification(notification=first),
+    Local(effect=NoCommands),
+    Local(effect=Expand),
+    WireNotification(notification=second),
+    Local(effect=Close),
+  ]
+  let commands = runtime_owner_plan_effects(
+    effects, runtime_owner_plan_test_local,
+  )
+  assert_eq(commands.length(), 5)
+  match commands[0] {
+    RuntimeOwnerWriteNotification(notification~) =>
+      assert_eq(notification, first)
+    _ => fail("first wire effect must stay first")
+  }
+  match commands[1] {
+    RuntimeOwnerTrace(method_name~) => assert_eq(method_name, "owner")
+    _ => fail("local planner must preserve its first command")
+  }
+  match commands[2] {
+    RuntimeOwnerCancelInbound(request_id=Number(value)) => assert_eq(value, 7)
+    _ => fail("local planner must retain the request id")
+  }
+  match commands[3] {
+    RuntimeOwnerWriteNotification(notification~) =>
+      assert_eq(notification, second)
+    _ => fail("later wire effect must follow expanded local commands")
+  }
+  match commands[4] {
+    RuntimeOwnerClose(reason~) => assert_eq(reason, "owner requested close")
+    _ => fail("later local effect must remain last")
+  }
+  assert_eq(
+    runtime_owner_plan_effects([], runtime_owner_plan_test_local).length(),
+    0,
+  )
+  assert_eq(
+    runtime_owner_plan_effects(
+      [Local(effect=NoCommands)],
+      runtime_owner_plan_test_local,
+    ).length(),
+    0,
+  )
 }
 
 ///|

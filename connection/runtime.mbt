@@ -73,6 +73,59 @@ pub(all) enum RuntimeOwnerEffect[E] {
 } derive(Eq, Debug)
 
 ///|
+/// Connection-owned pure commands compiled from owner effects. These values
+/// are intents only; the runtime does not execute or interpret them here.
+/// The `RuntimeOwner` prefix keeps their constructors distinct from the
+/// connection reducer's event and command constructors. The eventual owner
+/// interpreter supplies fixed trace fields from the method name; no arbitrary
+/// payload or trace text crosses this boundary.
+pub(all) enum RuntimeOwnerCommand {
+  RuntimeOwnerWriteNotification(notification~ : JsonRpcNotification)
+  RuntimeOwnerCancelInbound(request_id~ : RequestId)
+  RuntimeOwnerTrace(method_name~ : String)
+  RuntimeOwnerClose(reason~ : String)
+} derive(Eq, Debug)
+
+///|
+/// Explicit result of local-effect planning. `RuntimeOwnerNoCommands` is an
+/// intentional no-command plan; `RuntimeOwnerCommands` preserves every
+/// planned command in order. An empty commands array is still explicit, but
+/// callers should use `RuntimeOwnerNoCommands` when no command is intended.
+pub(all) enum RuntimeOwnerLocalPlan {
+  RuntimeOwnerNoCommands
+  RuntimeOwnerCommands(Array[RuntimeOwnerCommand])
+} derive(Eq, Debug)
+
+///|
+/// Compile every owner effect in order without changing owner state. A local
+/// effect is expanded by the caller-owned total planner and its commands are
+/// appended in place; no effect is dropped or interpreted in this function.
+/// This is a pure plan compiler only: it performs no I/O, task cancellation,
+/// tracing, or connection close. The real owner runner/interpreter is not
+/// wired here yet.
+pub fn[E] runtime_owner_plan_effects(
+  effects : Array[RuntimeOwnerEffect[E]],
+  plan_local_effect : (E) -> RuntimeOwnerLocalPlan,
+) -> Array[RuntimeOwnerCommand] {
+  let commands : Array[RuntimeOwnerCommand] = []
+  for effect in effects {
+    match effect {
+      WireNotification(notification~) =>
+        commands.push(RuntimeOwnerWriteNotification(notification~))
+      Local(effect~) =>
+        match plan_local_effect(effect) {
+          RuntimeOwnerNoCommands => ()
+          RuntimeOwnerCommands(local_commands) =>
+            for command in local_commands {
+              commands.push(command)
+            }
+        }
+    }
+  }
+  commands
+}
+
+///|
 /// A request completion commits domain state together with exactly one wire
 /// result and zero or more owner effects. Requests cannot represent multiple
 /// responses through this type.
@@ -112,6 +165,9 @@ pub(all) struct RuntimeOwnerPort[S, I, C, E] {
   execute_cancel : (S, I) -> C
   complete_request : (S, RequestId, I, C) -> RuntimeOwnerRequestCompletion[S, E]
   complete_notification : (S, I, C) -> RuntimeOwnerNotificationCompletion[S, E]
+  /// Plans local effects as explicit pure data. No I/O is performed here; the
+  /// real RuntimeOwner runner/interpreter is not wired yet.
+  plan_local_effect : (E) -> RuntimeOwnerLocalPlan
   cancel_request : (S, RequestId, I) -> (S, C)
   abort : (S, RuntimeOwnerTask[I]) -> S
 }
