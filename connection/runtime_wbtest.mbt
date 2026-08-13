@@ -2233,8 +2233,22 @@ test "runtime owner rejects admission after close" {
 test "runtime owner immediate admission stays on owner loop" {
   let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
     ..runtime_owner_test_port(),
-    admit_request: (state, _, _) => {
-      RuntimeOwnerRequestImmediate(state~, result=42)
+    admit_request: (state, id, _) => {
+      RuntimeOwnerRequestImmediate(completion={
+        state: {
+          ..state,
+          admitted: runtime_owner_test_push_id(state.admitted, id),
+        },
+        response: HandlerSuccess(Json::string("immediate-result")),
+        effects: [
+          WireNotification(notification=runtime_owner_test_notification()),
+          Local(effect=()),
+        ],
+      })
+    },
+    execute: fn(_) { abort("immediate request admission must not execute") },
+    complete_request: (_, _, _, _) => {
+      abort("immediate request admission must not complete asynchronously")
     },
   }
   let owner = runtime_owner_new(port)
@@ -2246,9 +2260,77 @@ test "runtime owner immediate admission stays on owner loop" {
     _ => abort("immediate owner admission must succeed")
   }
   match action {
-    RuntimeOwnerImmediate(result=42) => ()
+    RuntimeOwnerImmediate(completion~) => {
+      assert_eq(completion.state, owner.state())
+      assert_eq(owner.state().admitted, [Number(8)])
+      match completion.response {
+        HandlerSuccess(String(value)) => assert_eq(value, "immediate-result")
+        _ => fail("immediate admission must return a success response")
+      }
+      assert_eq(completion.effects.length(), 2)
+      match completion.effects[0] {
+        WireNotification(notification~) =>
+          assert_eq(notification, runtime_owner_test_notification())
+        _ => fail("immediate request wire effect must be preserved")
+      }
+      match completion.effects[1] {
+        Local(effect=_) => ()
+        _ => fail("immediate request local effect must be preserved")
+      }
+    }
     _ => fail("immediate admission must not create a task")
   }
   assert_eq(owner.task_count(), 0)
   assert_eq(owner.state().completed, [])
+}
+
+///|
+test "runtime owner immediate notification commits effects without response" {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, String] = {
+    ..runtime_owner_effect_test_port(),
+    admit_notification: (state, _) => {
+      RuntimeOwnerNotificationImmediate(completion={
+        state: {
+          ..state,
+          notifications: runtime_owner_test_push_int(state.notifications, 99),
+        },
+        effects: [
+          WireNotification(notification=runtime_owner_test_notification()),
+          Local(effect="immediate-notification"),
+        ],
+      })
+    },
+    execute: fn(_) {
+      abort("immediate notification admission must not execute")
+    },
+    complete_notification: (_, _, _) => {
+      abort("immediate notification admission must not complete asynchronously")
+    },
+  }
+  let owner = runtime_owner_new(port)
+  let (owner, action) = runtime_owner_admit_notification(
+    owner,
+    runtime_owner_test_notification(),
+    port,
+  ) catch {
+    _ => abort("immediate notification admission must succeed")
+  }
+  match action {
+    RuntimeOwnerNotificationImmediate(completion~) => {
+      assert_eq(completion.state, owner.state())
+      assert_eq(owner.state().notifications, [99])
+      assert_eq(completion.effects.length(), 2)
+      match completion.effects[0] {
+        WireNotification(notification~) =>
+          assert_eq(notification, runtime_owner_test_notification())
+        _ => fail("immediate notification wire effect must be preserved")
+      }
+      match completion.effects[1] {
+        Local(effect~) => assert_eq(effect, "immediate-notification")
+        _ => fail("immediate notification local effect must be preserved")
+      }
+    }
+    _ => fail("immediate notification must not create a task")
+  }
+  assert_eq(owner.task_count(), 0)
 }

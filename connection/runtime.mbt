@@ -27,18 +27,24 @@ using @transport {
 
 ///|
 /// A synchronous admission result for a request handled by a generic
-/// connection owner. `RuntimeOwnerRequestInvoke` commits `state` before the
-/// invocation is handed to an async task. The task never receives the owner.
-pub(all) enum RuntimeOwnerRequestAdmission[S, I, C] {
-  RuntimeOwnerRequestImmediate(state~ : S, result~ : C)
+/// connection owner. An immediate result commits the complete owner step
+/// synchronously; an invoke commits `state` before the invocation is handed
+/// to an async task. The task never receives the owner.
+pub(all) enum RuntimeOwnerRequestAdmission[S, I, E] {
+  RuntimeOwnerRequestImmediate(
+    completion~ : RuntimeOwnerRequestCompletion[S, E]
+  )
   RuntimeOwnerRequestInvoke(state~ : S, invocation~ : I)
 }
 
 ///|
 /// A synchronous admission result for a notification. Notifications never
-/// carry a request id and never produce a response in the owner seam.
-pub(all) enum RuntimeOwnerNotificationAdmission[S, I] {
-  RuntimeOwnerNotificationImmediate(state~ : S)
+/// carry a request id or response; immediate notifications still commit their
+/// state and effects synchronously.
+pub(all) enum RuntimeOwnerNotificationAdmission[S, I, E] {
+  RuntimeOwnerNotificationImmediate(
+    completion~ : RuntimeOwnerNotificationCompletion[S, E]
+  )
   RuntimeOwnerNotificationInvoke(state~ : S, invocation~ : I)
 }
 
@@ -152,11 +158,12 @@ pub(all) struct RuntimeOwnerPort[S, I, C, E] {
   admit_request : (S, RequestId, JsonRpcRequest) -> RuntimeOwnerRequestAdmission[
     S,
     I,
-    C,
+    E,
   ]
   admit_notification : (S, JsonRpcNotification) -> RuntimeOwnerNotificationAdmission[
     S,
     I,
+    E,
   ]
   execute : async (I) -> C
   /// Produces a redacted/static typed failure completion at the task boundary.
@@ -194,14 +201,16 @@ pub(all) enum RuntimeOwnerIgnore {
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum RuntimeOwnerRequestAction[I, C] {
-  RuntimeOwnerImmediate(result~ : C)
+pub(all) enum RuntimeOwnerRequestAction[S, I, E] {
+  RuntimeOwnerImmediate(completion~ : RuntimeOwnerRequestCompletion[S, E])
   RuntimeOwnerInvoke(task~ : RuntimeOwnerTask[I])
 }
 
 ///|
-pub(all) enum RuntimeOwnerNotificationAction[I] {
-  RuntimeOwnerNotificationImmediate
+pub(all) enum RuntimeOwnerNotificationAction[S, I, E] {
+  RuntimeOwnerNotificationImmediate(
+    completion~ : RuntimeOwnerNotificationCompletion[S, E]
+  )
   RuntimeOwnerNotificationInvoke(task~ : RuntimeOwnerTask[I])
 }
 
@@ -345,13 +354,13 @@ pub fn[S, I, C, E] runtime_owner_admit_request(
   owner : RuntimeOwner[S, I],
   request : JsonRpcRequest,
   port : RuntimeOwnerPort[S, I, C, E],
-) -> (RuntimeOwner[S, I], RuntimeOwnerRequestAction[I, C]) raise RuntimeOwnerError {
+) -> (RuntimeOwner[S, I], RuntimeOwnerRequestAction[S, I, E]) raise RuntimeOwnerError {
   if owner.closed {
     raise Closed
   }
   match (port.admit_request)(owner.state, request.id, request) {
-    RuntimeOwnerRequestImmediate(state~, result~) =>
-      ({ ..owner, state, }, RuntimeOwnerImmediate(result~))
+    RuntimeOwnerRequestImmediate(completion~) =>
+      ({ ..owner, state: completion.state }, RuntimeOwnerImmediate(completion~))
     RuntimeOwnerRequestInvoke(state~, invocation~) => {
       let task : RuntimeOwnerTask[I] = {
         task_token: owner.next_task_token,
@@ -380,13 +389,16 @@ pub fn[S, I, C, E] runtime_owner_admit_notification(
   owner : RuntimeOwner[S, I],
   notification : JsonRpcNotification,
   port : RuntimeOwnerPort[S, I, C, E],
-) -> (RuntimeOwner[S, I], RuntimeOwnerNotificationAction[I]) raise RuntimeOwnerError {
+) -> (RuntimeOwner[S, I], RuntimeOwnerNotificationAction[S, I, E]) raise RuntimeOwnerError {
   if owner.closed {
     raise Closed
   }
   match (port.admit_notification)(owner.state, notification) {
-    RuntimeOwnerNotificationImmediate(state~) =>
-      ({ ..owner, state, }, RuntimeOwnerNotificationImmediate)
+    RuntimeOwnerNotificationImmediate(completion~) =>
+      (
+        { ..owner, state: completion.state },
+        RuntimeOwnerNotificationImmediate(completion~),
+      )
     RuntimeOwnerNotificationInvoke(state~, invocation~) => {
       let task : RuntimeOwnerTask[I] = {
         task_token: owner.next_task_token,
