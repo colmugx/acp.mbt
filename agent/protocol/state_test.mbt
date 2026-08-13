@@ -128,6 +128,24 @@ fn agent_state_test_all_capabilities() -> AgentCapabilities {
 }
 
 ///|
+fn agent_state_test_gate_capabilities(
+  load_session : ProtocolNullable[Bool],
+  image : ProtocolNullable[Bool],
+  audio : ProtocolNullable[Bool],
+  embedded_context : ProtocolNullable[Bool],
+  mcp_http : ProtocolNullable[Bool],
+  mcp_sse : ProtocolNullable[Bool],
+) -> AgentCapabilities {
+  let all = agent_state_test_all_capabilities()
+  {
+    ..all,
+    load_session,
+    prompt_capabilities: Value({ image, audio, embedded_context, meta: Omitted }),
+    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted }),
+  }
+}
+
+///|
 fn agent_state_test_all_null_capabilities() -> AgentCapabilities {
   {
     load_session: Null,
@@ -267,6 +285,26 @@ fn agent_state_test_b09_denied(
   } noraise {
     _ => fail("expected " + method_name + " to deny " + capability)
   }
+}
+
+///|
+fn agent_state_test_gate_denied(
+  state : AgentProtocolState,
+  request : AgentRequest,
+  method_name : String,
+  capability : String,
+) -> Unit raise {
+  let before = state
+  try agent_protocol_reduce(state, Request(request)) catch {
+    CapabilityDenied(method_name=actual_method, capability=actual_capability) => {
+      assert_eq(actual_method, method_name)
+      assert_eq(actual_capability, capability)
+    }
+    _ => fail("expected " + method_name + " to deny " + capability)
+  } noraise {
+    _ => fail("expected " + method_name + " to deny " + capability)
+  }
+  assert_eq(state, before)
 }
 
 ///|
@@ -565,6 +603,13 @@ test "transport and prompt capability gates accept only explicitly enabled value
   )
   let state = agent_state_test_initialize(agent_protocol_state_new(config~), 1).state
 
+  let load = agent_state_test_request(
+    "session/load", "{\"mcpServers\":[],\"cwd\":\"/\",\"sessionId\":\"s\"}",
+  )
+  assert_true(
+    agent_protocol_reduce(state, Request(load)).commands[0]
+    is DispatchRequest(SessionLoad(_)),
+  )
   let http = agent_state_test_request(
     "session/new", "{\"cwd\":\"/\",\"mcpServers\":[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]}]}",
   )
@@ -600,6 +645,33 @@ test "transport and prompt capability gates accept only explicitly enabled value
     agent_protocol_reduce(state, Request(embedded)).commands[0]
     is DispatchRequest(SessionPrompt(_)),
   )
+
+  let false_capabilities = agent_state_test_gate_capabilities(
+    Value(false),
+    Value(false),
+    Value(false),
+    Value(false),
+    Value(false),
+    Value(false),
+  )
+  let false_state = agent_state_test_initialize(
+      agent_protocol_state_new(
+        config=agent_state_test_config(Value(false_capabilities), Omitted),
+      ),
+      1,
+    ).state
+  agent_state_test_gate_denied(false_state, load, "session/load", "loadSession")
+  agent_state_test_gate_denied(
+    false_state, image, "session/prompt", "prompt.image",
+  )
+  agent_state_test_gate_denied(
+    false_state, audio, "session/prompt", "prompt.audio",
+  )
+  agent_state_test_gate_denied(
+    false_state, embedded, "session/prompt", "prompt.embeddedContext",
+  )
+  agent_state_test_gate_denied(false_state, http, "session/new", "mcp.http")
+  agent_state_test_gate_denied(false_state, sse, "session/new", "mcp.sse")
 }
 
 ///|
