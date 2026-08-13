@@ -152,7 +152,7 @@ test "permission and session updates are baseline traffic" {
 test "filesystem read and write capabilities are independent" {
   let read_only_capabilities = client_state_test_capabilities(
     Value(true),
-    Omitted,
+    Value(false),
     Omitted,
     Omitted,
     Omitted,
@@ -160,6 +160,7 @@ test "filesystem read and write capabilities are independent" {
   let read_only = client_protocol_state_ready(
     capabilities=Value(read_only_capabilities),
   )
+  let read_only_before = read_only
   let read = client_state_test_request(
     "fs/read_text_file", "{\"sessionId\":\"s\",\"path\":\"/tmp/a\"}",
   )
@@ -179,9 +180,10 @@ test "filesystem read and write capabilities are independent" {
   } noraise {
     _ => fail("expected independent write gate")
   }
+  assert_eq(read_only, read_only_before)
 
   let write_only_capabilities = client_state_test_capabilities(
-    Omitted,
+    Value(false),
     Value(true),
     Omitted,
     Omitted,
@@ -190,6 +192,7 @@ test "filesystem read and write capabilities are independent" {
   let write_only = client_protocol_state_ready(
     capabilities=Value(write_only_capabilities),
   )
+  let write_only_before = write_only
   assert_true(
     client_protocol_reduce(write_only, Request(write)).commands[0]
     is DispatchRequest(FsWriteTextFile(_)),
@@ -203,6 +206,7 @@ test "filesystem read and write capabilities are independent" {
   } noraise {
     _ => fail("expected independent read gate")
   }
+  assert_eq(write_only, write_only_before)
 }
 
 ///|
@@ -210,11 +214,12 @@ test "one terminal capability gates all terminal requests" {
   let capabilities = client_state_test_capabilities(
     Omitted,
     Omitted,
-    Omitted,
+    Value(false),
     Omitted,
     Omitted,
   )
   let state = client_protocol_state_ready(capabilities=Value(capabilities))
+  let state_before = state
   let requests : Array[ClientRequest] = [
     client_state_test_request(
       "terminal/create", "{\"sessionId\":\"s\",\"command\":\"echo\"}",
@@ -239,6 +244,7 @@ test "one terminal capability gates all terminal requests" {
     } noraise {
       _ => fail("expected terminal capability gate")
     }
+    assert_eq(state, state_before)
   }
 
   let enabled_capabilities = client_state_test_capabilities(
