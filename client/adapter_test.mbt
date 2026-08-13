@@ -410,6 +410,7 @@ async test "Client notifications stay side-effect free in the adapter" {
     }
     Immediate(_) => fail("session/update must be invoked")
   }
+  assert_eq(update.state, state)
   assert_eq(update.outputs.length(), 0)
 
   let complete = match
@@ -426,6 +427,7 @@ async test "Client notifications stay side-effect free in the adapter" {
     }
     Immediate(_) => fail("elicitation/complete must be invoked")
   }
+  assert_eq(complete.state, state)
   assert_eq(complete.outputs.length(), 0)
 
   let cancel = client_adapter_test_immediate(
@@ -468,6 +470,33 @@ async test "Client notifications stay side-effect free in the adapter" {
     Command(TraceError(method_name="$/cancel_request", error~)) =>
       assert_eq(error.code, InvalidParams)
     _ => fail("malformed cancellation must remain a trace error")
+  }
+}
+
+///|
+test "Client adapter accepts unknown notifications as trace intents without responses" {
+  let endpoint = client_adapter_test_full_endpoint()
+  let state = client_adapter_test_state(endpoint)
+  let admission = client_adapter_admit(
+    state,
+    endpoint,
+    client_adapter_test_notification("vendor/unknown", "{}"),
+  )
+  match admission {
+    Immediate(step) => {
+      assert_eq(step.state, state)
+      assert_eq(step.outputs.length(), 1)
+      match step.outputs[0] {
+        Command(TraceError(method_name="vendor/unknown", error~)) => {
+          assert_eq(error.code, MethodNotFound)
+          assert_eq(error.message, "Method not found")
+          assert_eq(error.data, None)
+        }
+        Response(_) => fail("unknown notification must not emit a response")
+        Command(_) => fail("unknown notification must emit a trace intent")
+      }
+    }
+    Invoke(..) => fail("unknown notification must not invoke a handler")
   }
 }
 

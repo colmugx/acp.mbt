@@ -1047,6 +1047,7 @@ async test "adapter notifications emit no response and preserve cancellation ids
         invocation,
         agent_adapter_execute(invocation, endpoint, context),
       )
+      assert_eq(completed.state, initialized.state)
       assert_eq(completed.outputs.length(), 0)
     }
     Immediate(_) => fail("session cancellation must invoke a typed handler")
@@ -1091,6 +1092,41 @@ async test "adapter notifications emit no response and preserve cancellation ids
         _ => fail("expected integer cancellation command")
       }
     Invoke(..) => fail("$/cancel_request must not invoke an agent handler")
+  }
+}
+
+///|
+test "adapter accepts unknown notifications as trace intents without responses" {
+  let endpoint = agent_adapter_test_endpoint()
+  let state = agent_adapter_test_state(endpoint)
+  let admission = try
+    agent_adapter_admit(
+      state,
+      endpoint,
+      agent_adapter_test_notification("vendor/unknown", "{}"),
+    )
+  catch {
+    _ => abort("unknown notification admission must not raise")
+  } noraise {
+    value => value
+  }
+  match admission {
+    Immediate(step) => {
+      assert_eq(step.state, state)
+      assert_eq(step.outputs.length(), 1)
+      match step.outputs[0] {
+        Command(TraceError(method_name="vendor/unknown", error~)) => {
+          assert_eq(error.code, MethodNotFound)
+          assert_eq(error.message, "Method not found")
+          assert_eq(error.data, None)
+        }
+        Response(_) => fail("unknown notification must not emit a response")
+        Notification(_) =>
+          fail("unknown notification must not emit a notification")
+        Command(_) => fail("unknown notification must emit a trace intent")
+      }
+    }
+    Invoke(..) => fail("unknown notification must not invoke a handler")
   }
 }
 
