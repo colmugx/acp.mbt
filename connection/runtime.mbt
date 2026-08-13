@@ -658,15 +658,22 @@ priv struct RuntimeLegacySpawnContext[C] {
 }
 
 ///|
+priv enum RuntimeDispatchAction[D] {
+  RuntimeDispatchSpawned(
+    context~ : D,
+    task~ : RuntimeTaskControl,
+    next_task_token~ : Int
+  )
+}
+
+///|
 priv struct RuntimeDispatchPort[G, D] {
-  request : (@async.TaskGroup[G], Int, JsonRpcRequest, D) -> (
-    RuntimeTaskControl,
-    Int,
-  )
-  notification : (@async.TaskGroup[G], Int, JsonRpcNotification, D) -> (
-    RuntimeTaskControl,
-    Int,
-  )
+  request : (@async.TaskGroup[G], Int, JsonRpcRequest, D) -> RuntimeDispatchAction[
+    D,
+  ]
+  notification : (@async.TaskGroup[G], Int, JsonRpcNotification, D) -> RuntimeDispatchAction[
+    D,
+  ]
 }
 
 ///|
@@ -950,7 +957,7 @@ fn[G, C] runtime_spawn_legacy_request(
   next_task_token : Int,
   request : JsonRpcRequest,
   context : RuntimeLegacySpawnContext[C],
-) -> (RuntimeTaskControl, Int) {
+) -> RuntimeDispatchAction[RuntimeLegacySpawnContext[C]] {
   let task = group.spawn(() => {
     runtime_request_task(
       next_task_token,
@@ -962,13 +969,14 @@ fn[G, C] runtime_spawn_legacy_request(
       context.limit,
     )
   })
-  (
-    {
+  RuntimeDispatchSpawned(
+    context~,
+    task={
       task_token: next_task_token,
       request_id: Some(request.id),
       cancel: () => task.cancel(),
     },
-    next_task_token + 1,
+    next_task_token=next_task_token + 1,
   )
 }
 
@@ -978,7 +986,7 @@ fn[G, C] runtime_spawn_legacy_notification(
   next_task_token : Int,
   notification : JsonRpcNotification,
   context : RuntimeLegacySpawnContext[C],
-) -> (RuntimeTaskControl, Int) {
+) -> RuntimeDispatchAction[RuntimeLegacySpawnContext[C]] {
   let task = group.spawn(() => {
     runtime_notification_task(
       next_task_token,
@@ -989,13 +997,14 @@ fn[G, C] runtime_spawn_legacy_notification(
       context.limit,
     )
   })
-  (
-    {
+  RuntimeDispatchSpawned(
+    context~,
+    task={
       task_token: next_task_token,
       request_id: None,
       cancel: () => task.cancel(),
     },
-    next_task_token + 1,
+    next_task_token=next_task_token + 1,
   )
 }
 
@@ -1202,25 +1211,29 @@ async fn[G, D] runtime_apply_step(
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
-) -> (Array[RuntimeTaskControl], Int) raise RuntimeError {
+) -> (Array[RuntimeTaskControl], Int, D) raise RuntimeError {
   let next_tasks = Array::copy(tasks)
   let mut next_token = next_task_token
+  let mut next_context = dispatch_context
   for command in step.commands {
     match command {
-      DispatchRequest(request) => {
-        let (task, updated_token) = (dispatch.request)(
-          group, next_token, request, dispatch_context,
-        )
-        next_tasks.push(task)
-        next_token = updated_token
-      }
-      DispatchNotification(notification) => {
-        let (task, updated_token) = (dispatch.notification)(
-          group, next_token, notification, dispatch_context,
-        )
-        next_tasks.push(task)
-        next_token = updated_token
-      }
+      DispatchRequest(request) =>
+        match (dispatch.request)(group, next_token, request, next_context) {
+          RuntimeDispatchSpawned(context~, task~, next_task_token~) => {
+            next_tasks.push(task)
+            next_token = next_task_token
+            next_context = context
+          }
+        }
+      DispatchNotification(notification) =>
+        match
+          (dispatch.notification)(group, next_token, notification, next_context) {
+          RuntimeDispatchSpawned(context~, task~, next_task_token~) => {
+            next_tasks.push(task)
+            next_token = next_task_token
+            next_context = context
+          }
+        }
       command =>
         runtime_emit_command(
           command,
@@ -1244,7 +1257,7 @@ async fn[G, D] runtime_apply_step(
         }
     }
   }
-  (next_tasks, next_token)
+  (next_tasks, next_token, next_context)
 }
 
 ///|
@@ -1260,7 +1273,7 @@ async fn[G, D] runtime_apply_message(
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
-) -> (ConnectionState, Array[RuntimeTaskControl], Int) raise RuntimeError {
+) -> (ConnectionState, Array[RuntimeTaskControl], Int, D) raise RuntimeError {
   let message = jsonrpc_decode(frame) catch {
     _ => {
       shutdown.val = true
@@ -1284,11 +1297,11 @@ async fn[G, D] runtime_apply_message(
       raise ReducerFailed
     }
   }
-  let (next_tasks, next_token) = runtime_apply_step(
+  let (next_tasks, next_token, next_context) = runtime_apply_step(
     group, step, writer_queue, options, ports, dispatch, dispatch_context, tasks,
     next_task_token,
   )
-  (step.state, next_tasks, next_token)
+  (step.state, next_tasks, next_token, next_context)
 }
 
 ///|
@@ -1432,6 +1445,14 @@ priv struct RuntimeEventStep {
 }
 
 ///|
+fn[D] runtime_event_step(
+  step : RuntimeEventStep,
+  dispatch_context : D,
+) -> (RuntimeEventStep, D) {
+  (step, dispatch_context)
+}
+
+///|
 /// The single owner-loop event seam. Every reader, writer, handler, and
 /// notification event is admitted here; late task events are traced and
 /// ignored, while primary failures close through one typed path.
@@ -1450,7 +1471,8 @@ async fn[G, C, D] runtime_apply_event_of(
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
-) -> RuntimeEventStep raise RuntimeError {
+) -> (RuntimeEventStep, D) raise RuntimeError {
+  let mut next_context = dispatch_context
   match event {
     RuntimeChunk(chunk) => {
       let frame_step = framing_feed(decoder, chunk) catch {
@@ -1479,7 +1501,7 @@ async fn[G, C, D] runtime_apply_event_of(
       let mut next_token = next_task_token
       for frame in frame_step.frames {
         let next = runtime_apply_message(
-          group, next_state, frame, writer_queue, options, ports, dispatch, dispatch_context,
+          group, next_state, frame, writer_queue, options, ports, dispatch, next_context,
           next_tasks, next_token, shutdown,
         ) catch {
           error =>
@@ -1488,18 +1510,22 @@ async fn[G, C, D] runtime_apply_event_of(
               events, next_tasks, next_token, shutdown, false,
             )
         }
-        let (updated_state, updated_tasks, updated_token) = next
+        let (updated_state, updated_tasks, updated_token, updated_context) = next
         next_state = updated_state
         next_tasks = updated_tasks
         next_token = updated_token
+        next_context = updated_context
       }
-      {
-        state: next_state,
-        decoder: frame_step.state,
-        tasks: next_tasks,
-        next_task_token: next_token,
-        stop: false,
-      }
+      runtime_event_step(
+        {
+          state: next_state,
+          decoder: frame_step.state,
+          tasks: next_tasks,
+          next_task_token: next_token,
+          stop: false,
+        },
+        next_context,
+      )
     }
     RuntimeReaderFailed(error) => {
       (ports.trace)(
@@ -1564,7 +1590,10 @@ async fn[G, C, D] runtime_apply_event_of(
               "late",
             ),
           )
-          { state, decoder, tasks, next_task_token, stop: false }
+          runtime_event_step(
+            { state, decoder, tasks, next_task_token, stop: false },
+            next_context,
+          )
         }
         Some(_) =>
           match connection_inbound_index(state.inbound, id) {
@@ -1578,13 +1607,16 @@ async fn[G, C, D] runtime_apply_event_of(
                   "late",
                 ),
               )
-              {
-                state,
-                decoder,
-                tasks: remaining_tasks,
-                next_task_token,
-                stop: false,
-              }
+              runtime_event_step(
+                {
+                  state,
+                  decoder,
+                  tasks: remaining_tasks,
+                  next_task_token,
+                  stop: false,
+                },
+                next_context,
+              )
             }
             Some(_) => {
               let incoming = match event_to_result(result) {
@@ -1618,8 +1650,8 @@ async fn[G, C, D] runtime_apply_event_of(
                   )
                 }
               }
-              let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, dispatch, dispatch_context,
+              let (updated_tasks, updated_token, updated_context) = runtime_apply_step(
+                group, step, writer_queue, options, ports, dispatch, next_context,
                 remaining_tasks, next_task_token,
               ) catch {
                 error =>
@@ -1638,13 +1670,17 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                   )
               }
-              {
-                state: step.state,
-                decoder,
-                tasks: updated_tasks,
-                next_task_token: updated_token,
-                stop: false,
-              }
+              next_context = updated_context
+              runtime_event_step(
+                {
+                  state: step.state,
+                  decoder,
+                  tasks: updated_tasks,
+                  next_task_token: updated_token,
+                  stop: false,
+                },
+                next_context,
+              )
             }
           }
       }
@@ -1694,7 +1730,10 @@ async fn[G, C, D] runtime_apply_event_of(
               "late",
             ),
           )
-          { state, decoder, tasks, next_task_token, stop: false }
+          runtime_event_step(
+            { state, decoder, tasks, next_task_token, stop: false },
+            next_context,
+          )
         }
         Some(_) =>
           match connection_inbound_index(state.inbound, id) {
@@ -1708,13 +1747,16 @@ async fn[G, C, D] runtime_apply_event_of(
                   "late",
                 ),
               )
-              {
-                state,
-                decoder,
-                tasks: remaining_tasks,
-                next_task_token,
-                stop: false,
-              }
+              runtime_event_step(
+                {
+                  state,
+                  decoder,
+                  tasks: remaining_tasks,
+                  next_task_token,
+                  stop: false,
+                },
+                next_context,
+              )
             }
             Some(index) if state.inbound[index].cancel_requested => {
               (ports.trace)(
@@ -1746,8 +1788,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                   )
               }
-              let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, dispatch, dispatch_context,
+              let (updated_tasks, updated_token, updated_context) = runtime_apply_step(
+                group, step, writer_queue, options, ports, dispatch, next_context,
                 remaining_tasks, next_task_token,
               ) catch {
                 error =>
@@ -1766,13 +1808,17 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                   )
               }
-              {
-                state: step.state,
-                decoder,
-                tasks: updated_tasks,
-                next_task_token: updated_token,
-                stop: false,
-              }
+              next_context = updated_context
+              runtime_event_step(
+                {
+                  state: step.state,
+                  decoder,
+                  tasks: updated_tasks,
+                  next_task_token: updated_token,
+                  stop: false,
+                },
+                next_context,
+              )
             }
             Some(_) => {
               (ports.trace)(
@@ -1811,7 +1857,10 @@ async fn[G, C, D] runtime_apply_event_of(
               "runtime", "late_notification_ignored", "", "", "late",
             ),
           )
-          { state, decoder, tasks, next_task_token, stop: false }
+          runtime_event_step(
+            { state, decoder, tasks, next_task_token, stop: false },
+            next_context,
+          )
         }
         Some(_) => {
           (ports.trace)(
@@ -1819,13 +1868,16 @@ async fn[G, C, D] runtime_apply_event_of(
               "runtime", "task_completed", "", "", "notification",
             ),
           )
-          {
-            state,
-            decoder,
-            tasks: remaining_tasks,
-            next_task_token,
-            stop: false,
-          }
+          runtime_event_step(
+            {
+              state,
+              decoder,
+              tasks: remaining_tasks,
+              next_task_token,
+              stop: false,
+            },
+            next_context,
+          )
         }
       }
     }
@@ -1838,7 +1890,10 @@ async fn[G, C, D] runtime_apply_event_of(
               "runtime", "late_notification_ignored", "", "", "late",
             ),
           )
-          { state, decoder, tasks, next_task_token, stop: false }
+          runtime_event_step(
+            { state, decoder, tasks, next_task_token, stop: false },
+            next_context,
+          )
         }
         Some(_) => {
           (ports.trace)(
@@ -1846,13 +1901,16 @@ async fn[G, C, D] runtime_apply_event_of(
               "runtime", "task_cancelled", "", "", "notification",
             ),
           )
-          {
-            state,
-            decoder,
-            tasks: remaining_tasks,
-            next_task_token,
-            stop: false,
-          }
+          runtime_event_step(
+            {
+              state,
+              decoder,
+              tasks: remaining_tasks,
+              next_task_token,
+              stop: false,
+            },
+            next_context,
+          )
         }
       }
     }
@@ -1865,7 +1923,10 @@ async fn[G, C, D] runtime_apply_event_of(
               "runtime", "late_notification_ignored", "", "", "late",
             ),
           )
-          { state, decoder, tasks, next_task_token, stop: false }
+          runtime_event_step(
+            { state, decoder, tasks, next_task_token, stop: false },
+            next_context,
+          )
         }
         Some(_) => {
           (ports.trace)(
@@ -1918,7 +1979,10 @@ async fn[G, C, D] runtime_apply_event_of(
         group, state, "eof", writer_queue, options, ports, events, tasks, next_task_token,
         shutdown, false,
       )
-      { state, decoder, tasks: [], next_task_token, stop: true }
+      runtime_event_step(
+        { state, decoder, tasks: [], next_task_token, stop: true },
+        next_context,
+      )
     }
   }
 }
@@ -1939,7 +2003,7 @@ async fn[G, D] runtime_apply_event_with_dispatch(
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
-) -> RuntimeEventStep raise RuntimeError {
+) -> (RuntimeEventStep, D) raise RuntimeError {
   runtime_apply_event_of(
     event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
     dispatch, dispatch_context, tasks, next_task_token, shutdown,
@@ -1974,10 +2038,11 @@ async fn[G] runtime_apply_event(
     G,
     RuntimeLegacySpawnContext[RuntimeHandlerResult],
   ] = runtime_legacy_dispatch_port()
-  runtime_apply_event_with_dispatch(
+  let (step, _) = runtime_apply_event_with_dispatch(
     event, state, decoder, group, writer_queue, options, ports, events, dispatch,
     dispatch_context, tasks, next_task_token, shutdown,
   )
+  step
 }
 
 ///|

@@ -2334,3 +2334,75 @@ test "runtime owner immediate notification commits effects without response" {
   }
   assert_eq(owner.task_count(), 0)
 }
+
+///|
+async test "runtime dispatch threads updated context across events" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: _ => (),
+  }
+  @async.with_task_group(group => {
+    let dispatch : RuntimeDispatchPort[_, Int] = {
+      request: (group, token, request, context) => {
+        let task = group.spawn(() => ())
+        RuntimeDispatchSpawned(
+          context=context + 1,
+          task={
+            task_token: token,
+            request_id: Some(request.id),
+            cancel: () => task.cancel(),
+          },
+          next_task_token=token + 1,
+        )
+      },
+      notification: (group, token, _, context) => {
+        let task = group.spawn(() => ())
+        RuntimeDispatchSpawned(
+          context=context + 10,
+          task={
+            task_token: token,
+            request_id: None,
+            cancel: () => task.cancel(),
+          },
+          next_task_token=token + 1,
+        )
+      },
+    }
+    let (first, first_context) = runtime_apply_event_with_dispatch(
+      RuntimeChunk(
+        @utf8.encode(
+          "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"one\"}\n" +
+          "{\"jsonrpc\":\"2.0\",\"method\":\"two\"}\n",
+        ),
+      ),
+      connection_state(),
+      framing_state(max_frame_bytes=256),
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      dispatch,
+      0,
+      [],
+      0,
+      shutdown,
+    )
+    assert_eq(first_context, 11)
+    assert_eq(first.tasks.length(), 2)
+    assert_eq(first.tasks[0].task_token, 0)
+    assert_eq(first.tasks[1].task_token, 1)
+    assert_eq(first.next_task_token, 2)
+  })
+}
