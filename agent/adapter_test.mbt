@@ -183,6 +183,17 @@ fn agent_adapter_test_endpoint(
 }
 
 ///|
+fn agent_adapter_test_b09_endpoint(support : AgentSupport) -> AgentEndpoint {
+  agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("adapter-b09"),
+      sessions=agent_adapter_test_sessions(),
+      support~,
+    ).unwrap(),
+  )
+}
+
+///|
 fn agent_adapter_test_auth_endpoint_with(
   authenticate : AgentAuthenticateHandler,
   logout? : AgentLogoutHandler = agent_service_test_logout,
@@ -410,6 +421,72 @@ test "adapter rejects boolean config without client capability" {
     Immediate(step) =>
       assert_eq(agent_adapter_test_error_code(step), ResourceNotFound)
     Invoke(..) => fail("denied boolean config must not invoke a handler")
+  }
+}
+
+///|
+test "adapter gates B09 MCP and workspace capabilities before invocation" {
+  let unsupported_endpoint = agent_adapter_test_b09_endpoint(agent_support())
+  let unsupported_initialized = agent_adapter_test_initialized(
+    unsupported_endpoint,
+    Number(1),
+  )
+  let transport_denied = agent_adapter_admit(
+    unsupported_initialized.state,
+    unsupported_endpoint,
+    agent_adapter_test_request(
+      Number(2),
+      "session/new",
+      "{\"cwd\":\"/\",\"mcpServers\":[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]}]}",
+    ),
+  )
+  match transport_denied {
+    Immediate(step) => {
+      assert_eq(agent_adapter_test_error_code(step), ResourceNotFound)
+      assert_eq(step.state, unsupported_initialized.state)
+    }
+    Invoke(..) => fail("denied MCP transport must not invoke a handler")
+  }
+
+  let roots_denied = agent_adapter_admit(
+    unsupported_initialized.state,
+    unsupported_endpoint,
+    agent_adapter_test_request(
+      Number(3),
+      "session/new",
+      "{\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp/workspace\"],\"mcpServers\":[]}",
+    ),
+  )
+  match roots_denied {
+    Immediate(step) => {
+      assert_eq(agent_adapter_test_error_code(step), ResourceNotFound)
+      assert_eq(step.state, unsupported_initialized.state)
+    }
+    Invoke(..) =>
+      fail("denied additional directories must not invoke a handler")
+  }
+
+  let enabled_endpoint = agent_adapter_test_b09_endpoint(
+    agent_support(mcp_http=true, additional_directories=true),
+  )
+  let enabled_initialized = agent_adapter_test_initialized(
+    enabled_endpoint,
+    Number(4),
+  )
+  let enabled = agent_adapter_admit(
+    enabled_initialized.state,
+    enabled_endpoint,
+    agent_adapter_test_request(
+      Number(5),
+      "session/new",
+      "{\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp/workspace\"],\"mcpServers\":[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]}]}",
+    ),
+  )
+  match enabled {
+    Invoke(state=_, invocation=SessionNewInvocation(id=Number(5), params=_)) =>
+      ()
+    Immediate(_) => fail("enabled MCP and workspace capabilities must invoke")
+    Invoke(..) => fail("enabled B09 request admitted the wrong invocation")
   }
 }
 

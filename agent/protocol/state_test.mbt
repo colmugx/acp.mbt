@@ -140,6 +140,136 @@ fn agent_state_test_all_null_capabilities() -> AgentCapabilities {
 }
 
 ///|
+fn agent_state_test_b09_capabilities(
+  mcp_http : ProtocolNullable[Bool],
+  mcp_sse : ProtocolNullable[Bool],
+  additional_directories : ProtocolNullable[CapabilityMarker],
+) -> AgentCapabilities {
+  let all = agent_state_test_all_capabilities()
+  let sessions = match all.session_capabilities {
+    Value(value) => value
+    _ => abort("B09 fixture must include session capabilities")
+  }
+  {
+    ..all,
+    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted }),
+    session_capabilities: Value({ ..sessions, additional_directories, }),
+  }
+}
+
+///|
+fn agent_state_test_b09_state(
+  mcp_http : Bool,
+  mcp_sse : Bool,
+  additional_directories : Bool,
+) -> AgentProtocolState raise AgentProtocolError {
+  let http : ProtocolNullable[Bool] = if mcp_http {
+    Value(true)
+  } else {
+    Omitted
+  }
+  let sse : ProtocolNullable[Bool] = if mcp_sse { Value(true) } else { Omitted }
+  let roots : ProtocolNullable[CapabilityMarker] = if additional_directories {
+    Value(agent_state_test_marker())
+  } else {
+    Omitted
+  }
+  agent_state_test_initialize(
+    agent_protocol_state_new(
+      config=agent_state_test_config(
+        Value(agent_state_test_b09_capabilities(http, sse, roots)),
+        Omitted,
+      ),
+    ),
+    1,
+  ).state
+}
+
+///|
+fn agent_state_test_b09_servers(transport : String) -> String {
+  match transport {
+    "none" => "[]"
+    "mixed" =>
+      "[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]},{\"type\":\"sse\",\"name\":\"events\",\"url\":\"https://example.test/events\",\"headers\":[]}]"
+    "http" =>
+      "[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]}]"
+    "sse" =>
+      "[{\"type\":\"sse\",\"name\":\"events\",\"url\":\"https://example.test/events\",\"headers\":[]}]"
+    "stdio" =>
+      "[{\"type\":\"stdio\",\"name\":\"local\",\"command\":\"/bin/echo\",\"args\":[],\"env\":[]}]"
+    _ => abort("unknown B09 MCP transport")
+  }
+}
+
+///|
+fn agent_state_test_b09_request(
+  method_name : String,
+  transport : String,
+  with_additional_directories : Bool,
+) -> AgentRequest raise AgentMessageError {
+  let additional_directories = if with_additional_directories {
+    ",\"additionalDirectories\":[\"/tmp/workspace\"]"
+  } else {
+    ""
+  }
+  let servers = agent_state_test_b09_servers(transport)
+  let source = match method_name {
+    "session/new" =>
+      "{\"cwd\":\"/\"" +
+      additional_directories +
+      ",\"mcpServers\":" +
+      servers +
+      "}"
+    "session/load" =>
+      "{\"mcpServers\":" +
+      servers +
+      ",\"cwd\":\"/\"" +
+      additional_directories +
+      ",\"sessionId\":\"s\"}"
+    "session/resume" =>
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"" +
+      additional_directories +
+      ",\"mcpServers\":" +
+      servers +
+      "}"
+    _ => abort("unknown B09 session method")
+  }
+  agent_state_test_request(method_name, source)
+}
+
+///|
+fn agent_state_test_b09_dispatch(
+  state : AgentProtocolState,
+  request : AgentRequest,
+  method_name : String,
+) -> Unit raise {
+  let step = agent_protocol_reduce(state, Request(request))
+  assert_eq(step.commands.length(), 1)
+  match step.commands[0] {
+    DispatchRequest(_) => ()
+    _ => fail("expected " + method_name + " to dispatch")
+  }
+}
+
+///|
+fn agent_state_test_b09_denied(
+  state : AgentProtocolState,
+  request : AgentRequest,
+  method_name : String,
+  capability : String,
+) -> Unit raise {
+  try agent_protocol_reduce(state, Request(request)) catch {
+    CapabilityDenied(method_name=actual_method, capability=actual_capability) => {
+      assert_eq(actual_method, method_name)
+      assert_eq(actual_capability, capability)
+    }
+    _ => fail("expected " + method_name + " to deny " + capability)
+  } noraise {
+    _ => fail("expected " + method_name + " to deny " + capability)
+  }
+}
+
+///|
 fn agent_state_test_auth_method() -> AuthMethod {
   { id: "token", name: "Token", description: Omitted, meta: Omitted }
 }
@@ -539,6 +669,83 @@ test "omitted and null prompt and MCP capabilities reject each optional payload"
       _ => fail("expected omitted/null SSE MCP capability denial")
     } noraise {
       _ => fail("expected omitted/null SSE MCP capability denial")
+    }
+  }
+}
+
+///|
+test "B09 MCP transports are independently gated for new load and resume" {
+  let methods = ["session/new", "session/load", "session/resume"]
+  for method_name in methods {
+    let no_transport_state = agent_state_test_b09_state(false, false, false)
+    agent_state_test_b09_dispatch(
+      no_transport_state,
+      agent_state_test_b09_request(method_name, "stdio", false),
+      method_name,
+    )
+    for supported_transport in ["http", "sse"] {
+      let supports_http = supported_transport == "http"
+      let disabled_transport = if supports_http { "sse" } else { "http" }
+      let missing_capability = if supports_http {
+        "mcp.sse"
+      } else {
+        "mcp.http"
+      }
+      let state = agent_state_test_b09_state(
+        supports_http,
+        !supports_http,
+        false,
+      )
+      agent_state_test_b09_dispatch(
+        state,
+        agent_state_test_b09_request(method_name, supported_transport, false),
+        method_name,
+      )
+      agent_state_test_b09_denied(
+        state,
+        agent_state_test_b09_request(method_name, disabled_transport, false),
+        method_name,
+        if supports_http {
+          "mcp.sse"
+        } else {
+          "mcp.http"
+        },
+      )
+      agent_state_test_b09_denied(
+        state,
+        agent_state_test_b09_request(method_name, "mixed", false),
+        method_name,
+        missing_capability,
+      )
+    }
+  }
+}
+
+///|
+test "B09 additional directories require a marker and omission is allowed" {
+  let methods = ["session/new", "session/load", "session/resume"]
+  for method_name in methods {
+    for has_marker in [false, true] {
+      let state = agent_state_test_b09_state(false, false, has_marker)
+      agent_state_test_b09_dispatch(
+        state,
+        agent_state_test_b09_request(method_name, "none", false),
+        method_name,
+      )
+      if has_marker {
+        agent_state_test_b09_dispatch(
+          state,
+          agent_state_test_b09_request(method_name, "none", true),
+          method_name,
+        )
+      } else {
+        agent_state_test_b09_denied(
+          state,
+          agent_state_test_b09_request(method_name, "none", true),
+          method_name,
+          "session.additionalDirectories",
+        )
+      }
     }
   }
 }
