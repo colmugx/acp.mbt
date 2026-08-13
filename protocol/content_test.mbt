@@ -165,3 +165,77 @@ test "media and blob payloads validate base64 without fallback" {
     _ => fail("expected resource decoding to fail")
   }
 }
+
+///|
+test "embedded blob resources validate payload shape and base64" {
+  let blob : BlobResourceContents = {
+    blob: "aGVsbG8=",
+    mime_type: Value("application/octet-stream"),
+    uri: "file:///tmp/blob",
+    meta: omitted_json(),
+  }
+  assert_eq(
+    blob_resource_contents_from_json(blob_resource_contents_to_json(blob)),
+    blob,
+  )
+
+  try
+    blob_resource_contents_from_json(
+      protocol_parse_json("{\"blob\":\"%%%\",\"uri\":\"file:///x\"}"),
+    )
+  catch {
+    InvalidBase64(path="resource.blob") => ()
+    _ => fail("expected direct blob base64 validation")
+  } noraise {
+    _ => fail("expected direct blob decoding to fail")
+  }
+
+  let bad_blob : BlobResourceContents = {
+    blob: "%%%",
+    mime_type: Omitted,
+    uri: "file:///x",
+    meta: omitted_json(),
+  }
+  try blob_resource_contents_to_json(bad_blob) catch {
+    InvalidBase64(path="blob") => ()
+    _ => fail("expected blob encoding base64 validation")
+  } noraise {
+    _ => fail("expected blob encoding to fail")
+  }
+
+  try
+    content_block_from_json(
+      protocol_parse_json(
+        "{\"type\":\"resource\",\"resource\":{\"blob\":\"%%%\",\"uri\":\"file:///x\"}}",
+      ),
+    )
+  catch {
+    InvalidBase64(path="content.resource.blob") => ()
+    _ => fail("expected nested blob base64 validation")
+  } noraise {
+    _ => fail("expected nested blob decoding to fail")
+  }
+
+  try
+    blob_resource_contents_from_json(protocol_parse_json("{\"blob\":\"aA==\"}"))
+  catch {
+    MissingField(path="resource.uri") => ()
+    _ => fail("expected blob uri requirement")
+  } noraise {
+    _ => fail("expected blob without uri to fail")
+  }
+
+  try
+    embedded_resource_resource_from_json(
+      protocol_parse_json("{\"uri\":\"file:///x\"}"),
+    )
+  catch {
+    InvalidField(
+      path="resource",
+      reason="resource payload must contain text or blob"
+    ) => ()
+    _ => fail("expected embedded resource payload requirement")
+  } noraise {
+    _ => fail("expected embedded resource without payload to fail")
+  }
+}
