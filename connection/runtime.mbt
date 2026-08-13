@@ -658,6 +658,18 @@ priv struct RuntimeLegacySpawnContext[C] {
 }
 
 ///|
+priv struct RuntimeDispatchPort[G, D] {
+  request : (@async.TaskGroup[G], Int, JsonRpcRequest, D) -> (
+    RuntimeTaskControl,
+    Int,
+  )
+  notification : (@async.TaskGroup[G], Int, JsonRpcNotification, D) -> (
+    RuntimeTaskControl,
+    Int,
+  )
+}
+
+///|
 fn runtime_remove_task(
   tasks : Array[RuntimeTaskControl],
   task_token : Int,
@@ -988,6 +1000,21 @@ fn[G, C] runtime_spawn_legacy_notification(
 }
 
 ///|
+fn[G, C] runtime_legacy_dispatch_port() -> RuntimeDispatchPort[
+  G,
+  RuntimeLegacySpawnContext[C],
+] {
+  {
+    request: (group, token, request, context) => {
+      runtime_spawn_legacy_request(group, token, request, context)
+    },
+    notification: (group, token, notification, context) => {
+      runtime_spawn_legacy_notification(group, token, notification, context)
+    },
+  }
+}
+
+///|
 fn runtime_writer_offer(
   queue : @aqueue.Queue[RuntimeWriterItem],
   limit : Int,
@@ -1165,39 +1192,31 @@ async fn runtime_emit_command(
 }
 
 ///|
-async fn[G, C] runtime_apply_step(
+async fn[G, D] runtime_apply_step(
   group : @async.TaskGroup[G],
   step : ConnectionStep,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEventOf[C]],
-  result_to_event : (RuntimeHandlerResult) -> C,
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
-  shutdown : Ref[Bool],
 ) -> (Array[RuntimeTaskControl], Int) raise RuntimeError {
   let next_tasks = Array::copy(tasks)
   let mut next_token = next_task_token
-  let legacy_context = {
-    shutdown,
-    handlers: ports.handlers,
-    events,
-    result_to_event,
-    limit: options.queue_capacity,
-  }
   for command in step.commands {
     match command {
       DispatchRequest(request) => {
-        let (task, updated_token) = runtime_spawn_legacy_request(
-          group, next_token, request, legacy_context,
+        let (task, updated_token) = (dispatch.request)(
+          group, next_token, request, dispatch_context,
         )
         next_tasks.push(task)
         next_token = updated_token
       }
       DispatchNotification(notification) => {
-        let (task, updated_token) = runtime_spawn_legacy_notification(
-          group, next_token, notification, legacy_context,
+        let (task, updated_token) = (dispatch.notification)(
+          group, next_token, notification, dispatch_context,
         )
         next_tasks.push(task)
         next_token = updated_token
@@ -1229,15 +1248,15 @@ async fn[G, C] runtime_apply_step(
 }
 
 ///|
-async fn[G, C] runtime_apply_message(
+async fn[G, D] runtime_apply_message(
   group : @async.TaskGroup[G],
   state : ConnectionState,
   frame : String,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEventOf[C]],
-  result_to_event : (RuntimeHandlerResult) -> C,
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1266,8 +1285,8 @@ async fn[G, C] runtime_apply_message(
     }
   }
   let (next_tasks, next_token) = runtime_apply_step(
-    group, step, writer_queue, options, ports, events, result_to_event, tasks, next_task_token,
-    shutdown,
+    group, step, writer_queue, options, ports, dispatch, dispatch_context, tasks,
+    next_task_token,
   )
   (step.state, next_tasks, next_token)
 }
@@ -1416,7 +1435,7 @@ priv struct RuntimeEventStep {
 /// The single owner-loop event seam. Every reader, writer, handler, and
 /// notification event is admitted here; late task events are traced and
 /// ignored, while primary failures close through one typed path.
-async fn[G, C] runtime_apply_event_of(
+async fn[G, C, D] runtime_apply_event_of(
   event : RuntimeEventOf[C],
   state : ConnectionState,
   decoder : FramingState,
@@ -1425,8 +1444,9 @@ async fn[G, C] runtime_apply_event_of(
   options : RuntimeOptions,
   ports : RuntimePorts,
   events : @aqueue.Queue[RuntimeEventOf[C]],
-  result_to_event : (RuntimeHandlerResult) -> C,
   event_to_result : (C) -> RuntimeHandlerResult,
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
@@ -1459,7 +1479,7 @@ async fn[G, C] runtime_apply_event_of(
       let mut next_token = next_task_token
       for frame in frame_step.frames {
         let next = runtime_apply_message(
-          group, next_state, frame, writer_queue, options, ports, events, result_to_event,
+          group, next_state, frame, writer_queue, options, ports, dispatch, dispatch_context,
           next_tasks, next_token, shutdown,
         ) catch {
           error =>
@@ -1599,8 +1619,8 @@ async fn[G, C] runtime_apply_event_of(
                 }
               }
               let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, events, result_to_event,
-                remaining_tasks, next_task_token, shutdown,
+                group, step, writer_queue, options, ports, dispatch, dispatch_context,
+                remaining_tasks, next_task_token,
               ) catch {
                 error =>
                   runtime_fail_and_close(
@@ -1727,8 +1747,8 @@ async fn[G, C] runtime_apply_event_of(
                   )
               }
               let (updated_tasks, updated_token) = runtime_apply_step(
-                group, step, writer_queue, options, ports, events, result_to_event,
-                remaining_tasks, next_task_token, shutdown,
+                group, step, writer_queue, options, ports, dispatch, dispatch_context,
+                remaining_tasks, next_task_token,
               ) catch {
                 error =>
                   runtime_fail_and_close(
@@ -1904,6 +1924,29 @@ async fn[G, C] runtime_apply_event_of(
 }
 
 ///|
+/// Private dispatch wrapper used by the native engine and the legacy adapter.
+async fn[G, D] runtime_apply_event_with_dispatch(
+  event : RuntimeEvent,
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEvent],
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+) -> RuntimeEventStep raise RuntimeError {
+  runtime_apply_event_of(
+    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
+    dispatch, dispatch_context, tasks, next_task_token, shutdown,
+  )
+}
+
+///|
 /// Legacy handler-event wrapper. The existing runtime and white-box harness
 /// use `RuntimeHandlerResult` directly; the generic seam above is kept behind
 /// this identity adapter so no legacy call site changes behavior.
@@ -1920,9 +1963,20 @@ async fn[G] runtime_apply_event(
   next_task_token : Int,
   shutdown : Ref[Bool],
 ) -> RuntimeEventStep raise RuntimeError {
-  runtime_apply_event_of(
-    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
-    runtime_identity_handler_result, tasks, next_task_token, shutdown,
+  let dispatch_context : RuntimeLegacySpawnContext[RuntimeHandlerResult] = {
+    shutdown,
+    handlers: ports.handlers,
+    events,
+    result_to_event: runtime_identity_handler_result,
+    limit: options.queue_capacity,
+  }
+  let dispatch : RuntimeDispatchPort[
+    G,
+    RuntimeLegacySpawnContext[RuntimeHandlerResult],
+  ] = runtime_legacy_dispatch_port()
+  runtime_apply_event_with_dispatch(
+    event, state, decoder, group, writer_queue, options, ports, events, dispatch,
+    dispatch_context, tasks, next_task_token, shutdown,
   )
 }
 
