@@ -11,6 +11,7 @@ using @agent_message {
 using @protocol_data {
   type ProtocolNullable,
   type AgentCapabilities,
+  type ClientCapabilities,
   type AuthMethod,
   type InitializeParams,
   type CapabilityMarker,
@@ -33,6 +34,21 @@ fn agent_state_test_initialize(
   let params : InitializeParams = {
     protocol_version,
     client_capabilities: Omitted,
+    client_info: Omitted,
+    meta: Omitted,
+  }
+  agent_protocol_reduce(state, Request(Initialize(params)))
+}
+
+///|
+fn agent_state_test_initialize_with_client_capabilities(
+  state : AgentProtocolState,
+  protocol_version : Int,
+  client_capabilities : ProtocolNullable[ClientCapabilities],
+) -> AgentProtocolStep raise AgentProtocolError {
+  let params : InitializeParams = {
+    protocol_version,
+    client_capabilities,
     client_info: Omitted,
     meta: Omitted,
   }
@@ -64,6 +80,23 @@ fn agent_state_test_notification(
 ///|
 fn agent_state_test_marker() -> CapabilityMarker {
   { meta: Omitted }
+}
+
+///|
+fn agent_state_test_boolean_client_capabilities() -> ClientCapabilities {
+  {
+    fs: Omitted,
+    terminal: Omitted,
+    elicitation: Omitted,
+    session: Value({
+      config_options: Value({
+        boolean: Value(agent_state_test_marker()),
+        meta: Omitted,
+      }),
+      meta: Omitted,
+    }),
+    meta: Omitted,
+  }
 }
 
 ///|
@@ -211,6 +244,93 @@ test "authentication is advertised, sequenced, and completed by an event" {
   } noraise {
     _ => fail("expected session/new to require authentication after logout")
   }
+}
+
+///|
+test "boolean config values require the negotiated client capability" {
+  let config = agent_state_test_config(Omitted, Omitted)
+  let request = agent_state_test_request(
+    "session/set_config_option", "{\"sessionId\":\"s\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":true}",
+  )
+  let no_session : ClientCapabilities = {
+    fs: Omitted,
+    terminal: Omitted,
+    elicitation: Omitted,
+    session: Omitted,
+    meta: Omitted,
+  }
+  let no_config_options : ClientCapabilities = {
+    fs: Omitted,
+    terminal: Omitted,
+    elicitation: Omitted,
+    session: Value({ config_options: Omitted, meta: Omitted }),
+    meta: Omitted,
+  }
+  let null_boolean : ClientCapabilities = {
+    fs: Omitted,
+    terminal: Omitted,
+    elicitation: Omitted,
+    session: Value({
+      config_options: Value({ boolean: Null, meta: Omitted }),
+      meta: Omitted,
+    }),
+    meta: Omitted,
+  }
+  let denied_capabilities : Array[ProtocolNullable[ClientCapabilities]] = [
+    Omitted,
+    Null,
+    Value(no_session),
+    Value(no_config_options),
+    Value(null_boolean),
+  ]
+  for client_capabilities in denied_capabilities {
+    let state = agent_state_test_initialize_with_client_capabilities(
+        agent_protocol_state_new(config~),
+        1,
+        client_capabilities,
+      ).state
+    try agent_protocol_reduce(state, Request(request)) catch {
+      CapabilityDenied(
+        method_name="session/set_config_option",
+        capability="session.configOptions.boolean"
+      ) => ()
+      _ => fail("expected boolean config capability denial")
+    } noraise {
+      _ => fail("expected boolean config capability denial")
+    }
+  }
+
+  let enabled_state = agent_state_test_initialize_with_client_capabilities(
+      agent_protocol_state_new(config~),
+      1,
+      Value(agent_state_test_boolean_client_capabilities()),
+    ).state
+  let true_step = agent_protocol_reduce(enabled_state, Request(request))
+  assert_true(
+    true_step.commands[0] is DispatchRequest(SessionSetConfigOption(_)),
+  )
+  let false_request = agent_state_test_request(
+    "session/set_config_option", "{\"sessionId\":\"s\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":false}",
+  )
+  let false_step = agent_protocol_reduce(enabled_state, Request(false_request))
+  assert_true(
+    false_step.commands[0] is DispatchRequest(SessionSetConfigOption(_)),
+  )
+
+  let value_id_request = agent_state_test_request(
+    "session/set_config_option", "{\"sessionId\":\"s\",\"configId\":\"mode\",\"value\":\"fast\"}",
+  )
+  let no_boolean_state = agent_state_test_initialize(
+      agent_protocol_state_new(config~),
+      1,
+    ).state
+  let value_id_step = agent_protocol_reduce(
+    no_boolean_state,
+    Request(value_id_request),
+  )
+  assert_true(
+    value_id_step.commands[0] is DispatchRequest(SessionSetConfigOption(_)),
+  )
 }
 
 ///|

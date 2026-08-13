@@ -304,7 +304,9 @@ fn agent_adapter_test_initialized(
     agent_adapter_admit(
       agent_adapter_test_state(endpoint),
       endpoint,
-      agent_adapter_test_request(id, "initialize", "{\"protocolVersion\":1}"),
+      agent_adapter_test_request(
+        id, "initialize", "{\"protocolVersion\":1,\"clientCapabilities\":{\"session\":{\"configOptions\":{\"boolean\":{}}}}}",
+      ),
     )
   catch {
     _ => abort("initialize admission must not fail")
@@ -376,6 +378,39 @@ async test "adapter initializes immediately and rejects a second initialize" {
   }
   ignore(context)
   ignore(initial)
+}
+
+///|
+test "adapter rejects boolean config without client capability" {
+  let endpoint = agent_adapter_test_endpoint()
+  let initial = agent_adapter_test_state(endpoint)
+  let initialized = match
+    agent_adapter_admit(
+      initial,
+      endpoint,
+      agent_adapter_test_request(
+        Number(1),
+        "initialize",
+        "{\"protocolVersion\":1}",
+      ),
+    ) {
+    Immediate(step) => step
+    Invoke(..) => fail("initialize must complete synchronously")
+  }
+  let admission = agent_adapter_admit(
+    initialized.state,
+    endpoint,
+    agent_adapter_test_request(
+      Number(2),
+      "session/set_config_option",
+      "{\"sessionId\":\"s\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":true}",
+    ),
+  )
+  match admission {
+    Immediate(step) =>
+      assert_eq(agent_adapter_test_error_code(step), ResourceNotFound)
+    Invoke(..) => fail("denied boolean config must not invoke a handler")
+  }
 }
 
 ///|

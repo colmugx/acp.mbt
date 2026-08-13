@@ -338,6 +338,26 @@ fn agent_additional_directories_supported(state : AgentProtocolState) -> Bool {
 }
 
 ///|
+fn agent_client_boolean_config_supported(state : AgentProtocolState) -> Bool {
+  match state.client_capabilities {
+    Value(capabilities) =>
+      match capabilities.session {
+        Value(session) =>
+          match session.config_options {
+            Value(config_options) =>
+              match config_options.boolean {
+                Value(_) => true
+                Omitted | Null => false
+              }
+            Omitted | Null => false
+          }
+        Omitted | Null => false
+      }
+    Omitted | Null => false
+  }
+}
+
+///|
 fn agent_require_initialized(
   state : AgentProtocolState,
   method_name : String,
@@ -609,8 +629,17 @@ fn agent_reduce_request_initialized(
       agent_require_authenticated(state, "session/set_mode")
       { state, commands: [DispatchRequest(request)] }
     }
-    SessionSetConfigOption(_) => {
+    SessionSetConfigOption(params) => {
       agent_require_authenticated(state, "session/set_config_option")
+      match params.value {
+        Boolean(_) =>
+          agent_require_capability(
+            agent_client_boolean_config_supported(state),
+            "session/set_config_option",
+            "session.configOptions.boolean",
+          )
+        ValueId(_) => ()
+      }
       { state, commands: [DispatchRequest(request)] }
     }
     SessionPrompt(params) => {
