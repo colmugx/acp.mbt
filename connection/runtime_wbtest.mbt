@@ -1604,6 +1604,7 @@ fn runtime_owner_test_port() -> RuntimeOwnerPort[
   RuntimeOwnerTestState,
   Int,
   Int,
+  Unit,
 ] {
   {
     initial_state: runtime_owner_test_state(),
@@ -1620,21 +1621,27 @@ fn runtime_owner_test_port() -> RuntimeOwnerPort[
       RuntimeOwnerNotificationInvoke(state~, invocation=7)
     },
     execute: fn(value) { value },
-    to_handler_result: value => {
-      HandlerSuccess(Json::number(value.to_double(), repr=value.to_string()))
-    },
     execute_failure: (_, _) => -2,
     execute_cancel: (_, _) => -3,
     complete_request: (state, _, _, completion) => {
-      ..state,
-      completed: runtime_owner_test_push_int(state.completed, completion),
+      state: {
+        ..state,
+        completed: runtime_owner_test_push_int(state.completed, completion),
+      },
+      response: HandlerSuccess(
+        Json::number(completion.to_double(), repr=completion.to_string()),
+      ),
+      effects: [],
     },
     complete_notification: (state, _, completion) => {
-      ..state,
-      notifications: runtime_owner_test_push_int(
-        state.notifications,
-        completion,
-      ),
+      state: {
+        ..state,
+        notifications: runtime_owner_test_push_int(
+          state.notifications,
+          completion,
+        ),
+      },
+      effects: [],
     },
     cancel_request: (state, id, _) => {
       (
@@ -1660,6 +1667,149 @@ fn runtime_owner_test_request(id : RequestId) -> JsonRpcRequest {
 fn runtime_owner_test_notification() -> JsonRpcNotification {
   JsonRpcNotification::new(method_name="owner-notification") catch {
     _ => abort("owner notification fixture must be valid")
+  }
+}
+
+///|
+fn runtime_owner_effect_test_notification() -> JsonRpcNotification {
+  JsonRpcNotification::new(method_name="owner/update") catch {
+    _ => abort("owner effect notification fixture must be valid")
+  }
+}
+
+///|
+fn runtime_owner_effect_test_port() -> RuntimeOwnerPort[
+  RuntimeOwnerTestState,
+  Int,
+  Int,
+  String,
+] {
+  {
+    initial_state: runtime_owner_test_state(),
+    admit_request: (state, id, _) => {
+      RuntimeOwnerRequestInvoke(
+        state={
+          ..state,
+          admitted: runtime_owner_test_push_id(state.admitted, id),
+        },
+        invocation=9,
+      )
+    },
+    admit_notification: (state, _) => {
+      RuntimeOwnerNotificationInvoke(state~, invocation=10)
+    },
+    execute: fn(value) { value },
+    execute_failure: (_, _) => -2,
+    execute_cancel: (_, _) => -3,
+    complete_request: (state, _, _, completion) => {
+      state: {
+        ..state,
+        completed: runtime_owner_test_push_int(state.completed, completion),
+      },
+      response: HandlerSuccess(Json::string("request-result")),
+      effects: [
+        WireNotification(notification=runtime_owner_effect_test_notification()),
+        Local(effect="request-effect"),
+      ],
+    },
+    complete_notification: (state, _, completion) => {
+      state: {
+        ..state,
+        notifications: runtime_owner_test_push_int(
+          state.notifications,
+          completion,
+        ),
+      },
+      effects: [Local(effect="notification-effect")],
+    },
+    cancel_request: (state, id, _) => {
+      (
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        -1,
+      )
+    },
+    abort: (state, task) => {
+      ..state,
+      aborted: runtime_owner_test_push_int(state.aborted, task.task_token()),
+    },
+  }
+}
+
+///|
+test "runtime owner completions atomically return wire and local effects" {
+  let port = runtime_owner_effect_test_port()
+  let owner = runtime_owner_new(port)
+  let (owner, action) = runtime_owner_admit_request(
+    owner,
+    runtime_owner_test_request(Number(20)),
+    port,
+  ) catch {
+    _ => abort("effect request admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("effect request must invoke")
+  }
+  let result = runtime_owner_complete_request(
+    owner,
+    RuntimeOwnerRequestCompleted(
+      token=task.task_token(),
+      id=Number(20),
+      completion=9,
+    ),
+    port,
+  )
+  let (owner, completion) = match result {
+    RuntimeOwnerCompletionApplied(owner~, completion~) => (owner, completion)
+    RuntimeOwnerCompletionIgnored(reason=_) =>
+      abort("effect request completion must apply")
+  }
+  assert_eq(completion.state, owner.state())
+  assert_eq(owner.state().completed, [9])
+  assert_eq(owner.task_count(), 0)
+  match completion.response {
+    HandlerSuccess(String(value)) => assert_eq(value, "request-result")
+    _ => fail("request completion must contain one response")
+  }
+  assert_eq(completion.effects.length(), 2)
+  match completion.effects[0] {
+    WireNotification(notification~) =>
+      assert_eq(notification, runtime_owner_effect_test_notification())
+    _ => fail("request completion must retain wire notification effect")
+  }
+  match completion.effects[1] {
+    Local(effect~) => assert_eq(effect, "request-effect")
+    _ => fail("request completion must retain local effect")
+  }
+
+  let (owner, action) = runtime_owner_admit_notification(
+    owner,
+    runtime_owner_test_notification(),
+    port,
+  ) catch {
+    _ => abort("effect notification admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerNotificationInvoke(task~) => task
+    _ => abort("effect notification must invoke")
+  }
+  let result = runtime_owner_complete_notification(
+    owner,
+    RuntimeOwnerNotificationCompleted(token=task.task_token(), completion=10),
+    port,
+  )
+  let (owner, completion) = match result {
+    RuntimeOwnerCompletionApplied(owner~, completion~) => (owner, completion)
+    RuntimeOwnerCompletionIgnored(reason=_) =>
+      abort("effect notification completion must apply")
+  }
+  assert_eq(completion.state, owner.state())
+  assert_eq(owner.state().notifications, [10])
+  assert_eq(owner.task_count(), 0)
+  assert_eq(completion.effects.length(), 1)
+  match completion.effects[0] {
+    Local(effect~) => assert_eq(effect, "notification-effect")
+    _ => fail("notification completion must retain local effect")
   }
 }
 
@@ -1697,7 +1847,7 @@ async test "runtime owner executes overlapping requests and completes reverse or
   let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
   let first_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let second_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
     ..runtime_owner_test_port(),
     execute: async fn(value) {
       started.put(value)
@@ -1741,14 +1891,28 @@ async test "runtime owner executes overlapping requests and completes reverse or
     let second_event = second_handle.wait()
     let owner = match
       runtime_owner_complete_request(owner, second_event, port) {
-      RuntimeOwnerCompletionApplied(owner~) => owner
+      RuntimeOwnerCompletionApplied(owner~, completion~) => {
+        match completion.response {
+          HandlerSuccess(Number(_, repr~)) => assert_eq(repr, Some("2"))
+          _ => fail("request completion must contain one success response")
+        }
+        assert_eq(completion.effects.length(), 0)
+        owner
+      }
       RuntimeOwnerCompletionIgnored(reason=_) =>
         abort("second completion must apply")
     }
     first_gate.put(())
     let first_event = first_handle.wait()
     let owner = match runtime_owner_complete_request(owner, first_event, port) {
-      RuntimeOwnerCompletionApplied(owner~) => owner
+      RuntimeOwnerCompletionApplied(owner~, completion~) => {
+        match completion.response {
+          HandlerSuccess(Number(_, repr~)) => assert_eq(repr, Some("1"))
+          _ => fail("request completion must contain one success response")
+        }
+        assert_eq(completion.effects.length(), 0)
+        owner
+      }
       RuntimeOwnerCompletionIgnored(reason=_) =>
         abort("first completion must apply")
     }
@@ -1808,7 +1972,14 @@ test "runtime owner cancellation completes and releases reservation" {
   }
   assert_true(task.cancel_requested())
   let owner = match runtime_owner_complete_request(owner, event, port) {
-    RuntimeOwnerCompletionApplied(owner~) => owner
+    RuntimeOwnerCompletionApplied(owner~, completion~) => {
+      match completion.response {
+        HandlerSuccess(Number(_, repr~)) => assert_eq(repr, Some("-1"))
+        _ => fail("cancel completion must contain one response")
+      }
+      assert_eq(completion.effects.length(), 0)
+      owner
+    }
     RuntimeOwnerCompletionIgnored(reason=_) =>
       abort("cancel completion must apply")
   }
@@ -1880,7 +2051,7 @@ test "runtime owner close aborts pending work once and ignores late events" {
 async test "runtime owner notification overlap has no response or request id" {
   let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
     ..runtime_owner_test_port(),
     execute: async fn(value) {
       started.put(value)
@@ -1908,7 +2079,10 @@ async test "runtime owner notification overlap has no response or request id" {
     gate.put(())
     let event = handle.wait()
     let owner = match runtime_owner_complete_notification(owner, event, port) {
-      RuntimeOwnerCompletionApplied(owner~) => owner
+      RuntimeOwnerCompletionApplied(owner~, completion~) => {
+        assert_eq(completion.effects.length(), 0)
+        owner
+      }
       RuntimeOwnerCompletionIgnored(reason=_) =>
         abort("notification completion must apply")
     }
@@ -1942,7 +2116,14 @@ test "runtime owner applies handler failure as typed completion" {
       ),
       port,
     ) {
-    RuntimeOwnerCompletionApplied(owner~) => owner
+    RuntimeOwnerCompletionApplied(owner~, completion~) => {
+      match completion.response {
+        HandlerSuccess(Number(_, repr~)) => assert_eq(repr, Some("-99"))
+        _ => fail("failure completion must contain one response")
+      }
+      assert_eq(completion.effects.length(), 0)
+      owner
+    }
     RuntimeOwnerCompletionIgnored(reason=_) =>
       abort("handler failure completion must apply")
   }
@@ -1973,7 +2154,7 @@ test "runtime owner rejects admission after close" {
 
 ///|
 test "runtime owner immediate admission stays on owner loop" {
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
     ..runtime_owner_test_port(),
     admit_request: (state, _, _) => {
       RuntimeOwnerRequestImmediate(state~, result=42)

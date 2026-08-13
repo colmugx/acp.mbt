@@ -64,10 +64,37 @@ pub struct RuntimeOwnerTask[I] {
 }
 
 ///|
+/// A connection-owned effect produced by a pure completion. Wire notifications
+/// are transport values; local effects are caller-defined data for the owner
+/// to interpret. Neither variant executes an effect here.
+pub(all) enum RuntimeOwnerEffect[E] {
+  WireNotification(notification~ : JsonRpcNotification)
+  Local(effect~ : E)
+} derive(Eq, Debug)
+
+///|
+/// A request completion commits domain state together with exactly one wire
+/// result and zero or more owner effects. Requests cannot represent multiple
+/// responses through this type.
+pub(all) struct RuntimeOwnerRequestCompletion[S, E] {
+  state : S
+  response : RuntimeHandlerResult
+  effects : Array[RuntimeOwnerEffect[E]]
+}
+
+///|
+/// A notification completion commits domain state and effects but has no
+/// response field, so the owner cannot accidentally reply to a notification.
+pub(all) struct RuntimeOwnerNotificationCompletion[S, E] {
+  state : S
+  effects : Array[RuntimeOwnerEffect[E]]
+}
+
+///|
 /// The one-shot generic owner hooks. The connection runtime or another
 /// connection-local owner loop invokes these callbacks synchronously while it
 /// owns `S`; only `execute` crosses the async boundary.
-pub(all) struct RuntimeOwnerPort[S, I, C] {
+pub(all) struct RuntimeOwnerPort[S, I, C, E] {
   initial_state : S
   admit_request : (S, RequestId, JsonRpcRequest) -> RuntimeOwnerRequestAdmission[
     S,
@@ -79,14 +106,12 @@ pub(all) struct RuntimeOwnerPort[S, I, C] {
     I,
   ]
   execute : async (I) -> C
-  /// Converts typed completion data to the wire-level handler result.
-  to_handler_result : (C) -> RuntimeHandlerResult
   /// Produces a redacted/static typed failure completion at the task boundary.
   execute_failure : (S, I) -> C
   /// Produces a typed cancellation completion at the task boundary.
   execute_cancel : (S, I) -> C
-  complete_request : (S, RequestId, I, C) -> S
-  complete_notification : (S, I, C) -> S
+  complete_request : (S, RequestId, I, C) -> RuntimeOwnerRequestCompletion[S, E]
+  complete_notification : (S, I, C) -> RuntimeOwnerNotificationCompletion[S, E]
   cancel_request : (S, RequestId, I) -> (S, C)
   abort : (S, RuntimeOwnerTask[I]) -> S
 }
@@ -125,8 +150,8 @@ pub(all) enum RuntimeOwnerNotificationAction[I] {
 }
 
 ///|
-pub(all) enum RuntimeOwnerCompletionResult[S, I] {
-  RuntimeOwnerCompletionApplied(owner~ : RuntimeOwner[S, I])
+pub(all) enum RuntimeOwnerCompletionResult[S, I, O] {
+  RuntimeOwnerCompletionApplied(owner~ : RuntimeOwner[S, I], completion~ : O)
   RuntimeOwnerCompletionIgnored(reason~ : RuntimeOwnerIgnore)
 }
 
@@ -159,8 +184,8 @@ pub(all) suberror RuntimeOwnerError {
 } derive(Eq, Debug)
 
 ///|
-pub fn[S, I, C] runtime_owner_new(
-  port : RuntimeOwnerPort[S, I, C],
+pub fn[S, I, C, E] runtime_owner_new(
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> RuntimeOwner[S, I] {
   { state: port.initial_state, tasks: [], next_task_token: 0, closed: false }
 }
@@ -260,10 +285,10 @@ fn[S, I] runtime_owner_remove_task(
 }
 
 ///|
-pub fn[S, I, C] runtime_owner_admit_request(
+pub fn[S, I, C, E] runtime_owner_admit_request(
   owner : RuntimeOwner[S, I],
   request : JsonRpcRequest,
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> (RuntimeOwner[S, I], RuntimeOwnerRequestAction[I, C]) raise RuntimeOwnerError {
   if owner.closed {
     raise Closed
@@ -295,10 +320,10 @@ pub fn[S, I, C] runtime_owner_admit_request(
 }
 
 ///|
-pub fn[S, I, C] runtime_owner_admit_notification(
+pub fn[S, I, C, E] runtime_owner_admit_notification(
   owner : RuntimeOwner[S, I],
   notification : JsonRpcNotification,
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> (RuntimeOwner[S, I], RuntimeOwnerNotificationAction[I]) raise RuntimeOwnerError {
   if owner.closed {
     raise Closed
@@ -332,9 +357,9 @@ pub fn[S, I, C] runtime_owner_admit_notification(
 ///|
 /// Execute only the immutable invocation and return a typed event. This is
 /// the only async operation in the generic owner seam.
-pub async fn[S, I, C] runtime_owner_execute(
+pub async fn[S, I, C, E] runtime_owner_execute(
   task : RuntimeOwnerTask[I],
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> RuntimeOwnerEvent[C] {
   let completion = (port.execute)(task.invocation)
   if task.notification {
@@ -352,20 +377,20 @@ pub async fn[S, I, C] runtime_owner_execute(
 /// Start one immutable invocation in the caller's existing task group. The
 /// returned task is the only runtime cancellation handle; owner state remains
 /// with the caller, which must apply the resulting event serially.
-pub fn[G, S, I, C] runtime_owner_spawn(
+pub fn[G, S, I, C, E] runtime_owner_spawn(
   group : @async.TaskGroup[G],
   task : RuntimeOwnerTask[I],
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> @async.Task[RuntimeOwnerEvent[C]] {
   group.spawn(() => runtime_owner_execute(task, port))
 }
 
 ///|
-pub fn[S, I, C] runtime_owner_complete_request(
+pub fn[S, I, C, E] runtime_owner_complete_request(
   owner : RuntimeOwner[S, I],
   event : RuntimeOwnerEvent[C],
-  port : RuntimeOwnerPort[S, I, C],
-) -> RuntimeOwnerCompletionResult[S, I] {
+  port : RuntimeOwnerPort[S, I, C, E],
+) -> RuntimeOwnerCompletionResult[S, I, RuntimeOwnerRequestCompletion[S, E]] {
   if owner.closed {
     return RuntimeOwnerCompletionIgnored(reason=Closed)
   }
@@ -380,14 +405,17 @@ pub fn[S, I, C] runtime_owner_complete_request(
         Some(task) =>
           match task.request_id {
             Some(expected) if expected == actual => {
-              let next = runtime_owner_remove_task(owner, token)
-              let state = (port.complete_request)(
-                next.state,
+              let completion = (port.complete_request)(
+                owner.state,
                 actual,
                 task.invocation,
                 completion,
               )
-              RuntimeOwnerCompletionApplied(owner={ ..next, state, })
+              let next = runtime_owner_remove_task(owner, token)
+              RuntimeOwnerCompletionApplied(
+                owner={ ..next, state: completion.state },
+                completion~,
+              )
             }
             Some(expected) =>
               RuntimeOwnerCompletionIgnored(
@@ -401,11 +429,15 @@ pub fn[S, I, C] runtime_owner_complete_request(
 }
 
 ///|
-pub fn[S, I, C] runtime_owner_complete_notification(
+pub fn[S, I, C, E] runtime_owner_complete_notification(
   owner : RuntimeOwner[S, I],
   event : RuntimeOwnerEvent[C],
-  port : RuntimeOwnerPort[S, I, C],
-) -> RuntimeOwnerCompletionResult[S, I] {
+  port : RuntimeOwnerPort[S, I, C, E],
+) -> RuntimeOwnerCompletionResult[
+  S,
+  I,
+  RuntimeOwnerNotificationCompletion[S, E],
+] {
   if owner.closed {
     return RuntimeOwnerCompletionIgnored(reason=Closed)
   }
@@ -418,13 +450,16 @@ pub fn[S, I, C] runtime_owner_complete_notification(
         Some(task) if !task.notification =>
           RuntimeOwnerCompletionIgnored(reason=TaskKindMismatch(token~))
         Some(task) => {
-          let next = runtime_owner_remove_task(owner, token)
-          let state = (port.complete_notification)(
-            next.state,
+          let completion = (port.complete_notification)(
+            owner.state,
             task.invocation,
             completion,
           )
-          RuntimeOwnerCompletionApplied(owner={ ..next, state, })
+          let next = runtime_owner_remove_task(owner, token)
+          RuntimeOwnerCompletionApplied(
+            owner={ ..next, state: completion.state },
+            completion~,
+          )
         }
       }
   }
@@ -435,10 +470,10 @@ pub fn[S, I, C] runtime_owner_complete_notification(
 /// cancellation completion. The caller may cancel the task after this
 /// admission; applying `event` through `runtime_owner_complete_request`
 /// releases the owner reservation. A late task completion is ignored.
-pub fn[S, I, C] runtime_owner_cancel_request(
+pub fn[S, I, C, E] runtime_owner_cancel_request(
   owner : RuntimeOwner[S, I],
   id : RequestId,
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> RuntimeOwnerCancelResult[S, I, C] {
   if owner.closed {
     return RuntimeOwnerCancelIgnored(reason=Closed)
@@ -482,9 +517,9 @@ pub fn[S, I, C] runtime_owner_cancel_request(
 /// Close the owner exactly once. Abort callbacks update only the domain state;
 /// no wire response is generated here. Any completion carrying an old token
 /// is ignored by the closed-owner check.
-pub fn[S, I, C] runtime_owner_close(
+pub fn[S, I, C, E] runtime_owner_close(
   owner : RuntimeOwner[S, I],
-  port : RuntimeOwnerPort[S, I, C],
+  port : RuntimeOwnerPort[S, I, C, E],
 ) -> RuntimeOwnerCloseResult[S, I] {
   if owner.closed {
     return RuntimeOwnerAlreadyClosed(owner~)
