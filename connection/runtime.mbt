@@ -649,6 +649,15 @@ priv struct RuntimeTaskControl {
 }
 
 ///|
+priv struct RuntimeLegacySpawnContext[C] {
+  shutdown : Ref[Bool]
+  handlers : RuntimeHandlerPort
+  events : @aqueue.Queue[RuntimeEventOf[C]]
+  result_to_event : (RuntimeHandlerResult) -> C
+  limit : Int
+}
+
+///|
 fn runtime_remove_task(
   tasks : Array[RuntimeTaskControl],
   task_token : Int,
@@ -924,6 +933,61 @@ async fn[C] runtime_notification_task(
 }
 
 ///|
+fn[G, C] runtime_spawn_legacy_request(
+  group : @async.TaskGroup[G],
+  next_task_token : Int,
+  request : JsonRpcRequest,
+  context : RuntimeLegacySpawnContext[C],
+) -> (RuntimeTaskControl, Int) {
+  let task = group.spawn(() => {
+    runtime_request_task(
+      next_task_token,
+      request,
+      context.shutdown,
+      context.handlers,
+      context.events,
+      context.result_to_event,
+      context.limit,
+    )
+  })
+  (
+    {
+      task_token: next_task_token,
+      request_id: Some(request.id),
+      cancel: () => task.cancel(),
+    },
+    next_task_token + 1,
+  )
+}
+
+///|
+fn[G, C] runtime_spawn_legacy_notification(
+  group : @async.TaskGroup[G],
+  next_task_token : Int,
+  notification : JsonRpcNotification,
+  context : RuntimeLegacySpawnContext[C],
+) -> (RuntimeTaskControl, Int) {
+  let task = group.spawn(() => {
+    runtime_notification_task(
+      next_task_token,
+      notification,
+      context.shutdown,
+      context.handlers,
+      context.events,
+      context.limit,
+    )
+  })
+  (
+    {
+      task_token: next_task_token,
+      request_id: None,
+      cancel: () => task.cancel(),
+    },
+    next_task_token + 1,
+  )
+}
+
+///|
 fn runtime_writer_offer(
   queue : @aqueue.Queue[RuntimeWriterItem],
   limit : Int,
@@ -1115,46 +1179,28 @@ async fn[G, C] runtime_apply_step(
 ) -> (Array[RuntimeTaskControl], Int) raise RuntimeError {
   let next_tasks = Array::copy(tasks)
   let mut next_token = next_task_token
+  let legacy_context = {
+    shutdown,
+    handlers: ports.handlers,
+    events,
+    result_to_event,
+    limit: options.queue_capacity,
+  }
   for command in step.commands {
     match command {
       DispatchRequest(request) => {
-        let task_token = next_token
-        let task = group.spawn(() => {
-          runtime_request_task(
-            task_token,
-            request,
-            shutdown,
-            ports.handlers,
-            events,
-            result_to_event,
-            options.queue_capacity,
-          )
-        })
-        next_tasks.push({
-          task_token,
-          request_id: Some(request.id),
-          cancel: () => task.cancel(),
-        })
-        next_token = next_token + 1
+        let (task, updated_token) = runtime_spawn_legacy_request(
+          group, next_token, request, legacy_context,
+        )
+        next_tasks.push(task)
+        next_token = updated_token
       }
       DispatchNotification(notification) => {
-        let task_token = next_token
-        let task = group.spawn(() => {
-          runtime_notification_task(
-            task_token,
-            notification,
-            shutdown,
-            ports.handlers,
-            events,
-            options.queue_capacity,
-          )
-        })
-        next_tasks.push({
-          task_token,
-          request_id: None,
-          cancel: () => task.cancel(),
-        })
-        next_token = next_token + 1
+        let (task, updated_token) = runtime_spawn_legacy_notification(
+          group, next_token, notification, legacy_context,
+        )
+        next_tasks.push(task)
+        next_token = updated_token
       }
       command =>
         runtime_emit_command(
