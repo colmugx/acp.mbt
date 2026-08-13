@@ -251,9 +251,19 @@ fn client_reduce_notification(
   notification : ClientNotification,
 ) -> ClientProtocolStep raise ClientProtocolError {
   match notification {
-    SessionUpdate(_) | ElicitationComplete(_) => {
+    SessionUpdate(_) => {
       let method_name = notification.method_name()
       client_require_ready(state, method_name)
+      { state, commands: [DispatchNotification(notification)] }
+    }
+    ElicitationComplete(_) => {
+      let method_name = notification.method_name()
+      client_require_ready(state, method_name)
+      client_require_capability(
+        client_elicitation_url_supported(state),
+        method_name,
+        "elicitation.url",
+      )
       { state, commands: [DispatchNotification(notification)] }
     }
     CancelRequest(request_id) =>

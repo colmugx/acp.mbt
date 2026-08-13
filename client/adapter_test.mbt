@@ -322,6 +322,61 @@ async test "Client notifications stay side-effect free in the adapter" {
 }
 
 ///|
+test "Client adapter rejects elicitation completion without URL capability" {
+  let form_only_elicitation = try! client_elicitation_service(
+    form=client_service_test_form,
+    complete=client_service_test_complete,
+  )
+  let form_only_spec = client_spec(
+    info=client_service_test_info("form-only-adapter"),
+    session=client_service_test_session(),
+    elicitation=form_only_elicitation,
+  )
+  let endpoint = @reader.Reader::run(
+    client_program(@reader.Reader::pure(form_only_spec)),
+    (),
+  ).unwrap()
+  match
+    client_adapter_admit(
+      client_adapter_test_state(endpoint),
+      endpoint,
+      client_adapter_test_notification(
+        "elicitation/complete", "{\"elicitationId\":\"elicitation\"}",
+      ),
+    ) {
+    Immediate(step) => {
+      assert_eq(step.outputs.length(), 1)
+      match step.outputs[0] {
+        Command(TraceError(method_name="elicitation/complete", error~)) =>
+          assert_eq(error.code, ResourceNotFound)
+        _ => fail("denied completion must emit a capability trace")
+      }
+    }
+    Invoke(..) => fail("denied completion must not invoke the handler")
+  }
+}
+
+///|
+async test "Client adapter invokes URL completion when capability is advertised" {
+  let endpoint = client_adapter_test_full_endpoint()
+  let admission = client_adapter_admit(
+    client_adapter_test_state(endpoint),
+    endpoint,
+    client_adapter_test_notification(
+      "elicitation/complete", "{\"elicitationId\":\"elicitation\"}",
+    ),
+  )
+  match admission {
+    Invoke(state=reserved, invocation~) => {
+      let completion = client_adapter_execute(invocation, endpoint)
+      let done = client_adapter_complete(reserved, invocation, completion)
+      assert_eq(done.outputs.length(), 0)
+    }
+    Immediate(_) => fail("URL-enabled completion must invoke the handler")
+  }
+}
+
+///|
 test "Client adapter maps gates, malformed methods, and readiness" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)

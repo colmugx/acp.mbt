@@ -77,6 +77,13 @@ fn client_state_test_update_notification() -> ClientNotification raise ClientMes
 }
 
 ///|
+fn client_state_test_complete_notification() -> ClientNotification raise ClientMessageError {
+  client_state_test_notification(
+    "elicitation/complete", "{\"elicitationId\":\"e\"}",
+  )
+}
+
+///|
 fn client_state_test_form_request() -> ClientRequest raise ClientMessageError {
   client_state_test_request(
     "elicitation/create", "{\"mode\":\"form\",\"message\":\"Choose\",\"requestedSchema\":{\"type\":\"object\",\"properties\":{}},\"requestId\":1}",
@@ -266,6 +273,7 @@ test "elicitation form and URL gates are payload-specific and empty outer object
   )
   let form = client_state_test_form_request()
   let url = client_state_test_url_request()
+  let complete = client_state_test_complete_notification()
   assert_true(
     client_protocol_reduce(form_only, Request(form)).commands[0]
     is DispatchRequest(ElicitationCreate(Form(_))),
@@ -278,6 +286,15 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     _ => fail("expected URL-specific gate")
   } noraise {
     _ => fail("expected URL-specific gate")
+  }
+  try client_protocol_reduce(form_only, Notification(complete)) catch {
+    CapabilityDenied(
+      method_name="elicitation/complete",
+      capability="elicitation.url"
+    ) => ()
+    _ => fail("expected URL-specific completion gate")
+  } noraise {
+    _ => fail("expected URL-specific completion gate")
   }
 
   let url_only_capabilities = client_state_test_capabilities(
@@ -293,6 +310,10 @@ test "elicitation form and URL gates are payload-specific and empty outer object
   assert_true(
     client_protocol_reduce(url_only, Request(url)).commands[0]
     is DispatchRequest(ElicitationCreate(Url(_))),
+  )
+  assert_true(
+    client_protocol_reduce(url_only, Notification(complete)).commands[0]
+    is DispatchNotification(ElicitationComplete(_)),
   )
   try client_protocol_reduce(url_only, Request(form)) catch {
     CapabilityDenied(
@@ -333,6 +354,17 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     _ => fail("expected empty elicitation object to deny URL")
   }
 
+  let omitted_state = client_protocol_state_ready(capabilities=Omitted)
+  try client_protocol_reduce(omitted_state, Notification(complete)) catch {
+    CapabilityDenied(
+      method_name="elicitation/complete",
+      capability="elicitation.url"
+    ) => ()
+    _ => fail("expected omitted capabilities to deny completion")
+  } noraise {
+    _ => fail("expected omitted capabilities to deny completion")
+  }
+
   let null_state = client_protocol_state_ready(capabilities=Null)
   try client_protocol_reduce(null_state, Request(form)) catch {
     CapabilityDenied(
@@ -342,6 +374,15 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     _ => fail("expected null capabilities to deny form")
   } noraise {
     _ => fail("expected null capabilities to deny form")
+  }
+  try client_protocol_reduce(null_state, Notification(complete)) catch {
+    CapabilityDenied(
+      method_name="elicitation/complete",
+      capability="elicitation.url"
+    ) => ()
+    _ => fail("expected null capabilities to deny completion")
+  } noraise {
+    _ => fail("expected null capabilities to deny completion")
   }
 }
 
