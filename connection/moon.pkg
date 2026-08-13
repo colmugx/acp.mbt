@@ -1,0 +1,11 @@
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "colmugx/acp/transport",
+  "moonbitlang/async",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/utf8",
+}
+
+supported_targets = "native"

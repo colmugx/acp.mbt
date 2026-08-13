@@ -1,0 +1,6 @@
+import {
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
