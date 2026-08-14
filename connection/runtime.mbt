@@ -1613,29 +1613,6 @@ fn[D] runtime_apply_owner_commands_of(
 }
 
 ///|
-fn runtime_apply_owner_commands(
-  commands : Array[RuntimeOwnerCommand],
-  writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  options : RuntimeOptions,
-  ports : RuntimePorts,
-  tasks : Array[RuntimeTaskControl],
-) -> RuntimeOwnerCommandResult raise RuntimeError {
-  let (_, result) = runtime_apply_owner_commands_of(
-    commands,
-    writer_queue,
-    options,
-    ports,
-    tasks,
-    (),
-    (context, id, controls) => {
-      runtime_cancel_task(controls, id)
-      RuntimeDispatchCancelApplied(context~)
-    },
-  )
-  result
-}
-
-///|
 fn runtime_cancel_active_tasks(
   tasks : Array[RuntimeTaskControl],
   trace : (RuntimeTraceEvent) -> Unit,
@@ -1950,9 +1927,17 @@ async fn[G, D] runtime_apply_step(
 }
 
 ///|
+/// Apply one decoded wire frame. `committed_state` starts at the pre-frame
+/// state and is updated only when the reducer step is an admission step
+/// (`DispatchRequest`/`DispatchNotification`): admission commits new pending
+/// work before the dispatch port runs, so a dispatch failure must close with
+/// the committed acceptance and settle that work exactly once instead of
+/// rolling it back silently. Every other step keeps the all-or-nothing frame
+/// rollback its callers already rely on.
 async fn[G, D] runtime_apply_message(
   group : @async.TaskGroup[G],
   state : ConnectionState,
+  committed_state : Ref[ConnectionState],
   frame : String,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
@@ -1985,6 +1970,11 @@ async fn[G, D] runtime_apply_message(
       )
       raise ReducerFailed
     }
+  }
+  match step.commands {
+    [DispatchRequest(_)] | [DispatchNotification(_)] =>
+      committed_state.val = step.state
+    _ => ()
   }
   let state_ref = Ref::Ref(step.state)
   let (next_tasks, next_token, next_context, control) = runtime_apply_step(
@@ -2053,17 +2043,6 @@ async fn runtime_apply_close_step(
 }
 
 ///|
-/// Run the reducer's close transition before stopping native tasks. The
-/// reducer remains the sole owner of pending protocol state; this function
-/// only interprets the resulting commands and then cancels runtime work.
-fn[D] runtime_close_owner_noop(
-  context : D,
-  _tasks : Array[RuntimeTaskControl],
-) -> D raise RuntimeError {
-  context
-}
-
-///|
 async fn[G, C, D] runtime_close_connection_of(
   _group : @async.TaskGroup[G],
   state : ConnectionState,
@@ -2099,37 +2078,6 @@ async fn[G, C, D] runtime_close_connection_of(
 }
 
 ///|
-async fn[G, C] runtime_close_connection(
-  group : @async.TaskGroup[G],
-  state : ConnectionState,
-  reason : String,
-  writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  options : RuntimeOptions,
-  ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEventOf[C]],
-  tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
-  shutdown : Ref[Bool],
-  force_close_writer : Bool,
-) -> Unit raise RuntimeError {
-  let _ = runtime_close_connection_of(
-    group,
-    state,
-    reason,
-    writer_queue,
-    options,
-    ports,
-    events,
-    tasks,
-    next_task_token,
-    shutdown,
-    force_close_writer,
-    (),
-    runtime_close_owner_noop,
-  )
-}
-
-///|
 /// Close after a primary runtime failure. A cleanup failure is represented as
 /// a category pair so neither the original failure nor cleanup failure is
 /// silently discarded, and no arbitrary error payload crosses the boundary.
@@ -2156,39 +2104,6 @@ async fn[G, C, D, T] runtime_fail_and_close_of(
     cleanup => raise runtime_close_cleanup_error(primary, cleanup)
   }
   raise primary
-}
-
-///|
-async fn[G, C, T] runtime_fail_and_close(
-  group : @async.TaskGroup[G],
-  state : ConnectionState,
-  reason : String,
-  primary : RuntimeError,
-  writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  options : RuntimeOptions,
-  ports : RuntimePorts,
-  events : @aqueue.Queue[RuntimeEventOf[C]],
-  tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
-  shutdown : Ref[Bool],
-  force_close_writer : Bool,
-) -> T raise RuntimeError {
-  runtime_fail_and_close_of(
-    group,
-    state,
-    reason,
-    primary,
-    writer_queue,
-    options,
-    ports,
-    events,
-    tasks,
-    next_task_token,
-    shutdown,
-    force_close_writer,
-    (),
-    runtime_close_owner_noop,
-  )
 }
 
 ///|
@@ -2552,14 +2467,15 @@ async fn[G, C, D] runtime_apply_event_of(
       let mut next_tasks = tasks
       let mut next_token = next_task_token
       for frame in frame_step.frames {
+        let committed_state = Ref::Ref(next_state)
         let next = runtime_apply_message(
-          group, next_state, frame, writer_queue, options, ports, dispatch, next_context,
-          next_tasks, next_token, shutdown,
+          group, next_state, committed_state, frame, writer_queue, options, ports,
+          dispatch, next_context, next_tasks, next_token, shutdown,
         ) catch {
           error =>
             runtime_fail_and_close_of(
               group,
-              next_state,
+              committed_state.val,
               "protocol",
               error,
               writer_queue,
@@ -2979,7 +2895,7 @@ async fn[G, C, D] runtime_apply_event_of(
                   "task_control",
                 ),
               )
-              runtime_fail_and_close(
+              runtime_fail_and_close_of(
                 group,
                 state,
                 "task_mismatch",
@@ -2992,6 +2908,8 @@ async fn[G, C, D] runtime_apply_event_of(
                 next_task_token,
                 shutdown,
                 false,
+                next_context,
+                dispatch.close_owner,
               )
             }
           }
@@ -3051,7 +2969,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 IncomingFailed(id~, error=JsonRpcError::internal_error()),
               ) catch {
                 _ =>
-                  runtime_fail_and_close(
+                  runtime_fail_and_close_of(
                     group,
                     state,
                     "completion",
@@ -3064,6 +2982,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     next_task_token,
                     shutdown,
                     false,
+                    next_context,
+                    dispatch.close_owner,
                   )
               }
               let state_ref = Ref::Ref(step.state)
@@ -3072,7 +2992,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 remaining_tasks, next_task_token,
               ) catch {
                 error =>
-                  runtime_fail_and_close(
+                  runtime_fail_and_close_of(
                     group,
                     state_ref.val,
                     "completion",
@@ -3085,6 +3005,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     next_task_token,
                     shutdown,
                     false,
+                    next_context,
+                    dispatch.close_owner,
                   )
               }
               match control {
@@ -3140,7 +3062,7 @@ async fn[G, C, D] runtime_apply_event_of(
                   "handler",
                 ),
               )
-              runtime_fail_and_close(
+              runtime_fail_and_close_of(
                 group,
                 state,
                 "handler",
@@ -3153,6 +3075,8 @@ async fn[G, C, D] runtime_apply_event_of(
                 next_task_token,
                 shutdown,
                 false,
+                next_context,
+                dispatch.close_owner,
               )
             }
           }
@@ -3244,7 +3168,7 @@ async fn[G, C, D] runtime_apply_event_of(
               "inbound", "notification_failed", "", "", "handler",
             ),
           )
-          runtime_fail_and_close(
+          runtime_fail_and_close_of(
             group,
             state,
             "notification",
@@ -3257,6 +3181,8 @@ async fn[G, C, D] runtime_apply_event_of(
             next_task_token,
             shutdown,
             false,
+            next_context,
+            dispatch.close_owner,
           )
         }
       }
@@ -3269,7 +3195,7 @@ async fn[G, C, D] runtime_apply_event_of(
               "inbound", "eof_partial_frame", "", "", "framing",
             ),
           )
-          runtime_fail_and_close(
+          runtime_fail_and_close_of(
             group,
             state,
             "eof",
@@ -3282,16 +3208,29 @@ async fn[G, C, D] runtime_apply_event_of(
             next_task_token,
             shutdown,
             false,
+            next_context,
+            dispatch.close_owner,
           )
         }
       }
-      runtime_close_connection(
-        group, state, "eof", writer_queue, options, ports, events, tasks, next_task_token,
-        shutdown, false,
+      let closed_context = runtime_close_connection_of(
+        group,
+        state,
+        "eof",
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        false,
+        next_context,
+        dispatch.close_owner,
       )
       runtime_event_step(
         { state, decoder, tasks: [], next_task_token, stop: true },
-        next_context,
+        closed_context,
       )
     }
   }
@@ -3352,7 +3291,7 @@ async fn[G, C, D] runtime_connection_engine_with_dispatch_of(
   for ;; {
     let event = runtime_event_get(events) catch {
       _ =>
-        runtime_fail_and_close(
+        runtime_fail_and_close_of(
           group,
           state,
           "event_queue",
@@ -3365,6 +3304,8 @@ async fn[G, C, D] runtime_connection_engine_with_dispatch_of(
           next_task_token,
           shutdown,
           false,
+          dispatch_context,
+          dispatch.close_owner,
         )
     }
     let (step, next_context) = runtime_apply_event_of(

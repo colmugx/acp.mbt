@@ -8,6 +8,28 @@ fn runtime_test_options() -> RuntimeOptions {
 }
 
 ///|
+/// Legacy unit-context inbound cancellation seam for exercising the generic
+/// `_of` engine functions without an owner loop.
+fn runtime_wbtest_unit_cancel_inbound(
+  context : Unit,
+  id : RequestId,
+  controls : Array[RuntimeTaskControl],
+) -> RuntimeDispatchCancelResult[Unit] raise RuntimeError {
+  runtime_cancel_task(controls, id)
+  RuntimeDispatchCancelApplied(context~)
+}
+
+///|
+/// Legacy unit-context close hook: no owner state exists to close.
+#warnings("-unused_error_type")
+fn runtime_wbtest_unit_close_owner(
+  context : Unit,
+  _tasks : Array[RuntimeTaskControl],
+) -> Unit raise RuntimeError {
+  context
+}
+
+///|
 fn runtime_test_request() -> String {
   "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"work\"}\n"
 }
@@ -1207,7 +1229,7 @@ async test "runtime completion reducer failure closes every pending outbound onc
   let caught : Array[Unit] = []
   @async.with_task_group(group => {
     try {
-      let _result : Unit = runtime_fail_and_close(
+      let _result : Unit = runtime_fail_and_close_of(
         group,
         sent.state,
         "completion",
@@ -1220,6 +1242,8 @@ async test "runtime completion reducer failure closes every pending outbound onc
         0,
         shutdown,
         false,
+        (),
+        runtime_wbtest_unit_close_owner,
       )
     } catch {
       _ => caught.push(())
@@ -1799,7 +1823,7 @@ async test "runtime applies owner commands in order" {
     trace: event => traces.push(event),
   }
   let notification = runtime_owner_effect_test_notification()
-  let result = runtime_apply_owner_commands(
+  let (_, result) = runtime_apply_owner_commands_of(
     [
       RuntimeOwnerWriteNotification(notification~),
       RuntimeOwnerTrace(method_name="owner/work"),
@@ -1815,6 +1839,8 @@ async test "runtime applies owner commands in order" {
         cancel: () => cancelled.push(Number(9)),
       },
     ],
+    (),
+    runtime_wbtest_unit_cancel_inbound,
   )
   match result {
     RuntimeOwnerCommandsComplete => ()
@@ -1858,7 +1884,7 @@ async test "runtime owner close command stops interpretation" {
     cancel_outbound: None,
     trace: event => traces.push(event),
   }
-  let result = runtime_apply_owner_commands(
+  let (_, result) = runtime_apply_owner_commands_of(
     [
       RuntimeOwnerClose(reason="owner requested close"),
       RuntimeOwnerTrace(method_name="after-close"),
@@ -1870,6 +1896,8 @@ async test "runtime owner close command stops interpretation" {
     runtime_test_options(),
     ports,
     [],
+    (),
+    runtime_wbtest_unit_cancel_inbound,
   )
   match result {
     RuntimeOwnerCloseRequested(reason~) =>
@@ -1904,18 +1932,22 @@ async test "runtime owner missing cancellation stops interpretation" {
   }
   let mut raised = false
   try
-    runtime_apply_owner_commands(
-      [
-        RuntimeOwnerCancelInbound(request_id=Number(99)),
-        RuntimeOwnerTrace(method_name="after-missing-cancel"),
-        RuntimeOwnerWriteNotification(
-          notification=runtime_owner_effect_test_notification(),
-        ),
-      ],
-      writer_queue,
-      runtime_test_options(),
-      ports,
-      [],
+    ignore(
+      runtime_apply_owner_commands_of(
+        [
+          RuntimeOwnerCancelInbound(request_id=Number(99)),
+          RuntimeOwnerTrace(method_name="after-missing-cancel"),
+          RuntimeOwnerWriteNotification(
+            notification=runtime_owner_effect_test_notification(),
+          ),
+        ],
+        writer_queue,
+        runtime_test_options(),
+        ports,
+        [],
+        (),
+        runtime_wbtest_unit_cancel_inbound,
+      ),
     )
   catch {
     TaskControlMissing => raised = true
@@ -3347,4 +3379,1085 @@ async test "runtime engine returns generic dispatch state after close" {
     Response(Error(failure)) => assert_eq(failure.error.code, InternalError)
     _ => fail("expected close to flush the pending request failure")
   }
+}
+
+///|
+/// Shared no-I/O ports fixture for whitebox seams that only need tracing.
+fn runtime_wbtest_trace_ports(
+  traces : Array[RuntimeTraceEvent],
+) -> RuntimePorts {
+  {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: _ => (),
+      outbound_failure: None,
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+}
+
+///|
+/// Build the real owner dispatch context around one admitted owner.
+fn runtime_wbtest_owner_context(
+  owner : RuntimeOwner[RuntimeOwnerTestState, Int],
+  port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit],
+  events : @aqueue.Queue[RuntimeEventOf[Int]],
+  shutdown : Ref[Bool],
+) -> RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit] {
+  {
+    owner,
+    port,
+    events,
+    shutdown,
+    limit: runtime_test_options().queue_capacity,
+  }
+}
+
+///|
+/// Recording owner port: typed completions, typed cancel admissions, and
+/// close aborts are also pushed into caller-owned arrays so engine-internal
+/// owner state stays observable without escaping the loop.
+fn runtime_owner_recording_port(
+  completed : Array[Int],
+  cancelled : Array[RequestId],
+  aborted : Array[Int],
+) -> RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] {
+  {
+    ..runtime_owner_test_port(),
+    complete_request: (state, _, _, completion) => {
+      completed.push(completion)
+      {
+        state: {
+          ..state,
+          completed: runtime_owner_test_push_int(state.completed, completion),
+        },
+        response: HandlerSuccess(
+          Json::number(completion.to_double(), repr=completion.to_string()),
+        ),
+        effects: [],
+      }
+    },
+    cancel_request: (state, id, _) => {
+      cancelled.push(id)
+      (
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        -1,
+      )
+    },
+    abort: (state, task) => {
+      aborted.push(task.task_token())
+      state
+    },
+  }
+}
+
+///|
+async test "runtime owner inbound cancel releases one task and keeps its sibling" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let start_order : Array[Int] = []
+  let completed : Array[Int] = []
+  let cancelled : Array[RequestId] = []
+  let aborted : Array[Int] = []
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+    ..runtime_owner_recording_port(completed, cancelled, aborted),
+    execute: value => {
+      started.put(value)
+      if value == 1 {
+        release_one.get()
+      } else {
+        release_two.get()
+      }
+      value
+    },
+  }
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  let cancel_frame = "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n"
+  input.put(
+    Some(
+      @utf8.encode(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"owner\"}\n" +
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"owner\"}\n",
+      ),
+    ),
+  )
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      start_order.push(started.get())
+      start_order.push(started.get())
+      input.put(Some(@utf8.encode(cancel_frame)))
+      written.get()
+      release_two.put(())
+      written.get()
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  assert_eq(start_order, [1, 2])
+  assert_eq(cancelled, [Number(1)])
+  assert_eq(completed, [-1, 2])
+  assert_eq(aborted, [])
+  assert_eq(output.length(), 2)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(failure)) => {
+      assert_eq(failure.id, Number(1))
+      assert_eq(failure.error.code, RequestCancelled)
+    }
+    _ =>
+      fail("cancelled request must settle with one RequestCancelled response")
+  }
+  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(2))
+      match response.result {
+        Number(value, repr~) => {
+          assert_eq(value, 2.0)
+          // The core parser keeps `repr` only for literals a Double cannot
+          // represent losslessly, so the decoded integer result carries none.
+          assert_eq(repr, None)
+        }
+        _ => fail("sibling request must complete with its own typed result")
+      }
+    }
+    _ => fail("sibling request must complete exactly once after the cancel")
+  }
+  let cancel_traces = traces.filter(event => {
+    event.direction == "inbound" && event.phase == "cancel_requested"
+  })
+  assert_eq(cancel_traces.length(), 1)
+  assert_eq(cancel_traces[0].request_id, "1")
+  assert_eq(cancel_traces[0].error_kind, "cancel")
+  assert_eq(
+    traces.filter(event => event.phase == "owner_cancel_ignored").length(),
+    0,
+  )
+  assert_eq(
+    traces.filter(event => event.phase == "task_cancelled_on_close").length(),
+    0,
+  )
+}
+
+///|
+async test "runtime owner dispatch cancel applies exactly one typed cancel event" {
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let owner_port = runtime_owner_test_port()
+  let (owner, action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    runtime_owner_test_request(Number(1)),
+    owner_port,
+  ) catch {
+    _ => abort("dispatch cancel admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("dispatch cancel request must invoke")
+  }
+  let context = runtime_wbtest_owner_context(
+    owner, owner_port, events, shutdown,
+  )
+  // Only `cancel_inbound` is exercised here, so the task-group parameter is
+  // pinned explicitly instead of leaking an unresolved type variable.
+  let dispatch : RuntimeDispatchPort[
+    Unit,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  let controls : Array[RuntimeTaskControl] = [
+    {
+      task_token: task.task_token(),
+      request_id: Some(Number(1)),
+      cancel: () => cancelled.push(task.task_token()),
+    },
+    {
+      task_token: task.task_token() + 5,
+      request_id: Some(Number(9)),
+      cancel: () => cancelled.push(task.task_token() + 5),
+    },
+  ]
+  let next_context = runtime_apply_inbound_cancel(
+    Number(1),
+    ports,
+    controls,
+    context,
+    dispatch.cancel_inbound,
+  )
+  assert_eq(cancelled, [task.task_token()])
+  assert_eq(traces.length(), 1)
+  assert_eq(traces[0].direction, "inbound")
+  assert_eq(traces[0].phase, "cancel_requested")
+  assert_eq(traces[0].request_id, "1")
+  assert_eq(traces[0].error_kind, "cancel")
+  assert_eq(next_context.owner.state().cancelled, [Number(1)])
+  assert_eq(next_context.owner.task_count(), 1)
+  match events.get() {
+    RuntimeOwnerTaskEvent(
+      RuntimeOwnerTaskCompleted(
+        event=RuntimeOwnerRequestCompleted(
+          token=actual_token,
+          id=Number(1),
+          completion=-1
+        )
+      )
+    ) => assert_eq(actual_token, task.task_token())
+    _ => fail("typed cancel must publish exactly one typed completion event")
+  }
+  let leftover = events.try_get() catch { _ => None }
+  match leftover {
+    None => ()
+    Some(_) => fail("typed cancel must not publish a second event")
+  }
+}
+
+///|
+async test "runtime owner dispatch cancel fails fast on unknown or settled ids" {
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let cancelled_ids : Array[RequestId] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let owner_port = runtime_owner_recording_port([], cancelled_ids, [])
+  // Only `cancel_inbound` is exercised here, so the task-group parameter is
+  // pinned explicitly instead of leaking an unresolved type variable.
+  let dispatch : RuntimeDispatchPort[
+    Unit,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+
+  // Unknown id: no runtime task control carries the request id, so the
+  // dispatch port fails before any owner state changes.
+  let (unknown_owner, _) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    runtime_owner_test_request(Number(31)),
+    owner_port,
+  ) catch {
+    _ => abort("unknown cancel admission must succeed")
+  }
+  let unknown_context = runtime_wbtest_owner_context(
+    unknown_owner, owner_port, events, shutdown,
+  )
+  let mut native_missing = false
+  try
+    ignore(
+      runtime_apply_inbound_cancel(
+        Number(31),
+        ports,
+        [],
+        unknown_context,
+        dispatch.cancel_inbound,
+      ),
+    )
+  catch {
+    TaskControlMissing => native_missing = true
+    _ => fail("cancel without a task control must raise TaskControlMissing")
+  } noraise {
+    _ => fail("cancel without a task control must raise")
+  }
+  assert_true(native_missing)
+  assert_eq(traces.length(), 0)
+  assert_eq(cancelled.length(), 0)
+  assert_eq(cancelled_ids.length(), 0)
+  assert_eq(unknown_context.owner.task_count(), 1)
+
+  // Already-completed id: the owner released its task, but a stale control
+  // still matches; the ignored owner cancel must fail fast and cancel nobody.
+  let (settled_owner, settled_action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    runtime_owner_test_request(Number(32)),
+    owner_port,
+  ) catch {
+    _ => abort("settled cancel admission must succeed")
+  }
+  let settled_task = match settled_action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("settled cancel request must invoke")
+  }
+  let settled_owner = match
+    runtime_owner_complete_request(
+      settled_owner,
+      RuntimeOwnerRequestCompleted(
+        token=settled_task.task_token(),
+        id=Number(32),
+        completion=1,
+      ),
+      owner_port,
+    ) {
+    RuntimeOwnerCompletionApplied(owner~, ..) => owner
+    RuntimeOwnerCompletionIgnored(reason=_) =>
+      abort("settled cancel fixture completion must apply")
+  }
+  assert_eq(settled_owner.task_count(), 0)
+  let settled_context = runtime_wbtest_owner_context(
+    settled_owner, owner_port, events, shutdown,
+  )
+  let mut settled_missing = false
+  try
+    ignore(
+      runtime_apply_inbound_cancel(
+        Number(32),
+        ports,
+        [
+          {
+            task_token: settled_task.task_token(),
+            request_id: Some(Number(32)),
+            cancel: () => cancelled.push(settled_task.task_token()),
+          },
+          {
+            task_token: 90,
+            request_id: Some(Number(90)),
+            cancel: () => cancelled.push(90),
+          },
+        ],
+        settled_context,
+        dispatch.cancel_inbound,
+      ),
+    )
+  catch {
+    TaskControlMissing => settled_missing = true
+    _ => fail("settled cancel must raise TaskControlMissing")
+  } noraise {
+    _ => fail("settled cancel must raise")
+  }
+  assert_true(settled_missing)
+  assert_eq(cancelled.length(), 0)
+  let ignored = traces.filter(event => event.phase == "owner_cancel_ignored")
+  assert_eq(ignored.length(), 1)
+  assert_eq(ignored[0].direction, "inbound")
+  assert_eq(ignored[0].request_id, "32")
+  assert_eq(ignored[0].method_name, "")
+  assert_eq(ignored[0].error_kind, "unknown_request")
+
+  // Already-cancelled id: the first cancel holds the reservation, so the
+  // second owner cancel is ignored and fails fast without a second admission.
+  let (repeat_owner, repeat_action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    runtime_owner_test_request(Number(33)),
+    owner_port,
+  ) catch {
+    _ => abort("repeat cancel admission must succeed")
+  }
+  let repeat_task = match repeat_action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("repeat cancel request must invoke")
+  }
+  let repeat_owner = match
+    runtime_owner_cancel_request(repeat_owner, Number(33), owner_port) {
+    RuntimeOwnerCancelRequested(owner~, ..) => owner
+    RuntimeOwnerCancelIgnored(reason=_) =>
+      abort("repeat cancel fixture must apply once")
+  }
+  let repeat_context = runtime_wbtest_owner_context(
+    repeat_owner, owner_port, events, shutdown,
+  )
+  let mut repeat_missing = false
+  try
+    ignore(
+      runtime_apply_inbound_cancel(
+        Number(33),
+        ports,
+        [
+          {
+            task_token: repeat_task.task_token(),
+            request_id: Some(Number(33)),
+            cancel: () => cancelled.push(repeat_task.task_token()),
+          },
+        ],
+        repeat_context,
+        dispatch.cancel_inbound,
+      ),
+    )
+  catch {
+    TaskControlMissing => repeat_missing = true
+    _ => fail("already-cancelled request must raise TaskControlMissing")
+  } noraise {
+    _ => fail("already-cancelled request must raise")
+  }
+  assert_true(repeat_missing)
+  assert_eq(cancelled.length(), 0)
+  let ignored = traces.filter(event => event.phase == "owner_cancel_ignored")
+  assert_eq(ignored.length(), 2)
+  assert_eq(ignored[1].request_id, "33")
+  assert_eq(ignored[1].error_kind, "already_cancelled")
+  assert_eq(cancelled_ids, [Number(33)])
+  assert_eq(repeat_context.owner.task_count(), 1)
+  let leftover = events.try_get() catch { _ => None }
+  match leftover {
+    None => ()
+    Some(_) => fail("failed owner cancels must not publish task events")
+  }
+}
+
+///|
+async test "runtime owner unknown wire cancel fails fast without silent ignore" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  input.put(
+    Some(
+      @utf8.encode(
+        "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":99}}\n",
+      ),
+    ),
+  )
+  input.put(None)
+  let mut failed_fast = false
+  try
+    connection_runtime_run_owner(
+      ports,
+      runtime_test_options(),
+      runtime_owner_test_port(),
+    )
+  catch {
+    @runtime.RuntimeError::ReducerFailed => failed_fast = true
+    _ => fail("unknown wire cancel must surface the fail-fast runtime error")
+  } noraise {
+    _ => fail("unknown wire cancel must not continue silently")
+  }
+  assert_true(failed_fast)
+  assert_eq(output.length(), 0)
+  assert_true(traces.any(event => event.phase == "reducer_failed"))
+}
+
+///|
+async test "runtime owner eof close stops admission and empties pending work" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let completed : Array[Int] = []
+  let cancelled_ids : Array[RequestId] = []
+  let aborted : Array[Int] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let owner_port = runtime_owner_recording_port(
+    completed, cancelled_ids, aborted,
+  )
+  let request = runtime_owner_test_request(Number(1))
+  let (owner, request_action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    request,
+    owner_port,
+  ) catch {
+    _ => abort("close request admission must succeed")
+  }
+  let request_task = match request_action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("close request must invoke")
+  }
+  let (owner, notification_action) = runtime_owner_admit_notification(
+    owner,
+    runtime_owner_test_notification(),
+    owner_port,
+  ) catch {
+    _ => abort("close notification admission must succeed")
+  }
+  let notification_task = match notification_action {
+    RuntimeOwnerNotificationInvoke(task~) => task
+    _ => abort("close notification must invoke")
+  }
+  let context = runtime_wbtest_owner_context(
+    owner, owner_port, events, shutdown,
+  )
+  let dispatch : RuntimeDispatchPort[
+    _,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  let controls : Array[RuntimeTaskControl] = [
+    {
+      task_token: request_task.task_token(),
+      request_id: Some(Number(1)),
+      cancel: () => cancelled.push(request_task.task_token()),
+    },
+    {
+      task_token: notification_task.task_token(),
+      request_id: None,
+      cancel: () => cancelled.push(notification_task.task_token()),
+    },
+  ]
+  @async.with_task_group(group => {
+    let (step, closed_context) = runtime_apply_event_of(
+      RuntimeEof,
+      state,
+      framing_state(max_frame_bytes=256),
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      runtime_owner_handler_result_unavailable,
+      dispatch,
+      runtime_owner_apply_task_event,
+      context,
+      controls,
+      2,
+      shutdown,
+    )
+    assert_true(step.stop)
+    assert_eq(step.tasks.length(), 0)
+    assert_true(closed_context.owner.is_closed())
+    assert_eq(closed_context.owner.task_count(), 0)
+    let mut admission_stopped = false
+    try
+      ignore(
+        (dispatch.request)(
+          group,
+          7,
+          runtime_owner_test_request(Number(7)),
+          closed_context,
+        ),
+      )
+    catch {
+      ReducerFailed => admission_stopped = true
+      _ => fail("admission after close must fail fast")
+    } noraise {
+      _ => fail("admission after close must raise")
+    }
+    assert_true(admission_stopped)
+    assert_eq(closed_context.owner.task_count(), 0)
+  })
+  assert_eq(aborted, [request_task.task_token(), notification_task.task_token()])
+  assert_eq(cancelled, [
+    request_task.task_token(),
+    notification_task.task_token(),
+  ])
+  assert_eq(completed, [])
+  assert_eq(cancelled_ids, [])
+  assert_true(shutdown.val)
+  match writer_queue.get() {
+    RuntimeFrame(frame) =>
+      match jsonrpc_decode(@utf8.decode(frame.view())) {
+        Response(Error(failure)) => {
+          assert_eq(failure.id, Number(1))
+          assert_eq(failure.error.code, InternalError)
+        }
+        _ => fail("close must flush the pending request as one internal error")
+      }
+    RuntimeStop => fail("close must write the pending failure before stop")
+  }
+  match writer_queue.get() {
+    RuntimeStop => ()
+    RuntimeFrame(_) =>
+      fail("close must stop the writer after the failure frame")
+  }
+  // The reducer close step empties connection pending: the flushed failure
+  // frame above is the wire proof, and the settled close state is the state
+  // proof that no inbound request stays pending after close.
+  let settled = connection_reduce(state, Close(reason="eof")).state
+  assert_eq(settled.inbound.length(), 0)
+  assert_eq(settled.settled_inbound, [Number(1)])
+  let close_cancels = traces.filter(event => {
+    event.phase == "task_cancelled_on_close"
+  })
+  assert_eq(close_cancels.length(), 2)
+  let failed_inbound = traces.filter(event => event.phase == "inbound_failed")
+  assert_eq(failed_inbound.length(), 1)
+  assert_eq(failed_inbound[0].request_id, "1")
+  assert_eq(failed_inbound[0].error_kind, "close")
+}
+
+///|
+async test "runtime owner task loop drops its completion after shutdown begins" {
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(true)
+  let task : RuntimeOwnerTask[Int] = {
+    task_token: 4,
+    request_id: Some(Number(4)),
+    invocation: 4,
+    notification: false,
+    cancel_requested: false,
+  }
+  @async.with_task_group(group => {
+    let handle = group.spawn(() => {
+      runtime_owner_task_loop(
+        task,
+        runtime_owner_test_port(),
+        events,
+        shutdown,
+        8,
+      )
+    })
+    handle.wait()
+  })
+  let queued = events.try_get() catch { _ => None }
+  match queued {
+    None => ()
+    Some(_) =>
+      fail("a completion after shutdown must not reach the event queue")
+  }
+}
+
+///|
+async test "runtime owner late completion after close is traced and ignored" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let owner_port = runtime_owner_test_port()
+  let request = runtime_owner_test_request(Number(1))
+  let (owner, action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    request,
+    owner_port,
+  ) catch {
+    _ => abort("late completion admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("late completion request must invoke")
+  }
+  let context = runtime_wbtest_owner_context(
+    owner, owner_port, events, shutdown,
+  )
+  let dispatch : RuntimeDispatchPort[
+    _,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  let late_event : RuntimeEventOf[Int] = RuntimeOwnerTaskEvent(
+    RuntimeOwnerTaskCompleted(
+      event=RuntimeOwnerRequestCompleted(
+        token=task.task_token(),
+        id=Number(1),
+        completion=1,
+      ),
+    ),
+  )
+  @async.with_task_group(group => {
+    let (closed_step, closed_context) = runtime_apply_event_of(
+      RuntimeEof,
+      state,
+      framing_state(max_frame_bytes=256),
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      runtime_owner_handler_result_unavailable,
+      dispatch,
+      runtime_owner_apply_task_event,
+      context,
+      [
+        {
+          task_token: task.task_token(),
+          request_id: Some(Number(1)),
+          cancel: () => (),
+        },
+      ],
+      1,
+      shutdown,
+    )
+    assert_true(closed_step.stop)
+    assert_true(closed_context.owner.is_closed())
+    let (late_step, late_context) = runtime_apply_event_of(
+      late_event,
+      closed_step.state,
+      closed_step.decoder,
+      group,
+      writer_queue,
+      runtime_test_options(),
+      ports,
+      events,
+      runtime_owner_handler_result_unavailable,
+      dispatch,
+      runtime_owner_apply_task_event,
+      closed_context,
+      closed_step.tasks,
+      closed_step.next_task_token,
+      shutdown,
+    )
+    assert_eq(late_step.state, closed_step.state)
+    assert_eq(late_step.tasks.length(), 0)
+    assert_true(!late_step.stop)
+    assert_true(late_context.owner.is_closed())
+    let late_traces = traces.filter(event => {
+      event.phase == "late_owner_completion_ignored"
+    })
+    assert_eq(late_traces.length(), 1)
+    assert_eq(late_traces[0].request_id, "1")
+  })
+  match writer_queue.get() {
+    RuntimeFrame(_) => ()
+    RuntimeStop => fail("close must flush its failure frame before stop")
+  }
+  match writer_queue.get() {
+    RuntimeStop => ()
+    RuntimeFrame(_) => fail("close must stop the writer once")
+  }
+  let leftover = writer_queue.try_get() catch { _ => None }
+  match leftover {
+    None => ()
+    Some(_) => fail("late completion must not write a second response")
+  }
+}
+
+///|
+async test "runtime dispatch admission failure leaves no task or pending leak" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let state = connection_reduce(
+      connection_state(),
+      IncomingRequest(runtime_wbtest_request(Number(21))),
+    ).state
+  let controls : Array[RuntimeTaskControl] = [
+    {
+      task_token: 0,
+      request_id: Some(Number(21)),
+      cancel: () => cancelled.push(0),
+    },
+  ]
+  let dispatch : RuntimeDispatchPort[_, Unit] = {
+    request: (_group, _token, _request, _context) => raise ReducerFailed,
+    notification: (_group, _token, _notification, _context) => {
+      raise ReducerFailed
+    },
+    cancel_inbound: (context, id, tasks) => {
+      runtime_cancel_task(tasks, id)
+      RuntimeDispatchCancelApplied(context~)
+    },
+    close_owner: (context, _) => context,
+  }
+  @async.with_task_group(group => {
+    let mut admission_error = false
+    try
+      ignore(
+        runtime_apply_event_of(
+          RuntimeChunk(
+            @utf8.encode(
+              "{\"jsonrpc\":\"2.0\",\"id\":22,\"method\":\"work\"}\n",
+            ),
+          ),
+          state,
+          framing_state(max_frame_bytes=256),
+          group,
+          writer_queue,
+          runtime_test_options(),
+          ports,
+          events,
+          runtime_identity_handler_result,
+          dispatch,
+          runtime_owner_event_unavailable,
+          (),
+          controls,
+          1,
+          shutdown,
+        ),
+      )
+    catch {
+      @runtime.RuntimeError::ReducerFailed => admission_error = true
+      _ => fail("admission failure must surface its runtime error")
+    } noraise {
+      _ => fail("admission failure must raise")
+    }
+    assert_true(admission_error)
+  })
+  assert_eq(cancelled, [0])
+  assert_true(shutdown.val)
+  let dispatch_failures = traces.filter(event => {
+    event.phase == "dispatch_failed"
+  })
+  assert_eq(dispatch_failures.length(), 1)
+  assert_eq(dispatch_failures[0].error_kind, "reducer_failed")
+  // Close flushes pending inbound failures in admission order; the decoded
+  // failure ids are typed wire ids, not raw JSON values.
+  let expected_ids : Array[@jsonrpc.JsonRpcId] = [Number(21), Number(22)]
+  for expected in expected_ids {
+    match writer_queue.get() {
+      RuntimeFrame(frame) =>
+        match jsonrpc_decode(@utf8.decode(frame.view())) {
+          Response(Error(failure)) => {
+            assert_eq(failure.error.code, InternalError)
+            assert_eq(failure.id, expected)
+          }
+          _ => fail("admission failure must fail every pending request once")
+        }
+      RuntimeStop => fail("admission failure must flush failures before stop")
+    }
+  }
+  match writer_queue.get() {
+    RuntimeStop => ()
+    RuntimeFrame(_) => fail("admission failure must stop the writer last")
+  }
+}
+
+///|
+async test "runtime typed cancel failure settles its pending without leaks" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let request = runtime_wbtest_request(Number(1))
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  // The pending request is reducer-admitted, but its runtime task control is
+  // gone, so the typed cancel seam must fail fast instead of settling quietly.
+  let dispatch : RuntimeDispatchPort[_, Unit] = {
+    request: (_group, _token, _request, _context) => raise ReducerFailed,
+    notification: (_group, _token, _notification, _context) => {
+      raise ReducerFailed
+    },
+    cancel_inbound: (context, id, tasks) => {
+      runtime_cancel_task(tasks, id)
+      RuntimeDispatchCancelApplied(context~)
+    },
+    close_owner: (context, _) => context,
+  }
+  @async.with_task_group(group => {
+    let mut cancel_error = false
+    try
+      ignore(
+        runtime_apply_event_of(
+          RuntimeChunk(
+            @utf8.encode(
+              "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n",
+            ),
+          ),
+          state,
+          framing_state(max_frame_bytes=256),
+          group,
+          writer_queue,
+          runtime_test_options(),
+          ports,
+          events,
+          runtime_identity_handler_result,
+          dispatch,
+          runtime_owner_event_unavailable,
+          (),
+          [],
+          1,
+          shutdown,
+        ),
+      )
+    catch {
+      @runtime.RuntimeError::TaskControlMissing => cancel_error = true
+      _ => fail("cancel failure must surface its runtime error")
+    } noraise {
+      _ => fail("cancel failure must raise")
+    }
+    assert_true(cancel_error)
+  })
+  assert_eq(cancelled, [])
+  assert_true(shutdown.val)
+  let command_failures = traces.filter(event => event.phase == "command_failed")
+  assert_eq(command_failures.length(), 1)
+  assert_eq(command_failures[0].error_kind, "task_control_missing")
+  match writer_queue.get() {
+    RuntimeFrame(frame) =>
+      match jsonrpc_decode(@utf8.decode(frame.view())) {
+        Response(Error(failure)) => {
+          assert_eq(failure.id, Number(1))
+          assert_eq(failure.error.code, InternalError)
+        }
+        _ => fail("cancel failure must settle the pending request once")
+      }
+    RuntimeStop =>
+      fail("cancel failure must flush the settle frame before stop")
+  }
+  match writer_queue.get() {
+    RuntimeStop => ()
+    RuntimeFrame(_) => fail("cancel failure must stop the writer last")
+  }
+  let settled = connection_reduce(state, Close(reason="protocol")).state
+  assert_eq(settled.inbound.length(), 0)
+  assert_eq(settled.settled_inbound, [Number(1)])
+}
+
+///|
+async test "runtime owner handler failure cleans its task without leaking siblings" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let start_order : Array[Int] = []
+  let completed : Array[Int] = []
+  let cancelled : Array[RequestId] = []
+  let aborted : Array[Int] = []
+  let failure = JsonRpcError::internal_error()
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+    ..runtime_owner_recording_port(completed, cancelled, aborted),
+    execute: value => {
+      started.put(value)
+      if value == 1 {
+        raise @jsonrpc.JsonRpcCodecError::ParseError(
+          message="owner handler fault",
+        )
+      }
+      release_two.get()
+      value
+    },
+    complete_request: (state, _, _, completion) => {
+      completed.push(completion)
+      {
+        state: {
+          ..state,
+          completed: runtime_owner_test_push_int(state.completed, completion),
+        },
+        response: if completion == -2 {
+          HandlerError(failure)
+        } else {
+          HandlerSuccess(
+            Json::number(completion.to_double(), repr=completion.to_string()),
+          )
+        },
+        effects: [],
+      }
+    },
+  }
+  let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  input.put(
+    Some(
+      @utf8.encode(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"owner\"}\n" +
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"owner\"}\n",
+      ),
+    ),
+  )
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      start_order.push(started.get())
+      start_order.push(started.get())
+      written.get()
+      release_two.put(())
+      written.get()
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  assert_eq(start_order, [1, 2])
+  assert_eq(completed, [-2, 2])
+  assert_eq(cancelled, [])
+  assert_eq(aborted, [])
+  assert_eq(output.length(), 2)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(response)) => {
+      assert_eq(response.id, Number(1))
+      assert_eq(response.error, failure)
+    }
+    _ => fail("failed handler must settle with one typed error response")
+  }
+  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(2))
+      match response.result {
+        Number(value, repr~) => {
+          assert_eq(value, 2.0)
+          // The core parser keeps `repr` only for literals a Double cannot
+          // represent losslessly, so the decoded integer result carries none.
+          assert_eq(repr, None)
+        }
+        _ => fail("sibling request must complete with its own typed result")
+      }
+    }
+    _ => fail("sibling request must complete exactly once after the failure")
+  }
+  assert_eq(
+    traces.filter(event => event.phase == "task_cancelled_on_close").length(),
+    0,
+  )
+}
+
+///|
+async test "runtime owner close cleanup failure still cancels tasks and settles pending" {
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
+  writer_queue.close()
+  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let shutdown = Ref::Ref(false)
+  let traces : Array[RuntimeTraceEvent] = []
+  let cancelled : Array[Int] = []
+  let aborted : Array[Int] = []
+  let ports = runtime_wbtest_trace_ports(traces)
+  let owner_port = runtime_owner_recording_port([], [], aborted)
+  let request = runtime_owner_test_request(Number(1))
+  let (owner, action) = runtime_owner_admit_request(
+    runtime_owner_new(owner_port),
+    request,
+    owner_port,
+  ) catch {
+    _ => abort("cleanup failure admission must succeed")
+  }
+  let task = match action {
+    RuntimeOwnerInvoke(task~) => task
+    _ => abort("cleanup failure request must invoke")
+  }
+  let context = runtime_wbtest_owner_context(
+    owner, owner_port, events, shutdown,
+  )
+  let dispatch : RuntimeDispatchPort[
+    _,
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+  ] = runtime_owner_dispatch_port()
+  let state = connection_reduce(connection_state(), IncomingRequest(request)).state
+  let controls : Array[RuntimeTaskControl] = [
+    {
+      task_token: task.task_token(),
+      request_id: Some(Number(1)),
+      cancel: () => cancelled.push(task.task_token()),
+    },
+  ]
+  @async.with_task_group(group => {
+    let mut writer_error = false
+    try
+      ignore(
+        runtime_apply_event_of(
+          RuntimeEof,
+          state,
+          framing_state(max_frame_bytes=256),
+          group,
+          writer_queue,
+          runtime_test_options(),
+          ports,
+          events,
+          runtime_owner_handler_result_unavailable,
+          dispatch,
+          runtime_owner_apply_task_event,
+          context,
+          controls,
+          1,
+          shutdown,
+        ),
+      )
+    catch {
+      @runtime.RuntimeError::WriterQueueClosed => writer_error = true
+      _ => fail("close cleanup failure must surface the writer error")
+    } noraise {
+      _ => fail("close cleanup failure must raise")
+    }
+    assert_true(writer_error)
+  })
+  assert_eq(aborted, [task.task_token()])
+  assert_eq(cancelled, [task.task_token()])
+  assert_true(shutdown.val)
+  let unwritten = traces.filter(event => {
+    event.phase == "inbound_failure_unwritten"
+  })
+  assert_eq(unwritten.length(), 1)
+  assert_eq(unwritten[0].request_id, "1")
+  assert_eq(unwritten[0].error_kind, "writer")
+  let command_failures = traces.filter(event => event.phase == "command_failed")
+  assert_eq(command_failures.length(), 1)
+  assert_eq(command_failures[0].error_kind, "writer_queue_closed")
 }
