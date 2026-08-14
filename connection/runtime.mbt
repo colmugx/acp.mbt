@@ -758,6 +758,12 @@ priv enum RuntimeDispatchAction[D] {
 }
 
 ///|
+priv enum RuntimeDispatchCancelResult[D] {
+  RuntimeDispatchCancelApplied(context~ : D)
+  RuntimeDispatchCancelIgnored(context~ : D, reason~ : RuntimeOwnerIgnore)
+}
+
+///|
 priv struct RuntimeDispatchPort[G, D] {
   request : (@async.TaskGroup[G], Int, JsonRpcRequest, D) -> RuntimeDispatchAction[
     D,
@@ -765,6 +771,10 @@ priv struct RuntimeDispatchPort[G, D] {
   notification : (@async.TaskGroup[G], Int, JsonRpcNotification, D) -> RuntimeDispatchAction[
     D,
   ] raise RuntimeError
+  cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
+    D,
+  ] raise RuntimeError
+  close_owner : (D, Array[RuntimeTaskControl]) -> D raise RuntimeError
 }
 
 ///|
@@ -892,6 +902,34 @@ fn[G, S, I, C, E] runtime_owner_dispatch_port() -> RuntimeDispatchPort[
             next_task_token=token + 1,
           )
         }
+      }
+    },
+    cancel_inbound: (context, id, tasks) => {
+      let native_task = match runtime_find_task_by_request_id(tasks, id) {
+        None => raise TaskControlMissing
+        Some(task) => task
+      }
+      match runtime_owner_cancel_request(context.owner, id, context.port) {
+        RuntimeOwnerCancelIgnored(reason~) =>
+          RuntimeDispatchCancelIgnored(context~, reason~)
+        RuntimeOwnerCancelRequested(owner~, task~, event~) => {
+          if native_task.task_token != task.task_token {
+            raise TaskRequestMismatch
+          }
+          runtime_event_put(
+            context.events,
+            RuntimeOwnerTaskEvent(RuntimeOwnerTaskCompleted(event~)),
+            context.limit,
+          )
+          runtime_cancel_task(tasks, id)
+          RuntimeDispatchCancelApplied(context={ ..context, owner, })
+        }
+      }
+    },
+    close_owner: (context, _) => {
+      match runtime_owner_close(context.owner, context.port) {
+        RuntimeOwnerClosed(owner~, aborted=_) => { ..context, owner, }
+        RuntimeOwnerAlreadyClosed(owner~) => { ..context, owner, }
       }
     },
   }
@@ -1120,6 +1158,73 @@ fn runtime_find_task(
     }
   }
   None
+}
+
+///|
+fn runtime_find_task_by_request_id(
+  tasks : Array[RuntimeTaskControl],
+  request_id : RequestId,
+) -> RuntimeTaskControl? {
+  for task in tasks {
+    if task.request_id == Some(request_id) {
+      return Some(task)
+    }
+  }
+  None
+}
+
+///|
+fn runtime_owner_ignore_kind(reason : RuntimeOwnerIgnore) -> String {
+  match reason {
+    Closed => "closed"
+    UnknownTask(_) => "unknown_task"
+    UnknownRequest(_) => "unknown_request"
+    AlreadyCancelled(_) => "already_cancelled"
+    RequestIdMismatch(..) => "request_id_mismatch"
+    TaskKindMismatch(_) => "task_kind_mismatch"
+  }
+}
+
+///|
+fn[D] runtime_apply_inbound_cancel(
+  request_id : RequestId,
+  ports : RuntimePorts,
+  tasks : Array[RuntimeTaskControl],
+  dispatch_context : D,
+  cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
+    D,
+  ] raise RuntimeError,
+) -> D raise RuntimeError {
+  match cancel_inbound(dispatch_context, request_id, tasks) {
+    RuntimeDispatchCancelApplied(context~) => {
+      (ports.trace)(
+        runtime_trace_event(
+          "inbound",
+          "cancel_requested",
+          runtime_request_id_text(request_id),
+          "",
+          "cancel",
+        ),
+      )
+      context
+    }
+    RuntimeDispatchCancelIgnored(context~, reason~) => {
+      (ports.trace)(
+        runtime_trace_event(
+          "inbound",
+          "owner_cancel_ignored",
+          runtime_request_id_text(request_id),
+          "",
+          runtime_owner_ignore_kind(reason),
+        ),
+      )
+      // An ignored owner cancellation is not a successful command. Preserve
+      // the existing fail-fast runtime error so an unknown or duplicate
+      // effect cannot accidentally cancel another task or continue silently.
+      ignore(context)
+      raise TaskControlMissing
+    }
+  }
 }
 
 ///|
@@ -1412,6 +1517,11 @@ fn[G, C] runtime_legacy_dispatch_port() -> RuntimeDispatchPort[
     notification: (group, token, notification, context) => {
       runtime_spawn_legacy_notification(group, token, notification, context)
     },
+    cancel_inbound: (context, id, tasks) => {
+      runtime_cancel_task(tasks, id)
+      RuntimeDispatchCancelApplied(context~)
+    },
+    close_owner: (context, _) => context,
   }
 }
 
@@ -1465,13 +1575,18 @@ fn runtime_cancel_task(
 }
 
 ///|
-fn runtime_apply_owner_commands(
+fn[D] runtime_apply_owner_commands_of(
   commands : Array[RuntimeOwnerCommand],
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   options : RuntimeOptions,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
-) -> RuntimeOwnerCommandResult raise RuntimeError {
+  dispatch_context : D,
+  cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
+    D,
+  ] raise RuntimeError,
+) -> (D, RuntimeOwnerCommandResult) raise RuntimeError {
+  let mut next_context = dispatch_context
   for command in commands {
     match command {
       RuntimeOwnerWriteNotification(notification~) =>
@@ -1481,17 +1596,43 @@ fn runtime_apply_owner_commands(
           JsonRpcMessage::notification(notification),
         )
       RuntimeOwnerCancelInbound(request_id~) =>
-        runtime_cancel_task(tasks, request_id)
+        next_context = runtime_apply_inbound_cancel(
+          request_id, ports, tasks, next_context, cancel_inbound,
+        )
       RuntimeOwnerTrace(method_name~) =>
         (ports.trace)(
           runtime_trace_event(
             "runtime", "owner_trace", "", method_name, "owner",
           ),
         )
-      RuntimeOwnerClose(reason~) => return RuntimeOwnerCloseRequested(reason~)
+      RuntimeOwnerClose(reason~) =>
+        return (next_context, RuntimeOwnerCloseRequested(reason~))
     }
   }
-  RuntimeOwnerCommandsComplete
+  (next_context, RuntimeOwnerCommandsComplete)
+}
+
+///|
+fn runtime_apply_owner_commands(
+  commands : Array[RuntimeOwnerCommand],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  tasks : Array[RuntimeTaskControl],
+) -> RuntimeOwnerCommandResult raise RuntimeError {
+  let (_, result) = runtime_apply_owner_commands_of(
+    commands,
+    writer_queue,
+    options,
+    ports,
+    tasks,
+    (),
+    (context, id, controls) => {
+      runtime_cancel_task(controls, id)
+      RuntimeDispatchCancelApplied(context~)
+    },
+  )
+  result
 }
 
 ///|
@@ -1508,13 +1649,17 @@ fn runtime_cancel_active_tasks(
 }
 
 ///|
-async fn runtime_emit_command(
+async fn[D] runtime_emit_command_of(
   command : ConnectionCommand,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
   queue_limit : Int,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
-) -> Unit raise RuntimeError {
+  dispatch_context : D,
+  cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
+    D,
+  ] raise RuntimeError,
+) -> D raise RuntimeError {
   match command {
     WriteMessage(message) =>
       runtime_writer_offer(writer_queue, queue_limit, message)
@@ -1605,21 +1750,36 @@ async fn runtime_emit_command(
         ),
       )
     }
-    CancelInboundTask(id~) => {
-      runtime_cancel_task(tasks, id)
-      (ports.trace)(
-        runtime_trace_event(
-          "inbound",
-          "cancel_requested",
-          runtime_request_id_text(id),
-          "",
-          "cancel",
-        ),
+    CancelInboundTask(id~) =>
+      return runtime_apply_inbound_cancel(
+        id, ports, tasks, dispatch_context, cancel_inbound,
       )
-    }
     Trace(_) =>
       (ports.trace)(runtime_trace_event("runtime", "reducer_trace", "", "", ""))
   }
+  dispatch_context
+}
+
+///|
+async fn runtime_emit_command(
+  command : ConnectionCommand,
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  queue_limit : Int,
+  ports : RuntimePorts,
+  tasks : Array[RuntimeTaskControl],
+) -> Unit raise RuntimeError {
+  let _ = runtime_emit_command_of(
+    command,
+    writer_queue,
+    queue_limit,
+    ports,
+    tasks,
+    (),
+    (context, id, controls) => {
+      runtime_cancel_task(controls, id)
+      RuntimeDispatchCancelApplied(context~)
+    },
+  )
 }
 
 ///|
@@ -1674,10 +1834,16 @@ async fn[G, D] runtime_apply_step(
             )
             match control {
               RuntimeApplyContinue => {
-                let command_result = runtime_apply_owner_commands(
-                  commands, writer_queue, options, ports, updated_tasks,
+                let (owner_context, command_result) = runtime_apply_owner_commands_of(
+                  commands,
+                  writer_queue,
+                  options,
+                  ports,
+                  updated_tasks,
+                  updated_context,
+                  dispatch.cancel_inbound,
                 )
-                next_context = updated_context
+                next_context = owner_context
                 next_token = updated_token
                 let next_control = match command_result {
                   RuntimeOwnerCommandsComplete => RuntimeApplyContinue
@@ -1690,7 +1856,7 @@ async fn[G, D] runtime_apply_step(
                     return (
                       updated_tasks,
                       updated_token,
-                      updated_context,
+                      owner_context,
                       RuntimeApplyOwnerClose(reason~),
                     )
                 }
@@ -1732,10 +1898,16 @@ async fn[G, D] runtime_apply_step(
           }
           RuntimeDispatchRequestImmediate(..) => raise ReducerFailed
           RuntimeDispatchNotificationImmediate(context~, commands~) => {
-            let command_result = runtime_apply_owner_commands(
-              commands, writer_queue, options, ports, next_tasks,
+            let (owner_context, command_result) = runtime_apply_owner_commands_of(
+              commands,
+              writer_queue,
+              options,
+              ports,
+              next_tasks,
+              context,
+              dispatch.cancel_inbound,
             )
-            next_context = context
+            next_context = owner_context
             match command_result {
               RuntimeOwnerCommandsComplete => ()
               RuntimeOwnerCloseRequested(reason~) =>
@@ -1750,12 +1922,14 @@ async fn[G, D] runtime_apply_step(
         }
       }
       command =>
-        runtime_emit_command(
+        next_context = runtime_emit_command_of(
           command,
           writer_queue,
           options.queue_capacity,
           ports,
           next_tasks,
+          next_context,
+          dispatch.cancel_inbound,
         ) catch {
           error => {
             (ports.trace)(
@@ -1882,7 +2056,15 @@ async fn runtime_apply_close_step(
 /// Run the reducer's close transition before stopping native tasks. The
 /// reducer remains the sole owner of pending protocol state; this function
 /// only interprets the resulting commands and then cancels runtime work.
-async fn[G, C] runtime_close_connection(
+fn[D] runtime_close_owner_noop(
+  context : D,
+  _tasks : Array[RuntimeTaskControl],
+) -> D raise RuntimeError {
+  context
+}
+
+///|
+async fn[G, C, D] runtime_close_connection_of(
   _group : @async.TaskGroup[G],
   state : ConnectionState,
   reason : String,
@@ -1894,8 +2076,11 @@ async fn[G, C] runtime_close_connection(
   _next_task_token : Int,
   shutdown : Ref[Bool],
   force_close_writer : Bool,
-) -> Unit raise RuntimeError {
+  dispatch_context : D,
+  close_owner : (D, Array[RuntimeTaskControl]) -> D raise RuntimeError,
+) -> D raise RuntimeError {
   shutdown.val = true
+  let closed_context = close_owner(dispatch_context, tasks)
   let step = connection_reduce(state, Close(reason~)) catch {
     _ => raise ReducerFailed
   }
@@ -1910,12 +2095,70 @@ async fn[G, C] runtime_close_connection(
   }
   runtime_cancel_active_tasks(tasks, ports.trace)
   runtime_writer_stop(writer_queue, force_close_writer)
+  closed_context
+}
+
+///|
+async fn[G, C] runtime_close_connection(
+  group : @async.TaskGroup[G],
+  state : ConnectionState,
+  reason : String,
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+  force_close_writer : Bool,
+) -> Unit raise RuntimeError {
+  let _ = runtime_close_connection_of(
+    group,
+    state,
+    reason,
+    writer_queue,
+    options,
+    ports,
+    events,
+    tasks,
+    next_task_token,
+    shutdown,
+    force_close_writer,
+    (),
+    runtime_close_owner_noop,
+  )
 }
 
 ///|
 /// Close after a primary runtime failure. A cleanup failure is represented as
 /// a category pair so neither the original failure nor cleanup failure is
 /// silently discarded, and no arbitrary error payload crosses the boundary.
+async fn[G, C, D, T] runtime_fail_and_close_of(
+  group : @async.TaskGroup[G],
+  state : ConnectionState,
+  reason : String,
+  primary : RuntimeError,
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+  force_close_writer : Bool,
+  dispatch_context : D,
+  close_owner : (D, Array[RuntimeTaskControl]) -> D raise RuntimeError,
+) -> T raise RuntimeError {
+  let _ = runtime_close_connection_of(
+    group, state, reason, writer_queue, options, ports, events, tasks, next_task_token,
+    shutdown, force_close_writer, dispatch_context, close_owner,
+  ) catch {
+    cleanup => raise runtime_close_cleanup_error(primary, cleanup)
+  }
+  raise primary
+}
+
+///|
 async fn[G, C, T] runtime_fail_and_close(
   group : @async.TaskGroup[G],
   state : ConnectionState,
@@ -1930,13 +2173,22 @@ async fn[G, C, T] runtime_fail_and_close(
   shutdown : Ref[Bool],
   force_close_writer : Bool,
 ) -> T raise RuntimeError {
-  runtime_close_connection(
-    group, state, reason, writer_queue, options, ports, events, tasks, next_task_token,
-    shutdown, force_close_writer,
-  ) catch {
-    cleanup => raise runtime_close_cleanup_error(primary, cleanup)
-  }
-  raise primary
+  runtime_fail_and_close_of(
+    group,
+    state,
+    reason,
+    primary,
+    writer_queue,
+    options,
+    ports,
+    events,
+    tasks,
+    next_task_token,
+    shutdown,
+    force_close_writer,
+    (),
+    runtime_close_owner_noop,
+  )
 }
 
 ///|
@@ -2022,7 +2274,7 @@ async fn[G, C, D] runtime_apply_request_completion(
               "reducer",
             ),
           )
-          runtime_fail_and_close(
+          runtime_fail_and_close_of(
             group,
             state,
             "completion",
@@ -2035,6 +2287,8 @@ async fn[G, C, D] runtime_apply_request_completion(
             next_task_token,
             shutdown,
             false,
+            dispatch_context,
+            dispatch.close_owner,
           )
         }
       }
@@ -2044,7 +2298,7 @@ async fn[G, C, D] runtime_apply_request_completion(
         remaining_tasks, next_task_token,
       ) catch {
         error =>
-          runtime_fail_and_close(
+          runtime_fail_and_close_of(
             group,
             state_ref.val,
             "completion",
@@ -2057,15 +2311,23 @@ async fn[G, C, D] runtime_apply_request_completion(
             next_task_token,
             shutdown,
             false,
+            dispatch_context,
+            dispatch.close_owner,
           )
       }
       match control {
         RuntimeApplyContinue => {
-          let command_result = runtime_apply_owner_commands(
-            owner_commands, writer_queue, options, ports, updated_tasks,
+          let (owner_context, command_result) = runtime_apply_owner_commands_of(
+            owner_commands,
+            writer_queue,
+            options,
+            ports,
+            updated_tasks,
+            updated_context,
+            dispatch.cancel_inbound,
           ) catch {
             error =>
-              runtime_fail_and_close(
+              runtime_fail_and_close_of(
                 group,
                 state_ref.val,
                 "completion",
@@ -2078,6 +2340,8 @@ async fn[G, C, D] runtime_apply_request_completion(
                 updated_token,
                 shutdown,
                 false,
+                updated_context,
+                dispatch.close_owner,
               )
           }
           match command_result {
@@ -2090,10 +2354,10 @@ async fn[G, C, D] runtime_apply_request_completion(
                   next_task_token: updated_token,
                   stop: false,
                 },
-                updated_context,
+                owner_context,
               )
             RuntimeOwnerCloseRequested(_) => {
-              runtime_close_connection(
+              let closed_context = runtime_close_connection_of(
                 group,
                 state_ref.val,
                 "owner",
@@ -2105,6 +2369,8 @@ async fn[G, C, D] runtime_apply_request_completion(
                 updated_token,
                 shutdown,
                 false,
+                owner_context,
+                dispatch.close_owner,
               )
               runtime_event_step(
                 {
@@ -2114,13 +2380,13 @@ async fn[G, C, D] runtime_apply_request_completion(
                   next_task_token: updated_token,
                   stop: true,
                 },
-                updated_context,
+                closed_context,
               )
             }
           }
         }
         RuntimeApplyOwnerClose(_) => {
-          runtime_close_connection(
+          let closed_context = runtime_close_connection_of(
             group,
             state_ref.val,
             "owner",
@@ -2132,6 +2398,8 @@ async fn[G, C, D] runtime_apply_request_completion(
             updated_token,
             shutdown,
             false,
+            updated_context,
+            dispatch.close_owner,
           )
           runtime_event_step(
             {
@@ -2141,7 +2409,7 @@ async fn[G, C, D] runtime_apply_request_completion(
               next_task_token: updated_token,
               stop: true,
             },
-            updated_context,
+            closed_context,
           )
         }
       }
@@ -2161,18 +2429,37 @@ async fn[G, C, D] runtime_apply_notification_completion(
   options : RuntimeOptions,
   ports : RuntimePorts,
   events : @aqueue.Queue[RuntimeEventOf[C]],
+  dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   remaining_tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
-  let command_result = runtime_apply_owner_commands(
-    owner_commands, writer_queue, options, ports, remaining_tasks,
+  let (owner_context, command_result) = runtime_apply_owner_commands_of(
+    owner_commands,
+    writer_queue,
+    options,
+    ports,
+    remaining_tasks,
+    dispatch_context,
+    dispatch.cancel_inbound,
   ) catch {
     error =>
-      runtime_fail_and_close(
-        group, state, "completion", error, writer_queue, options, ports, events,
-        remaining_tasks, next_task_token, shutdown, false,
+      runtime_fail_and_close_of(
+        group,
+        state,
+        "completion",
+        error,
+        writer_queue,
+        options,
+        ports,
+        events,
+        remaining_tasks,
+        next_task_token,
+        shutdown,
+        false,
+        dispatch_context,
+        dispatch.close_owner,
       )
   }
   match command_result {
@@ -2182,17 +2469,28 @@ async fn[G, C, D] runtime_apply_notification_completion(
       )
       runtime_event_step(
         { state, decoder, tasks: remaining_tasks, next_task_token, stop: false },
-        dispatch_context,
+        owner_context,
       )
     }
     RuntimeOwnerCloseRequested(_) => {
-      runtime_close_connection(
-        group, state, "owner", writer_queue, options, ports, events, remaining_tasks,
-        next_task_token, shutdown, false,
+      let closed_context = runtime_close_connection_of(
+        group,
+        state,
+        "owner",
+        writer_queue,
+        options,
+        ports,
+        events,
+        remaining_tasks,
+        next_task_token,
+        shutdown,
+        false,
+        owner_context,
+        dispatch.close_owner,
       )
       runtime_event_step(
         { state, decoder, tasks: [], next_task_token, stop: true },
-        dispatch_context,
+        closed_context,
       )
     }
   }
@@ -2232,7 +2530,7 @@ async fn[G, C, D] runtime_apply_event_of(
           (ports.trace)(
             runtime_trace_event("inbound", "framing_failed", "", "", "framing"),
           )
-          runtime_fail_and_close(
+          runtime_fail_and_close_of(
             group,
             state,
             "framing",
@@ -2245,6 +2543,8 @@ async fn[G, C, D] runtime_apply_event_of(
             next_task_token,
             shutdown,
             false,
+            next_context,
+            dispatch.close_owner,
           )
         }
       }
@@ -2257,9 +2557,21 @@ async fn[G, C, D] runtime_apply_event_of(
           next_tasks, next_token, shutdown,
         ) catch {
           error =>
-            runtime_fail_and_close(
-              group, next_state, "protocol", error, writer_queue, options, ports,
-              events, next_tasks, next_token, shutdown, false,
+            runtime_fail_and_close_of(
+              group,
+              next_state,
+              "protocol",
+              error,
+              writer_queue,
+              options,
+              ports,
+              events,
+              next_tasks,
+              next_token,
+              shutdown,
+              false,
+              next_context,
+              dispatch.close_owner,
             )
         }
         let (
@@ -2276,9 +2588,20 @@ async fn[G, C, D] runtime_apply_event_of(
         match control {
           RuntimeApplyContinue => ()
           RuntimeApplyOwnerClose(_) => {
-            runtime_close_connection(
-              group, next_state, "owner", writer_queue, options, ports, events, next_tasks,
-              next_token, shutdown, false,
+            let closed_context = runtime_close_connection_of(
+              group,
+              next_state,
+              "owner",
+              writer_queue,
+              options,
+              ports,
+              events,
+              next_tasks,
+              next_token,
+              shutdown,
+              false,
+              next_context,
+              dispatch.close_owner,
             )
             return runtime_event_step(
               {
@@ -2288,7 +2611,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 next_task_token: next_token,
                 stop: true,
               },
-              next_context,
+              closed_context,
             )
           }
         }
@@ -2308,18 +2631,42 @@ async fn[G, C, D] runtime_apply_event_of(
       (ports.trace)(
         runtime_trace_event("inbound", "reader_failed", "", "", "reader"),
       )
-      runtime_fail_and_close(
-        group, state, "reader", error, writer_queue, options, ports, events, tasks,
-        next_task_token, shutdown, false,
+      runtime_fail_and_close_of(
+        group,
+        state,
+        "reader",
+        error,
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        false,
+        next_context,
+        dispatch.close_owner,
       )
     }
     RuntimeWriterFailed(error) => {
       (ports.trace)(
         runtime_trace_event("outbound", "writer_failed", "", "", "writer"),
       )
-      runtime_fail_and_close(
-        group, state, "writer", error, writer_queue, options, ports, events, tasks,
-        next_task_token, shutdown, true,
+      runtime_fail_and_close_of(
+        group,
+        state,
+        "writer",
+        error,
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        true,
+        next_context,
+        dispatch.close_owner,
       )
     }
     RuntimeOwnerTaskEvent(task_event) => {
@@ -2334,9 +2681,21 @@ async fn[G, C, D] runtime_apply_event_of(
               runtime_error_kind(error),
             ),
           )
-          runtime_fail_and_close(
-            group, state, "owner", error, writer_queue, options, ports, events, tasks,
-            next_task_token, shutdown, false,
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "owner",
+            error,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
           )
         }
       }
@@ -2420,7 +2779,7 @@ async fn[G, C, D] runtime_apply_event_of(
             Some(_) =>
               runtime_apply_notification_completion(
                 commands, state, decoder, group, writer_queue, options, ports, events,
-                context, remaining_tasks, next_task_token, shutdown,
+                dispatch, context, remaining_tasks, next_task_token, shutdown,
               )
           }
         }
@@ -2442,7 +2801,7 @@ async fn[G, C, D] runtime_apply_event_of(
                   "task_control",
                 ),
               )
-              runtime_fail_and_close(
+              runtime_fail_and_close_of(
                 group,
                 state,
                 "task_mismatch",
@@ -2455,6 +2814,8 @@ async fn[G, C, D] runtime_apply_event_of(
                 next_task_token,
                 shutdown,
                 false,
+                next_context,
+                dispatch.close_owner,
               )
             }
           }
@@ -2515,7 +2876,7 @@ async fn[G, C, D] runtime_apply_event_of(
                       "reducer",
                     ),
                   )
-                  runtime_fail_and_close(
+                  runtime_fail_and_close_of(
                     group,
                     state,
                     "completion",
@@ -2528,6 +2889,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     next_task_token,
                     shutdown,
                     false,
+                    next_context,
+                    dispatch.close_owner,
                   )
                 }
               }
@@ -2537,7 +2900,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 remaining_tasks, next_task_token,
               ) catch {
                 error =>
-                  runtime_fail_and_close(
+                  runtime_fail_and_close_of(
                     group,
                     state_ref.val,
                     "completion",
@@ -2550,6 +2913,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     next_task_token,
                     shutdown,
                     false,
+                    next_context,
+                    dispatch.close_owner,
                   )
               }
               match control {
@@ -2567,7 +2932,7 @@ async fn[G, C, D] runtime_apply_event_of(
                   )
                 }
                 RuntimeApplyOwnerClose(_) => {
-                  runtime_close_connection(
+                  let closed_context = runtime_close_connection_of(
                     group,
                     state_ref.val,
                     "owner",
@@ -2579,6 +2944,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     updated_token,
                     shutdown,
                     false,
+                    updated_context,
+                    dispatch.close_owner,
                   )
                   runtime_event_step(
                     {
@@ -2588,7 +2955,7 @@ async fn[G, C, D] runtime_apply_event_of(
                       next_task_token: updated_token,
                       stop: true,
                     },
-                    updated_context,
+                    closed_context,
                   )
                 }
               }
@@ -2735,7 +3102,7 @@ async fn[G, C, D] runtime_apply_event_of(
                   )
                 }
                 RuntimeApplyOwnerClose(_) => {
-                  runtime_close_connection(
+                  let closed_context = runtime_close_connection_of(
                     group,
                     state_ref.val,
                     "owner",
@@ -2747,6 +3114,8 @@ async fn[G, C, D] runtime_apply_event_of(
                     updated_token,
                     shutdown,
                     false,
+                    updated_context,
+                    dispatch.close_owner,
                   )
                   runtime_event_step(
                     {
@@ -2756,7 +3125,7 @@ async fn[G, C, D] runtime_apply_event_of(
                       next_task_token: updated_token,
                       stop: true,
                     },
-                    updated_context,
+                    closed_context,
                   )
                 }
               }

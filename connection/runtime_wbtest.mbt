@@ -1828,12 +1828,17 @@ async test "runtime applies owner commands in order" {
       }
     RuntimeStop => fail("owner notification must be queued before stop")
   }
-  assert_eq(traces.length(), 1)
+  assert_eq(traces.length(), 2)
   assert_eq(traces[0].direction, "runtime")
   assert_eq(traces[0].phase, "owner_trace")
   assert_eq(traces[0].request_id, "")
   assert_eq(traces[0].method_name, "owner/work")
   assert_eq(traces[0].error_kind, "owner")
+  assert_eq(traces[1].direction, "inbound")
+  assert_eq(traces[1].phase, "cancel_requested")
+  assert_eq(traces[1].request_id, "9")
+  assert_eq(traces[1].method_name, "")
+  assert_eq(traces[1].error_kind, "cancel")
   assert_eq(cancelled, [Number(9)])
 }
 
@@ -3145,6 +3150,11 @@ async test "runtime dispatch threads updated context across events" {
           next_task_token=token + 1,
         )
       },
+      cancel_inbound: (context, id, tasks) => {
+        runtime_cancel_task(tasks, id)
+        RuntimeDispatchCancelApplied(context~)
+      },
+      close_owner: (context, _) => context,
     }
     let (first, first_context) = runtime_apply_event_of(
       RuntimeChunk(
@@ -3214,6 +3224,11 @@ async test "runtime applies immediate request completion before owner commands" 
       notification: (_group, _token, _notification, context) => {
         RuntimeDispatchNotificationImmediate(context~, commands=[])
       },
+      cancel_inbound: (context, id, tasks) => {
+        runtime_cancel_task(tasks, id)
+        RuntimeDispatchCancelApplied(context~)
+      },
+      close_owner: (context, _) => context,
     }
     let state_ref = Ref::Ref(step.state)
     let (tasks, token, context, control) = runtime_apply_step(
@@ -3314,6 +3329,11 @@ async test "runtime engine returns generic dispatch state after close" {
               next_task_token=token + 1,
             )
           },
+          cancel_inbound: (context, id, tasks) => {
+            runtime_cancel_task(tasks, id)
+            RuntimeDispatchCancelApplied(context~)
+          },
+          close_owner: (context, _) => context,
         }
         (dispatch, 0)
       },
