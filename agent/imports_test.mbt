@@ -10,6 +10,7 @@ using @client_message {type ClientNotification, type ClientRequest}
 ///|
 using @jsonrpc {
   type JsonRpcErrorCode,
+  type JsonRpcId,
   type JsonRpcMessage,
   type JsonRpcNotification,
   type JsonRpcRequest,

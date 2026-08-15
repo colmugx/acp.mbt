@@ -391,6 +391,8 @@ pub using @agent {
   agent_auth_service,
   agent_context,
   agent_endpoint_from_spec,
+  agent_runtime_owner_port,
+  agent_runtime_run,
   agent_session_service,
   agent_spec,
   agent_support,

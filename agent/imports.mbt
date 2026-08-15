@@ -23,6 +23,25 @@ using @agent_protocol {
 using @client_message {type ClientNotification, type ClientRequest}
 
 ///|
+using @connection {
+  type RuntimeOwnerEffect,
+  type RuntimeOwnerNotificationAdmission,
+  type RuntimeOwnerNotificationCompletion,
+  type RuntimeOwnerPort,
+  type RuntimeOwnerRequestAdmission,
+  type RuntimeOwnerRequestCompletion,
+  connection_runtime_run_owner,
+}
+
+///|
+using @runtime {
+  type RuntimeHandlerResult,
+  type RuntimeOptions,
+  type RuntimePorts,
+  runtime_validate_options,
+}
+
+///|
 using @jsonrpc {
   type JsonRpcError,
   type JsonRpcId,

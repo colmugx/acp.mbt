@@ -164,3 +164,132 @@ pub async fn agent_adapter_execute(
       )
   }
 }
+
+///|
+/// The stable wire method name of one typed invocation.  Runtime bridges use
+/// it for trace intents only; it never replaces the typed completion.
+pub fn agent_adapter_invocation_method_name(
+  invocation : AgentAdapterInvocation,
+) -> String {
+  match invocation {
+    AuthenticateInvocation(id=_, params=_) => "authenticate"
+    LogoutInvocation(id=_, params=_) => "logout"
+    SessionNewInvocation(id=_, params=_) => "session/new"
+    SessionLoadInvocation(id=_, params=_) => "session/load"
+    SessionResumeInvocation(id=_, params=_) => "session/resume"
+    SessionListInvocation(id=_, params=_) => "session/list"
+    SessionDeleteInvocation(id=_, params=_) => "session/delete"
+    SessionCloseInvocation(id=_, params=_) => "session/close"
+    SessionSetModeInvocation(id=_, params=_) => "session/set_mode"
+    SessionSetConfigOptionInvocation(id=_, params=_) =>
+      "session/set_config_option"
+    SessionPromptInvocation(id=_, params=_) => "session/prompt"
+    SessionCancelInvocation(params=_) => "session/cancel"
+  }
+}
+
+///|
+/// Synthesize the redacted typed failure completion for one invocation,
+/// following the `agent_adapter_call` convention for unknown failures.  The
+/// owner task boundary uses this when async execution itself fails before a
+/// typed completion exists.
+pub fn agent_adapter_failure_completion(
+  invocation : AgentAdapterInvocation,
+) -> AgentAdapterCompletion {
+  match invocation {
+    AuthenticateInvocation(id~, params=_) =>
+      AuthenticateCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    LogoutInvocation(id~, params=_) =>
+      LogoutCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionNewInvocation(id~, params=_) =>
+      SessionNewCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionLoadInvocation(id~, params=_) =>
+      SessionLoadCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionResumeInvocation(id~, params=_) =>
+      SessionResumeCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionListInvocation(id~, params=_) =>
+      SessionListCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionDeleteInvocation(id~, params=_) =>
+      SessionDeleteCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionCloseInvocation(id~, params=_) =>
+      SessionCloseCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionSetModeInvocation(id~, params=_) =>
+      SessionSetModeCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionSetConfigOptionInvocation(id~, params=_) =>
+      SessionSetConfigOptionCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionPromptInvocation(id~, params=_) =>
+      SessionPromptCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionCancelInvocation(params=_) =>
+      SessionCancelCompleted(
+        result=Err(Application(message="agent handler failed")),
+      )
+  }
+}
+
+///|
+/// Synthesize the typed cancellation completion for one invocation.  The
+/// owner loop uses this when it grants an inbound cancellation so the
+/// reservation and wire id settle through the normal completion path.
+pub fn agent_adapter_cancel_completion(
+  invocation : AgentAdapterInvocation,
+) -> AgentAdapterCompletion {
+  match invocation {
+    AuthenticateInvocation(id~, params=_) =>
+      AuthenticateCompleted(id~, result=Err(Cancelled))
+    LogoutInvocation(id~, params=_) =>
+      LogoutCompleted(id~, result=Err(Cancelled))
+    SessionNewInvocation(id~, params=_) =>
+      SessionNewCompleted(id~, result=Err(Cancelled))
+    SessionLoadInvocation(id~, params=_) =>
+      SessionLoadCompleted(id~, result=Err(Cancelled))
+    SessionResumeInvocation(id~, params=_) =>
+      SessionResumeCompleted(id~, result=Err(Cancelled))
+    SessionListInvocation(id~, params=_) =>
+      SessionListCompleted(id~, result=Err(Cancelled))
+    SessionDeleteInvocation(id~, params=_) =>
+      SessionDeleteCompleted(id~, result=Err(Cancelled))
+    SessionCloseInvocation(id~, params=_) =>
+      SessionCloseCompleted(id~, result=Err(Cancelled))
+    SessionSetModeInvocation(id~, params=_) =>
+      SessionSetModeCompleted(id~, result=Err(Cancelled))
+    SessionSetConfigOptionInvocation(id~, params=_) =>
+      SessionSetConfigOptionCompleted(id~, result=Err(Cancelled))
+    SessionPromptInvocation(id~, params=_) =>
+      SessionPromptCompleted(id~, result=Err(Cancelled))
+    SessionCancelInvocation(params=_) =>
+      SessionCancelCompleted(result=Err(Cancelled))
+  }
+}
