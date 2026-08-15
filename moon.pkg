@@ -5,6 +5,7 @@ import {
   "colmugx/acp/client",
   "colmugx/acp/client/message" @client_message,
   "colmugx/acp/connection",
+  "colmugx/acp/connection/broker",
   "colmugx/acp/jsonrpc",
   "colmugx/acp/method",
   "colmugx/acp/protocol",

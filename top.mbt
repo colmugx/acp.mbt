@@ -459,6 +459,12 @@ pub using @client {
 }
 
 ///|
+/// Typed broker wiring that binds the Agent outbound context and the Client
+/// connection facade onto the engine-level outbound channel.  Codec details
+/// stay inside the broker package.
+pub using @broker {agent_context_over_channel, client_connection_over_channel}
+
+///|
 /// Generic owner state, admission, completion, and effect APIs. The public
 /// runners are the only connection loop entry points exposed by the stable
 /// facade; both drive the same single reader/writer/reducer engine. Reducer

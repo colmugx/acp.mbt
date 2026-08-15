@@ -24,6 +24,7 @@ using @client_message {type ClientNotification, type ClientRequest}
 
 ///|
 using @connection {
+  type RuntimeOutboundChannel,
   type RuntimeOwnerEffect,
   type RuntimeOwnerNotificationAdmission,
   type RuntimeOwnerNotificationCompletion,
@@ -31,6 +32,7 @@ using @connection {
   type RuntimeOwnerRequestAdmission,
   type RuntimeOwnerRequestCompletion,
   connection_runtime_run_owner,
+  connection_runtime_run_owner_with_outbound,
 }
 
 ///|

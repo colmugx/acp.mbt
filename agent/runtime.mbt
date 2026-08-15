@@ -122,6 +122,34 @@ pub async fn agent_runtime_run(
 }
 
 ///|
+/// Run one Agent connection on the single native owner-loop engine with the
+/// engine-level outbound channel handed to the Agent context factory.  The
+/// factory runs after the connection-local queues and shutdown state exist
+/// and before the loop starts; it typically builds
+/// `agent_context_over_channel` (in `connection/broker`) so handlers running
+/// mid-execution can issue reverse requests and stream notifications through
+/// the real engine.  This runner adds no second loop or channel state of its
+/// own: it validates the options fail-fast and reuses the same single
+/// reader/writer/reducer engine as `agent_runtime_run`, whose signature and
+/// behavior stay unchanged.
+pub async fn agent_runtime_run_with_outbound(
+  endpoint~ : AgentEndpoint,
+  context_factory~ : (RuntimeOutboundChannel[AgentAdapterCompletion]) -> AgentContext,
+  initial_state~ : AgentAdapterState,
+  ports~ : RuntimePorts,
+  options~ : RuntimeOptions,
+) -> Unit {
+  runtime_validate_options(options)
+  connection_runtime_run_owner_with_outbound(ports, options, channel => {
+    agent_runtime_owner_port(
+      endpoint~,
+      context=context_factory(channel),
+      initial_state~,
+    )
+  })
+}
+
+///|
 fn agent_runtime_request_admission(
   admission : AgentAdapterAdmission,
 ) -> RuntimeOwnerRequestAdmission[

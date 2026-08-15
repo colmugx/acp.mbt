@@ -3,10 +3,18 @@ import {
   "colmugx/acp/agent/message" @agent_message,
   "colmugx/acp/client",
   "colmugx/acp/client/message" @client_message,
+  "colmugx/acp/connection",
   "colmugx/acp/jsonrpc",
   "colmugx/acp/protocol" @protocol_data,
   "colmugx/acp/protocol/session" @session_protocol,
+  "moonbitlang/async",
   "moonbitlang/core/json",
 }
 
 supported_targets = "native"
+
+import {
+  "colmugx/acp/runtime",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
