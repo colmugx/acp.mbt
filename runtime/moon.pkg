@@ -1,6 +1,14 @@
 import {
   "colmugx/acp/jsonrpc",
+  "moonbitlang/async",
+  "moonbitlang/async/process",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/json",
 }
 
 supported_targets = "native"
+
+import {
+  "moonbitlang/async/pipe" @async_pipe,
+} for "test"

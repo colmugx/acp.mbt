@@ -150,6 +150,32 @@ pub async fn agent_runtime_run_with_outbound(
 }
 
 ///|
+/// Serve this process's real stdio as one Agent connection: inbound ACP
+/// frames arrive on stdin, outbound frames (including one final response per
+/// request) go to stdout, and every diagnostic goes to the trace sink
+/// (stderr by default).  This is a thin composition of `agent_runtime_run`
+/// over `runtime_stdio_ports`: it validates the options fail-fast before any
+/// I/O binding and creates no connection state of its own.  The loop ends
+/// when stdin reaches EOF or the engine fails; both outcomes surface through
+/// the same single reader/writer/reducer engine as every other runner.
+pub async fn agent_serve_stdio(
+  endpoint~ : AgentEndpoint,
+  context~ : AgentContext,
+  initial_state~ : AgentAdapterState,
+  options? : RuntimeOptions = runtime_default_options(),
+  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+) -> Unit {
+  runtime_validate_options(options)
+  agent_runtime_run(
+    endpoint~,
+    context~,
+    initial_state~,
+    ports=runtime_stdio_ports(trace~),
+    options~,
+  )
+}
+
+///|
 fn agent_runtime_request_admission(
   admission : AgentAdapterAdmission,
 ) -> RuntimeOwnerRequestAdmission[

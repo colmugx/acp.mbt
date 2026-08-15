@@ -13,9 +13,14 @@ using @connection {
 
 ///|
 using @runtime {
+  type RuntimeHandlerPort,
   type RuntimeHandlerResult,
   type RuntimeOptions,
   type RuntimePorts,
+  type RuntimeTraceEvent,
+  runtime_default_options,
+  runtime_process_ports,
+  runtime_stderr_trace,
   runtime_validate_options,
 }
 
@@ -168,6 +173,55 @@ pub async fn client_runtime_run_with_outbound(
     client_runtime_owner_port(
       endpoint=endpoint_factory(channel),
       initial_state~,
+    )
+  })
+}
+
+///|
+/// Drive one spawned agent subprocess as a Client connection over real
+/// process stdio.  The child's stdin/stdout become the engine's writer/reader
+/// ports (frames flushed per write), the child's stderr is redirected to this
+/// process's stderr, and diagnostics go to the trace sink (stderr by
+/// default).  This is a thin composition of `client_runtime_run_with_outbound`
+/// over `runtime_process_ports`; it validates the options fail-fast before
+/// spawning and reuses the same single reader/writer/reducer engine.
+///
+/// Connection scope equals child scope: the composition opens one task group,
+/// spawns the child inside it with `no_wait = true`, runs the engine, then
+/// closes the child's stdin — the ACP stdio shutdown signal — before group
+/// teardown.  A well-behaved agent exits on that EOF and is reaped with its
+/// exit status; an agent that keeps running is gracefully terminated and then
+/// forcefully killed by the async process layer's cancellation handler during
+/// teardown, still inside this call.  No detached child and no background
+/// reaper can outlive the returned call.
+pub async fn client_connect_process(
+  endpoint_factory~ : (RuntimeOutboundChannel[ClientAdapterCompletion]) -> ClientEndpoint,
+  initial_state~ : ClientAdapterState,
+  handlers~ : RuntimeHandlerPort,
+  command~ : String,
+  args? : Array[String] = [],
+  extra_env? : Map[String, String],
+  inherit_env? : Bool = true,
+  options? : RuntimeOptions = runtime_default_options(),
+  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+) -> Unit {
+  runtime_validate_options(options)
+  @async.with_task_group(group => {
+    let spawned = runtime_process_ports(
+      group,
+      handlers~,
+      command~,
+      args~,
+      extra_env?,
+      inherit_env~,
+      trace~,
+    )
+    defer spawned.child_stdin.close()
+    client_runtime_run_with_outbound(
+      endpoint_factory~,
+      initial_state~,
+      ports=spawned.ports,
+      options~,
     )
   })
 }

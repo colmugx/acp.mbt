@@ -40,6 +40,10 @@ using @runtime {
   type RuntimeHandlerResult,
   type RuntimeOptions,
   type RuntimePorts,
+  type RuntimeTraceEvent,
+  runtime_default_options,
+  runtime_stderr_trace,
+  runtime_stdio_ports,
   runtime_validate_options,
 }
 

@@ -393,6 +393,7 @@ pub using @agent {
   agent_endpoint_from_spec,
   agent_runtime_owner_port,
   agent_runtime_run,
+  agent_serve_stdio,
   agent_session_service,
   agent_spec,
   agent_support,
@@ -424,6 +425,7 @@ pub using @agent {
 /// Client composition, endpoint, and typed connection APIs. Adapter and
 /// protocol-state internals intentionally remain in the client package.
 pub using @client {
+  client_connect_process,
   client_connection,
   client_elicitation_service,
   client_file_system_service,
@@ -515,10 +517,19 @@ pub using @acp_error {
 
 ///|
 /// Native runtime ports and bounded-runtime configuration. The runtime
-/// implementation itself remains below this facade.
+/// implementation itself remains below this facade; the two real I/O port
+/// constructors (`runtime_stdio_ports` for serving this process's stdio,
+/// `runtime_process_ports` for driving a spawned agent subprocess) and the
+/// default stderr trace sink are the composition-root seams. The
+/// `RuntimeProcessPorts` fields expose the underlying `moonbitlang/async`
+/// process handles, so facade consumers of those fields depend on that
+/// package themselves.
 pub using @runtime {
   runtime_default_options,
+  runtime_process_ports,
   runtime_request_id_text,
+  runtime_stderr_trace,
+  runtime_stdio_ports,
   runtime_trace_event,
   runtime_validate_options,
   type RuntimeError,
@@ -526,6 +537,7 @@ pub using @runtime {
   type RuntimeHandlerResult,
   type RuntimeOptions,
   type RuntimePorts,
+  type RuntimeProcessPorts,
   type RuntimeReaderPort,
   type RuntimeTraceEvent,
   type RuntimeWriterPort,
