@@ -460,10 +460,12 @@ pub using @client {
 
 ///|
 /// Generic owner state, admission, completion, and effect APIs. The public
-/// runner is the only connection loop exposed by the stable facade; reducer
+/// runners are the only connection loop entry points exposed by the stable
+/// facade; both drive the same single reader/writer/reducer engine. Reducer
 /// steps and the legacy handler runner remain package-internal.
 pub using @connection {
   connection_runtime_run_owner,
+  connection_runtime_run_owner_with_outbound,
   runtime_owner_admit_notification,
   runtime_owner_admit_request,
   runtime_owner_cancel_request,
@@ -492,6 +494,7 @@ pub using @connection {
   type RuntimeOwnerRequestAdmission,
   type RuntimeOwnerRequestCompletion,
   type RuntimeOwnerTask,
+  type RuntimeOutboundChannel,
 }
 
 ///|

@@ -684,11 +684,218 @@ priv enum RuntimeEventOf[C] {
   RuntimeReaderFailed(RuntimeError)
   RuntimeWriterFailed(RuntimeError)
   RuntimeOwnerTaskEvent(RuntimeOwnerTaskEventOf[C])
+  RuntimeOutboundRequestSubmitted(
+    method_name~ : String,
+    params~ : Json,
+    reply~ : @aqueue.Queue[RuntimeOutboundReply]
+  )
+  RuntimeOutboundNotificationSubmitted(
+    method_name~ : String,
+    params~ : Json,
+    ack~ : @aqueue.Queue[RuntimeOutboundAck]
+  )
   RuntimeHandlerCompleted(Int, RequestId, C)
   RuntimeHandlerFailed(Int, RequestId)
   RuntimeNotificationCompleted(Int)
   RuntimeNotificationFailed(Int)
   RuntimeNotificationCancelled(Int)
+}
+
+///|
+/// Exactly one reply to an engine-level outbound request submission. The
+/// queue carrying it is one-shot and owned by the submitting task; the engine
+/// loop is the only writer.
+priv enum RuntimeOutboundReply {
+  RuntimeOutboundReplied(response~ : JsonRpcResponse)
+  RuntimeOutboundFailed(kind~ : RuntimeOutboundFailureKind)
+}
+
+///|
+/// Acknowledgement for an outbound notification submission. An ack records
+/// only that the frame was accepted into the serial writer queue; it never
+/// claims transport I/O completed, matching the `ClientNotificationBroker`
+/// contract on the stable facade.
+priv enum RuntimeOutboundAck {
+  RuntimeOutboundAcked
+  RuntimeOutboundAckFailed(kind~ : RuntimeOutboundFailureKind)
+}
+
+///|
+/// One channel-owned waiter registered by the engine loop under the request
+/// id the loop itself allocated. Both registration and release happen on the
+/// single owner loop; no other task mutates this record.
+priv struct RuntimeOutboundWaiter {
+  id : RequestId
+  reply : @aqueue.Queue[RuntimeOutboundReply]
+}
+
+///|
+/// Engine-local outbound submission accumulator: the engine-allocated request
+/// id counter and the parked waiter registry. The loop threads it immutably
+/// through `RuntimeEventStep`; each applied event takes one `Ref` snapshot of
+/// it, mirroring the existing `state_ref` style, so command interpretation
+/// can release waiters in place without introducing a second owner or
+/// engine-lifetime mutable state.
+priv struct RuntimeOutboundRegistry {
+  next_outbound_id : Int
+  waiters : Array[RuntimeOutboundWaiter]
+}
+
+///|
+fn runtime_outbound_registry() -> RuntimeOutboundRegistry {
+  { next_outbound_id: 1, waiters: [] }
+}
+
+///|
+fn runtime_outbound_push_waiter(
+  waiters : Array[RuntimeOutboundWaiter],
+  id : RequestId,
+  reply : @aqueue.Queue[RuntimeOutboundReply],
+) -> Array[RuntimeOutboundWaiter] {
+  let next = Array::copy(waiters)
+  next.push({ id, reply })
+  next
+}
+
+///|
+/// Deliver one reply to a request submitter. The one-shot queues are
+/// channel-owned and never closed, so a failed delivery is an impossible
+/// invariant; it fails fast with the outbound completion category instead of
+/// being swallowed.
+async fn runtime_outbound_reply_put(
+  queue : @aqueue.Queue[RuntimeOutboundReply],
+  reply : RuntimeOutboundReply,
+) -> Unit raise RuntimeError {
+  queue.put(reply) catch {
+    _ => raise OutboundCompletionFailed
+  }
+}
+
+///|
+/// Deliver one acknowledgement to a notification submitter. Same
+/// impossible-invariant contract as `runtime_outbound_reply_put`.
+async fn runtime_outbound_ack_put(
+  queue : @aqueue.Queue[RuntimeOutboundAck],
+  ack : RuntimeOutboundAck,
+) -> Unit raise RuntimeError {
+  queue.put(ack) catch {
+    _ => raise OutboundCompletionFailed
+  }
+}
+
+///|
+/// Release exactly one waiter with `reply`. A missing entry is a pending the
+/// channel does not manage (or one already settled); it is not an error, and
+/// removal keeps the release exactly-once.
+async fn runtime_outbound_release(
+  outbound : Ref[RuntimeOutboundRegistry],
+  id : RequestId,
+  reply : RuntimeOutboundReply,
+) -> Unit raise RuntimeError {
+  let next : Array[RuntimeOutboundWaiter] = []
+  let mut found : @aqueue.Queue[RuntimeOutboundReply]? = None
+  for waiter in outbound.val.waiters {
+    if waiter.id == id {
+      found = Some(waiter.reply)
+    } else {
+      next.push(waiter)
+    }
+  }
+  match found {
+    None => ()
+    Some(queue) => {
+      outbound.val = { ..outbound.val, waiters: next }
+      runtime_outbound_reply_put(queue, reply)
+    }
+  }
+}
+
+///|
+/// Release every surviving waiter with one failure kind. Every close path
+/// runs this sweep after its close-step interpretation (including its
+/// failure branch), so no parked submitter can outlive the connection even
+/// when interpretation stopped at an earlier command failure.
+async fn runtime_outbound_release_all(
+  outbound : Ref[RuntimeOutboundRegistry],
+  kind~ : RuntimeOutboundFailureKind,
+) -> Unit raise RuntimeError {
+  for waiter in outbound.val.waiters {
+    runtime_outbound_reply_put(waiter.reply, RuntimeOutboundFailed(kind~))
+  }
+  outbound.val = { ..outbound.val, waiters: [] }
+}
+
+///|
+/// Structured runtime error surfaced to a channel submitter. The closed
+/// `RuntimeError` set has no dedicated outbound category, so each failure
+/// kind maps to its closest existing category; the precise typed kind stays
+/// visible to `outbound_failure` callback consumers. `EndOfInput` (peer EOF)
+/// and `Reader` share `ReaderFailed`, and `Runtime` (owner-initiated close,
+/// local cancel, or a submission stranded by shutdown) shares `ReducerFailed`
+/// because both sides of each pair are the same connection-terminated
+/// condition at this boundary.
+fn runtime_outbound_reply_error(
+  kind : RuntimeOutboundFailureKind,
+) -> RuntimeError {
+  match kind {
+    Protocol => ReducerFailed
+    Framing => FramingFailed
+    Reader => ReaderFailed
+    Writer => WriterFailed
+    Handler => HandlerFailed
+    Notification => NotificationFailed
+    EndOfInput => ReaderFailed
+    EventQueue => EventQueueClosed
+    Runtime => ReducerFailed
+  }
+}
+
+///|
+/// Closest failure category for an outbound write failure. The precise
+/// `RuntimeError` is preserved by the fail-and-close primary error; the kind
+/// only labels the reply/ack delivered to the submitter.
+fn runtime_outbound_write_kind(
+  error : RuntimeError,
+) -> RuntimeOutboundFailureKind {
+  match error {
+    WriterFailed | WriterQueueClosed | WriterQueueBackpressure(_) => Writer
+    JsonRpcEncodeFailed => Protocol
+    _ => Runtime
+  }
+}
+
+///|
+/// Close reason for the fail-and-close path after a submission write offer
+/// failed. Queue failures close as `"writer"` so the pending settles with the
+/// `Writer` category; a local encode failure closes as `"protocol"`.
+fn runtime_outbound_write_reason(error : RuntimeError) -> String {
+  match error {
+    JsonRpcEncodeFailed => "protocol"
+    _ => "writer"
+  }
+}
+
+///|
+/// Reply to submissions stranded in the event queue after the loop stopped.
+/// The loop consumes events strictly in order and every close path sets
+/// `shutdown` before it stops, so a stranded submission was never admitted
+/// and can never receive a reducer settlement; exactly one failure reply
+/// keeps its submitter from parking forever. Other dead-lettered events are
+/// dropped, exactly as they were before this seam existed.
+async fn[C] runtime_outbound_drain_stranded(
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+) -> Unit raise RuntimeError {
+  for ;; {
+    let leftover = events.try_get() catch { _ => return }
+    match leftover {
+      None => return
+      Some(RuntimeOutboundRequestSubmitted(reply~, ..)) =>
+        runtime_outbound_reply_put(reply, RuntimeOutboundFailed(kind=Runtime))
+      Some(RuntimeOutboundNotificationSubmitted(ack~, ..)) =>
+        runtime_outbound_ack_put(ack, RuntimeOutboundAckFailed(kind=Runtime))
+      Some(_) => ()
+    }
+  }
 }
 
 ///|
@@ -1636,11 +1843,12 @@ async fn[D] runtime_emit_command_of(
   cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
     D,
   ] raise RuntimeError,
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> D raise RuntimeError {
   match command {
     WriteMessage(message) =>
       runtime_writer_offer(writer_queue, queue_limit, message)
-    CompleteOutbound(id~, response~) =>
+    CompleteOutbound(id~, response~) => {
       (ports.handlers.response)(response) catch {
         _ => {
           (ports.trace)(
@@ -1655,6 +1863,11 @@ async fn[D] runtime_emit_command_of(
           raise ResponseHandlerFailed
         }
       }
+      // The channel submitter parks until the application response callback
+      // has observed the reply, so application observation always precedes
+      // unparking. A missing waiter is a pending the channel does not manage.
+      runtime_outbound_release(outbound, id, RuntimeOutboundReplied(response~))
+    }
     DispatchRequest(_) | DispatchNotification(_) => ()
     FailOutbound(id~, reason~) => {
       match ports.handlers.outbound_failure {
@@ -1683,6 +1896,11 @@ async fn[D] runtime_emit_command_of(
           "",
           "peer",
         ),
+      )
+      runtime_outbound_release(
+        outbound,
+        id,
+        RuntimeOutboundFailed(kind=runtime_outbound_failure_kind(reason)),
       )
     }
     FailInbound(id~, reason=_, cancelled~) => {
@@ -1726,6 +1944,15 @@ async fn[D] runtime_emit_command_of(
           "cancel",
         ),
       )
+      // The reducer already settled this pending, so no response or close
+      // path will ever complete it. The closed failure-kind set has no
+      // dedicated "cancelled" category; `Runtime` (owner/runtime-initiated
+      // termination) is the closest existing kind for this local cancel.
+      runtime_outbound_release(
+        outbound,
+        id,
+        RuntimeOutboundFailed(kind=Runtime),
+      )
     }
     CancelInboundTask(id~) =>
       return runtime_apply_inbound_cancel(
@@ -1744,6 +1971,7 @@ async fn runtime_emit_command(
   queue_limit : Int,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> Unit raise RuntimeError {
   let _ = runtime_emit_command_of(
     command,
@@ -1756,6 +1984,7 @@ async fn runtime_emit_command(
       runtime_cancel_task(controls, id)
       RuntimeDispatchCancelApplied(context~)
     },
+    outbound,
   )
 }
 
@@ -1771,6 +2000,7 @@ async fn[G, D] runtime_apply_step(
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> (Array[RuntimeTaskControl], Int, D, RuntimeApplyControl) raise RuntimeError {
   let mut next_tasks = Array::copy(tasks)
   let mut next_token = next_task_token
@@ -1807,7 +2037,7 @@ async fn[G, D] runtime_apply_step(
             state_ref.val = completion_step.state
             let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
               group, completion_step, state_ref, writer_queue, options, ports, dispatch,
-              context, next_tasks, next_token,
+              context, next_tasks, next_token, outbound,
             )
             match control {
               RuntimeApplyContinue => {
@@ -1907,6 +2137,7 @@ async fn[G, D] runtime_apply_step(
           next_tasks,
           next_context,
           dispatch.cancel_inbound,
+          outbound,
         ) catch {
           error => {
             (ports.trace)(
@@ -1947,6 +2178,7 @@ async fn[G, D] runtime_apply_message(
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> (ConnectionState, Array[RuntimeTaskControl], Int, D, RuntimeApplyControl) raise RuntimeError {
   let message = jsonrpc_decode(frame) catch {
     _ => {
@@ -1979,7 +2211,7 @@ async fn[G, D] runtime_apply_message(
   let state_ref = Ref::Ref(step.state)
   let (next_tasks, next_token, next_context, control) = runtime_apply_step(
     group, step, state_ref, writer_queue, options, ports, dispatch, dispatch_context,
-    tasks, next_task_token,
+    tasks, next_task_token, outbound,
   )
   (state_ref.val, next_tasks, next_token, next_context, control)
 }
@@ -1996,6 +2228,7 @@ async fn runtime_apply_close_step(
   options : RuntimeOptions,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> Unit raise RuntimeError {
   for index, command in step.commands.iter2() {
     runtime_emit_command(
@@ -2004,6 +2237,7 @@ async fn runtime_apply_close_step(
       options.queue_capacity,
       ports,
       tasks,
+      outbound,
     ) catch {
       error => {
         (ports.trace)(
@@ -2057,14 +2291,25 @@ async fn[G, C, D] runtime_close_connection_of(
   force_close_writer : Bool,
   dispatch_context : D,
   close_owner : (D, Array[RuntimeTaskControl]) -> D raise RuntimeError,
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> D raise RuntimeError {
   shutdown.val = true
   let closed_context = close_owner(dispatch_context, tasks)
   let step = connection_reduce(state, Close(reason~)) catch {
-    _ => raise ReducerFailed
+    _ => {
+      runtime_outbound_release_all(
+        outbound,
+        kind=runtime_outbound_failure_kind(reason),
+      )
+      raise ReducerFailed
+    }
   }
-  runtime_apply_close_step(step, writer_queue, options, ports, tasks) catch {
+  runtime_apply_close_step(step, writer_queue, options, ports, tasks, outbound) catch {
     error => {
+      runtime_outbound_release_all(
+        outbound,
+        kind=runtime_outbound_failure_kind(reason),
+      )
       runtime_cancel_active_tasks(tasks, ports.trace)
       runtime_writer_stop(writer_queue, true) catch {
         cleanup => raise runtime_close_cleanup_error(error, cleanup)
@@ -2072,6 +2317,13 @@ async fn[G, C, D] runtime_close_connection_of(
       raise error
     }
   }
+  // Per-pending FailOutbound commands above released their waiters with the
+  // close reason's category; this sweep guarantees no waiter survives even
+  // when interpretation stopped at an earlier command failure.
+  runtime_outbound_release_all(
+    outbound,
+    kind=runtime_outbound_failure_kind(reason),
+  )
   runtime_cancel_active_tasks(tasks, ports.trace)
   runtime_writer_stop(writer_queue, force_close_writer)
   closed_context
@@ -2096,10 +2348,11 @@ async fn[G, C, D, T] runtime_fail_and_close_of(
   force_close_writer : Bool,
   dispatch_context : D,
   close_owner : (D, Array[RuntimeTaskControl]) -> D raise RuntimeError,
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> T raise RuntimeError {
   let _ = runtime_close_connection_of(
     group, state, reason, writer_queue, options, ports, events, tasks, next_task_token,
-    shutdown, force_close_writer, dispatch_context, close_owner,
+    shutdown, force_close_writer, dispatch_context, close_owner, outbound,
   ) catch {
     cleanup => raise runtime_close_cleanup_error(primary, cleanup)
   }
@@ -2156,6 +2409,7 @@ async fn[G, C, D] runtime_apply_request_completion(
   remaining_tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
   match connection_inbound_index(state.inbound, id) {
     None => {
@@ -2204,13 +2458,14 @@ async fn[G, C, D] runtime_apply_request_completion(
             false,
             dispatch_context,
             dispatch.close_owner,
+            outbound,
           )
         }
       }
       let state_ref = Ref::Ref(step.state)
       let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
         group, step, state_ref, writer_queue, options, ports, dispatch, dispatch_context,
-        remaining_tasks, next_task_token,
+        remaining_tasks, next_task_token, outbound,
       ) catch {
         error =>
           runtime_fail_and_close_of(
@@ -2228,6 +2483,7 @@ async fn[G, C, D] runtime_apply_request_completion(
             false,
             dispatch_context,
             dispatch.close_owner,
+            outbound,
           )
       }
       match control {
@@ -2257,6 +2513,7 @@ async fn[G, C, D] runtime_apply_request_completion(
                 false,
                 updated_context,
                 dispatch.close_owner,
+                outbound,
               )
           }
           match command_result {
@@ -2286,6 +2543,7 @@ async fn[G, C, D] runtime_apply_request_completion(
                 false,
                 owner_context,
                 dispatch.close_owner,
+                outbound,
               )
               runtime_event_step(
                 {
@@ -2315,6 +2573,7 @@ async fn[G, C, D] runtime_apply_request_completion(
             false,
             updated_context,
             dispatch.close_owner,
+            outbound,
           )
           runtime_event_step(
             {
@@ -2349,6 +2608,7 @@ async fn[G, C, D] runtime_apply_notification_completion(
   remaining_tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
   let (owner_context, command_result) = runtime_apply_owner_commands_of(
     owner_commands,
@@ -2375,6 +2635,7 @@ async fn[G, C, D] runtime_apply_notification_completion(
         false,
         dispatch_context,
         dispatch.close_owner,
+        outbound,
       )
   }
   match command_result {
@@ -2402,6 +2663,7 @@ async fn[G, C, D] runtime_apply_notification_completion(
         false,
         owner_context,
         dispatch.close_owner,
+        outbound,
       )
       runtime_event_step(
         { state, decoder, tasks: [], next_task_token, stop: true },
@@ -2436,6 +2698,7 @@ async fn[G, C, D] runtime_apply_event_of(
   tasks : Array[RuntimeTaskControl],
   next_task_token : Int,
   shutdown : Ref[Bool],
+  outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
   let mut next_context = dispatch_context
   match event {
@@ -2460,6 +2723,7 @@ async fn[G, C, D] runtime_apply_event_of(
             false,
             next_context,
             dispatch.close_owner,
+            outbound,
           )
         }
       }
@@ -2470,7 +2734,7 @@ async fn[G, C, D] runtime_apply_event_of(
         let committed_state = Ref::Ref(next_state)
         let next = runtime_apply_message(
           group, next_state, committed_state, frame, writer_queue, options, ports,
-          dispatch, next_context, next_tasks, next_token, shutdown,
+          dispatch, next_context, next_tasks, next_token, shutdown, outbound,
         ) catch {
           error =>
             runtime_fail_and_close_of(
@@ -2488,6 +2752,7 @@ async fn[G, C, D] runtime_apply_event_of(
               false,
               next_context,
               dispatch.close_owner,
+              outbound,
             )
         }
         let (
@@ -2518,6 +2783,7 @@ async fn[G, C, D] runtime_apply_event_of(
               false,
               next_context,
               dispatch.close_owner,
+              outbound,
             )
             return runtime_event_step(
               {
@@ -2562,6 +2828,7 @@ async fn[G, C, D] runtime_apply_event_of(
         false,
         next_context,
         dispatch.close_owner,
+        outbound,
       )
     }
     RuntimeWriterFailed(error) => {
@@ -2583,6 +2850,7 @@ async fn[G, C, D] runtime_apply_event_of(
         true,
         next_context,
         dispatch.close_owner,
+        outbound,
       )
     }
     RuntimeOwnerTaskEvent(task_event) => {
@@ -2612,6 +2880,7 @@ async fn[G, C, D] runtime_apply_event_of(
             false,
             next_context,
             dispatch.close_owner,
+            outbound,
           )
         }
       }
@@ -2674,7 +2943,7 @@ async fn[G, C, D] runtime_apply_event_of(
               runtime_apply_request_completion(
                 id, result, commands, "late_owner_completion_ignored", state, decoder,
                 group, writer_queue, options, ports, events, dispatch, context, remaining_tasks,
-                next_task_token, shutdown,
+                next_task_token, shutdown, outbound,
               )
           }
         }
@@ -2695,9 +2964,288 @@ async fn[G, C, D] runtime_apply_event_of(
             Some(_) =>
               runtime_apply_notification_completion(
                 commands, state, decoder, group, writer_queue, options, ports, events,
-                dispatch, context, remaining_tasks, next_task_token, shutdown,
+                dispatch, context, remaining_tasks, next_task_token, shutdown, outbound,
               )
           }
+        }
+      }
+    }
+    RuntimeOutboundRequestSubmitted(method_name~, params~, reply~) => {
+      // The loop allocates every channel request id itself, so correlation is
+      // engine-owned and no two submissions can collide.
+      let id : RequestId = Number(outbound.val.next_outbound_id.to_int64())
+      let request = JsonRpcRequest::new(id~, method_name~, params~) catch {
+        _ => {
+          (ports.trace)(
+            runtime_trace_event(
+              "outbound",
+              "outbound_request_invalid",
+              runtime_request_id_text(id),
+              method_name,
+              "protocol",
+            ),
+          )
+          runtime_outbound_reply_put(
+            reply,
+            RuntimeOutboundFailed(kind=Protocol),
+          )
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "protocol",
+            ReducerFailed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+        }
+      }
+      let step = connection_reduce(state, OutgoingRequest(request)) catch {
+        _ => {
+          (ports.trace)(
+            runtime_trace_event(
+              "outbound",
+              "outbound_reducer_failed",
+              runtime_request_id_text(id),
+              method_name,
+              "reducer",
+            ),
+          )
+          runtime_outbound_reply_put(
+            reply,
+            RuntimeOutboundFailed(kind=Protocol),
+          )
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "protocol",
+            ReducerFailed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+        }
+      }
+      // Waiter-before-send: the waiter is registered before the write is
+      // offered, inside this one loop step, so every failure from here on
+      // settles this submission exactly once through the close path below
+      // (the reducer already committed the pending, so FailOutbound fires the
+      // outbound_failure callback for it before releasing the waiter).
+      outbound.val = {
+        next_outbound_id: outbound.val.next_outbound_id + 1,
+        waiters: runtime_outbound_push_waiter(outbound.val.waiters, id, reply),
+      }
+      let state_ref = Ref::Ref(step.state)
+      let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
+        group, step, state_ref, writer_queue, options, ports, dispatch, next_context,
+        tasks, next_task_token, outbound,
+      ) catch {
+        error =>
+          runtime_fail_and_close_of(
+            group,
+            state_ref.val,
+            runtime_outbound_write_reason(error),
+            error,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+      }
+      match control {
+        RuntimeApplyContinue =>
+          runtime_event_step(
+            {
+              state: state_ref.val,
+              decoder,
+              tasks: updated_tasks,
+              next_task_token: updated_token,
+              stop: false,
+            },
+            updated_context,
+          )
+        RuntimeApplyOwnerClose(reason=close_reason) => {
+          let closed_context = runtime_close_connection_of(
+            group,
+            state_ref.val,
+            close_reason,
+            writer_queue,
+            options,
+            ports,
+            events,
+            updated_tasks,
+            updated_token,
+            shutdown,
+            false,
+            updated_context,
+            dispatch.close_owner,
+            outbound,
+          )
+          runtime_event_step(
+            {
+              state: state_ref.val,
+              decoder,
+              tasks: [],
+              next_task_token: updated_token,
+              stop: true,
+            },
+            closed_context,
+          )
+        }
+      }
+    }
+    RuntimeOutboundNotificationSubmitted(method_name~, params~, ack~) => {
+      let notification = JsonRpcNotification::new(method_name~, params~) catch {
+        _ => {
+          (ports.trace)(
+            runtime_trace_event(
+              "outbound", "outbound_notification_invalid", "", method_name, "protocol",
+            ),
+          )
+          runtime_outbound_ack_put(ack, RuntimeOutboundAckFailed(kind=Protocol))
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "protocol",
+            ReducerFailed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+        }
+      }
+      let step = connection_reduce(state, OutgoingNotification(notification)) catch {
+        _ => {
+          (ports.trace)(
+            runtime_trace_event(
+              "outbound", "outbound_notification_reducer_failed", "", method_name,
+              "reducer",
+            ),
+          )
+          runtime_outbound_ack_put(ack, RuntimeOutboundAckFailed(kind=Protocol))
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "protocol",
+            ReducerFailed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+        }
+      }
+      let state_ref = Ref::Ref(step.state)
+      let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
+        group, step, state_ref, writer_queue, options, ports, dispatch, next_context,
+        tasks, next_task_token, outbound,
+      ) catch {
+        error => {
+          // A notification has no reducer pending, so no close command will
+          // settle it; release the ack directly with the write failure kind.
+          runtime_outbound_ack_put(
+            ack,
+            RuntimeOutboundAckFailed(kind=runtime_outbound_write_kind(error)),
+          )
+          runtime_fail_and_close_of(
+            group,
+            state_ref.val,
+            runtime_outbound_write_reason(error),
+            error,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            next_context,
+            dispatch.close_owner,
+            outbound,
+          )
+        }
+      }
+      // Ack contract: acknowledge enqueue into the serial writer queue only,
+      // never a transport I/O flush (ClientNotificationBroker contract).
+      runtime_outbound_ack_put(ack, RuntimeOutboundAcked)
+      match control {
+        RuntimeApplyContinue =>
+          runtime_event_step(
+            {
+              state: state_ref.val,
+              decoder,
+              tasks: updated_tasks,
+              next_task_token: updated_token,
+              stop: false,
+            },
+            updated_context,
+          )
+        RuntimeApplyOwnerClose(reason=close_reason) => {
+          let closed_context = runtime_close_connection_of(
+            group,
+            state_ref.val,
+            close_reason,
+            writer_queue,
+            options,
+            ports,
+            events,
+            updated_tasks,
+            updated_token,
+            shutdown,
+            false,
+            updated_context,
+            dispatch.close_owner,
+            outbound,
+          )
+          runtime_event_step(
+            {
+              state: state_ref.val,
+              decoder,
+              tasks: [],
+              next_task_token: updated_token,
+              stop: true,
+            },
+            closed_context,
+          )
         }
       }
     }
@@ -2732,6 +3280,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 false,
                 next_context,
                 dispatch.close_owner,
+                outbound,
               )
             }
           }
@@ -2807,13 +3356,14 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     next_context,
                     dispatch.close_owner,
+                    outbound,
                   )
                 }
               }
               let state_ref = Ref::Ref(step.state)
               let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
                 group, step, state_ref, writer_queue, options, ports, dispatch, next_context,
-                remaining_tasks, next_task_token,
+                remaining_tasks, next_task_token, outbound,
               ) catch {
                 error =>
                   runtime_fail_and_close_of(
@@ -2831,6 +3381,7 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     next_context,
                     dispatch.close_owner,
+                    outbound,
                   )
               }
               match control {
@@ -2862,6 +3413,7 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     updated_context,
                     dispatch.close_owner,
+                    outbound,
                   )
                   runtime_event_step(
                     {
@@ -2910,6 +3462,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 false,
                 next_context,
                 dispatch.close_owner,
+                outbound,
               )
             }
           }
@@ -2984,12 +3537,13 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     next_context,
                     dispatch.close_owner,
+                    outbound,
                   )
               }
               let state_ref = Ref::Ref(step.state)
               let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
                 group, step, state_ref, writer_queue, options, ports, dispatch, next_context,
-                remaining_tasks, next_task_token,
+                remaining_tasks, next_task_token, outbound,
               ) catch {
                 error =>
                   runtime_fail_and_close_of(
@@ -3007,6 +3561,7 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     next_context,
                     dispatch.close_owner,
+                    outbound,
                   )
               }
               match control {
@@ -3038,6 +3593,7 @@ async fn[G, C, D] runtime_apply_event_of(
                     false,
                     updated_context,
                     dispatch.close_owner,
+                    outbound,
                   )
                   runtime_event_step(
                     {
@@ -3077,6 +3633,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 false,
                 next_context,
                 dispatch.close_owner,
+                outbound,
               )
             }
           }
@@ -3183,6 +3740,7 @@ async fn[G, C, D] runtime_apply_event_of(
             false,
             next_context,
             dispatch.close_owner,
+            outbound,
           )
         }
       }
@@ -3210,6 +3768,7 @@ async fn[G, C, D] runtime_apply_event_of(
             false,
             next_context,
             dispatch.close_owner,
+            outbound,
           )
         }
       }
@@ -3227,6 +3786,7 @@ async fn[G, C, D] runtime_apply_event_of(
         false,
         next_context,
         dispatch.close_owner,
+        outbound,
       )
       runtime_event_step(
         { state, decoder, tasks: [], next_task_token, stop: true },
@@ -3288,39 +3848,59 @@ async fn[G, C, D] runtime_connection_engine_with_dispatch_of(
   let mut decoder = framing_state(max_frame_bytes=options.max_frame_bytes)
   let mut tasks : Array[RuntimeTaskControl] = []
   let mut next_task_token = 0
-  for ;; {
-    let event = runtime_event_get(events) catch {
-      _ =>
-        runtime_fail_and_close_of(
-          group,
-          state,
-          "event_queue",
-          EventQueueClosed,
-          writer_queue,
-          options,
-          ports,
-          events,
-          tasks,
-          next_task_token,
-          shutdown,
-          false,
-          dispatch_context,
-          dispatch.close_owner,
-        )
+  let mut outbound_registry = runtime_outbound_registry()
+  try {
+    for ;; {
+      // One registry snapshot per loop turn, mirroring `state_ref`: the
+      // threaded state stays immutable while command interpretation releases
+      // waiters in place during this sequential step.
+      let outbound = Ref::Ref(outbound_registry)
+      let event = runtime_event_get(events) catch {
+        _ =>
+          runtime_fail_and_close_of(
+            group,
+            state,
+            "event_queue",
+            EventQueueClosed,
+            writer_queue,
+            options,
+            ports,
+            events,
+            tasks,
+            next_task_token,
+            shutdown,
+            false,
+            dispatch_context,
+            dispatch.close_owner,
+            outbound,
+          )
+      }
+      let (step, next_context) = runtime_apply_event_of(
+        event, state, decoder, group, writer_queue, options, ports, events, event_to_result,
+        dispatch, owner_event, dispatch_context, tasks, next_task_token, shutdown,
+        outbound,
+      )
+      state = step.state
+      decoder = step.decoder
+      tasks = step.tasks
+      next_task_token = step.next_task_token
+      dispatch_context = next_context
+      outbound_registry = outbound.val
+      if step.stop {
+        break
+      }
     }
-    let (step, next_context) = runtime_apply_event_of(
-      event, state, decoder, group, writer_queue, options, ports, events, event_to_result,
-      dispatch, owner_event, dispatch_context, tasks, next_task_token, shutdown,
-    )
-    state = step.state
-    decoder = step.decoder
-    tasks = step.tasks
-    next_task_token = step.next_task_token
-    dispatch_context = next_context
-    if step.stop {
-      break
+  } catch {
+    error => {
+      // A raise means the loop is gone; submissions still queued behind the
+      // failing event can never be admitted, so reply to them before the
+      // error escapes. Submissions already admitted were released by the
+      // close-path sweep, and release is exactly-once by registry removal.
+      runtime_outbound_drain_stranded(events)
+      raise error
     }
   }
+  runtime_outbound_drain_stranded(events)
   dispatch_context
 }
 
@@ -3379,6 +3959,128 @@ pub async fn[S, I, C, E] connection_runtime_run_owner(
       ports,
       options,
       (events, shutdown) => {
+        let context : RuntimeOwnerDispatchContext[S, I, C, E] = {
+          owner: runtime_owner_new(owner_port),
+          port: owner_port,
+          events,
+          shutdown,
+          limit: options.queue_capacity,
+        }
+        (runtime_owner_dispatch_port(), context)
+      },
+      runtime_owner_handler_result_unavailable,
+      runtime_owner_apply_task_event,
+    )
+  })
+}
+
+///|
+/// Engine-level outbound submission channel for one connection. A submitter
+/// deposits one event in the connection's single event queue and parks on a
+/// one-shot reply queue; the single owner loop allocates the request id,
+/// registers the waiter, and only then offers the write to the serial writer
+/// queue (waiter-before-send). The channel is constructed only inside
+/// `connection_runtime_run_owner_with_outbound`; its fields never escape.
+pub struct RuntimeOutboundChannel[C] {
+  priv events : @aqueue.Queue[RuntimeEventOf[C]]
+  priv shutdown : Ref[Bool]
+  priv limit : Int
+}
+
+///|
+/// Submit one request and park until the engine delivers exactly one reply.
+/// Submission is rejected with `EventQueueClosed` before enqueueing once the
+/// engine has begun shutting down, mirroring the owner task publication
+/// guard: a parked submitter can never outlive the loop, because admitted
+/// waiters are released by the close sweep and never-admitted submissions
+/// are answered by the engine's stranded-event drain.
+pub async fn[C] RuntimeOutboundChannel::submit_request(
+  self : RuntimeOutboundChannel[C],
+  method_name~ : String,
+  params~ : Json,
+) -> JsonRpcResponse {
+  if self.shutdown.val {
+    raise @runtime.RuntimeError::EventQueueClosed
+  }
+  let reply : @aqueue.Queue[RuntimeOutboundReply] = Queue(kind=Unbounded)
+  runtime_event_put(
+    self.events,
+    RuntimeOutboundRequestSubmitted(method_name~, params~, reply~),
+    self.limit,
+  )
+  let answer = reply.get() catch {
+    error => {
+      if @async.is_cancellation_error(error) {
+        raise error
+      }
+      raise @runtime.RuntimeError::EventQueueClosed
+    }
+  }
+  match answer {
+    RuntimeOutboundReplied(response~) => response
+    RuntimeOutboundFailed(kind~) => raise runtime_outbound_reply_error(kind)
+  }
+}
+
+///|
+/// Submit one notification and park until the engine acknowledges it. The
+/// ack records enqueue into the serial writer queue only; it never claims
+/// transport I/O completed, matching the `ClientNotificationBroker`
+/// contract on the stable facade.
+pub async fn[C] RuntimeOutboundChannel::submit_notification(
+  self : RuntimeOutboundChannel[C],
+  method_name~ : String,
+  params~ : Json,
+) -> Unit {
+  if self.shutdown.val {
+    raise @runtime.RuntimeError::EventQueueClosed
+  }
+  let ack : @aqueue.Queue[RuntimeOutboundAck] = Queue(kind=Unbounded)
+  runtime_event_put(
+    self.events,
+    RuntimeOutboundNotificationSubmitted(method_name~, params~, ack~),
+    self.limit,
+  )
+  let answer = ack.get() catch {
+    error => {
+      if @async.is_cancellation_error(error) {
+        raise error
+      }
+      raise @runtime.RuntimeError::EventQueueClosed
+    }
+  }
+  match answer {
+    RuntimeOutboundAcked => ()
+    RuntimeOutboundAckFailed(kind~) => raise runtime_outbound_reply_error(kind)
+  }
+}
+
+///|
+/// Run the one owner engine with an engine-level outbound submission
+/// channel. The factory runs after the connection-local queues and shutdown
+/// state exist and before the loop starts; its closures may capture the
+/// channel and hand it to typed request/notification brokers in a later work
+/// order. This runner adds no second loop: it reuses the same single
+/// reader/writer/reducer engine as `connection_runtime_run_owner`, whose
+/// signature and behavior stay unchanged for existing callers.
+pub async fn[S, I, C, E] connection_runtime_run_owner_with_outbound(
+  ports : RuntimePorts,
+  options : RuntimeOptions,
+  channel_factory : (RuntimeOutboundChannel[C]) -> RuntimeOwnerPort[S, I, C, E],
+) -> Unit {
+  runtime_validate_options(options)
+  let _ = @async.with_task_group(group => {
+    let _ = runtime_connection_engine_with_dispatch_of(
+      group,
+      ports,
+      options,
+      (events, shutdown) => {
+        let channel : RuntimeOutboundChannel[C] = {
+          events,
+          shutdown,
+          limit: options.queue_capacity,
+        }
+        let owner_port = channel_factory(channel)
         let context : RuntimeOwnerDispatchContext[S, I, C, E] = {
           owner: runtime_owner_new(owner_port),
           port: owner_port,

@@ -69,9 +69,22 @@ async fn[G] runtime_apply_event(
     RuntimeLegacySpawnContext[RuntimeHandlerResult],
   ] = runtime_legacy_dispatch_port()
   let (step, _) = runtime_apply_event_of(
-    event, state, decoder, group, writer_queue, options, ports, events, runtime_identity_handler_result,
-    dispatch, runtime_owner_event_unavailable, dispatch_context, tasks, next_task_token,
+    event,
+    state,
+    decoder,
+    group,
+    writer_queue,
+    options,
+    ports,
+    events,
+    runtime_identity_handler_result,
+    dispatch,
+    runtime_owner_event_unavailable,
+    dispatch_context,
+    tasks,
+    next_task_token,
     shutdown,
+    Ref(runtime_outbound_registry()),
   )
   step
 }
@@ -1175,6 +1188,7 @@ async test "runtime outbound cancellation uses callback once and rejects missing
     8,
     ports,
     [],
+    Ref(runtime_outbound_registry()),
   )
   assert_eq(cancelled, [Number(70)])
   assert_eq(
@@ -1189,6 +1203,7 @@ async test "runtime outbound cancellation uses callback once and rejects missing
       8,
       missing_ports,
       [],
+      Ref(runtime_outbound_registry()),
     )
   catch {
     OutboundCancelUnavailable => ()
@@ -1244,6 +1259,7 @@ async test "runtime completion reducer failure closes every pending outbound onc
         false,
         (),
         runtime_wbtest_unit_close_owner,
+        Ref(runtime_outbound_registry()),
       )
     } catch {
       _ => caught.push(())
@@ -2376,6 +2392,7 @@ async test "runtime owner runtime rejects token and id mismatch fail-fast" {
         ],
         1,
         shutdown,
+        Ref(runtime_outbound_registry()),
       )
     catch {
       @runtime.RuntimeError::TaskRequestMismatch => raised = true
@@ -2468,6 +2485,7 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
       ],
       1,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_eq(first.tasks.length(), 0)
     let (second, _) = runtime_apply_event_of(
@@ -2486,6 +2504,7 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
       first.tasks,
       first.next_task_token,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_eq(second.tasks.length(), 0)
   })
@@ -3209,6 +3228,7 @@ async test "runtime dispatch threads updated context across events" {
       [],
       0,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_eq(first_context, 11)
     assert_eq(first.tasks.length(), 2)
@@ -3274,6 +3294,7 @@ async test "runtime applies immediate request completion before owner commands" 
       0,
       [],
       0,
+      Ref(runtime_outbound_registry()),
     )
     assert_eq(context, 1)
     assert_eq(tasks.length(), 0)
@@ -3907,6 +3928,7 @@ async test "runtime owner eof close stops admission and empties pending work" {
       controls,
       2,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_true(step.stop)
     assert_eq(step.tasks.length(), 0)
@@ -4062,6 +4084,7 @@ async test "runtime owner late completion after close is traced and ignored" {
       ],
       1,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_true(closed_step.stop)
     assert_true(closed_context.owner.is_closed())
@@ -4081,6 +4104,7 @@ async test "runtime owner late completion after close is traced and ignored" {
       closed_step.tasks,
       closed_step.next_task_token,
       shutdown,
+      Ref(runtime_outbound_registry()),
     )
     assert_eq(late_step.state, closed_step.state)
     assert_eq(late_step.tasks.length(), 0)
@@ -4161,6 +4185,7 @@ async test "runtime dispatch admission failure leaves no task or pending leak" {
           controls,
           1,
           shutdown,
+          Ref(runtime_outbound_registry()),
         ),
       )
     catch {
@@ -4247,6 +4272,7 @@ async test "runtime typed cancel failure settles its pending without leaks" {
           [],
           1,
           shutdown,
+          Ref(runtime_outbound_registry()),
         ),
       )
     catch {
@@ -4438,6 +4464,7 @@ async test "runtime owner close cleanup failure still cancels tasks and settles 
           controls,
           1,
           shutdown,
+          Ref(runtime_outbound_registry()),
         ),
       )
     catch {
@@ -4460,4 +4487,557 @@ async test "runtime owner close cleanup failure still cancels tasks and settles 
   let command_failures = traces.filter(event => event.phase == "command_failed")
   assert_eq(command_failures.length(), 1)
   assert_eq(command_failures[0].error_kind, "writer_queue_closed")
+}
+
+///|
+/// Outbound-channel test ports: the response and outbound-failure callbacks
+/// record typed ids so settle-once is observable without engine internals.
+fn runtime_outbound_run_ports(
+  input : @aqueue.Queue[Bytes?],
+  output : Array[Bytes],
+  written : @aqueue.Queue[Unit],
+  traces : Array[RuntimeTraceEvent],
+  responses : Array[RequestId],
+  failures : Array[(RequestId, RuntimeOutboundFailureKind)],
+) -> RuntimePorts {
+  {
+    reader: { read: _ => input.get() },
+    writer: {
+      write: frame => {
+        output.push(frame)
+        written.put(())
+      },
+    },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: response => responses.push(connection_response_id(response)),
+      outbound_failure: Some((id, failure) => {
+        failures.push((id, failure.reason))
+      }),
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+}
+
+///|
+/// Run the one owner engine with an outbound channel and hand the channel to
+/// spawned submitters through an unbounded queue. The factory is
+/// synchronous, so it enqueues with `try_put`; that call wakes any submitter
+/// already parked on `get` point-to-point, making the handoff deterministic
+/// without any task-scheduling assumption.
+async fn runtime_outbound_run(
+  ports : RuntimePorts,
+  options : RuntimeOptions,
+  captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]],
+) -> Unit {
+  connection_runtime_run_owner_with_outbound(ports, options, channel => {
+    let _ = captured.try_put(channel) catch { _ => false }
+    runtime_owner_run_immediate_port(HandlerSuccess(Json::null()), [], [])
+  })
+}
+
+///|
+async test "runtime outbound channel round-trips one request through the wire" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      runtime_outbound_run(ports, runtime_test_options(), captured)
+    })
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      channel.submit_request(method_name="ask", params=Json::null())
+    })
+    written.get()
+    input.put(
+      Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"done\"}\n")),
+    )
+    input.put(None)
+    let response = submitter.wait()
+    runner.wait()
+    match response {
+      Success(success) => {
+        assert_eq(success.id, Number(1))
+        assert_eq(success.result, Json::string("done"))
+      }
+      Error(_) => fail("channel round-trip must deliver the success response")
+    }
+    assert_eq(output.length(), 1)
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Request(request) => {
+        assert_eq(request.id, Number(1))
+        assert_eq(request.method_name, "ask")
+      }
+      _ => fail("channel must write exactly the submitted request frame")
+    }
+    assert_eq(responses, [Number(1)])
+    assert_eq(failures.length(), 0)
+  })
+}
+
+///|
+async test "runtime outbound submission fails fast under writer backpressure" {
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(1))
+  writer_queue.put(RuntimeFrame(@utf8.encode("occupied\n")))
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: response => responses.push(connection_response_id(response)),
+      outbound_failure: Some((id, failure) => {
+        failures.push((id, failure.reason))
+      }),
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let shutdown = Ref::Ref(false)
+  let reply : @aqueue.Queue[RuntimeOutboundReply] = Queue(kind=Unbounded)
+  let options = { ..runtime_test_options(), queue_capacity: 1 }
+  let mut backpressure_limit = 0
+  @async.with_task_group(group => {
+    // The drain task only runs after the offer already failed synchronously,
+    // then frees the stop sentinel so the close path cannot park forever.
+    let drain = group.spawn(() => {
+      for ;; {
+        let item = writer_queue.get() catch { _ => break }
+        match item {
+          RuntimeStop => break
+          RuntimeFrame(_) => ()
+        }
+      }
+    })
+    try
+      ignore(
+        runtime_apply_event(
+          RuntimeOutboundRequestSubmitted(
+            method_name="ask",
+            params=Json::null(),
+            reply~,
+          ),
+          connection_state(),
+          framing_state(max_frame_bytes=256),
+          group,
+          writer_queue,
+          options,
+          ports,
+          events,
+          [],
+          0,
+          shutdown,
+        ),
+      )
+    catch {
+      @runtime.RuntimeError::WriterQueueBackpressure(limit~) =>
+        backpressure_limit = limit
+      _ => fail("writer backpressure must surface the primary writer error")
+    } noraise {
+      _ => fail("writer backpressure must raise")
+    }
+    drain.wait()
+  })
+  assert_eq(backpressure_limit, 1)
+  assert_true(shutdown.val)
+  assert_eq(responses.length(), 0)
+  assert_eq(failures.length(), 1)
+  assert_eq(failures[0].0, Number(1))
+  assert_true(failures[0].1 is Writer)
+  match reply.get() {
+    RuntimeOutboundFailed(kind~) => assert_true(kind is Writer)
+    RuntimeOutboundReplied(_) =>
+      fail("backpressure must fail the parked submitter")
+  }
+  match (reply.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("backpressure must release the waiter exactly once")
+  }
+}
+
+///|
+async test "runtime outbound parked waiter settles once on eof close" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  // The parked submitter classifies its own failure inside its task, so an
+  // expected submission failure never fails the shared task group.
+  let submit_error : Array[String] = []
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      runtime_outbound_run(ports, runtime_test_options(), captured)
+    })
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      try {
+        ignore(channel.submit_request(method_name="ask", params=Json::null()))
+        submit_error.push("none")
+      } catch {
+        @runtime.RuntimeError::ReaderFailed =>
+          submit_error.push("reader_failed")
+        _ => submit_error.push("unexpected")
+      }
+    })
+    written.get()
+    input.put(None)
+    submitter.wait()
+    runner.wait()
+  })
+  assert_eq(submit_error, ["reader_failed"])
+  assert_eq(responses.length(), 0)
+  assert_eq(failures.length(), 1)
+  assert_eq(failures[0].0, Number(1))
+  assert_true(failures[0].1 is EndOfInput)
+  let outbound_failed = traces.filter(event => event.phase == "outbound_failed")
+  assert_eq(outbound_failed.length(), 1)
+}
+
+///|
+async test "runtime outbound notification acks enqueue before flush" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      runtime_outbound_run(ports, runtime_test_options(), captured)
+    })
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      channel.submit_notification(method_name="note", params=Json::null())
+    })
+    written.get()
+    submitter.wait()
+    input.put(None)
+    runner.wait()
+    assert_eq(output.length(), 1)
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Notification(notification) => assert_eq(notification.method_name, "note")
+      _ => fail("channel must write exactly the submitted notification frame")
+    }
+    assert_eq(responses.length(), 0)
+    assert_eq(failures.length(), 0)
+  })
+}
+
+///|
+async test "runtime outbound notification fails with writer kind under backpressure" {
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(1))
+  writer_queue.put(RuntimeFrame(@utf8.encode("occupied\n")))
+  let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
+  let ports : RuntimePorts = {
+    reader: { read: _ => None },
+    writer: { write: _ => () },
+    handlers: {
+      request: _ => HandlerSuccess(Json::null()),
+      notification: _ => (),
+      response: response => responses.push(connection_response_id(response)),
+      outbound_failure: Some((id, failure) => {
+        failures.push((id, failure.reason))
+      }),
+    },
+    cancel_outbound: None,
+    trace: event => traces.push(event),
+  }
+  let shutdown = Ref::Ref(false)
+  let ack : @aqueue.Queue[RuntimeOutboundAck] = Queue(kind=Unbounded)
+  let options = { ..runtime_test_options(), queue_capacity: 1 }
+  let mut backpressure_limit = 0
+  @async.with_task_group(group => {
+    let drain = group.spawn(() => {
+      for ;; {
+        let item = writer_queue.get() catch { _ => break }
+        match item {
+          RuntimeStop => break
+          RuntimeFrame(_) => ()
+        }
+      }
+    })
+    try
+      ignore(
+        runtime_apply_event(
+          RuntimeOutboundNotificationSubmitted(
+            method_name="note",
+            params=Json::null(),
+            ack~,
+          ),
+          connection_state(),
+          framing_state(max_frame_bytes=256),
+          group,
+          writer_queue,
+          options,
+          ports,
+          events,
+          [],
+          0,
+          shutdown,
+        ),
+      )
+    catch {
+      @runtime.RuntimeError::WriterQueueBackpressure(limit~) =>
+        backpressure_limit = limit
+      _ => fail("notification backpressure must surface the writer error")
+    } noraise {
+      _ => fail("notification backpressure must raise")
+    }
+    drain.wait()
+  })
+  assert_eq(backpressure_limit, 1)
+  assert_true(shutdown.val)
+  // A notification owns no reducer pending, so no outbound_failure may fire.
+  assert_eq(failures.length(), 0)
+  match ack.get() {
+    RuntimeOutboundAckFailed(kind~) => assert_true(kind is Writer)
+    RuntimeOutboundAcked => fail("notification backpressure must fail the ack")
+  }
+  match (ack.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("backpressure must release the ack exactly once")
+  }
+}
+
+///|
+async test "runtime outbound reverse replies reach each own waiter" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      runtime_outbound_run(ports, runtime_test_options(), captured)
+    })
+    let first = group.spawn(() => {
+      let channel = captured.get()
+      // Hand the same channel handle to the second submitter before
+      // parking, so both waiters share the one engine-owned channel.
+      let _ = captured.try_put(channel) catch { _ => false }
+      channel.submit_request(method_name="one", params=Json::null())
+    })
+    written.get()
+    let second = group.spawn(() => {
+      let channel = captured.get()
+      channel.submit_request(method_name="two", params=Json::null())
+    })
+    written.get()
+    input.put(
+      Some(
+        @utf8.encode(
+          "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":\"second\"}\n" +
+          "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"first\"}\n",
+        ),
+      ),
+    )
+    input.put(None)
+    let second_response = second.wait()
+    let first_response = first.wait()
+    runner.wait()
+    match second_response {
+      Success(success) => {
+        assert_eq(success.id, Number(2))
+        assert_eq(success.result, Json::string("second"))
+      }
+      Error(_) => fail("second waiter must receive its own response")
+    }
+    match first_response {
+      Success(success) => {
+        assert_eq(success.id, Number(1))
+        assert_eq(success.result, Json::string("first"))
+      }
+      Error(_) => fail("first waiter must receive its own response")
+    }
+    assert_eq(output.length(), 2)
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Request(request) => assert_eq(request.method_name, "one")
+      _ => fail("first frame must be the first request")
+    }
+    match jsonrpc_decode(@utf8.decode(output[1].view())) {
+      Request(request) => assert_eq(request.method_name, "two")
+      _ => fail("second frame must be the second request")
+    }
+    // Replies are applied in wire order, so the reverse response for id 2
+    // completes before the response for id 1.
+    assert_eq(responses, [Number(2), Number(1)])
+    assert_eq(failures.length(), 0)
+  })
+}
+
+///|
+async test "runtime outbound submit after shutdown fails immediately" {
+  // Engine-level: after a graceful EOF close the captured channel must
+  // reject both submission kinds without parking.
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  input.put(None)
+  connection_runtime_run_owner_with_outbound(ports, runtime_test_options(), channel => {
+    let _ = captured.try_put(channel) catch { _ => false }
+    runtime_owner_run_immediate_port(HandlerSuccess(Json::null()), [], [])
+  })
+  let channel = captured.get()
+  let mut request_rejected = false
+  try
+    ignore(channel.submit_request(method_name="ask", params=Json::null()))
+  catch {
+    @runtime.RuntimeError::EventQueueClosed => request_rejected = true
+    _ =>
+      fail(
+        "post-close request submission must fail with the closed queue error",
+      )
+  } noraise {
+    _ => fail("post-close request submission must raise")
+  }
+  assert_true(request_rejected)
+  let mut notification_rejected = false
+  try
+    channel.submit_notification(method_name="note", params=Json::null())
+  catch {
+    @runtime.RuntimeError::EventQueueClosed => notification_rejected = true
+    _ =>
+      fail(
+        "post-close notification submission must fail with the closed queue error",
+      )
+  } noraise {
+    _ => fail("post-close notification submission must raise")
+  }
+  assert_true(notification_rejected)
+  // Unit seam: a shutdown flag alone rejects before enqueueing.
+  let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
+  let shutdown : Ref[Bool] = Ref(false)
+  shutdown.val = true
+  let guarded : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let mut local_rejected = false
+  try
+    ignore(guarded.submit_request(method_name="ask", params=Json::null()))
+  catch {
+    @runtime.RuntimeError::EventQueueClosed => local_rejected = true
+    _ => fail("shutdown guard must fail with the closed queue error")
+  } noraise {
+    _ => fail("shutdown guard must raise")
+  }
+  assert_true(local_rejected)
+  match (events.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("drain must leave the event queue empty")
+  }
+}
+
+///|
+async test "runtime outbound submit rejects a full event queue without parking" {
+  let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
+  events.put(RuntimeEof)
+  let shutdown : Ref[Bool] = Ref(false)
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let mut observed_limit = 0
+  try
+    ignore(channel.submit_request(method_name="ask", params=Json::null()))
+  catch {
+    @runtime.RuntimeError::EventQueueBackpressure(limit~) =>
+      observed_limit = limit
+    _ => fail("full event queue must surface event queue backpressure")
+  } noraise {
+    _ => fail("full event queue must raise")
+  }
+  assert_eq(observed_limit, 1)
+  // The rejected submission never entered the queue and never parked.
+  match (events.try_get() catch { _ => None }) {
+    Some(RuntimeEof) => ()
+    _ => fail("backpressure must not enqueue the rejected submission")
+  }
+}
+
+///|
+async test "runtime outbound drain settles stranded submissions once" {
+  let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Unbounded)
+  let reply : @aqueue.Queue[RuntimeOutboundReply] = Queue(kind=Unbounded)
+  let ack : @aqueue.Queue[RuntimeOutboundAck] = Queue(kind=Unbounded)
+  events.put(
+    RuntimeOutboundRequestSubmitted(
+      method_name="ask",
+      params=Json::null(),
+      reply~,
+    ),
+  )
+  events.put(RuntimeChunk(@utf8.encode("dead letter\n")))
+  events.put(
+    RuntimeOutboundNotificationSubmitted(
+      method_name="note",
+      params=Json::null(),
+      ack~,
+    ),
+  )
+  runtime_outbound_drain_stranded(events)
+  match reply.get() {
+    RuntimeOutboundFailed(kind~) => assert_true(kind is Runtime)
+    RuntimeOutboundReplied(_) =>
+      fail("stranded request must fail, not complete")
+  }
+  match ack.get() {
+    RuntimeOutboundAckFailed(kind~) => assert_true(kind is Runtime)
+    RuntimeOutboundAcked => fail("stranded notification must fail, not ack")
+  }
+  match (reply.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("backpressure must release the waiter exactly once")
+  }
+  match (ack.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("backpressure must release the ack exactly once")
+  }
+  match (events.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("drain must leave the event queue empty")
+  }
 }
