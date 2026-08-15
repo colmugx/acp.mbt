@@ -240,7 +240,86 @@ async test "client connection over channel maps an undecodable reply to a typed 
 }
 
 ///|
-async test "client connection over channel reports notifications as typed unavailability" {
+async test "client connection over channel submits engine cancel notifications" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = broker_channel_test_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => broker_channel_test_run(ports, captured))
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      let connection = client_connection_over_channel(channel~)
+      // The synchronous notification port submits the bidirectional
+      // cancellation through the real engine instead of failing fast; the
+      // facade call only returns once the event-queue offer succeeded.
+      connection.cancel_request(String("peer-request"))
+      let _ = captured.try_put(channel) catch { _ => false }
+    })
+    written.get()
+    submitter.wait()
+    input.put(None)
+    runner.wait()
+    assert_eq(output.length(), 1)
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Notification(notification) =>
+        assert_eq(notification.method_name, "$/cancel_request")
+      _ => fail("cancel_request must write exactly one $/cancel_request frame")
+    }
+    assert_eq(responses.length(), 0)
+    assert_eq(failures.length(), 0)
+  })
+}
+
+///|
+async test "client connection over channel submits session cancel notifications" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = broker_channel_test_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => broker_channel_test_run(ports, captured))
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      let connection = client_connection_over_channel(channel~)
+      // The stable v1 Client-to-Agent notification goes through the same
+      // synchronous submission path; Ok records event-queue acceptance.
+      connection.cancel({ session_id: "session", meta: Omitted })
+      let _ = captured.try_put(channel) catch { _ => false }
+    })
+    written.get()
+    submitter.wait()
+    input.put(None)
+    runner.wait()
+    assert_eq(output.length(), 1)
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Notification(notification) =>
+        assert_eq(notification.method_name, "session/cancel")
+      _ => fail("cancel must write exactly one session/cancel frame")
+    }
+    assert_eq(responses.length(), 0)
+    assert_eq(failures.length(), 0)
+  })
+}
+
+///|
+async test "client connection over channel maps closed notifications to typed unavailability" {
   // The submitter classifies its own failure inside its task, so an expected
   // typed unavailability never fails the shared task group.
   let observed : Array[String] = []
@@ -260,23 +339,25 @@ async test "client connection over channel reports notifications as typed unavai
     let runner = group.spawn(() => broker_channel_test_run(ports, captured))
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = client_connection_over_channel(channel~)
-      // The synchronous notification port fails fast with a typed error; it
-      // never claims the notification reached the engine.
-      try {
-        connection.cancel_request(String("peer-request"))
-        observed.push("unexpected-success")
-      } catch {
-        ClientConnectionUnavailable(method_name~) => observed.push(method_name)
-        _ => observed.push("unexpected-error")
-      }
+      // Hand the engine-owned channel back before the engine closes so the
+      // post-close check reuses the exact handle the engine constructed.
+      let _ = captured.try_put(channel) catch { _ => false }
     })
     submitter.wait()
     input.put(None)
     runner.wait()
+    let channel = captured.get()
+    let connection = client_connection_over_channel(channel~)
+    try {
+      connection.cancel({ session_id: "session", meta: Omitted })
+      observed.push("unexpected-success")
+    } catch {
+      ClientConnectionUnavailable(method_name~) => observed.push(method_name)
+      _ => observed.push("unexpected-error")
+    }
+    assert_eq(observed, ["session/cancel"])
+    assert_eq(output.length(), 0)
+    assert_eq(responses.length(), 0)
+    assert_eq(failures.length(), 0)
   })
-  assert_eq(observed, ["$/cancel_request"])
-  assert_eq(output.length(), 0)
-  assert_eq(responses.length(), 0)
-  assert_eq(failures.length(), 0)
 }

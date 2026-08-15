@@ -5041,3 +5041,136 @@ async test "runtime outbound drain settles stranded submissions once" {
     Some(_) => fail("drain must leave the event queue empty")
   }
 }
+
+///|
+async test "runtime outbound sync notification reaches the wire without parking" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[RuntimeTraceEvent] = []
+  let responses : Array[RequestId] = []
+  let failures : Array[(RequestId, RuntimeOutboundFailureKind)] = []
+  let ports = runtime_outbound_run_ports(
+    input, output, written, traces, responses, failures,
+  )
+  let captured : @aqueue.Queue[RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      runtime_outbound_run(ports, runtime_test_options(), captured)
+    })
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      let notification = channel.submit_notification_sync(
+        method_name="session/cancel",
+        params=Json::null(),
+      )
+      // Hand the channel back before parking so the post-close check below
+      // can reuse the exact engine-owned handle.
+      let _ = captured.try_put(channel) catch { _ => false }
+      // The loop must keep serving after the ack-less event: a parked
+      // request round-trips through the same single engine.
+      let response = channel.submit_request(
+        method_name="ask",
+        params=Json::null(),
+      )
+      (notification, response)
+    })
+    written.get()
+    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+      Notification(notification) =>
+        assert_eq(notification.method_name, "session/cancel")
+      _ => fail("sync submission must write exactly the notification frame")
+    }
+    written.get()
+    input.put(
+      Some(@utf8.encode("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"done\"}\n")),
+    )
+    let (notification, response) = submitter.wait()
+    assert_true(notification is Ok(_))
+    match response {
+      Success(success) => assert_eq(success.result, Json::string("done"))
+      Error(_) => fail("the loop must keep serving after a sync notification")
+    }
+    input.put(None)
+    runner.wait()
+    assert_eq(output.length(), 2)
+    assert_eq(responses, [Number(1)])
+    // The ack-less interpretation registers no waiter or pending: the close
+    // sweep settles nothing for it and the engine ends clean at EOF.
+    assert_eq(failures.length(), 0)
+    // Engine-level guard: after the graceful EOF close the same channel
+    // rejects a sync submission without enqueueing anything.
+    let channel = captured.get()
+    match
+      channel.submit_notification_sync(
+        method_name="session/cancel",
+        params=Json::null(),
+      ) {
+      Err(EventQueueClosed) => ()
+      _ => fail("post-close sync submission must fail with the closed error")
+    }
+  })
+}
+
+///|
+async test "runtime outbound sync notification rejects a full event queue" {
+  let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
+  events.put(RuntimeEof)
+  let shutdown : Ref[Bool] = Ref(false)
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  match
+    channel.submit_notification_sync(
+      method_name="session/cancel",
+      params=Json::null(),
+    ) {
+    Err(EventQueueBackpressure(limit~)) => assert_eq(limit, 1)
+    _ => fail("a full event queue must surface typed backpressure")
+  }
+  // The rejected submission never entered the queue: the sentinel event is
+  // still the one and only queued item, so the loop is unaffected.
+  match (events.try_get() catch { _ => None }) {
+    Some(RuntimeEof) => ()
+    _ => fail("backpressure must not enqueue the rejected sync submission")
+  }
+  // With capacity available again, the same channel accepts the next sync
+  // submission and queues exactly its fire-and-forget event.
+  match
+    channel.submit_notification_sync(
+      method_name="session/cancel",
+      params=Json::null(),
+    ) {
+    Ok(_) => ()
+    _ => fail("the channel must accept a sync submission once capacity frees")
+  }
+  match (events.try_get() catch { _ => None }) {
+    Some(RuntimeOutboundNotificationEnqueued(method_name~, ..)) =>
+      assert_eq(method_name, "session/cancel")
+    _ => fail("the accepted sync submission must be queued as its event")
+  }
+  match (events.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("the queue must hold exactly one accepted event")
+  }
+}
+
+///|
+async test "runtime outbound sync notification after shutdown fails closed" {
+  let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
+  let shutdown : Ref[Bool] = Ref(false)
+  shutdown.val = true
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  match
+    channel.submit_notification_sync(
+      method_name="session/cancel",
+      params=Json::null(),
+    ) {
+    Err(EventQueueClosed) => ()
+    _ => fail("post-shutdown sync submission must fail with the closed error")
+  }
+  match (events.try_get() catch { _ => None }) {
+    None => ()
+    Some(_) => fail("shutdown guard must not enqueue the sync submission")
+  }
+}

@@ -168,19 +168,17 @@ fn broker_channel_agent_reply(
 /// envelopes, correlation, and the serial writer queue stay engine-owned.
 ///
 /// The notification broker of the stable `ClientConnection` facade is
-/// synchronous by contract, while every engine submission must park until
-/// the single loop acknowledges it.  No established non-blocking bridge
-/// exists in this codebase, so the notification side fails fast with a typed
-/// `ClientConnectionUnavailable` carrying the method name: the notification
-/// is never silently dropped and no blocking bridge is invented here.
-/// Wiring Client notifications is an open item for the client runtime work
-/// order.
+/// synchronous by contract, so it submits through the channel's synchronous
+/// notification offer: no task parks, and the one engine loop still owns the
+/// envelope, framing, and the serial writer queue.  `Ok` therefore records
+/// only acceptance into the engine's event queue (the facade's notification
+/// port contract); writer-offer and transport failures stay observable at
+/// the connection level through the loop's fail-and-close semantics.
 ///
 /// v1 manifest fact (see `method/manifest.mbt`): the stable v1 surface has
 /// exactly one Client-to-Agent notification method, `session/cancel`, plus
 /// the Bidirectional engine-handled `$/cancel_request` notification.  Both
-/// currently hit this fail-fast path, so the open item is concretely about
-/// bridging those two notifications, not about a larger absent surface.
+/// flow through this synchronous submission path.
 pub fn[C] client_connection_over_channel(
   channel~ : RuntimeOutboundChannel[C],
 ) -> ClientConnection {
@@ -189,7 +187,7 @@ pub fn[C] client_connection_over_channel(
       broker_channel_client_request(channel, request)
     },
     notification_broker=notification => {
-      Err(ClientConnectionUnavailable(method_name=notification.method_name()))
+      broker_channel_client_notification(channel, notification)
     },
   )
 }
@@ -236,6 +234,44 @@ async fn[C] broker_channel_client_request(
           broker_channel_client_reply(request, response, method_name~)
       }
     }
+  }
+}
+
+///|
+/// One typed Client-to-Agent notification submitted synchronously through the
+/// real single engine.  The error mapping is total and documented case by
+/// case:
+/// - local params validation failure -> `ClientConnectionBrokerFailure`:
+///   nothing was submitted and the peer never saw a notification;
+/// - `EventQueueClosed` (including any submission attempted after the engine
+///   began shutting down) -> `ClientConnectionUnavailable`: no live
+///   connection remains that could admit the notification;
+/// - `EventQueueBackpressure` -> `ClientConnectionBrokerFailure`: the
+///   connection is live but its event-queue capacity is exhausted;
+/// - any other channel-side failure of the closed sync error set keeps the
+///   broker-failure category, mirroring the request side, so no transport
+///   failure is masked as cancellation or availability.
+fn[C] broker_channel_client_notification(
+  channel : RuntimeOutboundChannel[C],
+  notification : AgentNotification,
+) -> Result[Unit, ClientConnectionError] {
+  let method_name = notification.method_name()
+  let payload = Ok(broker_agent_notification_payload(notification)) catch {
+    _ => Err(ClientConnectionError::ClientConnectionBrokerFailure(method_name~))
+  }
+  match payload {
+    Err(error) => Err(error)
+    Ok(payload) =>
+      match
+        channel.submit_notification_sync(
+          method_name=payload.method_name,
+          params=payload.params,
+        ) {
+        Ok(_) => Ok(())
+        Err(EventQueueClosed) => Err(ClientConnectionUnavailable(method_name~))
+        Err(EventQueueBackpressure(_)) | Err(_) =>
+          Err(ClientConnectionBrokerFailure(method_name~))
+      }
   }
 }
 

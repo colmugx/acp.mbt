@@ -694,6 +694,10 @@ priv enum RuntimeEventOf[C] {
     params~ : Json,
     ack~ : @aqueue.Queue[RuntimeOutboundAck]
   )
+  /// Fire-and-forget outbound notification from a synchronous submitter: the
+  /// submission's acceptance was already reported synchronously by the
+  /// event-queue offer, so no parked ack queue exists to release.
+  RuntimeOutboundNotificationEnqueued(method_name~ : String, params~ : Json)
   RuntimeHandlerCompleted(Int, RequestId, C)
   RuntimeHandlerFailed(Int, RequestId)
   RuntimeNotificationCompleted(Int)
@@ -780,6 +784,23 @@ async fn runtime_outbound_ack_put(
 ) -> Unit raise RuntimeError {
   queue.put(ack) catch {
     _ => raise OutboundCompletionFailed
+  }
+}
+
+///|
+/// Deliver one acknowledgement when the submitter requested one. A
+/// fire-and-forget submission carries no ack queue (`None`); its acceptance
+/// was already reported synchronously by the event-queue offer, so there is
+/// no waiter to release here. Dropping the value is intentional, not a
+/// swallowed failure: every failure branch of the shared interpretation
+/// still closes the connection through the loop's fail-and-close semantics.
+async fn runtime_outbound_ack_put_optional(
+  ack : @aqueue.Queue[RuntimeOutboundAck]?,
+  value : RuntimeOutboundAck,
+) -> Unit raise RuntimeError {
+  match ack {
+    None => ()
+    Some(queue) => runtime_outbound_ack_put(queue, value)
   }
 }
 
@@ -880,8 +901,12 @@ fn runtime_outbound_write_reason(error : RuntimeError) -> String {
 /// The loop consumes events strictly in order and every close path sets
 /// `shutdown` before it stops, so a stranded submission was never admitted
 /// and can never receive a reducer settlement; exactly one failure reply
-/// keeps its submitter from parking forever. Other dead-lettered events are
-/// dropped, exactly as they were before this seam existed.
+/// keeps its submitter from parking forever. A fire-and-forget notification
+/// (`RuntimeOutboundNotificationEnqueued`) dead-letters with its event: its
+/// synchronous acceptance contract already completed at the queue offer, and
+/// writer-offer or transport failure remains observable through the loop's
+/// fail-and-close result, never as a silent success. Other dead-lettered
+/// events are dropped, exactly as they were before this seam existed.
 async fn[C] runtime_outbound_drain_stranded(
   events : @aqueue.Queue[RuntimeEventOf[C]],
 ) -> Unit raise RuntimeError {
@@ -2674,6 +2699,171 @@ async fn[G, C, D] runtime_apply_notification_completion(
 }
 
 ///|
+/// Interpret one outbound notification submission on the single owner loop.
+/// `ack` is `Some(queue)` for a parked submitter awaiting its one-shot
+/// acknowledgement and `None` for a fire-and-forget synchronous submission
+/// whose acceptance was already reported by the event-queue offer; the
+/// interpretation is otherwise identical. On the ack-less path nothing is
+/// swallowed: every failure branch still closes the connection through the
+/// loop's fail-and-close semantics, which stays observable through the trace
+/// sink and the runner result.
+async fn[G, C, D] runtime_apply_outbound_notification(
+  method_name~ : String,
+  params~ : Json,
+  ack~ : @aqueue.Queue[RuntimeOutboundAck]?,
+  state : ConnectionState,
+  decoder : FramingState,
+  group : @async.TaskGroup[G],
+  writer_queue : @aqueue.Queue[RuntimeWriterItem],
+  options : RuntimeOptions,
+  ports : RuntimePorts,
+  events : @aqueue.Queue[RuntimeEventOf[C]],
+  dispatch : RuntimeDispatchPort[G, D],
+  dispatch_context : D,
+  tasks : Array[RuntimeTaskControl],
+  next_task_token : Int,
+  shutdown : Ref[Bool],
+  outbound : Ref[RuntimeOutboundRegistry],
+) -> (RuntimeEventStep, D) raise RuntimeError {
+  let notification = JsonRpcNotification::new(method_name~, params~) catch {
+    _ => {
+      (ports.trace)(
+        runtime_trace_event(
+          "outbound", "outbound_notification_invalid", "", method_name, "protocol",
+        ),
+      )
+      runtime_outbound_ack_put_optional(
+        ack,
+        RuntimeOutboundAckFailed(kind=Protocol),
+      )
+      runtime_fail_and_close_of(
+        group,
+        state,
+        "protocol",
+        ReducerFailed,
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        false,
+        dispatch_context,
+        dispatch.close_owner,
+        outbound,
+      )
+    }
+  }
+  let step = connection_reduce(state, OutgoingNotification(notification)) catch {
+    _ => {
+      (ports.trace)(
+        runtime_trace_event(
+          "outbound", "outbound_notification_reducer_failed", "", method_name, "reducer",
+        ),
+      )
+      runtime_outbound_ack_put_optional(
+        ack,
+        RuntimeOutboundAckFailed(kind=Protocol),
+      )
+      runtime_fail_and_close_of(
+        group,
+        state,
+        "protocol",
+        ReducerFailed,
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        false,
+        dispatch_context,
+        dispatch.close_owner,
+        outbound,
+      )
+    }
+  }
+  let state_ref = Ref::Ref(step.state)
+  let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
+    group, step, state_ref, writer_queue, options, ports, dispatch, dispatch_context,
+    tasks, next_task_token, outbound,
+  ) catch {
+    error => {
+      // A notification has no reducer pending, so no close command will
+      // settle it; release the ack (when one exists) directly with the write
+      // failure kind.
+      runtime_outbound_ack_put_optional(
+        ack,
+        RuntimeOutboundAckFailed(kind=runtime_outbound_write_kind(error)),
+      )
+      runtime_fail_and_close_of(
+        group,
+        state_ref.val,
+        runtime_outbound_write_reason(error),
+        error,
+        writer_queue,
+        options,
+        ports,
+        events,
+        tasks,
+        next_task_token,
+        shutdown,
+        false,
+        dispatch_context,
+        dispatch.close_owner,
+        outbound,
+      )
+    }
+  }
+  // Ack contract: acknowledge enqueue into the serial writer queue only,
+  // never a transport I/O flush (ClientNotificationBroker contract).
+  runtime_outbound_ack_put_optional(ack, RuntimeOutboundAcked)
+  match control {
+    RuntimeApplyContinue =>
+      runtime_event_step(
+        {
+          state: state_ref.val,
+          decoder,
+          tasks: updated_tasks,
+          next_task_token: updated_token,
+          stop: false,
+        },
+        updated_context,
+      )
+    RuntimeApplyOwnerClose(reason=close_reason) => {
+      let closed_context = runtime_close_connection_of(
+        group,
+        state_ref.val,
+        close_reason,
+        writer_queue,
+        options,
+        ports,
+        events,
+        updated_tasks,
+        updated_token,
+        shutdown,
+        false,
+        updated_context,
+        dispatch.close_owner,
+        outbound,
+      )
+      runtime_event_step(
+        {
+          state: state_ref.val,
+          decoder,
+          tasks: [],
+          next_task_token: updated_token,
+          stop: true,
+        },
+        closed_context,
+      )
+    }
+  }
+}
+
+///|
 /// The single owner-loop event seam. Every reader, writer, handler, and
 /// notification event is admitted here; late task events are traced and
 /// ignored, while primary failures close through one typed path.
@@ -3117,138 +3307,44 @@ async fn[G, C, D] runtime_apply_event_of(
         }
       }
     }
-    RuntimeOutboundNotificationSubmitted(method_name~, params~, ack~) => {
-      let notification = JsonRpcNotification::new(method_name~, params~) catch {
-        _ => {
-          (ports.trace)(
-            runtime_trace_event(
-              "outbound", "outbound_notification_invalid", "", method_name, "protocol",
-            ),
-          )
-          runtime_outbound_ack_put(ack, RuntimeOutboundAckFailed(kind=Protocol))
-          runtime_fail_and_close_of(
-            group,
-            state,
-            "protocol",
-            ReducerFailed,
-            writer_queue,
-            options,
-            ports,
-            events,
-            tasks,
-            next_task_token,
-            shutdown,
-            false,
-            next_context,
-            dispatch.close_owner,
-            outbound,
-          )
-        }
-      }
-      let step = connection_reduce(state, OutgoingNotification(notification)) catch {
-        _ => {
-          (ports.trace)(
-            runtime_trace_event(
-              "outbound", "outbound_notification_reducer_failed", "", method_name,
-              "reducer",
-            ),
-          )
-          runtime_outbound_ack_put(ack, RuntimeOutboundAckFailed(kind=Protocol))
-          runtime_fail_and_close_of(
-            group,
-            state,
-            "protocol",
-            ReducerFailed,
-            writer_queue,
-            options,
-            ports,
-            events,
-            tasks,
-            next_task_token,
-            shutdown,
-            false,
-            next_context,
-            dispatch.close_owner,
-            outbound,
-          )
-        }
-      }
-      let state_ref = Ref::Ref(step.state)
-      let (updated_tasks, updated_token, updated_context, control) = runtime_apply_step(
-        group, step, state_ref, writer_queue, options, ports, dispatch, next_context,
-        tasks, next_task_token, outbound,
-      ) catch {
-        error => {
-          // A notification has no reducer pending, so no close command will
-          // settle it; release the ack directly with the write failure kind.
-          runtime_outbound_ack_put(
-            ack,
-            RuntimeOutboundAckFailed(kind=runtime_outbound_write_kind(error)),
-          )
-          runtime_fail_and_close_of(
-            group,
-            state_ref.val,
-            runtime_outbound_write_reason(error),
-            error,
-            writer_queue,
-            options,
-            ports,
-            events,
-            tasks,
-            next_task_token,
-            shutdown,
-            false,
-            next_context,
-            dispatch.close_owner,
-            outbound,
-          )
-        }
-      }
-      // Ack contract: acknowledge enqueue into the serial writer queue only,
-      // never a transport I/O flush (ClientNotificationBroker contract).
-      runtime_outbound_ack_put(ack, RuntimeOutboundAcked)
-      match control {
-        RuntimeApplyContinue =>
-          runtime_event_step(
-            {
-              state: state_ref.val,
-              decoder,
-              tasks: updated_tasks,
-              next_task_token: updated_token,
-              stop: false,
-            },
-            updated_context,
-          )
-        RuntimeApplyOwnerClose(reason=close_reason) => {
-          let closed_context = runtime_close_connection_of(
-            group,
-            state_ref.val,
-            close_reason,
-            writer_queue,
-            options,
-            ports,
-            events,
-            updated_tasks,
-            updated_token,
-            shutdown,
-            false,
-            updated_context,
-            dispatch.close_owner,
-            outbound,
-          )
-          runtime_event_step(
-            {
-              state: state_ref.val,
-              decoder,
-              tasks: [],
-              next_task_token: updated_token,
-              stop: true,
-            },
-            closed_context,
-          )
-        }
-      }
-    }
+    RuntimeOutboundNotificationSubmitted(method_name~, params~, ack~) =>
+      runtime_apply_outbound_notification(
+        method_name~,
+        params~,
+        ack=Some(ack),
+        state,
+        decoder,
+        group,
+        writer_queue,
+        options,
+        ports,
+        events,
+        dispatch,
+        next_context,
+        tasks,
+        next_task_token,
+        shutdown,
+        outbound,
+      )
+    RuntimeOutboundNotificationEnqueued(method_name~, params~) =>
+      runtime_apply_outbound_notification(
+        method_name~,
+        params~,
+        ack=None,
+        state,
+        decoder,
+        group,
+        writer_queue,
+        options,
+        ports,
+        events,
+        dispatch,
+        next_context,
+        tasks,
+        next_task_token,
+        shutdown,
+        outbound,
+      )
     RuntimeHandlerCompleted(task_token, id, result) => {
       match runtime_find_task(tasks, task_token) {
         None => ()
@@ -4052,6 +4148,42 @@ pub async fn[C] RuntimeOutboundChannel::submit_notification(
   match answer {
     RuntimeOutboundAcked => ()
     RuntimeOutboundAckFailed(kind~) => raise runtime_outbound_reply_error(kind)
+  }
+}
+
+///|
+/// Submit one notification synchronously, without parking on an asynchronous
+/// acknowledgement. The submission is a synchronous `try_put` onto the
+/// connection's single event queue — the same primitive every other
+/// event-queue publication wraps through `runtime_event_put` — carrying a
+/// fire-and-forget marker instead of a parked ack queue, so a caller that
+/// cannot block still submits through the one engine loop rather than a
+/// second writer.
+///
+/// Contract: `Ok` claims only that the event was accepted into the engine's
+/// event queue. Writer-offer and transport failures are never reported
+/// through this result; they remain observable at the connection level
+/// through the loop's fail-and-close semantics (trace sink and runner
+/// result), never as a silent success. Failures are the structured
+/// `EventQueueClosed` (also returned after shutdown, before enqueueing) and
+/// `EventQueueBackpressure(limit~)` errors, exactly like `runtime_event_put`.
+pub fn[C] RuntimeOutboundChannel::submit_notification_sync(
+  self : RuntimeOutboundChannel[C],
+  method_name~ : String,
+  params~ : Json,
+) -> Result[Unit, RuntimeError] {
+  if self.shutdown.val {
+    return Err(EventQueueClosed)
+  }
+  let accepted = self.events.try_put(
+    RuntimeOutboundNotificationEnqueued(method_name~, params~),
+  ) catch {
+    _ => return Err(EventQueueClosed)
+  }
+  if accepted {
+    Ok(())
+  } else {
+    Err(EventQueueBackpressure(limit=self.limit))
   }
 }
 
