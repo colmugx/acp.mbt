@@ -175,6 +175,12 @@ fn broker_channel_agent_reply(
 /// is never silently dropped and no blocking bridge is invented here.
 /// Wiring Client notifications is an open item for the client runtime work
 /// order.
+///
+/// v1 manifest fact (see `method/manifest.mbt`): the stable v1 surface has
+/// exactly one Client-to-Agent notification method, `session/cancel`, plus
+/// the Bidirectional engine-handled `$/cancel_request` notification.  Both
+/// currently hit this fail-fast path, so the open item is concretely about
+/// bridging those two notifications, not about a larger absent surface.
 pub fn[C] client_connection_over_channel(
   channel~ : RuntimeOutboundChannel[C],
 ) -> ClientConnection {

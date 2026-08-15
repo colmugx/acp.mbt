@@ -429,6 +429,8 @@ pub using @client {
   client_file_system_service,
   client_program,
   client_program_from,
+  client_runtime_owner_port,
+  client_runtime_run,
   client_session_service,
   client_spec,
   client_terminal_service,
