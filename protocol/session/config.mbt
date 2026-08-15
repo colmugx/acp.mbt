@@ -155,6 +155,26 @@ pub fn session_mode_to_json(
 }
 
 ///|
+/// Fail fast when a mode state names a current mode that is not available.
+/// Which modes exist is service-owned; the codec only enforces that the state
+/// an endpoint emits or accepts is internally consistent, so an unknown
+/// modeId can never become a silent default current mode.
+fn session_config_validate_current_mode(
+  state : SessionModeState,
+  field_path~ : String,
+) -> Unit raise ProtocolDecodeError {
+  for mode in state.available_modes {
+    if mode.id == state.current_mode_id {
+      return
+    }
+  }
+  raise InvalidField(
+    path=field_path,
+    reason="currentModeId must reference one of availableModes",
+  )
+}
+
+///|
 /// Decode the mode state returned by session lifecycle methods.
 pub fn session_mode_state_from_json(
   value : Json,
@@ -176,7 +196,12 @@ pub fn session_mode_state_from_json(
     path=path + ".availableModes",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { current_mode_id, available_modes, meta }
+  let state : SessionModeState = { current_mode_id, available_modes, meta }
+  session_config_validate_current_mode(
+    state,
+    field_path=path + ".currentModeId",
+  )
+  state
 }
 
 ///|
@@ -184,6 +209,7 @@ pub fn session_mode_state_from_json(
 pub fn session_mode_state_to_json(
   value : SessionModeState,
 ) -> Json raise ProtocolDecodeError {
+  session_config_validate_current_mode(value, field_path="currentModeId")
   let fields : Map[String, Json] = Map([])
   fields["currentModeId"] = Json::string(value.current_mode_id)
   fields["availableModes"] = session_config_encode_modes(value.available_modes)

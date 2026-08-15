@@ -98,6 +98,13 @@ test "prompt accepts an empty content array and preserves omitted fields" {
 
 ///|
 test "prompt rejects invalid stop reasons content tags and unknown fields" {
+  try prompt_result_from_json(protocol_parse_json("{}")) catch {
+    MissingField(path="session/prompt.stopReason") => ()
+    _ => fail("expected missing stop reason rejection")
+  } noraise {
+    _ => fail("expected missing stop reason rejection")
+  }
+
   try
     prompt_result_from_json(protocol_parse_json("{\"stopReason\":\"future\"}"))
   catch {

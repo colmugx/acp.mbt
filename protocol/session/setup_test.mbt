@@ -232,3 +232,30 @@ test "session setup reports required fields and nested mcp paths" {
     _ => fail("expected nested mcp path rejection")
   }
 }
+
+///|
+test "session new result rejects an empty session id in both directions" {
+  try
+    new_session_result_from_json(
+      protocol_parse_json("{\"sessionId\":\"\",\"modes\":null}"),
+    )
+  catch {
+    InvalidField(path="session/new.sessionId", reason=_) => ()
+    _ => fail("expected empty session id rejection on decode")
+  } noraise {
+    _ => fail("expected empty session id rejection on decode")
+  }
+
+  let empty : NewSessionResult = {
+    session_id: "",
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
+  try new_session_result_to_json(empty) catch {
+    InvalidField(path="sessionId", reason=_) => ()
+    _ => fail("expected empty session id rejection on encode")
+  } noraise {
+    _ => fail("expected empty session id rejection on encode")
+  }
+}

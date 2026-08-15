@@ -258,3 +258,45 @@ test "config mode and value errors are explicit" {
     _ => fail("expected config unknown field rejection")
   }
 }
+
+///|
+test "mode state rejects a current mode outside available modes" {
+  try
+    session_mode_state_from_json(
+      protocol_parse_json(
+        "{\"currentModeId\":\"gone\",\"availableModes\":[{\"id\":\"ask\",\"name\":\"Ask\"},{\"id\":\"code\",\"name\":\"Code\"}]}",
+      ),
+    )
+  catch {
+    InvalidField(path="modes.currentModeId", reason=_) => ()
+    _ => fail("expected unknown current mode rejection on decode")
+  } noraise {
+    _ => fail("expected unknown current mode rejection on decode")
+  }
+
+  let inconsistent : SessionModeState = {
+    current_mode_id: "gone",
+    available_modes: [
+      { id: "ask", name: "Ask", description: Omitted, meta: Omitted },
+    ],
+    meta: Omitted,
+  }
+  try session_mode_state_to_json(inconsistent) catch {
+    InvalidField(path="currentModeId", reason=_) => ()
+    _ => fail("expected unknown current mode rejection on encode")
+  } noraise {
+    _ => fail("expected unknown current mode rejection on encode")
+  }
+}
+
+///|
+test "set config option result must carry the complete option set" {
+  try
+    set_session_config_option_result_from_json(protocol_parse_json("{}"))
+  catch {
+    MissingField(path="session/set_config_option.configOptions") => ()
+    _ => fail("expected missing complete configOptions rejection")
+  } noraise {
+    _ => fail("expected missing complete configOptions rejection")
+  }
+}

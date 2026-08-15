@@ -61,6 +61,20 @@ pub(all) struct ResumeSessionResult {
 } derive(Eq, Debug)
 
 ///|
+/// Validate the session id of a `session/new` result in both directions.
+/// Uniqueness is owned by the session service; the codec only rejects the
+/// degenerate empty id that can never address a session.
+fn session_setup_session_id(
+  value : String,
+  field_path~ : String,
+) -> String raise ProtocolDecodeError {
+  if value == "" {
+    raise InvalidField(path=field_path, reason="sessionId must not be empty")
+  }
+  value
+}
+
+///|
 fn session_setup_decode_absolute_string_array(
   value : Json,
   path~ : String,
@@ -431,10 +445,9 @@ fn session_setup_decode_new_result_fields(
     ["sessionId", "modes", "configOptions", "_meta"],
     prefix=path,
   )
-  let session_id = protocol_required_string(
-    fields,
-    "sessionId",
-    path=path + ".sessionId",
+  let session_id = session_setup_session_id(
+    protocol_required_string(fields, "sessionId", path=path + ".sessionId"),
+    field_path=path + ".sessionId",
   )
   let modes = session_setup_decode_modes(fields, "modes", path=path + ".modes")
   let config_options = session_setup_decode_config_options_nullable(
@@ -462,7 +475,9 @@ pub fn new_session_result_to_json(
   value : NewSessionResult,
 ) -> Json raise ProtocolDecodeError {
   let fields : Map[String, Json] = Map([])
-  fields["sessionId"] = Json::string(value.session_id)
+  fields["sessionId"] = Json::string(
+    session_setup_session_id(value.session_id, field_path="sessionId"),
+  )
   session_setup_put_modes(fields, "modes", value.modes)
   session_setup_put_config_options(
     fields,
