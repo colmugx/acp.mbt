@@ -347,6 +347,23 @@ fn decode_diff(
 }
 
 ///|
+/// A terminal referenced by tool content must carry an id that can address a
+/// terminal.  Whether that id references a created, not-yet-released terminal
+/// is service-owned registry state (the client terminal service rejects
+/// unknown or released ids with a typed unavailable operation); the codec only
+/// rejects the degenerate empty id, mirroring the session-id policy of
+/// `session/new` results and the terminal host methods.
+fn tool_terminal_id(
+  value : String,
+  field_path~ : String,
+) -> String raise ProtocolDecodeError {
+  if value == "" {
+    raise InvalidField(path=field_path, reason="terminalId must not be empty")
+  }
+  value
+}
+
+///|
 fn encode_terminal(
   value : Terminal,
   with_type : Bool,
@@ -355,7 +372,9 @@ fn encode_terminal(
   if with_type {
     fields["type"] = Json::string("terminal")
   }
-  fields["terminalId"] = Json::string(value.terminal_id)
+  fields["terminalId"] = Json::string(
+    tool_terminal_id(value.terminal_id, field_path="terminalId"),
+  )
   protocol_put_meta(fields, value.meta)
   Json::object(fields)
 }
@@ -373,10 +392,9 @@ fn decode_terminal(
     ["terminalId", "_meta"]
   }
   protocol_reject_unknown(fields, allowed, prefix=path)
-  let terminal_id = protocol_required_string(
-    fields,
-    "terminalId",
-    path=path + ".terminalId",
+  let terminal_id = tool_terminal_id(
+    protocol_required_string(fields, "terminalId", path=path + ".terminalId"),
+    field_path=path + ".terminalId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
   { terminal_id, meta }

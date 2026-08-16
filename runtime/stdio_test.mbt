@@ -29,6 +29,42 @@ test "stderr trace line renders one sanitized line per event" {
 }
 
 ///|
+/// Row G07 stdout purity, structural half: a rendered diagnostics line can
+/// never parse as a JSON value, so even a misrouted diagnostics write could
+/// never be mistaken for an ACP frame on the protocol channel.  The line for
+/// a routing decision still carries the method name and, where one exists,
+/// the request id — both sanitized.
+test "trace lines carry routing fields but never parse as protocol frames" {
+  let lines = [
+    runtime_trace_stderr_line(
+      runtime_trace_event(
+        "inbound", "cancel_requested", "42", "$/cancel_request", "cancel",
+      ),
+    ),
+    runtime_trace_stderr_line(
+      runtime_trace_event(
+        "runtime", "owner_trace", "", "session/update", "owner",
+      ),
+    ),
+    runtime_trace_stderr_line(
+      runtime_trace_event("outbound", "writer_written", "", "", ""),
+    ),
+  ]
+  for line in lines {
+    assert_true(line.has_suffix("\n"))
+    let parsed = try @json.parse(line) catch {
+      _ => None
+    } noraise {
+      value => Some(value)
+    }
+    assert_true(parsed is None)
+  }
+  assert_true(lines[0].contains("request_id=42"))
+  assert_true(lines[0].contains("method=$/cancel_request"))
+  assert_true(lines[1].contains("method=session/update"))
+}
+
+///|
 /// The stdio port constructor binds the real process descriptors without
 /// performing any I/O of its own, and its trace seam — default or injected —
 /// is a total synchronous closure.  Invoking the default sink exercises the
