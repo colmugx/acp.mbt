@@ -1,0 +1,16 @@
+import {
+  "colmugx/acp/client",
+  "colmugx/acp/client/protocol" @client_protocol,
+  "colmugx/acp/connection/broker",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol" @protocol_data,
+  "colmugx/acp/protocol/session" @session_protocol,
+  "colmugx/acp/runtime",
+  "colmugx/reader",
+  "moonbitlang/async",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/async/process",
+  "moonbitlang/core/json",
+} for "test"
+
+supported_targets = "native"

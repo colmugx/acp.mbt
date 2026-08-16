@@ -176,6 +176,36 @@ pub async fn agent_serve_stdio(
 }
 
 ///|
+/// Serve this process's real stdio as one Agent connection with the
+/// engine-level outbound channel handed to the Agent context factory, so
+/// handlers running mid-execution can stream `session/update` notifications
+/// and issue reverse requests (`session/request_permission`, elicitation,
+/// filesystem, terminal) through the real engine instead of a fail-fast
+/// broker.  Without this composition a stdio Agent could answer requests but
+/// never exercise the reverse direction of the protocol; the factory timing
+/// mirrors `agent_runtime_run_with_outbound` (after the connection-local
+/// queues exist, before the loop starts).  This is a thin composition over
+/// `runtime_stdio_ports`: it validates the options fail-fast before any I/O
+/// binding and creates no second loop, channel state, or connection state of
+/// its own.  The loop ends when stdin reaches EOF or the engine fails.
+pub async fn agent_serve_stdio_with_outbound(
+  endpoint~ : AgentEndpoint,
+  context_factory~ : (RuntimeOutboundChannel[AgentAdapterCompletion]) -> AgentContext,
+  initial_state~ : AgentAdapterState,
+  options? : RuntimeOptions = runtime_default_options(),
+  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+) -> Unit {
+  runtime_validate_options(options)
+  agent_runtime_run_with_outbound(
+    endpoint~,
+    context_factory~,
+    initial_state~,
+    ports=runtime_stdio_ports(trace~),
+    options~,
+  )
+}
+
+///|
 fn agent_runtime_request_admission(
   admission : AgentAdapterAdmission,
 ) -> RuntimeOwnerRequestAdmission[

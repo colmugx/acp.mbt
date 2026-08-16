@@ -1,0 +1,14 @@
+import {
+  "colmugx/acp/agent",
+  "colmugx/acp/agent/protocol" @agent_protocol,
+  "colmugx/acp/connection/broker",
+  "colmugx/acp/protocol" @protocol_data,
+  "colmugx/acp/protocol/session" @session_protocol,
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

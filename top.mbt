@@ -394,6 +394,7 @@ pub using @agent {
   agent_runtime_owner_port,
   agent_runtime_run,
   agent_serve_stdio,
+  agent_serve_stdio_with_outbound,
   agent_session_service,
   agent_spec,
   agent_support,

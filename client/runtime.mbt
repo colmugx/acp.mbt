@@ -17,6 +17,7 @@ using @runtime {
   type RuntimeHandlerResult,
   type RuntimeOptions,
   type RuntimePorts,
+  type RuntimeProcessPorts,
   type RuntimeTraceEvent,
   runtime_default_options,
   runtime_process_ports,
@@ -194,6 +195,18 @@ pub async fn client_runtime_run_with_outbound(
 /// forcefully killed by the async process layer's cancellation handler during
 /// teardown, still inside this call.  No detached child and no background
 /// reaper can outlive the returned call.
+///
+/// The client owns that shutdown signal, and closing the child's stdin is
+/// what ends a live interactive session: the engine itself only ends on the
+/// child's stdout EOF, which a well-behaved agent produces after observing
+/// its own stdin EOF.  The built-in close therefore runs after the engine has
+/// already ended and cannot serve as the client's proactive shutdown.  The
+/// optional `spawned` callback closes exactly that gap: it receives the real
+/// `RuntimeProcessPorts` handle right after the spawn succeeds and before
+/// the engine starts, so a composition root (or test driver) can close the
+/// child's stdin, wait for the exit status, or cancel the child at the
+/// moment its session logic decides to.  The default is a no-op, so callers
+/// that only consume a self-terminating child keep the previous behavior.
 pub async fn client_connect_process(
   endpoint_factory~ : (RuntimeOutboundChannel[ClientAdapterCompletion]) -> ClientEndpoint,
   initial_state~ : ClientAdapterState,
@@ -202,12 +215,13 @@ pub async fn client_connect_process(
   args? : Array[String] = [],
   extra_env? : Map[String, String],
   inherit_env? : Bool = true,
+  spawned? : (RuntimeProcessPorts) -> Unit = _ => (),
   options? : RuntimeOptions = runtime_default_options(),
   trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> Unit {
   runtime_validate_options(options)
   @async.with_task_group(group => {
-    let spawned = runtime_process_ports(
+    let spawned_ports = runtime_process_ports(
       group,
       handlers~,
       command~,
@@ -216,11 +230,12 @@ pub async fn client_connect_process(
       inherit_env~,
       trace~,
     )
-    defer spawned.child_stdin.close()
+    spawned(spawned_ports)
+    defer spawned_ports.child_stdin.close()
     client_runtime_run_with_outbound(
       endpoint_factory~,
       initial_state~,
-      ports=spawned.ports,
+      ports=spawned_ports.ports,
       options~,
     )
   })
