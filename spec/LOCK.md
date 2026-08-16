@@ -27,7 +27,16 @@ The two retrieved files were staged only outside the repository during the
 audit (`/private/tmp/acp-v1-schema-b8dd9b24050f5d4882711656f30b1dbde0087d75.json`
 and `/private/tmp/acp-v1-meta-b8dd9b24050f5d4882711656f30b1dbde0087d75.json`).
 Their Git blob IDs came from `git hash-object`; their SHA-256 values came from
-`shasum -a 256`.  No schema bytes are vendored by this lock.
+`shasum -a 256`.
+
+On 2026-08-16 the two verified artifacts were re-fetched from their fixed raw
+URLs at the pinned commit and landed in-repo, byte-identical to the audited
+hashes above: `spec/schema/v1/schema.json` (Git blob `a01db8187e2684a5583b36dbdf938362a4ed10e5`,
+SHA-256 `7f1fba1561163729115247df75b67aeed02085115fbc7ef0131fb01d456c08f9`) and
+`spec/schema/v1/meta.json` (Git blob `b9c67caa417dd2285a31d07309a215a6110bbfaf`,
+SHA-256 `061edb6efa8fb2aa2792459a86ec7268de5fe665bba48b2ffe7939df01481f88`).
+Only these two v1 stable artifacts are vendored by this lock; no unstable or
+v2 artifact is vendored or exposed by the stable package.
 
 ## Reproduction gate
 

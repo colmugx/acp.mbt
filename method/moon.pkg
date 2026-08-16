@@ -3,6 +3,8 @@ import {
   "colmugx/acp/agent/message" @agent_message,
   "colmugx/acp/client/message" @client_message,
   "moonbitlang/core/json",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
 } for "test"
 
 supported_targets = "native"
