@@ -384,3 +384,64 @@ async test "moonbit client settles one typed failure when the agent dies mid-pro
   assert_eq(folded.tool_calls[0].status, Value(Completed))
   assert_eq(folded.tool_calls[0].raw_output, Value(Json::string("3 matches")))
 }
+
+///|
+/// The benign late-cancel interop regression. ACP v1 makes `$/cancel_request`
+/// best-effort and real ACP clients routinely send cancels that lose the race
+/// with an already-delivered response, so the agent engine must tolerate one
+/// instead of failing the connection. The client settles `initialize`
+/// (engine id 1), then emits the bidirectional cancellation for that
+/// already-settled id, and the very next request must still round-trip over
+/// the same live pipes: if the agent failed fast it would die on the spot,
+/// the client engine would observe its stdout EOF, and `session/new` would
+/// settle as a typed broker failure instead of a session id.
+async test "moonbit client late cancel keeps the agent connection serving" {
+  let fixture = interop_fixture_program.wait()
+  let recordings = interop_client_recordings()
+  let endpoint = interop_client_endpoint(recordings)
+  let connections : @aqueue.Queue[@client.ClientConnection] = Queue(
+    kind=Unbounded,
+  )
+  let child_stdins : @aqueue.Queue[@process.WriteToProcess] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let driver = group.spawn(() => {
+      let connection = connections.get()
+      let child_stdin = child_stdins.get()
+      let initialized = connection.initialize(
+        interop_client_initialize_params(),
+      )
+      assert_eq(initialized.protocol_version, 1)
+      // Settle-then-cancel race: the reply for engine id 1 was already
+      // observed above, so this cancellation targets an already-settled id.
+      connection.cancel_request(Number(1))
+      // The connection must keep serving traffic after the benign cancel.
+      let session = connection.new_session(interop_client_new_session_params())
+      assert_eq(session.session_id, "interop-session")
+      child_stdin.close()
+    })
+    @client.client_connect_process(
+      endpoint_factory=channel => {
+        let _ = connections.try_put(
+          @broker.client_connection_over_channel(channel~),
+        ) catch {
+          _ => false
+        }
+        endpoint
+      },
+      initial_state=interop_client_state(endpoint),
+      handlers=interop_client_handlers(recordings),
+      command=fixture,
+      args=["serve"],
+      spawned=ports => {
+        let _ = child_stdins.try_put(ports.child_stdin) catch { _ => false }
+      },
+      trace=_ => (),
+    )
+    driver.wait()
+  })
+  // Both engine requests settled exactly one reply and nothing failed.
+  assert_eq(recordings.responses, ["1", "2"])
+  assert_eq(recordings.failures.length(), 0)
+}

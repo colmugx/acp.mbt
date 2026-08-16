@@ -1418,6 +1418,18 @@ fn runtime_owner_ignore_kind(reason : RuntimeOwnerIgnore) -> String {
 }
 
 ///|
+/// Static trace category for one tolerated inbound wire cancellation. The
+/// closed set mirrors the reducer's typed ignore reasons exactly; no peer
+/// payload crosses this boundary.
+fn runtime_cancel_ignore_kind(reason : ConnectionCancelIgnoreReason) -> String {
+  match reason {
+    CancelUnknownRequest => "unknown_request"
+    CancelAlreadySettled => "already_settled"
+    CancelAlreadyCancelled => "already_cancelled"
+  }
+}
+
+///|
 fn[D] runtime_apply_inbound_cancel(
   request_id : RequestId,
   ports : RuntimePorts,
@@ -1450,9 +1462,16 @@ fn[D] runtime_apply_inbound_cancel(
           runtime_owner_ignore_kind(reason),
         ),
       )
-      // An ignored owner cancellation is not a successful command. Preserve
-      // the existing fail-fast runtime error so an unknown or duplicate
-      // effect cannot accidentally cancel another task or continue silently.
+      // An ignored cancellation at THIS seam is a genuine internal invariant
+      // violation, never a benign peer race: the reducer emits
+      // `CancelInboundTask` only for an id it still holds as a live inbound
+      // pending, so a missing native task control or a diverged owner task
+      // means the engine disagrees with the reducer. Benign wire races
+      // (an inbound `$/cancel_request` for a never-seen or already-settled
+      // id) never reach this seam because the reducer tolerates them as a
+      // traced `TraceCancelIgnored` no-op. Preserve the fail-fast runtime
+      // error so a diverged engine cannot cancel another task or continue
+      // silently.
       ignore(context)
       raise TaskControlMissing
     }
@@ -1982,6 +2001,19 @@ async fn[D] runtime_emit_command_of(
     CancelInboundTask(id~) =>
       return runtime_apply_inbound_cancel(
         id, ports, tasks, dispatch_context, cancel_inbound,
+      )
+    TraceCancelIgnored(id~, reason~) =>
+      // One tolerated benign wire cancel: traced and ignored, with the
+      // precise reason the reducer classified. No response, no close, and
+      // no state change belong to this path.
+      (ports.trace)(
+        runtime_trace_event(
+          "inbound",
+          "cancel_ignored",
+          runtime_request_id_text(id),
+          "",
+          runtime_cancel_ignore_kind(reason),
+        ),
       )
     Trace(_) =>
       (ports.trace)(runtime_trace_event("runtime", "reducer_trace", "", "", ""))

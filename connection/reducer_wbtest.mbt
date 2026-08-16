@@ -311,6 +311,8 @@ test "completion before cancellation stays success and late cancel is visible" {
     }
     _ => fail("expected success response before cancellation")
   }
+  // The local `CancelInbound` event is not the wire surface: a local caller
+  // cancels engine-owned state, so a settled id stays a fail-fast error.
   try connection_reduce(completed.state, CancelInbound(id=Number(10))) catch {
     DuplicateCancellation(id=Number(10)) => ()
     _ => fail("expected late cancellation failure")
@@ -320,6 +322,93 @@ test "completion before cancellation stays success and late cancel is visible" {
 }
 
 ///|
+fn wb_cancel_notification(id : RequestId) -> JsonRpcNotification {
+  let fields : Map[String, Json] = Map([])
+  fields["requestId"] = connection_request_id_json(id)
+  JsonRpcNotification::new(
+    method_name="$/cancel_request",
+    params=Json::object(fields),
+  ) catch {
+    _ => abort("cancellation fixture must have valid params")
+  }
+}
+
+///|
+/// Best-effort wire semantics: `$/cancel_request` for a never-seen id and
+/// for an already-settled id (the settle-then-cancel race real ACP clients
+/// produce) are traced no-ops with precise reasons. No state change, no
+/// response intent, no failure; the local-event pins above stay fail-fast.
+test "wire cancel for unknown and settled ids is a traced no-op" {
+  let initial = connection_state()
+  let unknown = connection_reduce(
+    initial,
+    IncomingNotification(wb_cancel_notification(Number(99))),
+  )
+  assert_eq(unknown.state, initial)
+  assert_eq(unknown.commands, [
+    TraceCancelIgnored(id=Number(99), reason=CancelUnknownRequest),
+  ])
+  let received = connection_reduce(
+    initial,
+    IncomingRequest(wb_request(Number(8), "m")),
+  )
+  let completed = connection_reduce(
+    received.state,
+    IncomingCompleted(id=Number(8), result=Json::null()),
+  )
+  let settled = connection_reduce(
+    completed.state,
+    IncomingNotification(wb_cancel_notification(Number(8))),
+  )
+  assert_eq(settled.state, completed.state)
+  assert_eq(settled.commands, [
+    TraceCancelIgnored(id=Number(8), reason=CancelAlreadySettled),
+  ])
+}
+
+///|
+/// A repeated wire cancel for one live pending is equally benign: the first
+/// cancel keeps the live semantics (mark plus native cancel intent) and the
+/// repeat is traced and ignored while the pending stays exactly-once
+/// settleable with its cancellation response.
+test "repeated wire cancel for a live pending is traced and keeps settlement" {
+  let received = connection_reduce(
+    connection_state(),
+    IncomingRequest(wb_request(Number(11), "long_task")),
+  )
+  let marked = connection_reduce(
+    received.state,
+    IncomingNotification(wb_cancel_notification(Number(11))),
+  )
+  assert_true(marked.state.inbound[0].cancel_requested)
+  assert_eq(marked.commands, [CancelInboundTask(id=Number(11))])
+  let repeated = connection_reduce(
+    marked.state,
+    IncomingNotification(wb_cancel_notification(Number(11))),
+  )
+  assert_eq(repeated.state, marked.state)
+  assert_eq(repeated.commands, [
+    TraceCancelIgnored(id=Number(11), reason=CancelAlreadyCancelled),
+  ])
+  let finished = connection_reduce(
+    repeated.state,
+    IncomingCompleted(id=Number(11), result=Json::string("late")),
+  )
+  assert_eq(finished.state.inbound.length(), 0)
+  assert_true(finished.state.settled_inbound.contains(Number(11)))
+  match finished.commands[0] {
+    WriteMessage(Response(Error(failure))) => {
+      assert_eq(failure.id, Number(11))
+      assert_eq(failure.error.code, RequestCancelled)
+    }
+    _ => fail("expected exactly one cancellation response after repeat")
+  }
+}
+
+///|
+/// The local `CancelInbound` event keeps fail-fast semantics for unknown and
+/// late ids: it is the engine-internal cancel surface, not the best-effort
+/// wire surface proven tolerant above.
 test "unknown and late cancellations and completions are visible" {
   try
     connection_reduce(connection_state(), CancelInbound(id=Number(99)))

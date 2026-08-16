@@ -186,9 +186,60 @@ fn connection_reduce_incoming_notification(
   connection_require_open(state)
   if notification.method_name == "$/cancel_request" {
     let id = connection_cancel_id(notification.params)
-    connection_reduce_cancel_inbound(state, id)
+    connection_reduce_wire_cancel_inbound(state, id)
   } else {
     { state, commands: [DispatchNotification(notification)] }
+  }
+}
+
+///|
+/// Apply one inbound wire `$/cancel_request` with best-effort semantics.
+///
+/// ACP v1 makes the cancellation best-effort: the receiver MAY cancel the
+/// matching activity and the only MUST is that the original request
+/// eventually receives its response; the contract is silent on ids that were
+/// never seen or already settled. Real ACP clients routinely send cancels
+/// that race with an already-delivered response, so a well-formed cancel of
+/// a non-live id is a traced no-op — no state change, no response, no close —
+/// and the connection keeps serving traffic:
+/// - never-seen id -> `CancelUnknownRequest`;
+/// - already-settled id (the settle-then-cancel race) -> `CancelAlreadySettled`;
+/// - live pending already carrying a cancel mark (a repeated best-effort
+///   cancel) -> `CancelAlreadyCancelled`.
+///
+/// A cancel for a genuinely live pending keeps the exact live semantics of
+/// `connection_reduce_cancel_inbound` (typed cancel mark plus the native
+/// `CancelInboundTask` intent). Malformed cancellation params still fail
+/// fast in `connection_cancel_id`: an invalid frame is a protocol violation,
+/// not a benign race. The local `CancelInbound` event is deliberately NOT
+/// tolerated: a local caller cancels engine-owned state, so an unknown,
+/// settled, or repeated id there remains a fail-fast programming error.
+fn connection_reduce_wire_cancel_inbound(
+  state : ConnectionState,
+  id : RequestId,
+) -> ConnectionStep raise ConnectionError {
+  match connection_inbound_index(state.inbound, id) {
+    Some(index) =>
+      if state.inbound[index].cancel_requested {
+        {
+          state,
+          commands: [TraceCancelIgnored(id~, reason=CancelAlreadyCancelled)],
+        }
+      } else {
+        connection_reduce_cancel_inbound(state, id)
+      }
+    None =>
+      if state.settled_inbound.contains(id) {
+        {
+          state,
+          commands: [TraceCancelIgnored(id~, reason=CancelAlreadySettled)],
+        }
+      } else {
+        {
+          state,
+          commands: [TraceCancelIgnored(id~, reason=CancelUnknownRequest)],
+        }
+      }
   }
 }
 

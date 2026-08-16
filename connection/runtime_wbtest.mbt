@@ -3822,36 +3822,120 @@ async test "runtime owner dispatch cancel fails fast on unknown or settled ids" 
 }
 
 ///|
-async test "runtime owner unknown wire cancel fails fast without silent ignore" {
+/// ACP v1 makes `$/cancel_request` best-effort, and real clients (Zed)
+/// routinely send cancels that lose the race with an already-delivered
+/// response. This tolerance proof pins the full-engine behavior for every
+/// benign race — an unknown id before any traffic, a repeated cancel for
+/// one still-live pending, and a settle-then-cancel after the response was
+/// delivered — each traced with its precise reason while the connection
+/// keeps serving requests. The genuinely live cancel in the middle keeps
+/// today's exact semantics: one typed cancellation event, exactly one
+/// RequestCancelled response, and an untouched sibling task. Genuine engine
+/// invariant violations (a live reducer pending whose task control is
+/// missing, or a diverged owner reservation) stay fail-fast and are proven
+/// separately by the TaskControlMissing pins above.
+async test "runtime owner tolerates benign wire cancels and keeps serving requests" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+    ..runtime_owner_test_port(),
+    execute: value => {
+      started.put(value)
+      if value == 1 {
+        release_one.get()
+      } else {
+        release_two.get()
+      }
+      value
+    },
+  }
   let ports = runtime_owner_run_runtime_ports(input, output, written, traces)
+  // One chunk, so both request frames are admitted before any completion:
+  // the unknown cancel is processed first, then both tasks park.
   input.put(
     Some(
       @utf8.encode(
-        "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":99}}\n",
+        "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":99}}\n" +
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"owner\"}\n" +
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"owner\"}\n",
       ),
     ),
   )
-  input.put(None)
-  let mut failed_fast = false
-  try
-    connection_runtime_run_owner(
-      ports,
-      runtime_test_options(),
-      runtime_owner_test_port(),
-    )
-  catch {
-    @runtime.RuntimeError::ReducerFailed => failed_fast = true
-    _ => fail("unknown wire cancel must surface the fail-fast runtime error")
-  } noraise {
-    _ => fail("unknown wire cancel must not continue silently")
+  @async.with_task_group(group => {
+    let feeder = group.spawn(() => {
+      let _ = started.get()
+      let _ = started.get()
+      // Both cancel frames share one chunk, so the second is reduced while
+      // the first cancellation completion is still queued: the pending is
+      // live and already marked, which is precisely the repeated-cancel
+      // race. The live first cancel applies through the real engine seam.
+      input.put(
+        Some(
+          @utf8.encode(
+            "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n" +
+            "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n",
+          ),
+        ),
+      )
+      written.get() // exactly one RequestCancelled response for request one
+      // The settle-then-cancel race: the cancellation response above was
+      // delivered, so this late cancel targets an already-settled id.
+      input.put(
+        Some(
+          @utf8.encode(
+            "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n",
+          ),
+        ),
+      )
+      release_two.put(())
+      written.get() // the sibling still round-trips: the connection survived
+      input.put(None)
+    })
+    connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
+    feeder.wait()
+  })
+  // Exactly two responses: the typed cancellation for request one and the
+  // normal success for request two. No close, no synthesized extra frame.
+  assert_eq(output.length(), 2)
+  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    Response(Error(failure)) => {
+      assert_eq(failure.id, Number(1))
+      assert_eq(failure.error.code, RequestCancelled)
+    }
+    _ => fail("live cancel must still produce exactly one cancellation error")
   }
-  assert_true(failed_fast)
-  assert_eq(output.length(), 0)
-  assert_true(traces.any(event => event.phase == "reducer_failed"))
+  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+    Response(Success(response)) => {
+      assert_eq(response.id, Number(2))
+      assert_eq(response.result, Json::number(2.0, repr="2"))
+    }
+    _ => fail("request two must complete normally after every benign cancel")
+  }
+  // The live cancel still crossed the engine seam exactly once.
+  let requested = traces.filter(event => event.phase == "cancel_requested")
+  assert_eq(requested.length(), 1)
+  assert_eq(requested[0].direction, "inbound")
+  assert_eq(requested[0].request_id, "1")
+  // Every benign race produced one exact traced no-op with its reason.
+  let ignored = traces.filter(event => event.phase == "cancel_ignored")
+  assert_eq(ignored.length(), 3)
+  assert_eq(ignored[0].direction, "inbound")
+  assert_eq(ignored[0].request_id, "99")
+  assert_eq(ignored[0].method_name, "")
+  assert_eq(ignored[0].error_kind, "unknown_request")
+  assert_eq(ignored[1].request_id, "1")
+  assert_eq(ignored[1].error_kind, "already_cancelled")
+  assert_eq(ignored[2].request_id, "1")
+  assert_eq(ignored[2].error_kind, "already_settled")
+  // No failure path ever fired.
+  assert_true(!traces.any(event => event.phase == "reducer_failed"))
+  assert_true(!traces.any(event => event.phase == "command_failed"))
+  assert_true(!traces.any(event => event.phase == "owner_cancel_ignored"))
 }
 
 ///|

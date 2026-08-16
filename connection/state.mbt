@@ -76,6 +76,21 @@ enum ConnectionEvent {
 } derive(Eq, Debug)
 
 ///|
+/// The precise, closed reason set for one tolerated inbound wire
+/// cancellation. An ACP `$/cancel_request` is best-effort by wire contract:
+/// the receiver MAY cancel the matching activity, the only obligation is
+/// that the original request still receives its response, and the contract
+/// is silent on ids that were never seen or already settled. Real ACP
+/// clients routinely send cancels that lose the race with an
+/// already-delivered response, so every well-formed cancel of a non-live id
+/// is a traced no-op instead of a connection failure.
+enum ConnectionCancelIgnoreReason {
+  CancelUnknownRequest
+  CancelAlreadySettled
+  CancelAlreadyCancelled
+} derive(Eq, Debug)
+
+///|
 /// Intent-only commands.  No command owns an async task, queue, callback, or
 /// dependency environment.
 enum ConnectionCommand {
@@ -88,6 +103,9 @@ enum ConnectionCommand {
   CancelOutboundTask(id~ : RequestId)
   CancelInboundTask(id~ : RequestId)
   Trace(message~ : String)
+  /// A tolerated inbound wire cancellation of a non-live id. This is a
+  /// trace-only intent: no response, no state change, no native cancel.
+  TraceCancelIgnored(id~ : RequestId, reason~ : ConnectionCancelIgnoreReason)
 } derive(Eq, Debug)
 
 ///|
