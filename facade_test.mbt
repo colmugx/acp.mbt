@@ -51,6 +51,42 @@ test "root facade exposes stable wire, message, runtime, and manifest APIs" {
 }
 
 ///|
+/// A facade-only consumer can construct the initial runner states and the
+/// session-update consumer fold through `@colmugx/acp` alone, without
+/// importing the agent, client, or protocol implementation packages.
+test "root facade exposes initial runner states and the session-update fold" {
+  let config : AgentProtocolConfig = {
+    agent_capabilities: Omitted,
+    auth_methods: Omitted,
+    agent_info: Omitted,
+  }
+  let protocol = agent_protocol_state_new(config~)
+  assert_eq(protocol.protocol_version, Omitted)
+  let initial = agent_adapter_state_new(protocol~)
+  assert_eq(
+    initial,
+    agent_adapter_state_new(protocol=agent_protocol_state_new(config~)),
+  )
+
+  let awaiting = client_protocol_state_new(capabilities=Omitted)
+  let ready = client_protocol_state_ready(capabilities=Omitted)
+  assert_eq(awaiting.capabilities, Omitted)
+  assert_true(awaiting != ready)
+  let client_initial = client_adapter_state_new(protocol=awaiting)
+  assert_eq(client_initial, client_adapter_state_new(protocol=awaiting))
+
+  let fold = session_update_fold(known_modes=[])
+  assert_eq(fold.known_modes.length(), 0)
+  assert_eq(fold.user_messages.length(), 0)
+  assert_eq(fold.agent_messages.length(), 0)
+  assert_eq(fold.agent_thoughts.length(), 0)
+  assert_eq(fold.tool_calls.length(), 0)
+  assert_true(fold.plan is None)
+  assert_true(fold.current_mode_id is None)
+  assert_true(fold.usage is None)
+}
+
+///|
 async test "root facade exposes the generic owner runner seam" {
   let owner_port : RuntimeOwnerPort[Unit, Unit, Unit, Unit] = {
     initial_state: (),

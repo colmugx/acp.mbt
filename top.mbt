@@ -22,9 +22,10 @@ pub using @jsonrpc {
 }
 
 ///|
-/// Stable ACP v1 wire data and its typed codecs. Low-level map/path helpers
-/// from the protocol implementation remain package-local to the protocol
-/// package; callers use the domain codecs below.
+/// Stable ACP v1 wire data, its typed codecs, and the pure session-update
+/// consumer fold. Low-level map/path helpers from the protocol implementation
+/// remain package-local to the protocol package; callers use the domain codecs
+/// and the fold below.
 pub using @protocol {
   agent_auth_capabilities_from_json,
   agent_auth_capabilities_to_json,
@@ -136,6 +137,7 @@ pub using @protocol {
   session_info_to_json,
   session_info_update_from_json,
   session_info_update_to_json,
+  session_update_fold,
   session_update_from_json,
   session_update_to_json,
   terminal_create_params_from_json,
@@ -255,6 +257,9 @@ pub using @protocol {
   type SessionInfo,
   type SessionInfoUpdate,
   type SessionUpdate,
+  type SessionUpdateFold,
+  type SessionUpdateFoldError,
+  type SessionUpdateMessage,
   type Terminal,
   type TerminalCreateParams,
   type TerminalCreateResult,
@@ -385,9 +390,12 @@ pub using @client_message {
 }
 
 ///|
-/// Agent composition, endpoint, and outbound context APIs. Adapter and
-/// protocol-state internals intentionally remain in the agent package.
+/// Agent composition, endpoint, and outbound context APIs together with the
+/// initial adapter-state constructor the facade runners require as
+/// `initial_state`. Adapter admission, completion, and invocation internals
+/// intentionally remain in the agent package.
 pub using @agent {
+  agent_adapter_state_new,
   agent_auth_service,
   agent_context,
   agent_endpoint_from_spec,
@@ -398,6 +406,7 @@ pub using @agent {
   agent_session_service,
   agent_spec,
   agent_support,
+  type AgentAdapterState,
   type AgentAuthService,
   type AgentAuthenticateHandler,
   type AgentCancelHandler,
@@ -423,9 +432,23 @@ pub using @agent {
 }
 
 ///|
-/// Client composition, endpoint, and typed connection APIs. Adapter and
-/// protocol-state internals intentionally remain in the client package.
+/// Agent-side protocol handshake state. The config value and the fresh-state
+/// constructor are the facade seam for building the `initial_state` value the
+/// agent runners accept. Reducer events, commands, and steps intentionally
+/// remain in the agent protocol package.
+pub using @agent_protocol {
+  agent_protocol_state_new,
+  type AgentProtocolConfig,
+  type AgentProtocolState,
+}
+
+///|
+/// Client composition, endpoint, and typed connection APIs together with the
+/// initial adapter-state constructor the facade runners require as
+/// `initial_state`. Adapter admission, completion, and invocation internals
+/// intentionally remain in the client package.
 pub using @client {
+  client_adapter_state_new,
   client_connect_process,
   client_connection,
   client_elicitation_service,
@@ -437,6 +460,7 @@ pub using @client {
   client_session_service,
   client_spec,
   client_terminal_service,
+  type ClientAdapterState,
   type ClientConnection,
   type ClientConnectionError,
   type ClientElicitationCompleteHandler,
@@ -461,6 +485,17 @@ pub using @client {
   type ClientTerminalWaitForExitHandler,
   type ClientWriteTextFileHandler,
   type ClientEndpoint,
+}
+
+///|
+/// Client-side protocol readiness state. The awaiting-ready and ready
+/// constructors are the facade seam for building the `initial_state` value
+/// the client runners accept. Reducer events, commands, and steps
+/// intentionally remain in the client protocol package.
+pub using @client_protocol {
+  client_protocol_state_new,
+  client_protocol_state_ready,
+  type ClientProtocolState,
 }
 
 ///|
