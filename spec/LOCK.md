@@ -23,9 +23,6 @@ used as reproducibility evidence.
 | `schema/v2/meta.json` | v2 Draft method metadata (exclusion reference) | <https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/b8dd9b24050f5d4882711656f30b1dbde0087d75/schema/v2/meta.json> | candidate `ad2cfd937a0722893fa577e4ff96df5c79cdc23c` (unverified) | not retrieved |
 | `schema/v2/meta.unstable.json` | v2 unstable exclusion metadata | <https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/b8dd9b24050f5d4882711656f30b1dbde0087d75/schema/v2/meta.unstable.json> | candidate `47d7973cb4323875069b53447797b6be86cc1d1e` (unverified) | not retrieved |
 
-The two retrieved files were staged only outside the repository during the
-audit (`/private/tmp/acp-v1-schema-b8dd9b24050f5d4882711656f30b1dbde0087d75.json`
-and `/private/tmp/acp-v1-meta-b8dd9b24050f5d4882711656f30b1dbde0087d75.json`).
 Their Git blob IDs came from `git hash-object`; their SHA-256 values came from
 `shasum -a 256`.
 

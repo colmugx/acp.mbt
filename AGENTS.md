@@ -85,7 +85,8 @@ You can browse and install extra skills here:
   `colmugx/reader` at the composition root for caller-owned immutable
   dependency environments. Keep connection/session state explicit in the
   reducer, runtime scope, or application store rather than Reader `Env`.
-- Stable v1 must pass its complete schema/method matrix and TypeScript/Rust
-  interoperability gates before v2 implementation begins.
+- Stable v1 must pass its complete schema/method matrix plus the pinned-schema
+  drift gate and the in-repo stdio interop evidence before v2 implementation
+  begins; cross-SDK interop validation is downstream consumer work.
 - `colmugx/acp` must remain independent from Posoco. Future
   `posoco-ext-acp` owns the Posoco adapter and depends on both projects.

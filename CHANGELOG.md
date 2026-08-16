@@ -8,15 +8,16 @@ landed on `main`; it is not a release announcement.
 ## [Unreleased] — v1-pending
 
 `colmugx/acp` is a native-only MoonBit SDK for Agent Client Protocol (ACP)
-v1. The v1 SDK scope is implemented and locally gated, but this is **not a
-release**. Open items before any v1 release claim (per
-`docs/implementation-plan/09-posoco-and-release-boundary.md`):
-TypeScript/Rust four-way interoperation replays, CI reproducibility of the
-release gates, the service-owned composition rows of the v1 matrix (C05
-full session-replay e2e, G01 root assembly execution, G06 real terminal
-truncation execution, G07 complete trace dimensions), and the final human
-release review. The `experimental` package (ACP v2 Draft facade) contains
-no implementation yet.
+v1. The v1 SDK scope is complete and locally gated (2026-08-17 scope
+decisions recorded in `docs/implementation-plan/10-progress-ledger.md`),
+but this is **not a release**. Open items before any v1 release claim
+(per `docs/implementation-plan/09-posoco-and-release-boundary.md`): the
+final human release review and the version/publish decision. The SDK's
+conformance evidence set is the pinned schema/meta drift gate
+(`method/manifest_test.mbt`) plus the MoonBit-to-MoonBit real-process
+stdio e2e (`tests/interop/`); real-world client integration validation
+belongs to downstream consumers of the SDK. The `experimental` package
+(ACP v2 Draft facade) contains no implementation yet.
 
 ### Toolchain baseline
 
@@ -111,6 +112,13 @@ no implementation yet.
   `session/cancel` and `$/cancel_request` reach the wire;
   closed channel maps to `Unavailable`, backpressure to `BrokerFailure`.
   `543dcc4`
+- Benign wire-cancel tolerance: a well-formed inbound `$/cancel_request`
+  for a non-live id (unknown request, already settled, or already
+  cancelled) is a traced no-op (`TraceCancelIgnored` with the matching
+  reason) and the connection keeps serving; live-cancel semantics, local
+  cancel events, and genuine invariant divergences still fail fast.
+  `c9eea23` (`tests/interop/interop_test.mbt`: "moonbit client late cancel
+  keeps the agent connection serving").
 
 ### Brokers
 
@@ -169,11 +177,11 @@ no implementation yet.
   `docs/implementation-plan/09` gate commands pass at the current HEAD
   (`rtk moon check --target native --warn-list +73`, `rtk moon test
   --target native`, `rtk moon info --target native`, `rtk moon fmt
-  --check`, `rtk git diff --check`), except that whole-module
-  `rtk moon coverage analyze` is blocked by a toolchain quirk
-  (`Sys_error("<module-root>/acp.mbt: No such file or directory")` inside
-  `moon_cove_report.combine_coverages`); per-package coverage is recorded
-  locally instead.
+  --check`, `rtk git diff --check`, `rtk moon coverage analyze`). The
+  earlier whole-module coverage toolchain quirk (a crash inside
+  `moon_cove_report.combine_coverages`) is resolved; the canonical
+  whole-module run is recorded in `uncovered.log` (711 uncovered lines
+  in 39 files at `c9eea23`).
 
 ### Documentation
 
