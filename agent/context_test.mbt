@@ -150,7 +150,13 @@ async fn agent_context_test_all_requests(
     }
     ElicitationCreate(Form(params)) => {
       assert_eq(params.message, "Please choose")
-      Ok(AgentReplyElicitationCreate({ action: Accept, meta: Omitted }))
+      Ok(
+        AgentReplyElicitationCreate({
+          action: Accept,
+          content: Omitted,
+          meta: Omitted,
+        }),
+      )
     }
     ElicitationCreate(Url(_)) => fail("expected the form elicitation fixture")
   }

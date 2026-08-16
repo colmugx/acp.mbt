@@ -575,6 +575,3 @@ async test "client runtime outbound serves inbound requests while forwarding" {
   assert_eq(responses, ["1", "2"])
   assert_eq(failures.length(), 0)
 }
-
-///|
-using @jsonrpc {type JsonRpcId}

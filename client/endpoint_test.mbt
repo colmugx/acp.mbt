@@ -1,7 +1,4 @@
 ///|
-using @acp_error {type ClientCompositionError}
-
-///|
 fn client_endpoint_test_spec(
   name : String,
   full : Bool,

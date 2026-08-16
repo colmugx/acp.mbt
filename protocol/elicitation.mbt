@@ -49,8 +49,13 @@ pub(all) enum ElicitationAction {
 
 ///|
 /// Result of `elicitation/create`.
+///
+/// `content` carries the accept-action form values.  Only the accept outcome
+/// may carry content; decline and cancel are payload-free per the fixed v1
+/// schema (`CreateElicitationResponse`/`ElicitationAcceptAction`).
 pub(all) struct ElicitationCreateResult {
   action : ElicitationAction
+  content : ProtocolNullable[Json]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
 
@@ -627,6 +632,51 @@ fn elicitation_decode_action(
 }
 
 ///|
+/// Validate one elicitation content value.  The fixed v1 schema allows
+/// strings, integers, numbers, booleans, and arrays of strings; nulls and
+/// nested objects are rejected instead of silently dropped.
+fn elicitation_validate_content_value(
+  value : Json,
+  path~ : String,
+) -> Unit raise ProtocolDecodeError {
+  match value {
+    String(_) => ()
+    True | False => ()
+    Array(values) =>
+      for index, item in values {
+        match item {
+          String(_) => ()
+          _ =>
+            raise InvalidField(
+              path=path + "[" + index.to_string() + "]",
+              reason="content array values must be strings",
+            )
+        }
+      }
+    Null | Object(_) =>
+      raise InvalidField(
+        path~,
+        reason="content values must be primitives or string arrays",
+      )
+    _ => ignore(protocol_decode_number(value, path~))
+  }
+}
+
+///|
+/// Validate the accept-action content object keyed by form field names and
+/// return it unchanged.
+fn elicitation_validate_content(
+  value : Json,
+  path~ : String,
+) -> Json raise ProtocolDecodeError {
+  let fields = protocol_require_object(value, path~)
+  for name, item in fields {
+    elicitation_validate_content_value(item, path=path + "." + name)
+  }
+  value
+}
+
+///|
 /// Decode the form/URL union for `elicitation/create`.
 pub fn elicitation_create_params_from_json(
   value : Json,
@@ -725,28 +775,75 @@ pub fn elicitation_create_params_to_json(
 }
 
 ///|
-/// Decode the result of `elicitation/create`.
+/// Decode the result of `elicitation/create`.  Only the accept outcome may
+/// carry `content`; a decline or cancel carrying content is an explicit
+/// invalid-params failure, never a silently ignored payload.
 pub fn elicitation_create_result_from_json(
   value : Json,
   path? : String = "elicitation/create",
 ) -> ElicitationCreateResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
-  protocol_reject_unknown(fields, ["action", "_meta"], prefix=path)
+  protocol_reject_unknown(fields, ["action", "content", "_meta"], prefix=path)
   let action = elicitation_decode_action(
     protocol_required(fields, "action", path=path + ".action"),
     path=path + ".action",
   )
+  let content : ProtocolNullable[Json] = match
+    protocol_field(fields, "content") {
+    Omitted => Omitted
+    Null =>
+      match action {
+        Accept => Null
+        Decline | Cancel =>
+          raise InvalidField(
+            path=path + ".content",
+            reason="decline and cancel must not carry content",
+          )
+      }
+    Value(content) =>
+      match action {
+        Accept =>
+          Value(elicitation_validate_content(content, path=path + ".content"))
+        Decline | Cancel =>
+          raise InvalidField(
+            path=path + ".content",
+            reason="decline and cancel must not carry content",
+          )
+      }
+  }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { action, meta }
+  { action, content, meta }
 }
 
 ///|
-/// Encode the result of `elicitation/create`.
+/// Encode the result of `elicitation/create`.  Encoding a decline or cancel
+/// result whose `content` is set fails fast instead of dropping the payload.
 pub fn elicitation_create_result_to_json(
   value : ElicitationCreateResult,
 ) -> Json raise ProtocolDecodeError {
   let fields : Map[String, Json] = Map([])
   fields["action"] = elicitation_encode_action(value.action)
+  match value.action {
+    Accept =>
+      match value.content {
+        Omitted => ()
+        Null => fields["content"] = Json::null()
+        Value(content) =>
+          fields["content"] = elicitation_validate_content(
+            content,
+            path="content",
+          )
+      }
+    Decline | Cancel =>
+      match value.content {
+        Omitted => ()
+        Null | Value(_) =>
+          raise InvalidField(
+            path="content",
+            reason="decline and cancel must not carry content",
+          )
+      }
+  }
   protocol_put_meta(fields, value.meta)
   Json::object(fields)
 }

@@ -82,6 +82,7 @@ test "elicitation actions and complete notification round trip" {
   for action in actions {
     let result : ElicitationCreateResult = {
       action,
+      content: Omitted,
       meta: elicitation_test_meta(),
     }
     assert_eq(
@@ -102,6 +103,94 @@ test "elicitation actions and complete notification round trip" {
     ),
     complete,
   )
+}
+
+///|
+test "elicitation accept content round trips and non-accept content fails" {
+  let content = protocol_parse_json(
+    "{\"name\":\"Ada\",\"count\":2,\"ratio\":1.5,\"ok\":true,\"tags\":[\"a\",\"b\"]}",
+  )
+  let accepted : ElicitationCreateResult = {
+    action: Accept,
+    content: Value(content),
+    meta: Omitted,
+  }
+  assert_eq(
+    elicitation_create_result_from_json(
+      elicitation_create_result_to_json(accepted),
+    ),
+    accepted,
+  )
+
+  let null_content : ElicitationCreateResult = {
+    action: Accept,
+    content: Null,
+    meta: Omitted,
+  }
+  assert_eq(
+    elicitation_create_result_from_json(
+      elicitation_create_result_to_json(null_content),
+    ),
+    null_content,
+  )
+
+  for
+    source in [
+      "{\"action\":\"decline\",\"content\":{\"name\":\"Ada\"}}", "{\"action\":\"cancel\",\"content\":null}",
+    ] {
+    try elicitation_create_result_from_json(protocol_parse_json(source)) catch {
+      InvalidField(
+        path="elicitation/create.content",
+        reason="decline and cancel must not carry content"
+      ) => ()
+      _ => fail("expected non-accept content rejection on decode")
+    } noraise {
+      _ => fail("expected non-accept content rejection on decode")
+    }
+  }
+
+  let non_accept_actions : Array[ElicitationAction] = [Decline, Cancel]
+  for action in non_accept_actions {
+    try
+      elicitation_create_result_to_json({
+        action,
+        content: Value(content),
+        meta: Omitted,
+      })
+    catch {
+      InvalidField(
+        path="content",
+        reason="decline and cancel must not carry content"
+      ) => ()
+      _ => fail("expected non-accept content rejection on encode")
+    } noraise {
+      _ => fail("expected non-accept content rejection on encode")
+    }
+  }
+
+  let invalid_values : Array[(String, String)] = [
+    (
+      "{\"action\":\"accept\",\"content\":{\"name\":null}}", "content values must be primitives or string arrays",
+    ),
+    (
+      "{\"action\":\"accept\",\"content\":{\"nested\":{\"deep\":true}}}", "content values must be primitives or string arrays",
+    ),
+    (
+      "{\"action\":\"accept\",\"content\":{\"tags\":[\"a\",1]}}", "content array values must be strings",
+    ),
+  ]
+  for pair in invalid_values {
+    let (source, expected_reason) = pair
+    try elicitation_create_result_from_json(protocol_parse_json(source)) catch {
+      InvalidField(path~, reason~) => {
+        assert_true(path.contains("content"))
+        assert_eq(reason, expected_reason)
+      }
+      _ => fail("expected invalid content value rejection")
+    } noraise {
+      _ => fail("expected invalid content value rejection")
+    }
+  }
 }
 
 ///|

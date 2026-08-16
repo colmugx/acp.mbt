@@ -88,7 +88,7 @@ async fn client_service_test_form(
   _params : ElicitationFormParams,
 ) -> ElicitationCreateResult {
   @async.pause()
-  { action: Accept, meta: Omitted }
+  { action: Accept, content: Omitted, meta: Omitted }
 }
 
 ///|
@@ -96,7 +96,7 @@ async fn client_service_test_url(
   _params : ElicitationUrlParams,
 ) -> ElicitationCreateResult {
   @async.pause()
-  { action: Accept, meta: Omitted }
+  { action: Accept, content: Omitted, meta: Omitted }
 }
 
 ///|
