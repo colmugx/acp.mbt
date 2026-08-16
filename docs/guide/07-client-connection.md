@@ -72,5 +72,6 @@ typed broker 返回了匹配值，不表示任何 bytes 已写入 peer。
 
 ## 下一篇
 
-继续阅读 [08 Runtime ports](08-runtime-ports.md)，区分可注入的 native seam 与
-尚未完成的可运行 server。
+继续阅读 [08 Runtime ports 与真实运行入口](08-runtime-ports.md)，了解
+`client_connection_over_channel` 如何把该 facade 接到真实 engine，以及 stdio/process
+运行入口的边界。

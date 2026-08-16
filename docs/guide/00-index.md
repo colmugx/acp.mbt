@@ -3,8 +3,10 @@
 ## 定位
 
 这是一套从 Quickstart 到 Advanced 的 `colmugx/acp` 用户指南。项目是
-MoonBit native-only SDK，面向稳定 ACP v1 wire；当前仍在实现中，不是完整的
-可发布 v1 产品，也不包含 v2 实现。
+MoonBit native-only SDK，面向稳定 ACP v1 wire；SDK 范围内的协议矩阵、
+owner-loop runtime 与真实 stdio/process 运行入口已有测试与端到端证据，但
+尚未完成 v1 release gate（TypeScript/Rust 四向 interop 等），也不是完整的
+可发布 v1 产品，且不包含 v2 实现。
 
 示例只依赖 root facade `"colmugx/acp"`。指南不会把 adapter、reducer、broker
 或 owner runtime state 当作普通用户 API。
@@ -37,7 +39,8 @@ MoonBit 源码使用默认 alias `@acp`；需要 core JSON 时，在同一个 `m
 5. [05 Client endpoint](05-client-endpoint.md)：服务能力和 Client 组合。
 6. [06 Reader 与 context](06-reader-and-context.md)：composition root 和 typed DI。
 7. [07 ClientConnection](07-client-connection.md)：注入 broker 的 typed facade。
-8. [08 Runtime ports](08-runtime-ports.md)：native ports/config seam 的边界。
+8. [08 Runtime ports 与运行入口](08-runtime-ports.md)：native ports/config seam、
+   真实 stdio/process 运行入口与 typed outbound broker 的边界。
 9. [09 错误、取消与 capabilities](09-errors-cancellation-capabilities.md)：结构化失败。
 10. [10 Advanced](10-advanced.md)：functional core、imperative shell 和集成边界。
 11. [11 当前限制](11-current-limitations.md)：已完成与未完成能力清单。
@@ -45,8 +48,10 @@ MoonBit 源码使用默认 alias `@acp`；需要 core JSON 时，在同一个 `m
 ## 错误边界
 
 协议 codec、framing、composition、handler 和 broker 错误都应显式处理或向上
-传播；不要把失败吞成成功。没有公开的 server runner 时，不要自行猜测一个
-生命周期 API。
+传播；不要把失败吞成成功。公开的运行入口是 `connection_runtime_run_owner(_with_outbound)`、
+`agent_serve_stdio(_with_outbound)`、`agent_runtime_run`、`client_runtime_run`
+和 `client_connect_process`；除此之外的生命周期需求应作为实现工作提出，
+不要在应用代码里发明第二套 loop 或猜测 API。
 
 ## 下一篇
 

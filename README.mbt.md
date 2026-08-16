@@ -1,20 +1,27 @@
 # colmugx/acp
 
 `colmugx/acp` 是面向 Agent Client Protocol (ACP) v1 的 MoonBit native SDK。
-当前版本仍在实现中，适合学习协议模型、构造 typed Agent/Client endpoint 和接入
-自有 transport seam；还不是可发布的完整 v1 SDK。
+当前版本已覆盖稳定 v1 wire、typed Agent/Client endpoint 组合与真实
+stdio/process runtime；还不是可发布的完整 v1 SDK（见下方剩余边界）。
 
 ## 当前状态
 
 - 稳定 v1 wire：严格 JSON-RPC envelope、ACP 数据模型、typed codecs、newline framing。
 - immutable composition：Agent/Client service、spec、endpoint 和 Reader/DI seam。
+- 单一 owner-loop runtime：`connection_runtime_run_owner(_with_outbound)` 引擎、
+  typed outbound channel 与 `agent_context_over_channel` /
+  `client_connection_over_channel` typed brokers。
+- 真实 stdio/process：`agent_serve_stdio(_with_outbound)`、
+  `client_connect_process`、`runtime_stdio_ports`、`runtime_process_ports`。
 - 目标平台：`native` only。
 - v2/`experimental` 尚未实现。
 - 许可证：Apache-2.0。
 
-尚未完成的能力包括 `serve_stdio`、完整 connection runtime runner、真实
-process/host-resource 集成、TypeScript/Rust interoperability，以及 v1 release
-gate。因此本项目不应被描述为已经提供可直接运行的 ACP server/client。
+尚未完成的能力包括 TypeScript/Rust 四向 interoperability、v1 release gate，
+以及由调用方组合的 service-owned 执行边界（session 持久化/replay 执行、
+terminal/process registries、截断执行、root assembly）。SDK 侧 matrix 测试与
+MoonBit↔MoonBit 真实子进程 stdio e2e（`tests/interop/`）已通过；在四向
+interop 与 release gate 闭环前，本项目不应被描述为完整 v1 release。
 
 ## 安装与导入
 
@@ -67,9 +74,12 @@ Client、Reader/context、typed broker、runtime ports、错误语义和高级�
 
 ## 重要限制
 
-`RuntimePorts` 和 `RuntimeOptions` 是可注入的配置/端口 seam，不等于一个已经完成
-的 server runner。`ClientConnection` 是 caller-supplied typed broker facade，不是
-transport 实现。真实 stdio 生命周期、connection owner runner、process 管理、
-interop 和 release gate 仍待完成。
+`RuntimePorts`/`RuntimeOptions` 仍是可注入的配置/端口 seam；`runtime_stdio_ports`
+与 `runtime_process_ports` 是两个真实 I/O 构造器，owner runner 与
+`agent_serve_stdio(_with_outbound)`/`client_connect_process` 在其上闭环。
+`ClientConnection` 本身保持 caller-supplied typed broker facade 语义；
+`client_connection_over_channel` 把它接到真实 engine。session 持久化/replay
+执行、terminal/process registries、截断执行、root assembly、TS/Rust interop
+和 release gate 仍待调用方组合或后续批次完成。
 
 项目保持独立于 Posoco；未来由 `posoco-ext-acp` 负责 Posoco 侧适配。
