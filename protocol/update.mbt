@@ -1288,3 +1288,470 @@ pub fn session_config_option_to_json(
 ) -> Json raise ProtocolDecodeError {
   encode_config_option(value)
 }
+
+///|
+/// Structured failures produced while folding typed session updates into
+/// consumer state.
+///
+/// These are consumer-side aggregation failures, not wire decode failures:
+/// malformed payloads are rejected earlier by `session_update_from_json`, so a
+/// typed update that reaches the fold always decoded cleanly.
+pub(all) suberror SessionUpdateFoldError {
+  DuplicateToolCall(tool_call_id~ : String)
+  UnknownToolCall(tool_call_id~ : String)
+  UnknownMode(mode_id~ : String)
+  InvalidTimestamp(field~ : String, value~ : String)
+} derive(Eq, Debug)
+
+///|
+/// One message aggregated from streamed content chunks.
+///
+/// Chunks that carry the same `messageId` value fold into one message, in
+/// arrival order.  The v1 schema pins the aggregation contract: all chunks
+/// belonging to the same message share one `messageId`, and a change of
+/// `messageId` starts a new message.  A chunk without a `messageId` value
+/// (omitted or JSON null) cannot be correlated, so the fold records it as its
+/// own standalone message instead of merging or overwriting anything.
+pub(all) struct SessionUpdateMessage {
+  message_id : ProtocolNullable[MessageId]
+  blocks : Array[ContentBlock]
+} derive(Eq, Debug)
+
+///|
+/// Pure per-session consumer state for a stream of typed session updates.
+///
+/// This is the consumer-side half of the `session/update` semantics (matrix
+/// rows E01-E11): the codec in this file owns wire shape and tri-state
+/// fidelity, while this fold owns aggregation and replacement semantics.  The
+/// fold follows the same discipline as `connection/reducer.mbt`: it is a pure
+/// function of `(state, update)`, allocates the next state without mutating
+/// the input state, keeps no mutable registry, and holds no global state.
+/// Each session owns one fold value, so a rejected update for one session can
+/// never pollute another session's state.
+///
+/// Semantics per variant:
+///
+/// - `user_message_chunk` / `agent_message_chunk` / `agent_thought_chunk`
+///   (E01-E03): chunks aggregate by `messageId` within their own kind bucket;
+///   the three kinds never merge with each other.
+/// - `tool_call` (E04): the first occurrence creates the tracked call keyed by
+///   `toolCallId`; a duplicate id is a typed error, never an overwrite.
+/// - `tool_call_update` (E05): present fields replace, omitted fields keep,
+///   and JSON null clears the field back to the omitted state; an unknown
+///   `toolCallId` is a typed error and never fabricates a new call.
+/// - `plan` (E06), `available_commands_update` (E07), and
+///   `config_option_update` (E09): each update is the complete replacement
+///   set; the fold never append-merges entries or options.
+/// - `current_mode_update` (E08): `currentModeId` is validated against the
+///   caller-supplied `known_modes`.  Consistent with the C10 boundary, the
+///   codec validates only shape; which modes exist is session knowledge the
+///   consumer owns.  The fold is strict: an empty known-mode set rejects every
+///   mode update rather than accepting a silent default mode.
+/// - `session_info_update` (E10): `title`/`updatedAt` keep tri-state
+///   semantics (omitted keeps, null clears, value sets) and an `updatedAt`
+///   value must parse as an RFC 3339 / ISO 8601 extended timestamp.
+/// - `usage_update` (E11): replaces the previously recorded usage; the
+///     non-negative `used`/`size` invariant is enforced at the codec by the
+///     unsigned integer decode.
+pub(all) struct SessionUpdateFold {
+  known_modes : Array[SessionModeId]
+  user_messages : Array[SessionUpdateMessage]
+  agent_messages : Array[SessionUpdateMessage]
+  agent_thoughts : Array[SessionUpdateMessage]
+  tool_calls : Array[ToolCall]
+  plan : Plan?
+  available_commands : Array[AvailableCommand]
+  current_mode_id : SessionModeId?
+  config_options : Array[SessionConfigOption]
+  session_title : ProtocolNullable[String]
+  session_updated_at : ProtocolNullable[String]
+  usage : UsageUpdate?
+} derive(Eq, Debug)
+
+///|
+/// Create the initial consumer state for one session.
+///
+/// `known_modes` is the immutable mode set the consumer knows for the session
+/// (typically `SessionModeState.available_modes` from `session/new`); it is
+/// only read by `current_mode_update` validation and is never modified by any
+/// applied update.
+pub fn session_update_fold(
+  known_modes~ : Array[SessionModeId],
+) -> SessionUpdateFold {
+  {
+    known_modes: known_modes.copy(),
+    user_messages: [],
+    agent_messages: [],
+    agent_thoughts: [],
+    tool_calls: [],
+    plan: None,
+    available_commands: [],
+    current_mode_id: None,
+    config_options: [],
+    session_title: Omitted,
+    session_updated_at: Omitted,
+    usage: None,
+  }
+}
+
+///|
+/// Apply strict `tool_call_update` patch semantics to one nullable field: a
+/// present value replaces the previous value, JSON null clears the field back
+/// to the omitted state, and an omitted field keeps the previous value.
+fn[T] session_update_patch_field(
+  current : ProtocolNullable[T],
+  patch : ProtocolNullable[T],
+) -> ProtocolNullable[T] {
+  match patch {
+    Omitted => current
+    Null => Omitted
+    Value(_) => patch
+  }
+}
+
+///|
+/// Patch semantics for nullable collection fields.  Identical to
+/// `session_update_patch_field` except that a replaced collection is copied,
+/// so the fold never aliases an array the caller could later mutate.
+fn[T] session_update_patch_collection(
+  current : ProtocolNullable[Array[T]],
+  patch : ProtocolNullable[Array[T]],
+) -> ProtocolNullable[Array[T]] {
+  match patch {
+    Omitted => current
+    Null => Omitted
+    Value(values) => Value(values.copy())
+  }
+}
+
+///|
+/// Fold one resolved tool call update into its tracked call.
+///
+/// A null `title` patch keeps the creation title: the v1 `ToolCall` record
+/// requires a title, the consumer state cannot represent a title-less call,
+/// and the fold never fabricates an empty title to simulate a clear.
+fn session_update_patch_tool_call(
+  call : ToolCall,
+  patch : ToolCallUpdate,
+) -> ToolCall {
+  {
+    tool_call_id: call.tool_call_id,
+    title: match patch.title {
+      Value(title) => title
+      _ => call.title
+    },
+    kind: session_update_patch_field(call.kind, patch.kind),
+    status: session_update_patch_field(call.status, patch.status),
+    content: session_update_patch_collection(call.content, patch.content),
+    locations: session_update_patch_collection(call.locations, patch.locations),
+    raw_input: session_update_patch_field(call.raw_input, patch.raw_input),
+    raw_output: session_update_patch_field(call.raw_output, patch.raw_output),
+    meta: session_update_patch_field(call.meta, patch.meta),
+  }
+}
+
+///|
+/// Locate a tracked message by its `messageId` value.
+fn session_update_message_index(
+  messages : Array[SessionUpdateMessage],
+  message_id : MessageId,
+) -> Int? {
+  for index, message in messages {
+    match message.message_id {
+      Value(id) => if id == message_id { return Some(index) }
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+/// Fold one streamed chunk into a message bucket (E01-E03).
+///
+/// A chunk whose `messageId` carries a value appends to the message with that
+/// id, creating it on first occurrence; a change of id therefore starts a new
+/// message while earlier messages keep their blocks.  A chunk without a
+/// `messageId` value becomes its own standalone message because nothing on
+/// the wire correlates it with an existing one.
+fn session_update_append_chunk(
+  messages : Array[SessionUpdateMessage],
+  chunk : ContentChunk,
+) -> Array[SessionUpdateMessage] {
+  match chunk.message_id {
+    Value(id) => {
+      let next = messages.copy()
+      match session_update_message_index(messages, id) {
+        Some(index) => {
+          let message = next[index]
+          let blocks = message.blocks.copy()
+          blocks.push(chunk.content)
+          next[index] = { message_id: message.message_id, blocks }
+        }
+        None =>
+          next.push({ message_id: chunk.message_id, blocks: [chunk.content] })
+      }
+      next
+    }
+    _ => {
+      let next = messages.copy()
+      next.push({ message_id: chunk.message_id, blocks: [chunk.content] })
+      next
+    }
+  }
+}
+
+///|
+/// Locate a tracked tool call by its `toolCallId`.
+fn session_update_tool_call_index(
+  calls : Array[ToolCall],
+  tool_call_id : ToolCallId,
+) -> Int? {
+  for index, call in calls {
+    if call.tool_call_id == tool_call_id {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+/// Report whether the caller-supplied known-mode set contains `mode_id`.
+fn session_update_mode_known(
+  known_modes : Array[SessionModeId],
+  mode_id : SessionModeId,
+) -> Bool {
+  let mut known = false
+  for mode in known_modes {
+    if mode == mode_id {
+      known = true
+      break
+    }
+  }
+  known
+}
+
+///|
+/// Read one ASCII digit at `index`, or `None` when out of range or not a
+/// digit.
+fn session_update_timestamp_digit(chars : Array[Char], index : Int) -> Int? {
+  if index >= chars.length() {
+    None
+  } else if protocol_is_digit(chars[index]) {
+    Some(chars[index].to_int() - '0')
+  } else {
+    None
+  }
+}
+
+///|
+/// Read a two-digit zero-padded number at `index`.
+fn session_update_timestamp_pair(chars : Array[Char], index : Int) -> Int? {
+  match
+    (
+      session_update_timestamp_digit(chars, index),
+      session_update_timestamp_digit(chars, index + 1),
+    ) {
+    (Some(high), Some(low)) => Some(high * 10 + low)
+    _ => None
+  }
+}
+
+///|
+/// Read the four-digit year at the start of a timestamp.
+fn session_update_timestamp_year(chars : Array[Char]) -> Int? {
+  match
+    (
+      session_update_timestamp_digit(chars, 0),
+      session_update_timestamp_digit(chars, 1),
+      session_update_timestamp_digit(chars, 2),
+      session_update_timestamp_digit(chars, 3),
+    ) {
+    (Some(a), Some(b), Some(c), Some(d)) =>
+      Some(a * 1000 + b * 100 + c * 10 + d)
+    _ => None
+  }
+}
+
+///|
+/// Proleptic Gregorian leap-year test for day-of-month validation.
+fn session_update_is_leap_year(year : Int) -> Bool {
+  (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+///|
+/// Days in one month; an out-of-range month yields 0 so the caller's day
+/// check fails.
+fn session_update_days_in_month(year : Int, month : Int) -> Int {
+  match month {
+    1 | 3 | 5 | 7 | 8 | 10 | 12 => 31
+    4 | 6 | 9 | 11 => 30
+    2 => if session_update_is_leap_year(year) { 29 } else { 28 }
+    _ => 0
+  }
+}
+
+///|
+/// Validate the timezone designator starting at `start`: `Z`/`z`, or a
+/// numeric offset `±HH:MM` within range.  The timestamp must end there.
+fn session_update_timestamp_offset_valid(
+  chars : Array[Char],
+  start : Int,
+) -> Bool {
+  let length = chars.length()
+  if start >= length {
+    return false
+  }
+  match chars[start] {
+    'Z' | 'z' => start + 1 == length
+    '+' | '-' =>
+      match
+        (
+          session_update_timestamp_pair(chars, start + 1),
+          session_update_timestamp_pair(chars, start + 4),
+        ) {
+        (Some(hour), Some(minute)) =>
+          if start + 3 < length && chars[start + 3] == ':' {
+            hour <= 23 && minute <= 59 && start + 6 == length
+          } else {
+            false
+          }
+        _ => false
+      }
+    _ => false
+  }
+}
+
+///|
+/// Strict shape check for the RFC 3339 / ISO 8601 extended calendar form the
+/// v1 schema requires for `updatedAt`:
+/// `YYYY-MM-DDTHH:MM:SS[.fraction](Z|±HH:MM)` with `T`/`t` and `Z`/`z`
+/// accepted, zero-padded two-digit fields, calendar-valid month and day
+/// (leap-year aware), and seconds up to 60 for leap seconds.  This is a
+/// shape/parse gate only; it does not normalize or rewrite the value.
+fn session_update_is_valid_timestamp(value : String) -> Bool {
+  let chars = value.to_array()
+  let length = chars.length()
+  if length < 20 {
+    return false
+  }
+  if chars[4] != '-' || chars[7] != '-' {
+    return false
+  }
+  if chars[10] != 'T' && chars[10] != 't' {
+    return false
+  }
+  if chars[13] != ':' || chars[16] != ':' {
+    return false
+  }
+  let date_valid = match
+    (
+      session_update_timestamp_year(chars),
+      session_update_timestamp_pair(chars, 5),
+      session_update_timestamp_pair(chars, 8),
+      session_update_timestamp_pair(chars, 11),
+      session_update_timestamp_pair(chars, 14),
+      session_update_timestamp_pair(chars, 17),
+    ) {
+    (Some(year), Some(month), Some(day), Some(hour), Some(minute), Some(second)) =>
+      month >= 1 &&
+      month <= 12 &&
+      day >= 1 &&
+      day <= session_update_days_in_month(year, month) &&
+      hour <= 23 &&
+      minute <= 59 &&
+      second <= 60
+    _ => false
+  }
+  if !date_valid {
+    return false
+  }
+  let mut offset_start = 19
+  if offset_start < length && chars[offset_start] == '.' {
+    offset_start += 1
+    let fraction_start = offset_start
+    while offset_start < length && protocol_is_digit(chars[offset_start]) {
+      offset_start += 1
+    }
+    if offset_start == fraction_start {
+      return false
+    }
+  }
+  session_update_timestamp_offset_valid(chars, offset_start)
+}
+
+///|
+/// Apply one typed session update to consumer state, returning either the
+/// next state or a typed rejection.  The input state is never mutated, so a
+/// caller that keeps the previous value still observes it unchanged after a
+/// rejection.
+pub fn session_update_apply(
+  state : SessionUpdateFold,
+  update : SessionUpdate,
+) -> Result[SessionUpdateFold, SessionUpdateFoldError] {
+  match update {
+    UserMessageChunk(chunk) =>
+      Ok({
+        ..state,
+        user_messages: session_update_append_chunk(state.user_messages, chunk),
+      })
+    AgentMessageChunk(chunk) =>
+      Ok({
+        ..state,
+        agent_messages: session_update_append_chunk(state.agent_messages, chunk),
+      })
+    AgentThoughtChunk(chunk) =>
+      Ok({
+        ..state,
+        agent_thoughts: session_update_append_chunk(state.agent_thoughts, chunk),
+      })
+    ToolCall(call) =>
+      match
+        session_update_tool_call_index(state.tool_calls, call.tool_call_id) {
+        Some(_) => Err(DuplicateToolCall(tool_call_id=call.tool_call_id))
+        None => {
+          let calls = state.tool_calls.copy()
+          calls.push(call)
+          Ok({ ..state, tool_calls: calls })
+        }
+      }
+    ToolCallUpdate(patch) =>
+      match
+        session_update_tool_call_index(state.tool_calls, patch.tool_call_id) {
+        Some(index) => {
+          let calls = state.tool_calls.copy()
+          calls[index] = session_update_patch_tool_call(calls[index], patch)
+          Ok({ ..state, tool_calls: calls })
+        }
+        None => Err(UnknownToolCall(tool_call_id=patch.tool_call_id))
+      }
+    Plan(value) => Ok({ ..state, plan: Some(value) })
+    AvailableCommandsUpdate(value) =>
+      Ok({ ..state, available_commands: value.available_commands.copy() })
+    CurrentModeUpdate(value) =>
+      if session_update_mode_known(state.known_modes, value.current_mode_id) {
+        Ok({ ..state, current_mode_id: Some(value.current_mode_id) })
+      } else {
+        Err(UnknownMode(mode_id=value.current_mode_id))
+      }
+    ConfigOptionUpdate(value) =>
+      Ok({ ..state, config_options: value.config_options.copy() })
+    SessionInfoUpdate(value) => {
+      let title = match value.title {
+        Omitted => state.session_title
+        updated => updated
+      }
+      let updated_at = match value.updated_at {
+        Omitted => state.session_updated_at
+        Null => Null
+        Value(timestamp) =>
+          if session_update_is_valid_timestamp(timestamp) {
+            Value(timestamp)
+          } else {
+            return Err(InvalidTimestamp(field="updatedAt", value=timestamp))
+          }
+      }
+      Ok({ ..state, session_title: title, session_updated_at: updated_at })
+    }
+    UsageUpdate(value) => Ok({ ..state, usage: Some(value) })
+  }
+}
