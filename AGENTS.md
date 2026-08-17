@@ -69,9 +69,16 @@ You can browse and install extra skills here:
   suffixes are allowed for test files. Do not create `v1/` or `v2/`
   implementation directories; retain `experimental/` as the experimental
   facade.
-- The root facade file `top.mbt` uses `pub using` to re-export all user-facing
-  public types, enums, errors, functions, and methods. Internal reducer,
-  broker, and runtime state must remain unexported.
+- The root facade file `top.mbt` uses `pub using` to re-export user-facing
+  public types, enums, errors, functions, and methods. Internal reducer
+  transitions (admit/complete/reducer events and commands), the owner-loop
+  state machine (`RuntimeOwner` and its transitions), broker codec internals,
+  and mutable runtime loop state must remain unexported. Deliberately
+  exported seams are: the runner entry points, ports and channels
+  (`RuntimeOwnerPort`, `RuntimeOutboundChannel`, `RuntimePorts`), and the
+  immutable initial-state constructors runners require
+  (`agent_adapter_state_new`/`client_adapter_state_new` with their protocol
+  states) plus the pure `session_update_fold` consumer aid.
 - The current supported target is native only. Protocol stdout must contain
   newline-delimited ACP JSON-RPC frames only; diagnostics go to stderr or an
   explicitly injected trace sink.

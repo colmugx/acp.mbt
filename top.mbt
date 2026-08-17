@@ -505,38 +505,23 @@ pub using @client_protocol {
 pub using @broker {agent_context_over_channel, client_connection_over_channel}
 
 ///|
-/// Generic owner state, admission, completion, and effect APIs. The public
-/// runners are the only connection loop entry points exposed by the stable
-/// facade; both drive the same single reader/writer/reducer engine. Reducer
-/// steps and the legacy handler runner remain package-internal.
+/// Owner-loop runner seam. The public runners are the only connection loop
+/// entry points exposed by the stable facade; both drive the same single
+/// reader/writer/reducer engine. The owner state machine itself
+/// (`RuntimeOwner` values and its admit/execute/spawn/cancel/close/complete
+/// transitions) is engine-internal and stays unexported; only the runner
+/// functions, the outbound channel, the owner port, and the types a port
+/// implementor must name are re-exported here. Reducer steps and the legacy
+/// handler runner remain package-internal.
 pub using @connection {
   connection_runtime_run_owner,
   connection_runtime_run_owner_with_outbound,
-  runtime_owner_admit_notification,
-  runtime_owner_admit_request,
-  runtime_owner_cancel_request,
-  runtime_owner_close,
-  runtime_owner_complete_notification,
-  runtime_owner_complete_request,
-  runtime_owner_execute,
-  runtime_owner_new,
-  runtime_owner_plan_effects,
-  runtime_owner_spawn,
-  type RuntimeOwner,
-  type RuntimeOwnerCancelResult,
-  type RuntimeOwnerCloseResult,
   type RuntimeOwnerCommand,
-  type RuntimeOwnerCompletionResult,
   type RuntimeOwnerEffect,
-  type RuntimeOwnerError,
-  type RuntimeOwnerEvent,
-  type RuntimeOwnerIgnore,
   type RuntimeOwnerLocalPlan,
-  type RuntimeOwnerNotificationAction,
   type RuntimeOwnerNotificationAdmission,
   type RuntimeOwnerNotificationCompletion,
   type RuntimeOwnerPort,
-  type RuntimeOwnerRequestAction,
   type RuntimeOwnerRequestAdmission,
   type RuntimeOwnerRequestCompletion,
   type RuntimeOwnerTask,
