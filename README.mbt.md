@@ -24,9 +24,6 @@ import {
 }
 ```
 
-Source uses the default alias `@acp`; add `"moonbitlang/core/json" @json` when
-you construct JSON values.
-
 ## Quick Start
 
 ### Agent
@@ -289,13 +286,6 @@ Stdout carries only newline-delimited ACP JSON-RPC frames. Diagnostics are
 sanitized single-line traces — direction, phase, request id, method, and error
 kind only, never payloads — written to stderr by default; every runner accepts
 a `trace~` sink so you can capture them yourself.
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Guide index](docs/guide/00-index.md) | Full learning path from JSON-RPC framing to runtime ports |
-| [Protocol lock](spec/LOCK.md) | The pinned upstream schema commit behind the v1 surface |
 
 ## License
 
