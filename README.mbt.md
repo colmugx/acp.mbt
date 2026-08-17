@@ -17,11 +17,13 @@ stdio/process runtime；还不是可发布的完整 v1 SDK（见下方剩余边�
 - v2/`experimental` 尚未实现。
 - 许可证：Apache-2.0。
 
-尚未完成的能力包括 TypeScript/Rust 四向 interoperability、v1 release gate，
-以及由调用方组合的 service-owned 执行边界（session 持久化/replay 执行、
-terminal/process registries、截断执行、root assembly）。SDK 侧 matrix 测试与
-MoonBit↔MoonBit 真实子进程 stdio e2e（`tests/interop/`）已通过；在四向
-interop 与 release gate 闭环前，本项目不应被描述为完整 v1 release。
+尚未完成的能力包括 v1 release gate 的最终人工 release review 与版本/发布
+决策，以及由调用方组合的 service-owned 执行边界（session 持久化/replay 执行、
+terminal/process registries、截断执行、root assembly）。SDK 侧 matrix 测试
+已通过，互操作证据集（固定 schema/meta drift gate + MoonBit↔MoonBit 真实
+子进程 stdio e2e，`tests/interop/`）也已落地；真实世界客户端集成验证属于
+SDK 的下游消费者。在最终 release review 与版本/发布决策闭环前，本项目不应
+被描述为完整 v1 release。
 
 ## 安装与导入
 
@@ -79,7 +81,7 @@ Client、Reader/context、typed broker、runtime ports、错误语义和高级�
 `agent_serve_stdio(_with_outbound)`/`client_connect_process` 在其上闭环。
 `ClientConnection` 本身保持 caller-supplied typed broker facade 语义；
 `client_connection_over_channel` 把它接到真实 engine。session 持久化/replay
-执行、terminal/process registries、截断执行、root assembly、TS/Rust interop
-和 release gate 仍待调用方组合或后续批次完成。
+执行、terminal/process registries、截断执行、root assembly 仍待调用方组合；
+v1 release gate 的最终人工 review 与版本/发布决策仍待完成。
 
 项目保持独立于 Posoco；未来由 `posoco-ext-acp` 负责 Posoco 侧适配。

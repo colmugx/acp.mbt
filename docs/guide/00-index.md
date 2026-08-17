@@ -5,8 +5,8 @@
 这是一套从 Quickstart 到 Advanced 的 `colmugx/acp` 用户指南。项目是
 MoonBit native-only SDK，面向稳定 ACP v1 wire；SDK 范围内的协议矩阵、
 owner-loop runtime 与真实 stdio/process 运行入口已有测试与端到端证据，但
-尚未完成 v1 release gate（TypeScript/Rust 四向 interop 等），也不是完整的
-可发布 v1 产品，且不包含 v2 实现。
+尚未完成 v1 release gate 的最终人工 release review 与版本/发布决策，也
+不是完整的可发布 v1 产品，且不包含 v2 实现。
 
 示例只依赖 root facade `"colmugx/acp"`。指南不会把 adapter、reducer、broker
 或 owner runtime state 当作普通用户 API。
