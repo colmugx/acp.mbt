@@ -234,6 +234,46 @@ test "session setup reports required fields and nested mcp paths" {
 }
 
 ///|
+test "session new accepts untagged stdio mcp server per wire schema" {
+  // Stdio is the untagged McpServer variant: editors send no "type" field.
+  let params = new_session_params_from_json(
+    protocol_parse_json(
+      "{\"cwd\":\"/workspace\",\"mcpServers\":[{\"name\":\"fs\",\"command\":\"/usr/local/bin/mcp-fs\",\"args\":[\"--readonly\"],\"env\":[]}]}",
+    ),
+  )
+  guard params.mcp_servers[0]
+    is Stdio({ name: "fs", command: "/usr/local/bin/mcp-fs", .. }) else {
+    fail("expected untagged stdio mcp server")
+  }
+  // An explicit "stdio" tag stays accepted for backwards compatibility.
+  let tagged = new_session_params_from_json(
+    protocol_parse_json(
+      "{\"cwd\":\"/workspace\",\"mcpServers\":[{\"type\":\"stdio\",\"name\":\"fs\",\"command\":\"/usr/local/bin/mcp-fs\",\"args\":[],\"env\":[]}]}",
+    ),
+  )
+  guard tagged.mcp_servers[0] is Stdio(_) else {
+    fail("expected tagged stdio mcp server")
+  }
+  // Round trip still holds through the tagged encoder.
+  assert_eq(
+    new_session_params_from_json(new_session_params_to_json(params)),
+    params,
+  )
+  try
+    new_session_params_from_json(
+      protocol_parse_json(
+        "{\"cwd\":\"/workspace\",\"mcpServers\":[{\"type\":null}]}",
+      ),
+    )
+  catch {
+    ExpectedString(path="session/new.mcpServers[0].type") => ()
+    _ => fail("expected null type rejection")
+  } noraise {
+    _ => fail("expected null type rejection")
+  }
+}
+
+///|
 test "session new result rejects an empty session id in both directions" {
   try
     new_session_result_from_json(

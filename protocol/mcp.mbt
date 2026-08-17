@@ -294,21 +294,28 @@ fn mcp_encode_sse(value : McpServerSse) -> Json raise ProtocolDecodeError {
 
 ///|
 /// Decode one MCP server transport configuration.
+///
+/// Per the wire schema only `http`/`sse` carry a `type` tag; stdio is the
+/// untagged variant, so an absent `type` decodes as stdio. An explicit
+/// `"stdio"` tag stays accepted for backwards compatibility with payloads
+/// produced before this fix.
 pub fn mcp_server_from_json(
   value : Json,
   path? : String = "mcpServer",
 ) -> McpServer raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
-  let discriminator = protocol_required_string(
-    fields,
-    "type",
-    path=path + ".type",
-  )
-  match discriminator {
-    "stdio" => Stdio(mcp_decode_stdio_fields(fields, path~))
-    "http" => Http(mcp_decode_http_fields(fields, path~))
-    "sse" => Sse(mcp_decode_sse_fields(fields, path~))
-    other => raise InvalidDiscriminator(path=path + ".type", value=other)
+  let tag : String? = match protocol_field(fields, "type") {
+    Omitted => None
+    Null => raise ExpectedString(path=path + ".type")
+    Value(discriminator) =>
+      Some(protocol_decode_string(discriminator, path=path + ".type"))
+  }
+  match tag {
+    None => Stdio(mcp_decode_stdio_fields(fields, path~))
+    Some("stdio") => Stdio(mcp_decode_stdio_fields(fields, path~))
+    Some("http") => Http(mcp_decode_http_fields(fields, path~))
+    Some("sse") => Sse(mcp_decode_sse_fields(fields, path~))
+    Some(other) => raise InvalidDiscriminator(path=path + ".type", value=other)
   }
 }
 
