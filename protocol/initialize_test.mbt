@@ -151,6 +151,8 @@ test "initialize params and result round trip version negotiation data" {
       terminal: Value(false),
       elicitation: Omitted,
       session: Omitted,
+      plan: Omitted,
+      auth: Omitted,
       meta: Omitted,
     }),
     client_info: Value({
@@ -266,4 +268,37 @@ test "capability and initialize unknown fields report precise paths" {
   } noraise {
     _ => fail("expected nested boolean type error")
   }
+}
+
+///|
+test "client capabilities accept upstream unstable plan and auth fields" {
+  let params = initialize_params_from_json(
+    protocol_parse_json(
+      "{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true,\"plan\":{},\"auth\":{\"terminal\":true}}}",
+    ),
+  )
+  guard params.client_capabilities
+    is Value(
+      {
+        plan: Value({ meta: Omitted }),
+        auth: Value({ terminal: Value(true), meta: Omitted }),
+        ..,
+      }
+    ) else {
+    fail("expected plan marker and auth terminal capability")
+  }
+  // Null, omitted, and round-trip stay valid for both fields.
+  let nulls = client_capabilities_from_json(
+    protocol_parse_json("{\"plan\":null,\"auth\":null}"),
+  )
+  guard nulls is { plan: Null, auth: Null, .. } else {
+    fail("expected null plan and auth")
+  }
+  let decoded = client_capabilities_from_json(
+    protocol_parse_json("{\"plan\":{\"_meta\":{\"k\":1}}}"),
+  )
+  assert_eq(
+    client_capabilities_from_json(client_capabilities_to_json(decoded)),
+    decoded,
+  )
 }

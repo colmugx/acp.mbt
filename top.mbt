@@ -197,6 +197,7 @@ pub using @protocol {
   type AvailableCommandsUpdate,
   type BlobResourceContents,
   type CapabilityMarker,
+  type ClientAuthCapabilities,
   type ClientCapabilities,
   type ClientConfigOptionCapabilities,
   type ClientElicitationCapabilities,

@@ -40,6 +40,15 @@ pub(all) struct ClientConfigOptionCapabilities {
 } derive(Eq, Debug)
 
 ///|
+/// Client authentication capabilities (upstream unstable `auth` field): which
+/// authentication method types the client can handle. Decoded so editors that
+/// advertise it do not fail initialization.
+pub(all) struct ClientAuthCapabilities {
+  terminal : ProtocolNullable[Bool]
+  meta : ProtocolNullable[Json]
+} derive(Eq, Debug)
+
+///|
 /// Client session capabilities advertised during initialization.
 pub(all) struct ClientSessionCapabilities {
   config_options : ProtocolNullable[ClientConfigOptionCapabilities]
@@ -53,6 +62,10 @@ pub(all) struct ClientCapabilities {
   terminal : ProtocolNullable[Bool]
   elicitation : ProtocolNullable[ClientElicitationCapabilities]
   session : ProtocolNullable[ClientSessionCapabilities]
+  /// Upstream unstable field: the client can receive plan session updates.
+  plan : ProtocolNullable[CapabilityMarker]
+  /// Upstream unstable field; see `ClientAuthCapabilities`.
+  auth : ProtocolNullable[ClientAuthCapabilities]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
 
@@ -293,6 +306,19 @@ fn init_nullable_client_session(
     Omitted => Omitted
     Null => Null
     Value(value) => Value(client_session_capabilities_from_json(value, path~))
+  }
+}
+
+///|
+fn init_nullable_client_auth(
+  fields : Map[String, Json],
+  key : String,
+  path~ : String,
+) -> ProtocolNullable[ClientAuthCapabilities] raise ProtocolDecodeError {
+  match protocol_field(fields, key) {
+    Omitted => Omitted
+    Null => Null
+    Value(value) => Value(client_auth_capabilities_from_json(value, path~))
   }
 }
 
@@ -618,13 +644,39 @@ pub fn client_session_capabilities_to_json(
 }
 
 ///|
+/// Decode Client authentication capabilities.
+pub fn client_auth_capabilities_from_json(
+  value : Json,
+  path? : String = "auth",
+) -> ClientAuthCapabilities raise ProtocolDecodeError {
+  let fields = protocol_require_object(value, path~)
+  protocol_reject_unknown(fields, ["_meta", "terminal"], prefix=path)
+  let terminal = init_nullable_bool(fields, "terminal", path=path + ".terminal")
+  let meta = protocol_meta(fields, path=path + "._meta")
+  { terminal, meta }
+}
+
+///|
+/// Encode Client authentication capabilities.
+pub fn client_auth_capabilities_to_json(
+  value : ClientAuthCapabilities,
+) -> Json raise ProtocolDecodeError {
+  let fields : Map[String, Json] = Map([])
+  init_put_nullable(fields, "terminal", value.terminal, value => {
+    Json::boolean(value)
+  })
+  protocol_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
 fn decode_client_capabilities_fields(
   fields : Map[String, Json],
   path~ : String,
 ) -> ClientCapabilities raise ProtocolDecodeError {
   protocol_reject_unknown(
     fields,
-    ["_meta", "fs", "terminal", "elicitation", "session"],
+    ["_meta", "fs", "terminal", "elicitation", "session", "plan", "auth"],
     prefix=path,
   )
   let fs = init_nullable_client_fs(fields, "fs", path=path + ".fs")
@@ -639,8 +691,10 @@ fn decode_client_capabilities_fields(
     "session",
     path=path + ".session",
   )
+  let plan = init_nullable_marker(fields, "plan", path=path + ".plan")
+  let auth = init_nullable_client_auth(fields, "auth", path=path + ".auth")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { fs, terminal, elicitation, session, meta }
+  { fs, terminal, elicitation, session, plan, auth, meta }
 }
 
 ///|
@@ -679,6 +733,13 @@ pub fn client_capabilities_to_json(
     "session",
     value.session,
     client_session_capabilities_to_json,
+  )
+  init_put_nullable(fields, "plan", value.plan, capability_marker_to_json)
+  init_put_nullable(
+    fields,
+    "auth",
+    value.auth,
+    client_auth_capabilities_to_json,
   )
   protocol_put_meta(fields, value.meta)
   Json::object(fields)

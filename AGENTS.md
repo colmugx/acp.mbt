@@ -1,9 +1,6 @@
 # Project Agents.md Guide
 
-This is a [MoonBit](https://docs.moonbitlang.com) project.
-
-You can browse and install extra skills here:
-<https://github.com/moonbitlang/skills>
+写注释之前，请仔细思考：注释信息对未来的迭代或者HANDOFF是否有必要
 
 ## Project Structure
 
@@ -92,8 +89,7 @@ You can browse and install extra skills here:
   `colmugx/reader` at the composition root for caller-owned immutable
   dependency environments. Keep connection/session state explicit in the
   reducer, runtime scope, or application store rather than Reader `Env`.
-- Stable v1 must pass its complete schema/method matrix plus the pinned-schema
-  drift gate and the in-repo stdio interop evidence before v2 implementation
-  begins; cross-SDK interop validation is downstream consumer work.
-- `colmugx/acp` must remain independent from Posoco. Future
-  `posoco-ext-acp` owns the Posoco adapter and depends on both projects.
+
+## Rules
+
+- Before starting work, load the `moonbit-agent-guide` skill (per the instruction at the top of this file); load `moonbit-orientation` when you need more MoonBit documentation or toolchain detail.

@@ -95,6 +95,8 @@ fn agent_state_test_boolean_client_capabilities() -> ClientCapabilities {
       }),
       meta: Omitted,
     }),
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
 }
@@ -425,6 +427,8 @@ test "boolean config values require the negotiated client capability" {
     terminal: Omitted,
     elicitation: Omitted,
     session: Omitted,
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
   let no_config_options : ClientCapabilities = {
@@ -432,6 +436,8 @@ test "boolean config values require the negotiated client capability" {
     terminal: Omitted,
     elicitation: Omitted,
     session: Value({ config_options: Omitted, meta: Omitted }),
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
   let null_boolean : ClientCapabilities = {
@@ -442,6 +448,8 @@ test "boolean config values require the negotiated client capability" {
       config_options: Value({ boolean: Null, meta: Omitted }),
       meta: Omitted,
     }),
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
   let denied_capabilities : Array[ProtocolNullable[ClientCapabilities]] = [

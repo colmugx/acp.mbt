@@ -120,6 +120,8 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
       terminal: Omitted,
       elicitation: Null,
       session: Omitted,
+      plan: Omitted,
+      auth: Omitted,
       meta: Omitted,
     }),
   )

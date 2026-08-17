@@ -71,6 +71,8 @@ fn client_endpoint_capabilities(spec : ClientSpec) -> ClientCapabilities {
     },
     elicitation: client_endpoint_elicitation_capabilities(spec.elicitation),
     session: Omitted,
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
 }

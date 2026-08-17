@@ -33,6 +33,8 @@ fn client_state_test_capabilities(
     terminal,
     elicitation: Value({ form, url, meta: Omitted }),
     session: Omitted,
+    plan: Omitted,
+    auth: Omitted,
     meta: Omitted,
   }
 }
