@@ -15,6 +15,7 @@ pub(all) suberror ExperimentalV2DecodeError {
   InvalidField(path~ : String, reason~ : String)
   InvalidDiscriminator(path~ : String, value~ : String)
   InvalidPath(path~ : String, value~ : String)
+  InvalidBase64(path~ : String)
 } derive(Eq, Debug)
 
 ///|
@@ -80,8 +81,8 @@ pub fn[T] experimental_v2_put_patch(
   fields : Map[String, Json],
   key : String,
   value : ExperimentalV2Patch[T],
-  encode : (T) -> Json,
-) -> Unit {
+  encode : (T) -> Json raise ExperimentalV2DecodeError,
+) -> Unit raise ExperimentalV2DecodeError {
   match value {
     PatchOmitted => ()
     PatchNull => fields[key] = Json::null()
@@ -222,5 +223,121 @@ pub fn experimental_v2_validate_absolute_path(
     path
   } else {
     raise InvalidPath(path=field_path, value=path)
+  }
+}
+
+///|
+/// Validate one RFC 4648 base64 payload on both decode and encode paths.
+pub fn experimental_v2_validate_base64(
+  value : String,
+  field_path~ : String,
+) -> String raise ExperimentalV2DecodeError {
+  ignore(
+    @base64.decode(value) catch {
+      _ => raise InvalidBase64(path=field_path)
+    },
+  )
+  value
+}
+
+///|
+fn experimental_v2_decode_finite_number(
+  value : Json,
+  path~ : String,
+) -> Double raise ExperimentalV2DecodeError {
+  match value {
+    Number(number, ..) =>
+      if number.is_nan() || number.is_inf() {
+        raise InvalidField(path~, reason="number must be finite")
+      } else {
+        number
+      }
+    _ => raise ExpectedNumber(path~)
+  }
+}
+
+///|
+fn experimental_v2_decode_uint32(
+  value : Json,
+  path~ : String,
+) -> UInt raise ExperimentalV2DecodeError {
+  match value {
+    Number(number, ..) =>
+      if number == number.floor() && number >= 0.0 && number <= 4294967295.0 {
+        number.to_uint()
+      } else {
+        raise InvalidField(path~, reason="expected a uint32 integer")
+      }
+    _ => raise ExpectedNumber(path~)
+  }
+}
+
+///|
+/// Decode a signed 64-bit integer without trusting a rounded `Double`: a
+/// number beyond the exact binary integer range must retain its original
+/// JSON text in `repr`, and only a plain (optionally negative) digit run is
+/// accepted there; exponent or decimal reprs are typed failures.
+fn experimental_v2_decode_int64(
+  value : Json,
+  path~ : String,
+) -> Int64 raise ExperimentalV2DecodeError {
+  match value {
+    Number(number, repr~) =>
+      match repr {
+        Some(text) => experimental_v2_parse_int64_repr(text, path~)
+        None =>
+          if number.is_nan() ||
+            number.is_inf() ||
+            number != number.floor() ||
+            number.abs() > 9007199254740991.0 {
+            raise InvalidField(path~, reason="expected a signed 64-bit integer")
+          } else {
+            number.to_int64()
+          }
+      }
+    _ => raise InvalidField(path~, reason="expected a signed 64-bit integer")
+  }
+}
+
+///|
+/// Encode an exact int64 number: the original decimal text rides along as
+/// `repr` so values beyond the binary double range stringify losslessly.
+fn experimental_v2_encode_int64(value : Int64) -> Json {
+  Json::number(value.to_double(), repr=value.to_string())
+}
+
+///|
+fn experimental_v2_parse_int64_repr(
+  text : String,
+  path~ : String,
+) -> Int64 raise ExperimentalV2DecodeError {
+  if text == "-9223372036854775808" {
+    return -9223372036854775807L - 1L
+  }
+  let chars = text.to_array()
+  let length = chars.length()
+  let negative = length > 0 && chars[0] == '-'
+  let mut index = if negative { 1 } else { 0 }
+  if index >= length {
+    raise InvalidField(path~, reason="expected a signed 64-bit integer")
+  }
+  let bound : Int64 = 9223372036854775807L
+  let mut value : Int64 = 0L
+  while index < length {
+    let ch = chars[index]
+    if ch < '0' || ch > '9' {
+      raise InvalidField(path~, reason="expected a signed 64-bit integer")
+    }
+    let digit = (ch.to_int() - '0'.to_int()).to_int64()
+    if value > (bound - digit) / 10L {
+      raise InvalidField(path~, reason="signed 64-bit integer out of range")
+    }
+    value = value * 10L + digit
+    index += 1
+  }
+  if negative {
+    -value
+  } else {
+    value
   }
 }

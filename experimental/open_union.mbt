@@ -79,3 +79,25 @@ fn experimental_v2_open_raw_tag_error(
     reason="open-union raw payload must carry its tag in \"" + tag_key + "\"",
   )
 }
+
+///|
+/// Stamp one discriminator into an already-encoded payload object.  Union
+/// encoders own the tag; the payload encoders stay pure per their schema
+/// definitions.
+pub fn experimental_v2_tag_payload(
+  payload : Json,
+  tag_key~ : String,
+  tag~ : String,
+) -> Json raise ExperimentalV2DecodeError {
+  match payload {
+    Object(fields) => {
+      fields[tag_key] = Json::string(tag)
+      Json::object(fields)
+    }
+    _ =>
+      raise InvalidField(
+        path=tag_key,
+        reason="tagged payload must encode to an object",
+      )
+  }
+}

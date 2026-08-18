@@ -71,13 +71,19 @@ test "v2 patch decode distinguishes omitted null and value" {
 ///|
 test "v2 patch encode writes value explicit null or nothing" {
   let fields : Map[String, Json] = Map([])
-  experimental_v2_put_patch(fields, "title", PatchValue("draft"), Json::string)
+  experimental_v2_put_patch(fields, "title", PatchValue("draft"), value => {
+    Json::string(value)
+  })
   assert_true(fields.get("title") is Some(String("draft")))
   let fields : Map[String, Json] = Map([])
-  experimental_v2_put_patch(fields, "title", PatchNull, Json::string)
+  experimental_v2_put_patch(fields, "title", PatchNull, value => {
+    Json::string(value)
+  })
   assert_true(fields.get("title") is Some(Null))
   let fields : Map[String, Json] = Map([])
-  experimental_v2_put_patch(fields, "title", PatchOmitted, Json::string)
+  experimental_v2_put_patch(fields, "title", PatchOmitted, value => {
+    Json::string(value)
+  })
   assert_true(fields.get("title") is None)
 }
 
@@ -91,7 +97,7 @@ test "v2 patch value round-trips through decode and encode" {
     path="title",
   )
   let fields : Map[String, Json] = Map([])
-  experimental_v2_put_patch(fields, "title", patch, Json::string)
+  experimental_v2_put_patch(fields, "title", patch, value => Json::string(value))
   assert_eq(
     experimental_v2_stringify_json(Json::object(fields)),
     "{\"title\":\"draft\"}",
