@@ -614,6 +614,94 @@ pub fn experimental_v2_encode_close_session_params(
 }
 
 ///|
+/// Parameters of `session/prompt`.  The baseline blocks `text` and
+/// `resource_link` are always acceptable; the other block kinds are gated by
+/// the agent's prompt capability markers at the endpoint layer.
+pub(all) struct ExperimentalV2PromptParams {
+  session_id : String
+  prompt : Array[ExperimentalV2ContentBlock]
+  meta : Json?
+} derive(Eq, Debug)
+
+///|
+pub fn experimental_v2_decode_prompt_params(
+  value : Json,
+  path? : String = "session/prompt",
+) -> ExperimentalV2PromptParams raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  experimental_v2_reject_unknown(
+    fields,
+    ["_meta", "sessionId", "prompt"],
+    prefix=path,
+  )
+  let session_id = experimental_v2_validate_id(
+    experimental_v2_decode_string(
+      experimental_v2_required(fields, "sessionId", path=path + ".sessionId"),
+      path=path + ".sessionId",
+    ),
+    field_path=path + ".sessionId",
+  )
+  let prompt = experimental_v2_decode_array(
+    experimental_v2_required(fields, "prompt", path=path + ".prompt"),
+    path=path + ".prompt",
+    (item, item_path) => {
+      experimental_v2_decode_content_block(item, path=item_path)
+    },
+  )
+  let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
+  { session_id, prompt, meta }
+}
+
+///|
+pub fn experimental_v2_encode_prompt_params(
+  value : ExperimentalV2PromptParams,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["sessionId"] = Json::string(value.session_id)
+  fields["prompt"] = experimental_v2_encode_array(
+    value.prompt,
+    experimental_v2_encode_content_block,
+  )
+  experimental_v2_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
+/// Parameters of the `session/cancel` notification.
+pub(all) struct ExperimentalV2CancelSessionParams {
+  session_id : String
+  meta : Json?
+} derive(Eq, Debug)
+
+///|
+pub fn experimental_v2_decode_cancel_session_params(
+  value : Json,
+  path? : String = "session/cancel",
+) -> ExperimentalV2CancelSessionParams raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  experimental_v2_reject_unknown(fields, ["_meta", "sessionId"], prefix=path)
+  let session_id = experimental_v2_validate_id(
+    experimental_v2_decode_string(
+      experimental_v2_required(fields, "sessionId", path=path + ".sessionId"),
+      path=path + ".sessionId",
+    ),
+    field_path=path + ".sessionId",
+  )
+  let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
+  { session_id, meta }
+}
+
+///|
+pub fn experimental_v2_encode_cancel_session_params(
+  value : ExperimentalV2CancelSessionParams,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["sessionId"] = Json::string(value.session_id)
+  experimental_v2_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
 /// Result of `session/close`; it carries only protocol metadata.
 pub(all) struct ExperimentalV2CloseSessionResult {
   meta : Json?
