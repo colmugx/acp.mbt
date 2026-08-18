@@ -1117,8 +1117,11 @@ test "adapter accepts unknown notifications as trace intents without responses" 
       match step.outputs[0] {
         Command(TraceError(method_name="vendor/unknown", error~)) => {
           assert_eq(error.code, MethodNotFound)
-          assert_eq(error.message, "Method not found")
-          assert_eq(error.data, None)
+          assert_eq(error.message, "unknown method: vendor/unknown")
+          assert_eq(
+            error.data,
+            Some(Json::string("unknown method: vendor/unknown")),
+          )
         }
         Response(_) => fail("unknown notification must not emit a response")
         Notification(_) =>
@@ -1260,13 +1263,13 @@ async test "adapter maps unknown malformed and handler failures without success 
     agent_service_test_context(),
   )
   match unknown_completion {
-    SessionNewCompleted(
-      id=Number(9),
-      result=Err(Application(message="agent handler failed"))
-    ) => ()
-    SessionNewCompleted(id=Number(9), result=Err(Application(message~))) =>
-      fail("unknown handler detail leaked: " + message)
-    _ => fail("unknown handler must become a redacted application failure")
+    SessionNewCompleted(id=Number(9), result=Err(Application(message~))) => {
+      // An unexpected exception names itself with the method context and
+      // the error's display text, so users can paste it to a developer.
+      assert_true(message.contains("session/new"))
+      assert_true(message.contains("agent handler failed"))
+    }
+    _ => fail("unknown handler must become a detailed application failure")
   }
   let unknown = agent_adapter_complete(
     unknown_admission.0,
@@ -1277,8 +1280,8 @@ async test "adapter maps unknown malformed and handler failures without success 
   assert_eq(unknown.outputs.length(), 1)
   match agent_adapter_test_response(unknown) {
     Error(failure) => {
-      assert_eq(failure.error.message, "Internal error")
-      assert_eq(failure.error.data, None)
+      assert_true(failure.error.message.contains("agent handler failed"))
+      assert_eq(failure.error.data, Some(Json::string(failure.error.message)))
     }
     Success(_) => fail("unknown handler must not produce a success response")
   }

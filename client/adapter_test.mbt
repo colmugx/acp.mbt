@@ -489,8 +489,11 @@ test "Client adapter accepts unknown notifications as trace intents without resp
       match step.outputs[0] {
         Command(TraceError(method_name="vendor/unknown", error~)) => {
           assert_eq(error.code, MethodNotFound)
-          assert_eq(error.message, "Method not found")
-          assert_eq(error.data, None)
+          assert_eq(error.message, "unknown method: vendor/unknown")
+          assert_eq(
+            error.data,
+            Some(Json::string("unknown method: vendor/unknown")),
+          )
         }
         Response(_) => fail("unknown notification must not emit a response")
         Command(_) => fail("unknown notification must emit a trace intent")

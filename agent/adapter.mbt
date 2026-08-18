@@ -191,40 +191,110 @@ fn agent_adapter_decode_error_message(error : ProtocolDecodeError) -> String {
 }
 
 ///|
+/// One wire error that carries its human-readable detail on both JSON-RPC
+/// channels: `message` (what editors render by default) and `data` (the
+/// field Zed's error builder surfaces). Every caller passes an
+/// already-sanitized, host-authored string — this helper never wraps raw
+/// payloads or stack detail; it only stops the adapter from discarding what
+/// handlers chose to tell the user.
+fn agent_adapter_detailed_error(
+  code~ : @jsonrpc.JsonRpcErrorCode,
+  message~ : String,
+) -> JsonRpcError {
+  JsonRpcError::new(code~, message~, data=Json::string(message))
+}
+
+///|
 fn agent_adapter_message_error(error : AgentMessageError) -> JsonRpcError {
   match error {
     InvalidParams(method_name~, cause~) =>
-      JsonRpcError::new(
+      agent_adapter_detailed_error(
         code=InvalidParams,
         message=method_name + ": " + agent_adapter_decode_error_message(cause),
       )
-    UnknownMethod(_) => JsonRpcError::method_not_found()
-    WrongDirection(_) => JsonRpcError::method_not_found()
-    WrongKind(_) => JsonRpcError::invalid_request()
+    UnknownMethod(method_name~) =>
+      agent_adapter_detailed_error(
+        code=MethodNotFound,
+        message="unknown method: " + method_name,
+      )
+    WrongDirection(method_name~) =>
+      agent_adapter_detailed_error(
+        code=MethodNotFound,
+        message="method is not an agent request: " + method_name,
+      )
+    WrongKind(method_name~) =>
+      agent_adapter_detailed_error(
+        code=InvalidRequest,
+        message="wrong message kind for method: " + method_name,
+      )
   }
 }
 
 ///|
 fn agent_adapter_protocol_error(error : AgentProtocolError) -> JsonRpcError {
   match error {
-    AuthenticationRequired(_) => JsonRpcError::auth_required()
-    AuthenticationMethodNotAdvertised(_) => JsonRpcError::auth_required()
-    NotAuthenticated => JsonRpcError::auth_required()
-    CapabilityDenied(..) => JsonRpcError::resource_not_found()
-    NotInitialized(_) => JsonRpcError::invalid_request()
-    AlreadyInitialized => JsonRpcError::invalid_request()
-    AuthenticationNotRequired => JsonRpcError::invalid_request()
-    AlreadyAuthenticated => JsonRpcError::invalid_request()
-    InvalidEvent(_) => JsonRpcError::invalid_request()
+    AuthenticationRequired(method_name~) =>
+      agent_adapter_detailed_error(
+        code=AuthRequired,
+        message="authentication required before " + method_name,
+      )
+    AuthenticationMethodNotAdvertised(method_id~) =>
+      agent_adapter_detailed_error(
+        code=AuthRequired,
+        message="authentication method is not advertised: " + method_id,
+      )
+    NotAuthenticated =>
+      agent_adapter_detailed_error(
+        code=AuthRequired,
+        message="agent is not authenticated",
+      )
+    CapabilityDenied(method_name~, capability~) =>
+      agent_adapter_detailed_error(
+        code=ResourceNotFound,
+        message="capability '" +
+          capability +
+          "' required by " +
+          method_name +
+          " is not enabled",
+      )
+    NotInitialized(method_name~) =>
+      agent_adapter_detailed_error(
+        code=InvalidRequest,
+        message="initialize required before " + method_name,
+      )
+    AlreadyInitialized =>
+      agent_adapter_detailed_error(
+        code=InvalidRequest,
+        message="agent is already initialized",
+      )
+    AuthenticationNotRequired =>
+      agent_adapter_detailed_error(
+        code=InvalidRequest,
+        message="authentication is not required",
+      )
+    AlreadyAuthenticated =>
+      agent_adapter_detailed_error(
+        code=InvalidRequest,
+        message="agent is already authenticated",
+      )
+    InvalidEvent(reason~) =>
+      agent_adapter_detailed_error(code=InvalidRequest, message=reason)
   }
 }
 
 ///|
 fn agent_adapter_handler_error(error : HandlerError) -> JsonRpcError {
   match error {
-    Application(_) => JsonRpcError::internal_error()
+    Application(message~) =>
+      agent_adapter_detailed_error(code=InternalError, message~)
+    InvalidParams(message~) =>
+      agent_adapter_detailed_error(code=InvalidParams, message~)
     Cancelled => JsonRpcError::request_cancelled()
-    UnavailableOperation(_) => JsonRpcError::resource_not_found()
+    UnavailableOperation(method_name~) =>
+      agent_adapter_detailed_error(
+        code=ResourceNotFound,
+        message="agent does not implement operation: " + method_name,
+      )
   }
 }
 
@@ -260,7 +330,14 @@ fn[T] agent_adapter_encode_success(
   encode : (T) -> Json raise ProtocolDecodeError,
 ) -> Result[AgentAdapterStep, JsonRpcError] {
   try encode(value) catch {
-    _ => Err(JsonRpcError::internal_error())
+    error =>
+      Err(
+        agent_adapter_detailed_error(
+          code=InternalError,
+          message="failed to encode response: " +
+            agent_adapter_decode_error_message(error),
+        ),
+      )
   } noraise {
     result => Ok(agent_adapter_success(state, id, result))
   }
@@ -277,10 +354,16 @@ async fn[T] agent_adapter_call(
       } else {
         match error {
           HandlerError::Application(message~) => Err(Application(message~))
+          HandlerError::InvalidParams(message~) => Err(InvalidParams(message~))
           HandlerError::Cancelled => Err(Cancelled)
           HandlerError::UnavailableOperation(method_name~) =>
             Err(UnavailableOperation(method_name~))
-          _ => Err(Application(message="agent handler failed"))
+          _ =>
+            // An unexpected exception is a handler defect: name it with the
+            // error's display text so a user can paste it to a developer.
+            Err(
+              Application(message="agent handler failed: " + error.to_string()),
+            )
         }
       }
   } noraise {
@@ -338,21 +421,25 @@ fn agent_adapter_initialize(
         agent_info: Value(endpoint.info()),
         meta: Omitted,
       }
-      let encoded = try initialize_result_to_json(result) catch {
-        _ => None
-      } noraise {
-        json => Some(json)
+      let encoded : Result[Json, ProtocolDecodeError] = Ok(
+        initialize_result_to_json(result),
+      ) catch {
+        error => Err(error)
       }
       match encoded {
-        None =>
+        Err(error) =>
           Immediate(
             agent_adapter_response(
               next_state,
               id,
-              JsonRpcError::internal_error(),
+              agent_adapter_detailed_error(
+                code=InternalError,
+                message="failed to encode initialize result: " +
+                  agent_adapter_decode_error_message(error),
+              ),
             ),
           )
-        Some(json) => Immediate(agent_adapter_success(next_state, id, json))
+        Ok(json) => Immediate(agent_adapter_success(next_state, id, json))
       }
     }
   }

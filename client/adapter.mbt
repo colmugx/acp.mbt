@@ -218,33 +218,101 @@ fn client_adapter_validate_endpoint(
 }
 
 ///|
-/// Adapter errors deliberately use stable, payload-free protocol messages.
-/// Detailed decoder errors stay internal and are not copied into a response.
+/// One wire error that carries its human-readable detail on both JSON-RPC
+/// channels: `message` (what peers render by default) and `data` (the field
+/// Zed-style error builders surface). Every caller passes an
+/// already-sanitized, host-authored string; this helper only stops the
+/// adapter from discarding what handlers chose to tell the peer.
+fn client_adapter_detailed_error(
+  code~ : @jsonrpc.JsonRpcErrorCode,
+  message~ : String,
+) -> JsonRpcError {
+  JsonRpcError::new(code~, message~, data=Json::string(message))
+}
+
+///|
+/// Render one decoder failure as a short, path-carrying string.
+fn client_adapter_decode_error_message(error : ProtocolDecodeError) -> String {
+  match error {
+    JsonParse(message~) => message
+    ExpectedObject(path~) => "expected object at " + path
+    ExpectedArray(path~) => "expected array at " + path
+    ExpectedString(path~) => "expected string at " + path
+    ExpectedBoolean(path~) => "expected boolean at " + path
+    ExpectedNumber(path~) => "expected number at " + path
+    MissingField(path~) => "missing field at " + path
+    UnknownField(path~) => "unknown field at " + path
+    InvalidField(path~, reason~) => path + ": " + reason
+    InvalidDiscriminator(path~, value~) => path + ": " + value
+    InvalidPath(path~, value~) => path + ": " + value
+    InvalidBase64(path~) => "invalid base64 at " + path
+  }
+}
+
+///|
 fn client_adapter_message_error(error : ClientMessageError) -> JsonRpcError {
   match error {
-    InvalidParams(..) =>
-      JsonRpcError::new(code=InvalidParams, message="invalid params")
-    UnknownMethod(_) => JsonRpcError::method_not_found()
-    WrongDirection(_) => JsonRpcError::method_not_found()
-    WrongKind(_) => JsonRpcError::invalid_request()
+    InvalidParams(method_name~, cause~) =>
+      client_adapter_detailed_error(
+        code=InvalidParams,
+        message=method_name + ": " + client_adapter_decode_error_message(cause),
+      )
+    UnknownMethod(method_name~) =>
+      client_adapter_detailed_error(
+        code=MethodNotFound,
+        message="unknown method: " + method_name,
+      )
+    WrongDirection(method_name~) =>
+      client_adapter_detailed_error(
+        code=MethodNotFound,
+        message="method is not a client request: " + method_name,
+      )
+    WrongKind(method_name~) =>
+      client_adapter_detailed_error(
+        code=InvalidRequest,
+        message="wrong message kind for method: " + method_name,
+      )
   }
 }
 
 ///|
 fn client_adapter_protocol_error(error : ClientProtocolError) -> JsonRpcError {
   match error {
-    NotReady(_) => JsonRpcError::invalid_request()
-    AlreadyReady => JsonRpcError::invalid_request()
-    CapabilityDenied(..) => JsonRpcError::resource_not_found()
+    NotReady(method_name~) =>
+      client_adapter_detailed_error(
+        code=InvalidRequest,
+        message="initialize required before " + method_name,
+      )
+    AlreadyReady =>
+      client_adapter_detailed_error(
+        code=InvalidRequest,
+        message="client is already initialized",
+      )
+    CapabilityDenied(method_name~, capability~) =>
+      client_adapter_detailed_error(
+        code=ResourceNotFound,
+        message="capability '" +
+          capability +
+          "' required by " +
+          method_name +
+          " is not enabled",
+      )
   }
 }
 
 ///|
 fn client_adapter_handler_error(error : HandlerError) -> JsonRpcError {
   match error {
-    Application(_) => JsonRpcError::internal_error()
+    Application(message~) =>
+      client_adapter_detailed_error(code=InternalError, message~)
+    InvalidParams(message~) =>
+      client_adapter_detailed_error(code=InvalidParams, message~)
     Cancelled => JsonRpcError::request_cancelled()
-    UnavailableOperation(_) => JsonRpcError::resource_not_found()
+    UnavailableOperation(method_name~) =>
+      client_adapter_detailed_error(
+        code=ResourceNotFound,
+        message="client does not implement operation: " + method_name,
+      )
   }
 }
 
@@ -275,7 +343,9 @@ fn client_adapter_reduce_notification(
 ///|
 /// Normalize handler failures without confusing an application-raised
 /// `Cancelled` value with the async runtime's cancellation exception.
-/// Unknown exceptions are intentionally redacted rather than stringified.
+/// Handler-authored messages pass through verbatim (they are the
+/// host-sanitized channel); an unexpected exception names itself with the
+/// error's display text so the peer can report it to a developer.
 async fn[T] client_adapter_call(
   handler : async () -> T,
 ) -> Result[T, HandlerError] noraise {
@@ -285,12 +355,15 @@ async fn[T] client_adapter_call(
         Err(Cancelled)
       } else {
         match error {
-          HandlerError::Application(_) =>
-            Err(Application(message="handler failure"))
+          HandlerError::Application(message~) => Err(Application(message~))
+          HandlerError::InvalidParams(message~) => Err(InvalidParams(message~))
           HandlerError::Cancelled => Err(Cancelled)
           HandlerError::UnavailableOperation(method_name~) =>
             Err(UnavailableOperation(method_name~))
-          _ => Err(Application(message="handler failure"))
+          _ =>
+            Err(
+              Application(message="client handler failed: " + error.to_string()),
+            )
         }
       }
   } noraise {

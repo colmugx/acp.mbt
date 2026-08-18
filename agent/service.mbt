@@ -1,5 +1,8 @@
 ///|
 /// Normalize generic async failures once at the Agent endpoint boundary.
+/// Handler-authored messages pass through with the method name as context;
+/// an unexpected exception names itself so the client receives something a
+/// user can paste to a developer.
 fn agent_handler_error(method_name : String, error : Error) -> HandlerError {
   if @async.is_cancellation_error(error) {
     Cancelled
@@ -7,10 +10,15 @@ fn agent_handler_error(method_name : String, error : Error) -> HandlerError {
     match error {
       HandlerError::Application(message~) =>
         Application(message=method_name + ": " + message)
+      HandlerError::InvalidParams(message~) =>
+        InvalidParams(message=method_name + ": " + message)
       HandlerError::Cancelled => Cancelled
       HandlerError::UnavailableOperation(method_name~) =>
         UnavailableOperation(method_name~)
-      _ => Application(message="agent handler failed")
+      _ =>
+        Application(
+          message=method_name + ": agent handler failed: " + error.to_string(),
+        )
     }
   }
 }
