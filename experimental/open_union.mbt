@@ -46,7 +46,7 @@ pub fn[T] experimental_v2_decode_open(
 pub fn[T] experimental_v2_encode_open(
   value : ExperimentalV2Open[T],
   tag_key~ : String,
-  encode_known : (T) -> Json,
+  encode_known : (T) -> Json raise ExperimentalV2DecodeError,
 ) -> Json raise ExperimentalV2DecodeError {
   match value {
     Known(known) => encode_known(known)

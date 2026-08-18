@@ -166,11 +166,9 @@ test "v2 open union keeps underscore tags as extension with raw payload" {
   assert_true(decoded is Extension(tag="_custom", ..))
   assert_eq(
     experimental_v2_stringify_json(
-      experimental_v2_encode_open(
-        decoded,
-        tag_key="type",
-        core_test_encode_known,
-      ),
+      experimental_v2_encode_open(decoded, tag_key="type", known => {
+        core_test_encode_known(known)
+      }),
     ),
     source,
   )
@@ -189,11 +187,9 @@ test "v2 open union keeps unknown future tags with raw payload" {
   assert_true(decoded is Future(tag="futureThing", ..))
   assert_eq(
     experimental_v2_stringify_json(
-      experimental_v2_encode_open(
-        decoded,
-        tag_key="type",
-        core_test_encode_known,
-      ),
+      experimental_v2_encode_open(decoded, tag_key="type", known => {
+        core_test_encode_known(known)
+      }),
     ),
     source,
   )
@@ -277,11 +273,9 @@ test "v2 open union encode fails fast on an inconsistent raw payload" {
     raw=experimental_v2_parse_json("{\"type\":\"alpha\"}"),
   )
   try
-    experimental_v2_encode_open(
-      mismatch,
-      tag_key="type",
-      core_test_encode_known,
-    )
+    experimental_v2_encode_open(mismatch, tag_key="type", known => {
+      core_test_encode_known(known)
+    })
   catch {
     InvalidField(path="type", reason=_) => ()
     _ => fail("expected a typed error for a mismatched raw tag")
@@ -293,11 +287,9 @@ test "v2 open union encode fails fast on an inconsistent raw payload" {
     raw=experimental_v2_parse_json("{\"count\":2}"),
   )
   try
-    experimental_v2_encode_open(
-      untagged,
-      tag_key="type",
-      core_test_encode_known,
-    )
+    experimental_v2_encode_open(untagged, tag_key="type", known => {
+      core_test_encode_known(known)
+    })
   catch {
     InvalidField(path="type", reason=_) => ()
     _ => fail("expected a typed error for a raw payload without the tag")
