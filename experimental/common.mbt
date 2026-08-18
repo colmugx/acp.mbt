@@ -307,6 +307,67 @@ fn experimental_v2_encode_int64(value : Int64) -> Json {
 }
 
 ///|
+/// Decode an unsigned 64-bit integer with the same exactness rule as
+/// `experimental_v2_decode_int64`: values beyond the exact binary integer
+/// range must carry their original decimal text in `repr`.
+fn experimental_v2_decode_uint64(
+  value : Json,
+  path~ : String,
+) -> UInt64 raise ExperimentalV2DecodeError {
+  match value {
+    Number(number, repr~) =>
+      match repr {
+        Some(text) => experimental_v2_parse_uint64_repr(text, path~)
+        None =>
+          if number.is_nan() ||
+            number.is_inf() ||
+            number != number.floor() ||
+            number < 0.0 ||
+            number > 9007199254740991.0 {
+            raise InvalidField(
+              path~,
+              reason="expected an unsigned 64-bit integer",
+            )
+          } else {
+            number.to_uint64()
+          }
+      }
+    _ => raise InvalidField(path~, reason="expected an unsigned 64-bit integer")
+  }
+}
+
+///|
+fn experimental_v2_encode_uint64(value : UInt64) -> Json {
+  Json::number(value.to_double(), repr=value.to_string())
+}
+
+///|
+fn experimental_v2_parse_uint64_repr(
+  text : String,
+  path~ : String,
+) -> UInt64 raise ExperimentalV2DecodeError {
+  let chars = text.to_array()
+  let length = chars.length()
+  if length == 0 {
+    raise InvalidField(path~, reason="expected an unsigned 64-bit integer")
+  }
+  let bound : UInt64 = 18446744073709551615UL
+  let mut value : UInt64 = 0UL
+  for index in 0..<length {
+    let ch = chars[index]
+    if ch < '0' || ch > '9' {
+      raise InvalidField(path~, reason="expected an unsigned 64-bit integer")
+    }
+    let digit = (ch.to_int() - '0'.to_int()).to_uint64()
+    if value > (bound - digit) / 10UL {
+      raise InvalidField(path~, reason="unsigned 64-bit integer out of range")
+    }
+    value = value * 10UL + digit
+  }
+  value
+}
+
+///|
 fn experimental_v2_parse_int64_repr(
   text : String,
   path~ : String,

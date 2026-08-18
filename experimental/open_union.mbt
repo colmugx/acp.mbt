@@ -101,3 +101,24 @@ pub fn experimental_v2_tag_payload(
       )
   }
 }
+
+///|
+/// Remove one discriminator from an encoded payload object so the payload can
+/// decode through its own strict field check.  Mirror of
+/// `experimental_v2_tag_payload` for inline (flattened) unions such as
+/// `sessionUpdate` and `mode`, where the tag and the payload fields share one
+/// object.
+pub fn experimental_v2_untag_payload(
+  value : Json,
+  tag_key~ : String,
+  path~ : String,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  let stripped : Map[String, Json] = Map([])
+  for key, field in fields {
+    if key != tag_key {
+      stripped[key] = field
+    }
+  }
+  Json::object(stripped)
+}
