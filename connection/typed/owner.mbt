@@ -363,15 +363,15 @@ pub fn[S, I] typed_owner_cancel_request(
   if owner.closed {
     return Ignored(reason=Closed)
   }
-  let mut found : TypedOwnerTask[I]? = None
-  for task in owner.tasks {
-    match task.request_id {
-      Some(task_id) if task_id == id && !task.is_notification => {
-        found = Some(task)
-        break
+  let found : TypedOwnerTask[I]? = search~: {
+    for task in owner.tasks {
+      match task.request_id {
+        Some(task_id) if task_id == id && !task.is_notification =>
+          break search~ Some(task)
+        _ => ()
       }
-      _ => ()
     }
+    None
   }
   match found {
     None => Ignored(reason=UnknownRequest(id~))

@@ -608,15 +608,15 @@ pub fn[S, I, C, E] runtime_owner_cancel_request(
   if owner.closed {
     return RuntimeOwnerCancelIgnored(reason=Closed)
   }
-  let mut found : RuntimeOwnerTask[I]? = None
-  for task in owner.tasks {
-    match task.request_id {
-      Some(task_id) if task_id == id && !task.notification => {
-        found = Some(task)
-        break
+  let found : RuntimeOwnerTask[I]? = search~: {
+    for task in owner.tasks {
+      match task.request_id {
+        Some(task_id) if task_id == id && !task.notification =>
+          break search~ Some(task)
+        _ => ()
       }
-      _ => ()
     }
+    None
   }
   match found {
     None => RuntimeOwnerCancelIgnored(reason=UnknownRequest(id~))
@@ -2046,6 +2046,9 @@ async fn runtime_emit_command(
 }
 
 ///|
+// The dispatch/notification/command catch handlers below only trace the
+// error kind and re-raise; `errdefer` cannot inspect the error value.
+#warnings("-fragile_catch_all")
 async fn[G, D] runtime_apply_step(
   group : @async.TaskGroup[G],
   step : ConnectionStep,
@@ -2279,6 +2282,7 @@ async fn[G, D] runtime_apply_message(
 /// callbacks are never replayed during cleanup.  The current and remaining
 /// inbound failure commands are the only ones that can be reported as
 /// unwritten.
+#warnings("-fragile_catch_all")
 async fn runtime_apply_close_step(
   step : ConnectionStep,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
@@ -2288,6 +2292,30 @@ async fn runtime_apply_close_step(
   outbound : Ref[RuntimeOutboundRegistry],
 ) -> Unit raise RuntimeError {
   for index, command in step.commands.iter2() {
+    // Per-iteration errdefer: while the error escapes, report this and every
+    // later inbound failure command as unwritten.  errdefer (not catch) so
+    // cancellation still triggers the report.
+    errdefer (for remaining_index, remaining in step.commands.iter2() {
+      if remaining_index >= index {
+        match remaining {
+          FailInbound(id~, cancelled~, ..) =>
+            (ports.trace)(
+              runtime_trace_event(
+                "inbound",
+                "inbound_failure_unwritten",
+                runtime_request_id_text(id),
+                "",
+                if cancelled {
+                  "cancel"
+                } else {
+                  "writer"
+                },
+              ),
+            )
+          _ => ()
+        }
+      }
+    })
     runtime_emit_command(
       command,
       writer_queue,
@@ -2306,27 +2334,6 @@ async fn runtime_apply_close_step(
             runtime_error_kind(error),
           ),
         )
-        for remaining_index, remaining in step.commands.iter2() {
-          if remaining_index >= index {
-            match remaining {
-              FailInbound(id~, cancelled~, ..) =>
-                (ports.trace)(
-                  runtime_trace_event(
-                    "inbound",
-                    "inbound_failure_unwritten",
-                    runtime_request_id_text(id),
-                    "",
-                    if cancelled {
-                      "cancel"
-                    } else {
-                      "writer"
-                    },
-                  ),
-                )
-              _ => ()
-            }
-          }
-        }
         raise error
       }
     }
@@ -2334,6 +2341,10 @@ async fn runtime_apply_close_step(
 }
 
 ///|
+// The close-step catch handler combines the original error with the writer
+// cleanup error (`runtime_close_cleanup_error`), which `errdefer` cannot
+// reference; the release order of the cleanup chain is load-bearing.
+#warnings("-fragile_catch_all")
 async fn[G, C, D] runtime_close_connection_of(
   _group : @async.TaskGroup[G],
   state : ConnectionState,
@@ -3977,58 +3988,51 @@ async fn[G, C, D] runtime_connection_engine_with_dispatch_of(
   let mut tasks : Array[RuntimeTaskControl] = []
   let mut next_task_token = 0
   let mut outbound_registry = runtime_outbound_registry()
-  try {
-    for ;; {
-      // One registry snapshot per loop turn, mirroring `state_ref`: the
-      // threaded state stays immutable while command interpretation releases
-      // waiters in place during this sequential step.
-      let outbound = Ref::Ref(outbound_registry)
-      let event = runtime_event_get(events) catch {
-        _ =>
-          runtime_fail_and_close_of(
-            group,
-            state,
-            "event_queue",
-            EventQueueClosed,
-            writer_queue,
-            options,
-            ports,
-            events,
-            tasks,
-            next_task_token,
-            shutdown,
-            false,
-            dispatch_context,
-            dispatch.close_owner,
-            outbound,
-          )
-      }
-      let (step, next_context) = runtime_apply_event_of(
-        event, state, decoder, group, writer_queue, options, ports, events, event_to_result,
-        dispatch, owner_event, dispatch_context, tasks, next_task_token, shutdown,
-        outbound,
-      )
-      state = step.state
-      decoder = step.decoder
-      tasks = step.tasks
-      next_task_token = step.next_task_token
-      dispatch_context = next_context
-      outbound_registry = outbound.val
-      if step.stop {
-        break
-      }
+  // Loop exit — stop, error, or cancellation — strands any submission still
+  // queued behind it: they can never be admitted, so reply to them on the way
+  // out. Submissions already admitted were released by the close-path sweep,
+  // and release is exactly-once by registry removal.
+  defer runtime_outbound_drain_stranded(events)
+  for ;; {
+    // One registry snapshot per loop turn, mirroring `state_ref`: the
+    // threaded state stays immutable while command interpretation releases
+    // waiters in place during this sequential step.
+    let outbound = Ref::Ref(outbound_registry)
+    let event = runtime_event_get(events) catch {
+      _ =>
+        runtime_fail_and_close_of(
+          group,
+          state,
+          "event_queue",
+          EventQueueClosed,
+          writer_queue,
+          options,
+          ports,
+          events,
+          tasks,
+          next_task_token,
+          shutdown,
+          false,
+          dispatch_context,
+          dispatch.close_owner,
+          outbound,
+        )
     }
-  } catch {
-    error => {
-      // A raise means the loop is gone; submissions still queued behind the
-      // failing event can never be admitted, so reply to them before the
-      // error escapes. Submissions already admitted were released by the
-      // close-path sweep, and release is exactly-once by registry removal.
-      runtime_outbound_drain_stranded(events)
-      raise error
+    let (step, next_context) = runtime_apply_event_of(
+      event, state, decoder, group, writer_queue, options, ports, events, event_to_result,
+      dispatch, owner_event, dispatch_context, tasks, next_task_token, shutdown,
+      outbound,
+    )
+    state = step.state
+    decoder = step.decoder
+    tasks = step.tasks
+    next_task_token = step.next_task_token
+    dispatch_context = next_context
+    outbound_registry = outbound.val
+    if step.stop {
+      break
     }
   }
-  runtime_outbound_drain_stranded(events)
   dispatch_context
 }
 

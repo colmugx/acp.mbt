@@ -5,4 +5,10 @@ import {
   "moonbitlang/async/stdio",
 }
 
+import {
+  "moonbitlang/core/quickcheck" @qc,
+  "moonbitlang/core/quickcheck/shrink",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
+
 supported_targets = "native"

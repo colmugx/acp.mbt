@@ -16,9 +16,5 @@ description = ""
 
 import {
   "colmugx/reader@0.3.0",
-  "moonbitlang/async@0.20.5",
+  "moonbitlang/async@0.21.0",
 }
-
-options(
-  exclude: [ "examples", "public", "docs" ],
-)
