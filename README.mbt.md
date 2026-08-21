@@ -2,7 +2,7 @@
 
 Type-safe [Agent Client Protocol](https://agentclientprotocol.com/) (ACP) v1 SDK for MoonBit.
 
-**Version**: 0.1.2 · **Protocol**: ACP v1 · **Target**: native · **License**: Apache-2.0
+**Version**: 0.1.3 · **Protocol**: ACP v1 · **Target**: native · **License**: Apache-2.0
 
 Implement the agent side, the client side, or both. Peers exchange
 newline-delimited JSON-RPC frames over stdio: every v1 type has a strict
