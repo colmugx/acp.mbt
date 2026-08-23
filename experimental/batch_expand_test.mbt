@@ -6,9 +6,7 @@ fn batch_expand_test_chunk(text : String) -> Bytes? {
 ///|
 /// Drain one reader port fully, reading in tiny chunks so the wrapper's
 /// pending-byte slicing is exercised, and return the decoded stream text.
-async fn batch_expand_test_drain(
-  reader : @runtime.RuntimeReaderPort,
-) -> String raise {
+async fn batch_expand_test_drain(reader : @runtime.RuntimeReaderPort) -> String {
   let collected = StringBuilder()
   for ;; {
     match (reader.read)(3) {
@@ -23,11 +21,7 @@ async test "v2 batch expanding reader rewrites intact batches and passes lone fr
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   // The stream splits the lone frame and the batch across chunk boundaries so
   // the wrapper's internal framing buffer is load-bearing.
-  input.put(
-    batch_expand_test_chunk(
-      "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"met",
-    ),
-  )
+  input.put(batch_expand_test_chunk("{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"met"))
   input.put(
     batch_expand_test_chunk(
       "hod\":\"m\"}\n[{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/list\"},{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"r1\"}}]\n{\"jsonrpc\":\"2.0\",\"method\":\"n\"}\n",
@@ -40,8 +34,7 @@ async test "v2 batch expanding reader rewrites intact batches and passes lone fr
   )
   let drained = batch_expand_test_drain(reader)
   assert_eq(
-    drained,
-    "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"method\":\"m\"}\n{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/list\"}\n{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"r1\"}}\n{\"jsonrpc\":\"2.0\",\"method\":\"n\"}\n",
+    drained, "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"method\":\"m\"}\n{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/list\"}\n{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"r1\"}}\n{\"jsonrpc\":\"2.0\",\"method\":\"n\"}\n",
   )
 }
 
@@ -62,8 +55,7 @@ async test "v2 batch expanding reader passes fault batches byte-exact" {
   // Empty array, invalid-entry batch, and truncated batch JSON all pass
   // through unchanged: the engine's per-object decode keeps fault policy.
   assert_eq(
-    drained,
-    "[]\n[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"session/list\"},\"junk\"]\n[{\"jsonrpc\"\n",
+    drained, "[]\n[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"session/list\"},\"junk\"]\n[{\"jsonrpc\"\n",
   )
 }
 
@@ -99,7 +91,9 @@ async test "v2 agent runner over batch expanding ports processes batched entries
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[@runtime.RuntimeTraceEvent] = []
   let responses : Array[String] = []
-  let failures : Array[(@jsonrpc.RequestId, @runtime.RuntimeOutboundFailureKind)] = []
+  let failures : Array[
+    (@jsonrpc.RequestId, @runtime.RuntimeOutboundFailureKind),
+  ] = []
   let ports = experimental_v2_batch_expanding_ports(
     ports=experimental_v2_runtime_test_ports(
       input, output, written, traces, responses, failures,
@@ -113,7 +107,8 @@ async test "v2 agent runner over batch expanding ports processes batched entries
   )
   input.put(None)
   @async.with_task_group(group => {
-    group.spawn(() => {
+    group
+    .spawn(() => {
       experimental_v2_agent_runtime_run(
         endpoint~,
         context=experimental_v2_agent_fail_fast_context(),
@@ -121,12 +116,10 @@ async test "v2 agent runner over batch expanding ports processes batched entries
         ports~,
         options=@runtime.runtime_default_options(),
       )
-    }).wait()
+    })
+    .wait()
   })
   assert_eq(output.length(), 1)
-  assert_eq(
-    experimental_v2_runtime_test_success_id(output[0]),
-    String("init"),
-  )
+  assert_eq(experimental_v2_runtime_test_success_id(output[0]), String("init"))
   assert_eq(failures.length(), 0)
 }

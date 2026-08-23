@@ -81,8 +81,7 @@ test "v2 wire split maps truncated batch json to one -32700 single reply" {
   )
   // An unparseable frame is answered -32700 whatever it would have been.
   assert_true(
-    experimental_v2_split_wire_frame("{not json")
-    is SplitSingleErrorReply(_),
+    experimental_v2_split_wire_frame("{not json") is SplitSingleErrorReply(_),
   )
 }
 
@@ -111,8 +110,7 @@ test "v2 wire split keeps invalid entries' -32600 replies in place" {
 ///|
 test "v2 collect replies batches single response frames into one line" {
   let line = experimental_v2_collect_replies([
-    "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}",
-    "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}",
+    "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}", "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}",
   ])
   assert_eq(
     line, "[{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null},{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}]",

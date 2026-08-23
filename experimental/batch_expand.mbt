@@ -82,10 +82,9 @@ async fn experimental_v2_batch_expanding_read(
         state.pending.length()
       }
       let chunk = state.pending.view(start=0, end=take).to_owned()
-      state.pending = state.pending.view(
-        start=take,
-        end=state.pending.length(),
-      ).to_owned()
+      state.pending = state.pending
+        .view(start=take, end=state.pending.length())
+        .to_owned()
       return Some(chunk)
     }
     if state.eof {
@@ -116,11 +115,12 @@ async fn experimental_v2_batch_expanding_read(
 /// returns the original frame text unchanged.
 fn experimental_v2_batch_expand_frame(frame : String) -> String {
   match experimental_v2_split_wire_frame(frame) {
-    SplitBatchFrames(frames~, intact~) => if intact {
-      frames.join("\n")
-    } else {
-      frame
-    }
+    SplitBatchFrames(frames~, intact~) =>
+      if intact {
+        frames.join("\n")
+      } else {
+        frame
+      }
     SplitLoneObject(..) | SplitSingleErrorReply(..) => frame
   }
 }

@@ -109,12 +109,8 @@ fn experimental_v2_wire_entry_frame(item : Json) -> String? {
 }
 
 ///|
-fn experimental_v2_wire_error_frame(
-  error : @jsonrpc.JsonRpcError,
-) -> String {
+fn experimental_v2_wire_error_frame(error : @jsonrpc.JsonRpcError) -> String {
   try! @jsonrpc.jsonrpc_encode(
-    @jsonrpc.JsonRpcMessage::response(
-      experimental_v2_batch_single_error(error),
-    ),
+    @jsonrpc.JsonRpcMessage::response(experimental_v2_batch_single_error(error)),
   )
 }
