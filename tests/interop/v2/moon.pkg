@@ -1,0 +1,13 @@
+import {
+  "colmugx/acp/experimental",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "colmugx/acp/transport",
+  "moonbitlang/async",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/async/process",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+} for "test"
+
+supported_targets = "native"

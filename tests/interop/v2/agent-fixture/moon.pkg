@@ -1,0 +1,10 @@
+import {
+  "colmugx/acp/experimental" @v2,
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")
