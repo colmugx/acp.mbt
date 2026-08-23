@@ -280,6 +280,14 @@ failing silently.
 | Ports & trace | `runtime_stdio_ports`, `runtime_process_ports`, `RuntimeHandlerPort`, `runtime_default_options`, `runtime_stderr_trace` |
 | Errors | `HandlerError`, `AgentCompositionError`, `ClientCompositionError`, `AgentContextError`, `ClientConnectionError`, `RuntimeError` |
 
+## Experimental: ACP v2
+
+`colmugx/acp/experimental` implements the ACP v2 Draft stable baseline
+against the pinned v2 schema (see `spec/LOCK.md`). It is an opt-in import —
+the v1 facade above is unchanged — with v2-only version negotiation (a v1
+peer is rejected, no downgrade). Draft quality: breaking changes may occur
+at any time.
+
 ## Trace and Diagnostics
 
 Stdout carries only newline-delimited ACP JSON-RPC frames. Diagnostics are
