@@ -8,13 +8,7 @@ repository = "https://github.com/colmugx/acp.mbt"
 
 license = "Apache-2.0"
 
-keywords = [
-  "acp",
-  "agent-client-protocol",
-  "ai",
-  "agent",
-  "json-rpc",
-]
+keywords = [ "acp", "agent-client-protocol", "ai", "agent", "json-rpc" ]
 
 preferred_target = "native"
 

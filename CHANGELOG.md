@@ -7,6 +7,30 @@ landed on `main`; it is not a release announcement.
 
 ## [Unreleased] — v1-pending
 
+### Error forwarding (behavior change)
+
+- Adapter errors no longer collapse onto payload-free standard messages.
+  Every handler-, message-, and protocol-level failure now carries its
+  host-authored, already-sanitized detail onto the wire on both JSON-RPC
+  channels: `message` (what editors render) and `data` (the field
+  Zed-style error builders surface). A user seeing "Internal error" with no
+  cause can now read — and paste to a developer — what actually happened.
+  Verified by `agent/adapter_wbtest.mbt` ("handler errors forward their
+  message and data onto the wire", "protocol errors forward their payload
+  as the wire message") and the mirrored `client/adapter_wbtest.mbt`.
+- `HandlerError` gained `InvalidParams(message~ : String)`, mapped to
+  JSON-RPC `-32602`, so clients distinguish user mistakes (unknown id,
+  wrong value shape) from internal failures. Handlers must keep payloads
+  sanitized: the adapter forwards them verbatim by design.
+- An unexpected (non-`HandlerError`) handler exception is reported as
+  `"agent handler failed: <display text>"` / `"client handler failed:
+  <display text>"` instead of the bare category, naming the defect for bug
+  reports. Encoder failures likewise report the decode path.
+- Closed-static client/agent facade error types (`AgentContextError`,
+  `ClientConnectionError`) are unchanged: they are the local typed
+  boundary, not the wire; the wire now carries the full detail for any
+  JSON-RPC peer.
+
 `colmugx/acp` is a native-only MoonBit SDK for Agent Client Protocol (ACP)
 v1. The v1 SDK scope is complete and locally gated (2026-08-17 scope
 decisions recorded in `docs/implementation-plan/10-progress-ledger.md`),
