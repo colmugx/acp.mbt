@@ -40,8 +40,9 @@ final human release review and the version/publish decision. The SDK's
 conformance evidence set is the pinned schema/meta drift gate
 (`method/manifest_test.mbt`) plus the MoonBit-to-MoonBit real-process
 stdio e2e (`tests/interop/`); real-world client integration validation
-belongs to downstream consumers of the SDK. The `experimental` package
-(ACP v2 Draft facade) contains no implementation yet.
+belongs to downstream consumers of the SDK. The `experimental`
+package (ACP v2 Draft facade) now carries the ACP v2 Draft stable-baseline
+implementation; see the *Experimental: ACP v2 Draft baseline* section below.
 
 ### Toolchain baseline
 
@@ -214,6 +215,110 @@ belongs to downstream consumers of the SDK. The `experimental` package
   interfaces, agent work files). `cf15295`, `00429b0`, `7f25f53`
 - Guide/runtime coverage sync. `3a697e5`
 
+### Experimental: ACP v2 Draft baseline (colmugx/acp/experimental)
+
+The ACP v2 Draft stable baseline is implemented behind the explicit
+`colmugx/acp/experimental` facade. This is Draft quality: breaking changes
+may occur at any time. The unstable overlay is not implemented and never
+vendored — `schema/v2/meta.unstable.json` is hash-recorded in `spec/LOCK.md`
+as an exclusion reference only, and `schema/v2/schema.unstable.json` was
+never retrieved. Version negotiation is v2-only with no downgrade: the
+client always offers `protocolVersion: 2` and fails terminally
+(`UnsupportedVersion` plus close) on any other negotiated version, while
+the agent answers a version-1 offer with `2` and stays un-initialized until
+the peer retries with version 2 — a v1 peer is rejected, never served v1.
+The root v1 surface is unchanged: every commit below touches only
+`experimental/`, the pinned `spec/schema/v2/` inputs, and
+`tests/interop/v2/`, and the root boundary test stays green
+(`method/manifest_test.mbt`: "release boundary: no posoco dependency
+anywhere and no experimental import in the root facade").
+
+- Baseline pin and manifest drift gate: vendored the pinned v2 schema/meta
+  bytes (`spec/schema/v2/`, SHA-256 in `spec/LOCK.md`), a 16-entry v2
+  method manifest, and the exact-set drift test deriving that manifest
+  from the pinned bytes. `662253f` (`experimental/manifest_test.mbt`:
+  "v2 manifest is the exact method set of the pinned v2 schema and meta
+  bytes", "v1-only and unstable overlay names are outside the v2
+  manifest").
+- Protocol core: an explicit tri-state patch ADT (omitted = unchanged,
+  `null` = clear, value = replace), open unions separating `Known`,
+  `_`-prefixed extension, and future-raw tags with unknown payloads
+  preserved, and strict decode that rejects unknown fields with the
+  offending key and path and known-tag illegal payloads as typed errors.
+  `cfd17ea` (`experimental/core_test.mbt`: "v2 patch decode distinguishes
+  omitted null and value", "v2 open union keeps underscore tags as
+  extension with raw payload", "v2 reject unknown reports the offending
+  key and path").
+- Full v2 model codecs: initialize (role-agnostic `info` plus
+  `capabilities` with object-presence support markers), auth methods,
+  MCP server configs, session lifecycle models, and config options
+  (`66ecd5f`, 45 tests); content blocks, tool calls with per-id upsert
+  content chunks, diffs as `changes` file operations with optional
+  `git_patch`, the agent-owned terminal surface, and the restructured
+  permission title/subject shapes (`041bd7b`, 29 tests).
+- `session/update` envelope covering all 16 arms — user/agent/thought
+  message upserts and chunks, `state_update`
+  running/requires_action/idle, tool-call update and content chunk,
+  terminal upsert and output chunk, plan replacement, available commands,
+  config options, session info, usage — with unknown discriminators
+  preserved raw, plus the elicitation property DSL. `28f4bca`, 20 tests
+  (`experimental/session_update_test.mbt`: "v2 message upsert arms
+  round-trip tri-state content"; `experimental/elicitation_test.mbt`:
+  "v2 elicitation create form round-trips the property DSL").
+- Endpoint state machines with v2-only negotiation and no downgrade:
+  the agent and client reducers reject repetition, gate traffic on
+  initialization/readiness, and classify unknown and v1-only method names
+  as typed rejections. `9aeee04`, 18 tests
+  (`experimental/agent_state_test.mbt`: "v2 agent negotiation accepts
+  only version two and rejects repetition"; `experimental/client_state_test.mbt`:
+  "v2 client fails terminally on a mismatched negotiate result").
+- Pure session fold over the update stream: prompt-accept to
+  running/requires_action/idle lifecycle with stop reasons recorded only
+  on idle, message/tool/plan/terminal upsert and chunk aggregation with
+  tri-state patches, unknown updates preserved raw and re-emittable, and
+  replay from start reproducing the live folded state. `bf73987`, 14
+  tests (`experimental/session_fold_test.mbt`: "v2 fold lifecycle matrix
+  records stop reason on idle only", "v2 fold replay from start
+  reproduces the live folded state").
+- JSON-RPC batch: a total batch codec (mixed and notification-only
+  entries, empty array mapped to one `-32600` id-null reply, invalid JSON
+  to one `-32700`, per-entry error tagging with siblings kept) while the
+  v1 codec still rejects array input; frame expansion wired into the
+  runners so inbound batch frames expand into single-object frames before
+  the shared engine's object-only decode and replies go out per frame,
+  which the v2 transport rules allow (lone frames pass byte-exact; a
+  reply-batching helper is provided for peers that want one line).
+  `ec19c4b`, 12 tests (`experimental/batch_test.mbt`: "v2 batch decode
+  maps an empty array to one -32600 id-null response", "v1
+  jsonrpc_decode_json still rejects array input"); `cb2abc8` + `e807c9b`
+  (`experimental/batch_frame_test.mbt`: "v2 wire split expands a valid
+  batch into ordered object frames"; `experimental/batch_expand_test.mbt`:
+  "v2 agent runner over batch expanding ports processes batched
+  entries").
+- Agent and client adaptation stacks on the shared single-engine runtime:
+  the typed agent adapter (admit/execute/complete, capability-marked
+  gates, auth reservation), the typed client adapter (permission before
+  initialize, elicitation mode gates), typed outbound brokers, and the
+  `experimental_v2_agent_serve_stdio(_with_outbound)` /
+  `experimental_v2_client_connect_process` runners. `480dad4`, 36 tests
+  (`experimental/agent_adapter_test.mbt`: "v2 agent adapter completes
+  every baseline session method"); `83cbf59`, 26 tests
+  (`experimental/client_connection_test.mbt`: "v2 client connection
+  forwards initialize and pins version 2"; `experimental/runtime_run_test.mbt`:
+  "v2 agent runtime run with outbound streams a full turn with
+  permission").
+- Real-process end-to-end proof: a real MoonBit v2 client runtime drives a
+  real MoonBit v2 agent-fixture process over stdio with frame/EOF-gated
+  assertions — a live turn streamed through updates and a permission
+  round-trip folded by the consumer, mid-prompt agent death settling
+  exactly one typed failure, late wire-cancel tolerance, and a two-entry
+  batch frame processed end to end. `7601ea5`
+  (`tests/interop/v2/interop_test.mbt`: "v2 moonbit client drives a v2
+  moonbit agent process end to end over stdio", "v2 moonbit client
+  settles one typed failure when the agent dies mid-prompt", "v2 agent
+  tolerates a late wire cancel and keeps serving", "v2 agent processes a
+  two-entry batch frame").
+
 ### Compatibility commitments
 
 Per `docs/implementation-plan/09-posoco-and-release-boundary.md`:
@@ -223,7 +328,8 @@ Per `docs/implementation-plan/09-posoco-and-release-boundary.md`:
   commit recorded in `spec/LOCK.md`; the stable facade will not gain
   breaking changes without a new version, and no unstable or v2 name is
   vendored or exposed by the stable package.
-- `colmugx/acp/experimental` is the future ACP v2 Draft facade. It is
-  currently an empty placeholder; when implemented it is Draft-only,
-  breaking changes may occur at any time, it must be imported explicitly
-  and will never change root v1 behavior or goldens.
+- `colmugx/acp/experimental` is the ACP v2 Draft facade implementing the
+  pinned stable baseline (see the *Experimental: ACP v2 Draft baseline*
+  section above). It is Draft-only, breaking changes may occur at any
+  time, it must be imported explicitly and will never change root v1
+  behavior or goldens.
