@@ -702,6 +702,33 @@ pub fn experimental_v2_encode_cancel_session_params(
 }
 
 ///|
+/// Result of `session/prompt`: an acknowledgement that the agent accepted the
+/// prompt.  It does not report completion; processing arrives as
+/// `session/update` notifications.
+pub(all) struct ExperimentalV2PromptResult {
+  meta : Json?
+} derive(Eq, Debug)
+
+///|
+pub fn experimental_v2_decode_prompt_result(
+  value : Json,
+  path? : String = "session/prompt",
+) -> ExperimentalV2PromptResult raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+}
+
+///|
+pub fn experimental_v2_encode_prompt_result(
+  value : ExperimentalV2PromptResult,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields : Map[String, Json] = Map([])
+  experimental_v2_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
 /// Result of `session/close`; it carries only protocol metadata.
 pub(all) struct ExperimentalV2CloseSessionResult {
   meta : Json?
