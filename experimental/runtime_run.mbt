@@ -59,20 +59,25 @@ pub async fn experimental_v2_agent_runtime_run_with_outbound(
 /// composition of `experimental_v2_agent_runtime_run` over
 /// `runtime_stdio_ports`: it validates the options fail-fast before any I/O
 /// binding and creates no connection state of its own.  The loop ends when
-/// stdin reaches EOF or the engine fails.
+/// stdin reaches EOF or the engine fails.  With `batch` the reader port is
+/// wrapped by `experimental_v2_batch_expanding_ports`: inbound v2 batch
+/// frames are expanded into single-object frames before the shared
+/// engine's object-only decode; replies still go out per frame, which the
+/// v2 transport rules allow.
 pub async fn experimental_v2_agent_serve_stdio(
   endpoint~ : ExperimentalV2AgentEndpoint,
   context~ : ExperimentalV2AgentContext,
   initial_state~ : ExperimentalV2AgentAdapterState,
   options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
   trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch? : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   experimental_v2_agent_runtime_run(
     endpoint~,
     context~,
     initial_state~,
-    ports=@runtime.runtime_stdio_ports(trace~),
+    ports=experimental_v2_agent_serve_stdio_ports(trace, batch, options),
     options~,
   )
 }
@@ -90,7 +95,11 @@ pub async fn experimental_v2_agent_serve_stdio(
 /// thin composition over `runtime_stdio_ports`: it validates the options
 /// fail-fast before any I/O binding and creates no second loop, channel
 /// state, or connection state of its own.  The loop ends when stdin reaches
-/// EOF or the engine fails.
+/// EOF or the engine fails.  With `batch` the reader port is wrapped by
+/// `experimental_v2_batch_expanding_ports`: inbound v2 batch frames are
+/// expanded into single-object frames before the shared engine's object-only
+/// decode; replies still go out per frame, which the v2 transport rules
+/// allow.
 pub async fn experimental_v2_agent_serve_stdio_with_outbound(
   endpoint~ : ExperimentalV2AgentEndpoint,
   context_factory~ : (
@@ -99,15 +108,30 @@ pub async fn experimental_v2_agent_serve_stdio_with_outbound(
   initial_state~ : ExperimentalV2AgentAdapterState,
   options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
   trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch? : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   experimental_v2_agent_runtime_run_with_outbound(
     endpoint~,
     context_factory~,
     initial_state~,
-    ports=@runtime.runtime_stdio_ports(trace~),
+    ports=experimental_v2_agent_serve_stdio_ports(trace, batch, options),
     options~,
   )
+}
+
+///|
+fn experimental_v2_agent_serve_stdio_ports(
+  trace : (@runtime.RuntimeTraceEvent) -> Unit,
+  batch : Bool,
+  options : @runtime.RuntimeOptions,
+) -> @runtime.RuntimePorts {
+  let ports = @runtime.runtime_stdio_ports(trace~)
+  if batch {
+    experimental_v2_batch_expanding_ports(ports~, options~)
+  } else {
+    ports
+  }
 }
 
 ///|
@@ -293,7 +317,10 @@ pub async fn experimental_v2_client_runtime_run_with_outbound(
 /// callback receives the real `RuntimeProcessPorts` handle right after the
 /// spawn succeeds and before the engine starts, so a composition root (or
 /// test driver) can close the child's stdin, wait for the exit status, or
-/// cancel the child at the moment its session logic decides to.
+/// cancel the child at the moment its session logic decides to.  With
+/// `batch` the child's stdout reader is wrapped by
+/// `experimental_v2_batch_expanding_ports`, so a v2 agent that batches its
+/// replies still settles one reply per request through the shared engine.
 pub async fn experimental_v2_client_connect_process(
   endpoint_factory~ : (
     @connection.RuntimeOutboundChannel[ExperimentalV2ClientCompletion],
@@ -307,6 +334,7 @@ pub async fn experimental_v2_client_connect_process(
   spawned? : (@runtime.RuntimeProcessPorts) -> Unit = _ => (),
   options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
   trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch? : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   @async.with_task_group(group => {
@@ -324,7 +352,14 @@ pub async fn experimental_v2_client_connect_process(
     experimental_v2_client_runtime_run_with_outbound(
       endpoint_factory~,
       initial_state~,
-      ports=spawned_ports.ports,
+      ports=if batch {
+        experimental_v2_batch_expanding_ports(
+          ports=spawned_ports.ports,
+          options~,
+        )
+      } else {
+        spawned_ports.ports
+      },
       options~,
     )
   })
