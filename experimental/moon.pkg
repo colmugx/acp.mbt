@@ -1,12 +1,17 @@
 import {
+  "colmugx/acp/connection",
   "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "moonbitlang/async",
   "moonbitlang/core/encoding/base64",
   "moonbitlang/core/json",
 }
 
 import {
   "moonbitlang/async",
+  "moonbitlang/async/aqueue",
   "moonbitlang/async/fs",
+  "moonbitlang/core/encoding/utf8",
 } for "test"
 
 supported_targets = "native"
