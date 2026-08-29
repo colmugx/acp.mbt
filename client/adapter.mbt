@@ -81,6 +81,8 @@ using @session_protocol {
   type CloseSessionResult,
   type DeleteSessionParams,
   type DeleteSessionResult,
+  type ForkSessionParams,
+  type ForkSessionResult,
   type ListSessionsParams,
   type ListSessionsResult,
   type LoadSessionParams,

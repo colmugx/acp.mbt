@@ -74,7 +74,7 @@ fn client_matrix_test_capture_read(
   async fn(params : ReadTextFileParams) -> ReadTextFileResult {
     @async.pause()
     seen.push(params)
-    { content: "matrix-read", meta: Omitted }
+    { content: "matrix-read", meta: Omitted, }
   }
 }
 
@@ -95,7 +95,7 @@ fn client_matrix_test_capture_write(
   async fn(params : WriteTextFileParams) -> WriteTextFileResult {
     @async.pause()
     seen.push(params)
-    { meta: Omitted }
+    { meta: Omitted, }
   }
 }
 
@@ -115,7 +115,7 @@ fn client_matrix_test_fixed_create(
 ) -> ClientTerminalCreateHandler {
   async fn(_params : TerminalCreateParams) -> TerminalCreateResult {
     @async.pause()
-    { terminal_id, meta: Omitted }
+    { terminal_id, meta: Omitted, }
   }
 }
 
@@ -125,7 +125,7 @@ fn client_matrix_test_fixed_create(
 fn client_matrix_test_degenerate_create() -> ClientTerminalCreateHandler {
   async fn(_params : TerminalCreateParams) -> TerminalCreateResult {
     @async.pause()
-    { terminal_id: "", meta: Omitted }
+    { terminal_id: "", meta: Omitted, }
   }
 }
 
@@ -163,9 +163,9 @@ fn client_matrix_test_status_wait() -> ClientTerminalWaitForExitHandler {
   async fn(params : TerminalWaitForExitParams) -> TerminalWaitForExitResult {
     @async.pause()
     if params.terminal_id == "exit-0" {
-      { exit_code: Value(0UL), signal: Omitted, meta: Omitted }
+      { exit_code: Value(0UL), signal: Omitted, meta: Omitted, }
     } else if params.terminal_id == "signaled" {
-      { exit_code: Omitted, signal: Value("SIGTERM"), meta: Omitted }
+      { exit_code: Omitted, signal: Value("SIGTERM"), meta: Omitted, }
     } else {
       raise HandlerError::UnavailableOperation(
         method_name="terminal/wait_for_exit",
@@ -185,7 +185,7 @@ fn client_matrix_test_release_once(
     @async.pause()
     if params.terminal_id == terminal_id && !released.contains(terminal_id) {
       released.push(terminal_id)
-      { meta: Omitted }
+      { meta: Omitted, }
     } else {
       raise HandlerError::UnavailableOperation(method_name="terminal/release")
     }
@@ -335,7 +335,7 @@ async test "matrix D02 session update delivers every variant typed without respo
   match received[8].update {
     ConfigOptionUpdate(options) =>
       assert_true(
-        options.config_options[0].kind is Boolean({ current_value: true }),
+        options.config_options[0].kind is Boolean({ current_value: true, }),
       )
     _ => fail("expected the config_option_update fixture")
   }
@@ -543,7 +543,7 @@ async test "matrix D05 terminal create validates shape and terminal id" {
     create=async fn(params : TerminalCreateParams) -> TerminalCreateResult {
       @async.pause()
       seen.push(params)
-      { terminal_id: "matrix-terminal", meta: Omitted }
+      { terminal_id: "matrix-terminal", meta: Omitted, }
     },
     output=client_service_test_output,
     wait_for_exit=client_service_test_wait,
@@ -850,7 +850,7 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
   }
   let crossed : ClientAdapterCompletion = TerminalReleaseCompleted(
     id=Number(10),
-    result=Ok({ meta: Omitted }),
+    result=Ok({ meta: Omitted, }),
   )
   try client_adapter_complete(reserved, invocation, crossed) catch {
     CompletionMismatch(method_name="terminal/kill") => ()
@@ -1168,4 +1168,114 @@ async test "matrix D11 elicitation complete never finishes unknown ids" {
     method_name="elicitation/complete",
     code=InvalidParams,
   )
+}
+
+///|
+/// One minimal total owner port: this test only exercises the outbound
+/// direction, so every inbound hook stays total and side-effect free.
+fn client_matrix_test_owner_port() -> @connection.RuntimeOwnerPort[
+  Unit,
+  Unit,
+  Unit,
+  Unit,
+] {
+  {
+    initial_state: (),
+    admit_request: (_state, _id, _request) => {
+      RuntimeOwnerRequestImmediate(completion={
+        state: (),
+        response: HandlerSuccess(Json::null()),
+        effects: [],
+      })
+    },
+    admit_notification: (_state, _notification) => {
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [], })
+    },
+    execute: _invocation => (),
+    execute_failure: (_state, _invocation) => (),
+    execute_cancel: (_state, _invocation) => (),
+    complete_request: (state, _id, _invocation, _completion) => {
+      state,
+      response: HandlerSuccess(Json::null()),
+      effects: [],
+    },
+    complete_notification: (state, _invocation, _completion) => {
+      state,
+      effects: [],
+    },
+    plan_local_effect: _effect => RuntimeOwnerNoCommands,
+    cancel_request: (state, _id, _invocation) => (state, ()),
+    abort: (state, _task) => state,
+  }
+}
+
+///|
+/// Run the one owner engine and capture its outbound channel for the test
+/// body, mirroring the broker channel harness without engine internals.
+async fn client_matrix_test_channel_run(
+  ports : @runtime.RuntimePorts,
+  captured : @aqueue.Queue[@connection.RuntimeOutboundChannel[Unit]],
+) -> Unit {
+  @connection.connection_runtime_run_owner_with_outbound(
+    ports,
+    @runtime.runtime_default_options(),
+    channel => {
+      let _ = captured.try_put(channel) catch { _ => false }
+      client_matrix_test_owner_port()
+    },
+  )
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft): the client wire frame for
+/// `session/fork` mirrors `session/resume`'s client face — one typed forward
+/// request frame with exact params, settled by one typed reply frame whose
+/// session id addresses the fork copy.
+async test "matrix session fork wire frame mirrors the resume client recipe" {
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[@runtime.RuntimeTraceEvent] = []
+  let ports = client_runtime_test_ports(input, output, written, traces)
+  let captured : @aqueue.Queue[@connection.RuntimeOutboundChannel[Unit]] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let runner = group.spawn(() => {
+      client_matrix_test_channel_run(ports, captured)
+    })
+    let submitter = group.spawn(() => {
+      let channel = captured.get()
+      let connection = @broker.client_connection_over_channel(channel~)
+      connection.fork_session({
+        cwd: "/",
+        session_id: "matrix",
+        additional_directories: Omitted,
+        mcp_servers: Omitted,
+        meta: Omitted,
+      })
+    })
+    // The fake agent answers the fork only after observing its frame, so the
+    // request wire shape and the reply correlation stay observable.
+    ignore(written.get())
+    let fork_request = client_runtime_test_request(output[0])
+    assert_eq(fork_request.method_name, "session/fork")
+    assert_eq(fork_request.id, Number(1))
+    assert_eq(
+      fork_request.params,
+      Some(client_adapter_test_json("{\"cwd\":\"/\",\"sessionId\":\"matrix\"}")),
+    )
+    input.put(
+      client_runtime_test_chunk(
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"sessionId\":\"matrix-fork-1\"}}\n",
+      ),
+    )
+    let forked = submitter.wait()
+    input.put(None)
+    runner.wait()
+    assert_eq(forked.session_id, "matrix-fork-1")
+    assert_eq(forked.modes, Omitted)
+    assert_eq(forked.config_options, Omitted)
+  })
+  assert_eq(output.length(), 1)
 }
