@@ -123,6 +123,7 @@ fn agent_state_test_all_capabilities() -> AgentCapabilities {
       resume_capability: Value(agent_state_test_marker()),
       close: Value(agent_state_test_marker()),
       additional_directories: Value(agent_state_test_marker()),
+      fork: Omitted,
       meta: Omitted,
     }),
     meta: Omitted,

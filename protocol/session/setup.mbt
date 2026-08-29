@@ -61,6 +61,30 @@ pub(all) struct ResumeSessionResult {
 } derive(Eq, Debug)
 
 ///|
+/// Parameters for `session/fork`.
+///
+/// Upstream unstable (RFD session-fork, Draft).
+pub(all) struct ForkSessionParams {
+  cwd : String
+  session_id : SessionId
+  additional_directories : ProtocolNullable[Array[String]]
+  mcp_servers : ProtocolNullable[Array[McpServer]]
+  meta : ProtocolNullable[Json]
+} derive(Eq, Debug)
+
+///|
+/// Result of `session/fork`.  Same shape as `NewSessionResult`; the new
+/// session id addresses the fork.
+///
+/// Upstream unstable (RFD session-fork, Draft).
+pub(all) struct ForkSessionResult {
+  session_id : SessionId
+  modes : ProtocolNullable[SessionModeState]
+  config_options : ProtocolNullable[Array[SessionConfigOption]]
+  meta : ProtocolNullable[Json]
+} derive(Eq, Debug)
+
+///|
 /// Validate the session id of a `session/new` result in both directions.
 /// Uniqueness is owned by the session service; the codec only rejects the
 /// degenerate empty id that can never address a session.
@@ -263,7 +287,7 @@ fn session_setup_decode_new_params_fields(
     path=path + ".mcpServers",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { cwd, additional_directories, mcp_servers, meta }
+  { cwd, additional_directories, mcp_servers, meta, }
 }
 
 ///|
@@ -324,7 +348,7 @@ fn session_setup_decode_load_params_fields(
     path=path + ".sessionId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { mcp_servers, cwd, additional_directories, session_id, meta }
+  { mcp_servers, cwd, additional_directories, session_id, meta, }
 }
 
 ///|
@@ -393,7 +417,7 @@ fn session_setup_decode_resume_params_fields(
       Value(session_setup_decode_mcp_servers(value, path=path + ".mcpServers"))
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, cwd, additional_directories, mcp_servers, meta }
+  { session_id, cwd, additional_directories, mcp_servers, meta, }
 }
 
 ///|
@@ -436,6 +460,84 @@ pub fn resume_session_params_to_json(
 }
 
 ///|
+fn session_setup_decode_fork_params_fields(
+  fields : Map[String, Json],
+  path~ : String,
+) -> ForkSessionParams raise ProtocolDecodeError {
+  protocol_reject_unknown(
+    fields,
+    ["cwd", "sessionId", "additionalDirectories", "mcpServers", "_meta"],
+    prefix=path,
+  )
+  let cwd = protocol_validate_absolute_path(
+    protocol_required_string(fields, "cwd", path=path + ".cwd"),
+    field_path=path + ".cwd",
+  )
+  let session_id = protocol_required_string(
+    fields,
+    "sessionId",
+    path=path + ".sessionId",
+  )
+  let additional_directories = session_setup_decode_additional_directories(
+    fields,
+    "additionalDirectories",
+    path=path + ".additionalDirectories",
+  )
+  let mcp_servers : ProtocolNullable[Array[McpServer]] = match
+    protocol_field(fields, "mcpServers") {
+    Omitted => Omitted
+    Null =>
+      raise InvalidField(
+        path=path + ".mcpServers",
+        reason="mcpServers must be an array when present",
+      )
+    Value(value) =>
+      Value(session_setup_decode_mcp_servers(value, path=path + ".mcpServers"))
+  }
+  let meta = protocol_meta(fields, path=path + "._meta")
+  { cwd, session_id, additional_directories, mcp_servers, meta, }
+}
+
+///|
+/// Decode `session/fork` parameters.
+pub fn fork_session_params_from_json(
+  value : Json,
+  path? : String = "session/fork",
+) -> ForkSessionParams raise ProtocolDecodeError {
+  let fields = protocol_require_object(value, path~)
+  session_setup_decode_fork_params_fields(fields, path~)
+}
+
+///|
+/// Encode `session/fork` parameters.
+pub fn fork_session_params_to_json(
+  value : ForkSessionParams,
+) -> Json raise ProtocolDecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["cwd"] = Json::string(
+    protocol_validate_absolute_path(value.cwd, field_path="cwd"),
+  )
+  fields["sessionId"] = Json::string(value.session_id)
+  session_setup_put_additional_directories(
+    fields,
+    "additionalDirectories",
+    value.additional_directories,
+  )
+  match value.mcp_servers {
+    Omitted => ()
+    Null =>
+      raise InvalidField(
+        path="mcpServers",
+        reason="mcpServers must be an array when present",
+      )
+    Value(value) =>
+      fields["mcpServers"] = session_setup_encode_mcp_servers(value)
+  }
+  protocol_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
 fn session_setup_decode_new_result_fields(
   fields : Map[String, Json],
   path~ : String,
@@ -456,7 +558,7 @@ fn session_setup_decode_new_result_fields(
     path=path + ".configOptions",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, modes, config_options, meta }
+  { session_id, modes, config_options, meta, }
 }
 
 ///|
@@ -505,7 +607,7 @@ fn session_setup_decode_load_result_fields(
     path=path + ".configOptions",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { modes, config_options, meta }
+  { modes, config_options, meta, }
 }
 
 ///|
@@ -553,7 +655,7 @@ pub fn resume_session_result_from_json(
     path=path + ".configOptions",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { modes, config_options, meta }
+  { modes, config_options, meta, }
 }
 
 ///|
@@ -562,6 +664,51 @@ pub fn resume_session_result_to_json(
   value : ResumeSessionResult,
 ) -> Json raise ProtocolDecodeError {
   let fields : Map[String, Json] = Map([])
+  session_setup_put_modes(fields, "modes", value.modes)
+  session_setup_put_config_options(
+    fields,
+    "configOptions",
+    value.config_options,
+  )
+  protocol_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
+/// Decode the result of `session/fork`.
+pub fn fork_session_result_from_json(
+  value : Json,
+  path? : String = "session/fork",
+) -> ForkSessionResult raise ProtocolDecodeError {
+  let fields = protocol_require_object(value, path~)
+  protocol_reject_unknown(
+    fields,
+    ["sessionId", "modes", "configOptions", "_meta"],
+    prefix=path,
+  )
+  let session_id = session_setup_session_id(
+    protocol_required_string(fields, "sessionId", path=path + ".sessionId"),
+    field_path=path + ".sessionId",
+  )
+  let modes = session_setup_decode_modes(fields, "modes", path=path + ".modes")
+  let config_options = session_setup_decode_config_options_nullable(
+    fields,
+    "configOptions",
+    path=path + ".configOptions",
+  )
+  let meta = protocol_meta(fields, path=path + "._meta")
+  { session_id, modes, config_options, meta, }
+}
+
+///|
+/// Encode the result of `session/fork`.
+pub fn fork_session_result_to_json(
+  value : ForkSessionResult,
+) -> Json raise ProtocolDecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["sessionId"] = Json::string(
+    session_setup_session_id(value.session_id, field_path="sessionId"),
+  )
   session_setup_put_modes(fields, "modes", value.modes)
   session_setup_put_config_options(
     fields,

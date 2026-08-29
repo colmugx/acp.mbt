@@ -101,6 +101,8 @@ pub(all) struct AgentSessionCapabilities {
   resume_capability : ProtocolNullable[CapabilityMarker]
   close : ProtocolNullable[CapabilityMarker]
   additional_directories : ProtocolNullable[CapabilityMarker]
+  /// Upstream unstable field (RFD session-fork, Draft).
+  fork : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
 
@@ -470,7 +472,7 @@ pub fn implementation_from_json(
     path=path + ".version",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { name, title, version, meta }
+  { name, title, version, meta, }
 }
 
 ///|
@@ -507,7 +509,7 @@ fn decode_client_file_system_fields(
     path=path + ".writeTextFile",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { read_text_file, write_text_file, meta }
+  { read_text_file, write_text_file, meta, }
 }
 
 ///|
@@ -545,7 +547,7 @@ fn decode_client_elicitation_fields(
   let form = init_nullable_marker(fields, "form", path=path + ".form")
   let url = init_nullable_marker(fields, "url", path=path + ".url")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { form, url, meta }
+  { form, url, meta, }
 }
 
 ///|
@@ -578,7 +580,7 @@ fn decode_client_config_option_fields(
   protocol_reject_unknown(fields, ["_meta", "boolean"], prefix=path)
   let boolean = init_nullable_marker(fields, "boolean", path=path + ".boolean")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { boolean, meta }
+  { boolean, meta, }
 }
 
 ///|
@@ -614,7 +616,7 @@ fn decode_client_session_fields(
     path=path + ".configOptions",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|
@@ -653,7 +655,7 @@ pub fn client_auth_capabilities_from_json(
   protocol_reject_unknown(fields, ["_meta", "terminal"], prefix=path)
   let terminal = init_nullable_bool(fields, "terminal", path=path + ".terminal")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { terminal, meta }
+  { terminal, meta, }
 }
 
 ///|
@@ -694,7 +696,7 @@ fn decode_client_capabilities_fields(
   let plan = init_nullable_marker(fields, "plan", path=path + ".plan")
   let auth = init_nullable_client_auth(fields, "auth", path=path + ".auth")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { fs, terminal, elicitation, session, plan, auth, meta }
+  { fs, terminal, elicitation, session, plan, auth, meta, }
 }
 
 ///|
@@ -763,7 +765,7 @@ fn decode_agent_prompt_fields(
     path=path + ".embeddedContext",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { image, audio, embedded_context, meta }
+  { image, audio, embedded_context, meta, }
 }
 
 ///|
@@ -800,7 +802,7 @@ fn decode_agent_mcp_fields(
   let http = init_nullable_bool(fields, "http", path=path + ".http")
   let sse = init_nullable_bool(fields, "sse", path=path + ".sse")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { http, sse, meta }
+  { http, sse, meta, }
 }
 
 ///|
@@ -833,7 +835,7 @@ fn decode_agent_auth_fields(
   protocol_reject_unknown(fields, ["_meta", "logout"], prefix=path)
   let logout = init_nullable_marker(fields, "logout", path=path + ".logout")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { logout, meta }
+  { logout, meta, }
 }
 
 ///|
@@ -864,7 +866,9 @@ fn decode_agent_session_fields(
 ) -> AgentSessionCapabilities raise ProtocolDecodeError {
   protocol_reject_unknown(
     fields,
-    ["_meta", "list", "delete", "resume", "close", "additionalDirectories"],
+    [
+      "_meta", "list", "delete", "resume", "close", "additionalDirectories", "fork",
+    ],
     prefix=path,
   )
   let list = init_nullable_marker(fields, "list", path=path + ".list")
@@ -880,8 +884,17 @@ fn decode_agent_session_fields(
     "additionalDirectories",
     path=path + ".additionalDirectories",
   )
+  let fork = init_nullable_marker(fields, "fork", path=path + ".fork")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { list, delete, resume_capability, close, additional_directories, meta }
+  {
+    list,
+    delete,
+    resume_capability,
+    close,
+    additional_directories,
+    fork,
+    meta,
+  }
 }
 
 ///|
@@ -915,6 +928,7 @@ pub fn agent_session_capabilities_to_json(
     value.additional_directories,
     capability_marker_to_json,
   )
+  init_put_nullable(fields, "fork", value.fork, capability_marker_to_json)
   protocol_put_meta(fields, value.meta)
   Json::object(fields)
 }
@@ -1039,7 +1053,7 @@ pub fn initialize_params_from_json(
     path=path + ".clientInfo",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { protocol_version, client_capabilities, client_info, meta }
+  { protocol_version, client_capabilities, client_info, meta, }
 }
 
 ///|
@@ -1100,7 +1114,7 @@ pub fn initialize_result_from_json(
     path=path + ".agentInfo",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { protocol_version, agent_capabilities, auth_methods, agent_info, meta }
+  { protocol_version, agent_capabilities, auth_methods, agent_info, meta, }
 }
 
 ///|
@@ -1158,7 +1172,7 @@ pub fn auth_method_from_json(
     path=path + ".description",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { id, name, description, meta }
+  { id, name, description, meta, }
 }
 
 ///|
@@ -1189,7 +1203,7 @@ pub fn authenticate_params_from_json(
     path=path + ".methodId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { method_id, meta }
+  { method_id, meta, }
 }
 
 ///|
@@ -1219,7 +1233,7 @@ pub fn authenticate_result_from_json(
   value : Json,
   path? : String = "authenticate",
 ) -> AuthenticateResult raise ProtocolDecodeError {
-  { meta: decode_meta_only(value, path~) }
+  { meta: decode_meta_only(value, path~), }
 }
 
 ///|
@@ -1238,7 +1252,7 @@ pub fn logout_params_from_json(
   value : Json,
   path? : String = "logout",
 ) -> LogoutParams raise ProtocolDecodeError {
-  { meta: decode_meta_only(value, path~) }
+  { meta: decode_meta_only(value, path~), }
 }
 
 ///|
@@ -1257,7 +1271,7 @@ pub fn logout_result_from_json(
   value : Json,
   path? : String = "logout",
 ) -> LogoutResult raise ProtocolDecodeError {
-  { meta: decode_meta_only(value, path~) }
+  { meta: decode_meta_only(value, path~), }
 }
 
 ///|
