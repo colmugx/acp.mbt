@@ -48,6 +48,17 @@ test "matrix G01 additional directories keep exact wire order per method" {
     ).additional_directories,
     Value(ordered),
   )
+  let fork_params : ForkSessionParams = {
+    cwd: "/workspace",
+    session_id: "s",
+    additional_directories: Value(ordered),
+    mcp_servers: Omitted,
+    meta: Omitted,
+  }
+  assert_eq(
+    fork_session_params_from_json(fork_session_params_to_json(fork_params)).additional_directories,
+    Value(ordered),
+  )
   try
     new_session_params_from_json(
       protocol_parse_json(

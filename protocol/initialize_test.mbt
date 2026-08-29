@@ -10,7 +10,7 @@ fn init_test_null_meta() -> ProtocolNullable[Json] {
 
 ///|
 fn init_test_marker() -> CapabilityMarker {
-  { meta: init_test_omitted_meta() }
+  { meta: init_test_omitted_meta(), }
 }
 
 ///|
@@ -171,7 +171,7 @@ test "initialize params and result round trip version negotiation data" {
     protocol_version: 1,
     agent_capabilities: Null,
     auth_methods: Value([
-      { id: "oauth", name: "OAuth", description: Null, meta: Omitted },
+      { id: "oauth", name: "OAuth", description: Null, meta: Omitted, },
     ]),
     agent_info: Omitted,
     meta: Omitted,
@@ -224,17 +224,17 @@ test "auth methods and authenticate/logout data preserve optional fields" {
     auth_method_from_json(auth_method_to_json(auth_method)),
     auth_method,
   )
-  let params : AuthenticateParams = { method_id: "token", meta: Omitted }
+  let params : AuthenticateParams = { method_id: "token", meta: Omitted, }
   assert_eq(
     authenticate_params_from_json(authenticate_params_to_json(params)),
     params,
   )
-  let result : AuthenticateResult = { meta: Omitted }
+  let result : AuthenticateResult = { meta: Omitted, }
   assert_eq(
     authenticate_result_from_json(authenticate_result_to_json(result)),
     result,
   )
-  let logout : LogoutResult = { meta: Null }
+  let logout : LogoutResult = { meta: Null, }
   assert_eq(logout_result_from_json(logout_result_to_json(logout)), logout)
   try
     authenticate_params_from_json(protocol_parse_json("{\"methodId\":\"\"}"))
@@ -280,9 +280,9 @@ test "client capabilities accept upstream unstable plan and auth fields" {
   guard params.client_capabilities
     is Value(
       {
-        plan: Value({ meta: Omitted }),
-        auth: Value({ terminal: Value(true), meta: Omitted }),
-        ..,
+        plan: Value({ meta: Omitted, }),
+        auth: Value({ terminal: Value(true), meta: Omitted, }),
+        ..
       }
     ) else {
     fail("expected plan marker and auth terminal capability")
@@ -299,6 +299,33 @@ test "client capabilities accept upstream unstable plan and auth fields" {
   )
   assert_eq(
     client_capabilities_from_json(client_capabilities_to_json(decoded)),
+    decoded,
+  )
+}
+
+///|
+test "agent session capabilities accept upstream unstable fork marker" {
+  let capabilities = agent_capabilities_from_json(
+    protocol_parse_json("{\"sessionCapabilities\":{\"fork\":{},\"list\":{}}}"),
+  )
+  guard capabilities.session_capabilities
+    is Value({ fork: Value({ meta: Omitted, }), .. }) else {
+    fail("expected fork capability marker")
+  }
+  // Omitted and null markers stay unsupported without fallback.
+  let omitted = agent_session_capabilities_from_json(protocol_parse_json("{}"))
+  assert_eq(omitted.fork, Omitted)
+  let nulls = agent_session_capabilities_from_json(
+    protocol_parse_json("{\"fork\":null}"),
+  )
+  assert_eq(nulls.fork, Null)
+  let decoded = agent_session_capabilities_from_json(
+    protocol_parse_json("{\"fork\":{\"_meta\":{\"k\":1}}}"),
+  )
+  assert_eq(
+    agent_session_capabilities_from_json(
+      agent_session_capabilities_to_json(decoded),
+    ),
     decoded,
   )
 }

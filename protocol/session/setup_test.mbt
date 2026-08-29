@@ -43,7 +43,7 @@ fn session_setup_test_option() -> SessionConfigOption {
     name: "Confirm actions",
     description: Omitted,
     category: Value(Mode),
-    kind: Boolean({ current_value: true }),
+    kind: Boolean({ current_value: true, }),
     meta: session_setup_test_meta(),
   }
 }
@@ -297,5 +297,154 @@ test "session new result rejects an empty session id in both directions" {
     _ => fail("expected empty session id rejection on encode")
   } noraise {
     _ => fail("expected empty session id rejection on encode")
+  }
+}
+
+///|
+test "session fork params and result round trip with and without mcp servers" {
+  let with_servers : ForkSessionParams = {
+    cwd: "/workspace",
+    session_id: "s-origin",
+    additional_directories: Value(["/workspace/shared"]),
+    mcp_servers: Value([session_setup_test_server()]),
+    meta: Value({ "trace": Json::string("fork") }),
+  }
+  assert_eq(
+    fork_session_params_from_json(fork_session_params_to_json(with_servers)),
+    with_servers,
+  )
+
+  let omitted_servers : ForkSessionParams = {
+    cwd: "/workspace",
+    session_id: "s-origin",
+    additional_directories: Omitted,
+    mcp_servers: Omitted,
+    meta: Omitted,
+  }
+  assert_eq(
+    fork_session_params_from_json(fork_session_params_to_json(omitted_servers)),
+    omitted_servers,
+  )
+
+  let result : ForkSessionResult = {
+    session_id: "s-fork",
+    modes: Value(session_setup_test_modes()),
+    config_options: Value([session_setup_test_option()]),
+    meta: Null,
+  }
+  assert_eq(
+    fork_session_result_from_json(fork_session_result_to_json(result)),
+    result,
+  )
+
+  let nulls = fork_session_result_from_json(
+    protocol_parse_json(
+      "{\"sessionId\":\"s-fork\",\"modes\":null,\"configOptions\":null}",
+    ),
+  )
+  assert_eq(nulls.modes, Null)
+  assert_eq(nulls.config_options, Null)
+}
+
+///|
+test "session fork params reject missing required and unknown fields" {
+  try
+    fork_session_params_from_json(protocol_parse_json("{\"sessionId\":\"s\"}"))
+  catch {
+    MissingField(path="session/fork.cwd") => ()
+    _ => fail("expected missing fork cwd")
+  } noraise {
+    _ => fail("expected missing fork cwd")
+  }
+
+  try
+    fork_session_params_from_json(
+      protocol_parse_json("{\"cwd\":\"/workspace\"}"),
+    )
+  catch {
+    MissingField(path="session/fork.sessionId") => ()
+    _ => fail("expected missing fork sessionId")
+  } noraise {
+    _ => fail("expected missing fork sessionId")
+  }
+
+  try
+    fork_session_params_from_json(
+      protocol_parse_json(
+        "{\"cwd\":\"/workspace\",\"sessionId\":\"s\",\"extra\":true}",
+      ),
+    )
+  catch {
+    UnknownField(path="session/fork.extra") => ()
+    _ => fail("expected unknown fork field rejection")
+  } noraise {
+    _ => fail("expected unknown fork field rejection")
+  }
+}
+
+///|
+test "session fork params reject relative roots and null arrays" {
+  try
+    fork_session_params_from_json(
+      protocol_parse_json("{\"cwd\":\"relative\",\"sessionId\":\"s\"}"),
+    )
+  catch {
+    InvalidPath(path="session/fork.cwd", value="relative") => ()
+    _ => fail("expected relative fork cwd rejection")
+  } noraise {
+    _ => fail("expected relative fork cwd rejection")
+  }
+
+  try
+    fork_session_params_from_json(
+      protocol_parse_json(
+        "{\"cwd\":\"/workspace\",\"sessionId\":\"s\",\"mcpServers\":null}",
+      ),
+    )
+  catch {
+    InvalidField(path="session/fork.mcpServers", reason=_) => ()
+    _ => fail("expected null fork mcpServers rejection")
+  } noraise {
+    _ => fail("expected null fork mcpServers rejection")
+  }
+
+  try
+    fork_session_params_from_json(
+      protocol_parse_json(
+        "{\"cwd\":\"/workspace\",\"sessionId\":\"s\",\"additionalDirectories\":null}",
+      ),
+    )
+  catch {
+    InvalidField(path="session/fork.additionalDirectories", reason=_) => ()
+    _ => fail("expected null fork additionalDirectories rejection")
+  } noraise {
+    _ => fail("expected null fork additionalDirectories rejection")
+  }
+}
+
+///|
+test "session fork result rejects an empty session id in both directions" {
+  try
+    fork_session_result_from_json(
+      protocol_parse_json("{\"sessionId\":\"\",\"modes\":null}"),
+    )
+  catch {
+    InvalidField(path="session/fork.sessionId", reason=_) => ()
+    _ => fail("expected empty fork session id rejection on decode")
+  } noraise {
+    _ => fail("expected empty fork session id rejection on decode")
+  }
+
+  let empty : ForkSessionResult = {
+    session_id: "",
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
+  try fork_session_result_to_json(empty) catch {
+    InvalidField(path="sessionId", reason=_) => ()
+    _ => fail("expected empty fork session id rejection on encode")
+  } noraise {
+    _ => fail("expected empty fork session id rejection on encode")
   }
 }

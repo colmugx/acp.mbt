@@ -88,6 +88,7 @@ fn agent_endpoint_session_capabilities(
       resume_capability: agent_endpoint_marker(resume_capable),
       close: agent_endpoint_marker(close),
       additional_directories: agent_endpoint_marker(additional_directories),
+      fork: Omitted,
       meta: Omitted,
     })
   } else {
