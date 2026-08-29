@@ -34,22 +34,26 @@ pub(all) struct AcpV1Method {
 pub fn acp_v1_method_manifest() -> Array[AcpV1Method] {
   [
     // Client -> Agent requests.
-    { method_name: "initialize", direction: ClientToAgent, kind: Request },
-    { method_name: "authenticate", direction: ClientToAgent, kind: Request },
-    { method_name: "logout", direction: ClientToAgent, kind: Request },
-    { method_name: "session/new", direction: ClientToAgent, kind: Request },
-    { method_name: "session/load", direction: ClientToAgent, kind: Request },
-    { method_name: "session/resume", direction: ClientToAgent, kind: Request },
-    { method_name: "session/list", direction: ClientToAgent, kind: Request },
-    { method_name: "session/delete", direction: ClientToAgent, kind: Request },
-    { method_name: "session/close", direction: ClientToAgent, kind: Request },
-    { method_name: "session/set_mode", direction: ClientToAgent, kind: Request },
+    { method_name: "initialize", direction: ClientToAgent, kind: Request, },
+    { method_name: "authenticate", direction: ClientToAgent, kind: Request, },
+    { method_name: "logout", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/new", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/load", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/resume", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/list", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/delete", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/close", direction: ClientToAgent, kind: Request, },
+    {
+      method_name: "session/set_mode",
+      direction: ClientToAgent,
+      kind: Request,
+    },
     {
       method_name: "session/set_config_option",
       direction: ClientToAgent,
       kind: Request,
     },
-    { method_name: "session/prompt", direction: ClientToAgent, kind: Request },
+    { method_name: "session/prompt", direction: ClientToAgent, kind: Request, },
     // Client -> Agent notification.
     {
       method_name: "session/cancel",
@@ -72,15 +76,19 @@ pub fn acp_v1_method_manifest() -> Array[AcpV1Method] {
       direction: AgentToClient,
       kind: Request,
     },
-    { method_name: "terminal/create", direction: AgentToClient, kind: Request },
-    { method_name: "terminal/output", direction: AgentToClient, kind: Request },
+    { method_name: "terminal/create", direction: AgentToClient, kind: Request, },
+    { method_name: "terminal/output", direction: AgentToClient, kind: Request, },
     {
       method_name: "terminal/wait_for_exit",
       direction: AgentToClient,
       kind: Request,
     },
-    { method_name: "terminal/kill", direction: AgentToClient, kind: Request },
-    { method_name: "terminal/release", direction: AgentToClient, kind: Request },
+    { method_name: "terminal/kill", direction: AgentToClient, kind: Request, },
+    {
+      method_name: "terminal/release",
+      direction: AgentToClient,
+      kind: Request,
+    },
     {
       method_name: "elicitation/create",
       direction: AgentToClient,
@@ -104,4 +112,17 @@ pub fn acp_v1_method_manifest() -> Array[AcpV1Method] {
       kind: Notification,
     },
   ]
+}
+
+///|
+/// Return a fresh manifest for the v1 unstable-overlay method surface this
+/// facade implements.  Upstream unstable (RFD session-fork, Draft).
+///
+/// This is a **deliberate subset** of the pinned v1 unstable overlay
+/// (`spec/schema/v1/meta.unstable.json`, vendored): only `session/fork` is
+/// implemented.  Unstable overlay methods deliberately stay out of the stable
+/// manifest above and out of its exact-set drift gate against the pinned
+/// stable `meta.json`/`schema.json` bytes.
+pub fn acp_v1_unstable_method_manifest() -> Array[AcpV1Method] {
+  [{ method_name: "session/fork", direction: ClientToAgent, kind: Request, }]
 }
