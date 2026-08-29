@@ -585,9 +585,10 @@ pub using @transport {
 }
 
 ///|
-/// The fixed stable v1 method manifest.
+/// The fixed stable v1 method manifest plus the unstable overlay subset.
 pub using @method {
   acp_v1_method_manifest,
+  acp_v1_unstable_method_manifest,
   type AcpV1Method,
   type AcpV1MethodDirection,
   type AcpV1MethodKind,
