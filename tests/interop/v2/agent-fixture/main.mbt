@@ -70,6 +70,7 @@ fn interop_v2_fixture_capabilities() -> @v2.ExperimentalV2AgentCapabilities {
       mcp: MarkerUnsupported,
       delete: MarkerUnsupported,
       additional_directories: MarkerUnsupported,
+      fork: MarkerUnsupported,
       meta: None,
     }),
     auth: MarkerUnsupported,

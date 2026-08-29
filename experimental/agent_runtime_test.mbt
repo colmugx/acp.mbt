@@ -10,7 +10,7 @@ fn experimental_v2_agent_runtime_test_ports(
   traces : Array[@runtime.RuntimeTraceEvent],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -224,7 +224,7 @@ async test "v2 agent runtime bridge completes two requests in reverse order exac
     } else {
       gate_second.get()
     }
-    { session_id: "created", config_options: None, meta: None }
+    { session_id: "created", config_options: None, meta: None, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -303,7 +303,7 @@ async test "v2 agent runtime bridge cancels one pending request by typed id" {
     } else {
       gate_sibling.get()
     }
-    { session_id: "created", config_options: None, meta: None }
+    { session_id: "created", config_options: None, meta: None, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -389,7 +389,7 @@ async test "v2 agent runtime bridge close aborts a pending login and settles it"
           login=async fn(_context, _params) {
             arrived.put(())
             gate.get()
-            { meta: None }
+            { meta: None, }
           },
           logout=experimental_v2_agent_test_logout,
         ),
@@ -469,7 +469,7 @@ async fn experimental_v2_agent_test_outbound_new(
       meta: None,
     },
   )
-  { session_id: "never", config_options: None, meta: None }
+  { session_id: "never", config_options: None, meta: None, }
 }
 
 ///|
@@ -554,7 +554,7 @@ test "v2 agent owner port plans local effects and synthesizes completions" {
   )
   let invocation : ExperimentalV2AgentInvocation = AuthLoginInvocation(
     id=String("login-1"),
-    params={ method_id: "token", meta: None },
+    params={ method_id: "token", meta: None, },
   )
   match
     (port.execute_cancel)(

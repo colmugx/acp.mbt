@@ -40,7 +40,7 @@ pub(all) struct ExperimentalV2AgentAdapterState {
 pub fn experimental_v2_agent_adapter_state_new(
   protocol~ : ExperimentalV2AgentState,
 ) -> ExperimentalV2AgentAdapterState {
-  { protocol, reservation: Idle }
+  { protocol, reservation: Idle, }
 }
 
 ///|
@@ -153,7 +153,7 @@ fn experimental_v2_agent_trace(
   method_name : String,
   error : @jsonrpc.JsonRpcError,
 ) -> ExperimentalV2AgentAdapterStep {
-  { state, outputs: [Command(TraceError(method_name~, error~))] }
+  { state, outputs: [Command(TraceError(method_name~, error~))], }
 }
 
 ///|
@@ -384,6 +384,12 @@ fn experimental_v2_agent_decode_request(
           experimental_v2_decode_resume_session_params(value)
         }),
       )
+    "session/fork" =>
+      SessionFork(
+        experimental_v2_agent_decode_with(method_name, value, value => {
+          experimental_v2_decode_fork_session_params(value)
+        }),
+      )
     "session/close" =>
       SessionClose(
         experimental_v2_agent_decode_with(method_name, value, value => {
@@ -499,8 +505,8 @@ fn experimental_v2_agent_release_reservation(
   id : @jsonrpc.RequestId,
 ) -> ExperimentalV2AgentAdapterState raise ExperimentalV2AgentAdapterError {
   match state.reservation {
-    LoginPending(reserved) if reserved == id => { ..state, reservation: Idle }
-    LogoutPending(reserved) if reserved == id => { ..state, reservation: Idle }
+    LoginPending(reserved) if reserved == id => { ..state, reservation: Idle, }
+    LogoutPending(reserved) if reserved == id => { ..state, reservation: Idle, }
     _ => raise LateCompletion(request_id=id)
   }
 }
@@ -566,7 +572,7 @@ fn experimental_v2_agent_admit_login(
     Err(error) => Immediate(experimental_v2_agent_response(state, id, error))
     Ok(step) =>
       Invoke(
-        state={ protocol: step.state, reservation: LoginPending(id) },
+        state={ protocol: step.state, reservation: LoginPending(id), },
         invocation=AuthLoginInvocation(id~, params~),
       )
   }
@@ -586,7 +592,7 @@ fn experimental_v2_agent_admit_logout(
     Err(error) => Immediate(experimental_v2_agent_response(state, id, error))
     Ok(step) =>
       Invoke(
-        state={ protocol: step.state, reservation: LogoutPending(id) },
+        state={ protocol: step.state, reservation: LogoutPending(id), },
         invocation=AuthLogoutInvocation(id~, params~),
       )
   }
@@ -608,7 +614,7 @@ fn experimental_v2_agent_admit_session_request(
   }
   match experimental_v2_agent_adapter_reduce_request(state, request) {
     Err(error) => Immediate(experimental_v2_agent_response(state, id, error))
-    Ok(step) => Invoke(state={ ..state, protocol: step.state }, invocation~)
+    Ok(step) => Invoke(state={ ..state, protocol: step.state, }, invocation~)
   }
 }
 
@@ -672,6 +678,13 @@ fn experimental_v2_agent_admit_request(
         request,
         SessionDeleteInvocation(id~, params~),
       )
+    SessionFork(params) =>
+      experimental_v2_agent_admit_session_request(
+        state,
+        id,
+        request,
+        SessionForkInvocation(id~, params~),
+      )
   }
 }
 
@@ -688,7 +701,7 @@ fn experimental_v2_agent_admit_cancel_session(
     Err(error) =>
       Immediate(experimental_v2_agent_trace(state, "session/cancel", error))
     Ok(step) =>
-      Immediate({ state: { ..state, protocol: step.state }, outputs: [] })
+      Immediate({ state: { ..state, protocol: step.state, }, outputs: [], })
   }
 }
 
@@ -703,7 +716,7 @@ fn experimental_v2_agent_admit_cancel_request(
       Immediate(experimental_v2_agent_trace(state, "$/cancel_request", error))
     Ok(step) =>
       Immediate({
-        state: { ..state, protocol: step.state },
+        state: { ..state, protocol: step.state, },
         outputs: [Command(CancelRequest(request_id~))],
       })
   }
@@ -832,7 +845,7 @@ fn experimental_v2_agent_complete_login(
         Err(error) => experimental_v2_agent_response(released, id, error)
         Ok(step) =>
           experimental_v2_agent_complete_result(
-            { ..released, protocol: step.state },
+            { ..released, protocol: step.state, },
             id,
             Ok(value),
             experimental_v2_encode_login_result,
@@ -867,7 +880,7 @@ fn experimental_v2_agent_complete_logout(
         Err(error) => experimental_v2_agent_response(released, id, error)
         Ok(step) =>
           experimental_v2_agent_complete_result(
-            { ..released, protocol: step.state },
+            { ..released, protocol: step.state, },
             id,
             Ok(value),
             experimental_v2_encode_logout_result,
@@ -974,6 +987,16 @@ pub fn experimental_v2_agent_adapter_complete(
         SessionDeleteCompleted(id=completion_id, result=_) =>
           raise LateCompletion(request_id=completion_id)
         _ => raise CompletionMismatch(method_name="session/delete")
+      }
+    SessionForkInvocation(id~, params=_) =>
+      match completion {
+        SessionForkCompleted(id=completion_id, result~) if completion_id == id =>
+          experimental_v2_agent_complete_result(
+            state, id, result, experimental_v2_encode_fork_session_result,
+          )
+        SessionForkCompleted(id=completion_id, result=_) =>
+          raise LateCompletion(request_id=completion_id)
+        _ => raise CompletionMismatch(method_name="session/fork")
       }
   }
 }

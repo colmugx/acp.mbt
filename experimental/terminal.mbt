@@ -26,7 +26,7 @@ pub fn experimental_v2_decode_terminal(
     field_path=path + ".terminalId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { terminal_id, meta }
+  { terminal_id, meta, }
 }
 
 ///|
@@ -61,7 +61,7 @@ pub fn experimental_v2_decode_terminal_output(
     field_path=path + ".data",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { data, meta }
+  { data, meta, }
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn experimental_v2_decode_terminal_exit_status(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { exit_code, signal, meta }
+  { exit_code, signal, meta, }
 }
 
 ///|
@@ -187,7 +187,7 @@ pub fn experimental_v2_decode_terminal_update(
     (value, path) => experimental_v2_decode_terminal_exit_status(value, path~),
   )
   let meta = experimental_v2_top_meta(fields, path=path + "._meta")
-  { terminal_id, command, cwd, output, exit_status, meta }
+  { terminal_id, command, cwd, output, exit_status, meta, }
 }
 
 ///|
@@ -248,7 +248,7 @@ pub fn experimental_v2_decode_terminal_output_chunk(
     field_path=path + ".data",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { terminal_id, data, meta }
+  { terminal_id, data, meta, }
 }
 
 ///|

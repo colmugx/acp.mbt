@@ -436,7 +436,7 @@ fn experimental_v2_client_runtime_request_completion(
     }
   }
   match response {
-    Some(response) => { state: step.state, response, effects }
+    Some(response) => { state: step.state, response, effects, }
     None => abort("v2 client adapter request step must carry one response")
   }
 }
@@ -461,7 +461,7 @@ fn experimental_v2_client_runtime_notification_completion(
       Command(command) => effects.push(Local(effect=command))
     }
   }
-  { state: step.state, effects }
+  { state: step.state, effects, }
 }
 
 ///|
@@ -488,7 +488,7 @@ fn experimental_v2_client_runtime_trace_completion(
   ExperimentalV2ClientAdapterState,
   ExperimentalV2ClientAdapterCommand,
 ] {
-  { state, effects: experimental_v2_client_runtime_trace_effects(method_name) }
+  { state, effects: experimental_v2_client_runtime_trace_effects(method_name), }
 }
 
 ///|

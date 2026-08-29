@@ -1,11 +1,11 @@
 ///|
 fn client_state_test_info(name : String) -> ExperimentalV2Implementation {
-  { name, title: None, version: "1.0.0", meta: None }
+  { name, title: None, version: "1.0.0", meta: None, }
 }
 
 ///|
 fn client_state_test_marker() -> ExperimentalV2MarkerPayload {
-  { meta: None }
+  { meta: None, }
 }
 
 ///|

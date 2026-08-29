@@ -52,21 +52,21 @@ test "v2 message upsert arms round-trip tri-state content" {
           {
             content: PatchValue([Known(BlockText({ text: "hi", .. }))]),
             meta: PatchValue(Object(_)),
-            ..,
+            ..
           }
         )
         | UpdateAgentMessage(
           {
             content: PatchValue([Known(BlockText({ text: "hi", .. }))]),
             meta: PatchValue(Object(_)),
-            ..,
+            ..
           }
         )
         | UpdateAgentThought(
           {
             content: PatchValue([Known(BlockText({ text: "hi", .. }))]),
             meta: PatchValue(Object(_)),
-            ..,
+            ..
           }
         )
       ),
@@ -136,21 +136,21 @@ test "v2 content chunks require messageId and content" {
           {
             message_id: "m1",
             content: Known(BlockText({ text: "par", .. })),
-            ..,
+            ..
           }
         )
         | UpdateAgentMessageChunk(
           {
             message_id: "m1",
             content: Known(BlockText({ text: "par", .. })),
-            ..,
+            ..
           }
         )
         | UpdateAgentThoughtChunk(
           {
             message_id: "m1",
             content: Known(BlockText({ text: "par", .. })),
-            ..,
+            ..
           }
         )
       ),
@@ -189,14 +189,14 @@ test "v2 state update matrix per schema optionality" {
   )
   assert_true(
     running
-    is Known(StateRunning({ meta: Some(Object({ "k": Number(1, ..), .. })) })),
+    is Known(StateRunning({ meta: Some(Object({ "k": Number(1, ..), .. })), })),
   )
   let requires_action = model_test_round_trip(
     "{\"state\":\"requires_action\"}",
     value => experimental_v2_decode_state_update(value),
     experimental_v2_encode_state_update,
   )
-  assert_true(requires_action is Known(StateRequiresAction({ meta: None })))
+  assert_true(requires_action is Known(StateRequiresAction({ meta: None, })))
   let reasons : Array[(String, ExperimentalV2StopReason)] = [
     ("end_turn", StopReasonEndTurn),
     ("max_tokens", StopReasonMaxTokens),
@@ -303,26 +303,26 @@ test "v2 plan update replaces entries wholesale incl cancelled" {
                     content: "a",
                     priority: PlanPriorityHigh,
                     status: PlanStatusCancelled,
-                    ..,
+                    ..
                   },
                   {
                     content: "b",
                     priority: PlanPriorityExtension(tag="_prio"),
                     status: PlanStatusExtension(tag="_hold"),
-                    ..,
+                    ..
                   },
                   {
                     content: "c",
                     priority: PlanPriorityLow,
                     status: PlanStatusFuture(raw="later"),
-                    ..,
+                    ..
                   },
                 ],
-                ..,
+                ..
               }
             )
           ),
-          ..,
+          ..
         }
       )
     ) else {
@@ -399,7 +399,7 @@ test "v2 tool call and terminal arms round-trip through session update" {
           title: PatchValue("Run tests"),
           kind: PatchValue(ToolKindExecute),
           status: PatchValue(ToolCallStatusInProgress),
-          ..,
+          ..
         }
       )
     ),
@@ -415,7 +415,7 @@ test "v2 tool call and terminal arms round-trip through session update" {
       UpdateToolCallContentChunk(
         {
           content: Known(ToolCallContentTerminal({ terminal_id: "t1", .. })),
-          ..,
+          ..
         }
       )
     ),
@@ -432,7 +432,7 @@ test "v2 tool call and terminal arms round-trip through session update" {
         {
           command: PatchValue("cargo test"),
           exit_status: PatchValue({ exit_code: Some(0), .. }),
-          ..,
+          ..
         }
       )
     ),
@@ -464,11 +464,11 @@ test "v2 available commands update round-trips the input union" {
               input: Some(
                 Known(CommandInputText({ hint: "What to plan?", .. }))
               ),
-              ..,
+              ..
             },
             { name: "status", input: None, .. },
           ],
-          ..,
+          ..
         }
       )
     ) else {
@@ -486,7 +486,7 @@ test "v2 available commands update round-trips the input union" {
       UpdateAvailableCommands(
         {
           available_commands: [{ input: Some(Extension(tag="_ink", ..)), .. }],
-          ..,
+          ..
         }
       )
     ),
@@ -502,7 +502,7 @@ test "v2 available commands update round-trips the input union" {
       UpdateAvailableCommands(
         {
           available_commands: [{ input: Some(Future(tag="voice", ..)), .. }],
-          ..,
+          ..
         }
       )
     ),
@@ -547,10 +547,10 @@ test "v2 config option update round-trips the full option set" {
       UpdateConfigOptions(
         {
           config_options: [
-            Known({ payload: PayloadBoolean({ current_value: true }), .. }),
+            Known({ payload: PayloadBoolean({ current_value: true, }), .. }),
             Known({ payload: PayloadSelect(_), .. }),
           ],
-          ..,
+          ..
         }
       )
     ),
@@ -603,7 +603,7 @@ test "v2 session info update applies field-level tri-state" {
     cleared
     is Known(
       UpdateSessionInfo(
-        { title: PatchNull, updated_at: PatchNull, meta: PatchNull }
+        { title: PatchNull, updated_at: PatchNull, meta: PatchNull, }
       )
     ),
   )

@@ -79,7 +79,7 @@ pub fn experimental_v2_agent_context(
   request_broker~ : ExperimentalV2AgentRequestBroker,
   notification_broker~ : ExperimentalV2AgentNotificationBroker,
 ) -> ExperimentalV2AgentContext {
-  { request_broker, notification_broker }
+  { request_broker, notification_broker, }
 }
 
 ///|

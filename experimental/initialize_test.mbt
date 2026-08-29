@@ -19,7 +19,7 @@ test "v2 initialize params default omitted capabilities to the empty object" {
     ),
   )
   assert_true(
-    decoded.capabilities is { elicitation: MarkerUnsupported, meta: None },
+    decoded.capabilities is { elicitation: MarkerUnsupported, meta: None, },
   )
   let encoded = experimental_v2_require_object(
     experimental_v2_encode_initialize_params(decoded),
@@ -174,6 +174,6 @@ test "v2 initialize result round-trips auth methods both known and open" {
   assert_true(bare.auth_methods is None)
   assert_true(
     bare.capabilities
-    is { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None },
+    is { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None, },
   )
 }

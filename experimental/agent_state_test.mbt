@@ -1,11 +1,11 @@
 ///|
 fn agent_state_test_info(name : String) -> ExperimentalV2Implementation {
-  { name, title: None, version: "1.0.0", meta: None }
+  { name, title: None, version: "1.0.0", meta: None, }
 }
 
 ///|
 fn agent_state_test_marker() -> ExperimentalV2MarkerPayload {
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -13,12 +13,12 @@ fn agent_state_test_config(
   capabilities : ExperimentalV2AgentCapabilities,
   auth_methods : Array[ExperimentalV2AuthMethod]?,
 ) -> ExperimentalV2AgentEndpointConfig {
-  { info: agent_state_test_info("agent"), capabilities, auth_methods }
+  { info: agent_state_test_info("agent"), capabilities, auth_methods, }
 }
 
 ///|
 fn agent_state_test_no_capabilities() -> ExperimentalV2AgentCapabilities {
-  { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None }
+  { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None, }
 }
 
 ///|
@@ -27,6 +27,7 @@ fn agent_state_test_session_capabilities(
   mcp : ExperimentalV2Marker[ExperimentalV2McpCapabilities],
   delete : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
   additional_directories : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
+  fork? : ExperimentalV2Marker[ExperimentalV2MarkerPayload] = MarkerUnsupported,
 ) -> ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
@@ -34,6 +35,7 @@ fn agent_state_test_session_capabilities(
       mcp,
       delete,
       additional_directories,
+      fork,
       meta: None,
     }),
     auth: MarkerUnsupported,
@@ -57,6 +59,7 @@ fn agent_state_test_all_capabilities() -> ExperimentalV2AgentCapabilities {
     }),
     MarkerSupported(agent_state_test_marker()),
     MarkerSupported(agent_state_test_marker()),
+    fork=MarkerSupported(agent_state_test_marker()),
   )
 }
 
@@ -69,6 +72,7 @@ fn agent_state_test_gate_capabilities(
   additional_directories : Bool,
   mcp_stdio : Bool,
   mcp_http : Bool,
+  fork? : Bool = false,
 ) -> ExperimentalV2AgentCapabilities {
   fn marker(
     supported : Bool,
@@ -93,6 +97,7 @@ fn agent_state_test_gate_capabilities(
     }),
     marker(delete),
     marker(additional_directories),
+    fork=marker(fork),
   )
 }
 
@@ -114,7 +119,7 @@ fn agent_state_test_initialize(
   let params : ExperimentalV2InitializeParams = {
     protocol_version,
     info: agent_state_test_info("client"),
-    capabilities: { elicitation: MarkerUnsupported, meta: None },
+    capabilities: { elicitation: MarkerUnsupported, meta: None, },
     meta: None,
   }
   experimental_v2_agent_reduce(state, ClientRequest(Initialize(params)))
@@ -133,7 +138,7 @@ fn agent_state_test_initialized(
 
 ///|
 fn agent_state_test_auth_method(method_id : String) -> ExperimentalV2AuthMethod {
-  Known({ method_id, name: "Token", description: None, meta: None })
+  Known({ method_id, name: "Token", description: None, meta: None, })
 }
 
 ///|
@@ -487,6 +492,15 @@ test "v2 baseline session methods need no capability markers" {
 }
 
 ///|
+fn agent_state_test_fork(source : String) -> ExperimentalV2AgentRequest raise {
+  SessionFork(
+    experimental_v2_decode_fork_session_params(
+      experimental_v2_parse_json(source),
+    ),
+  )
+}
+
+///|
 test "v2 session delete requires the session delete marker" {
   let denied = agent_state_test_initialized(
     agent_state_test_no_capabilities(),
@@ -522,6 +536,97 @@ test "v2 session delete requires the session delete marker" {
     None,
   )
   agent_state_test_dispatched(allowed, delete)
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft): `session/fork` gates on the
+/// `session.fork` marker and mirrors resume's payload-field gates.
+test "v2 session fork requires the session fork marker" {
+  let no_marker = agent_state_test_initialized(
+    agent_state_test_no_capabilities(),
+    None,
+  )
+  agent_state_test_denied(
+    no_marker,
+    agent_state_test_fork("{\"sessionId\":\"s\",\"cwd\":\"/\"}"),
+    "session/fork",
+    "session.fork",
+  )
+  let outer_only = agent_state_test_initialized(
+    agent_state_test_session_capabilities(
+      MarkerSupported({
+        image: MarkerUnsupported,
+        audio: MarkerUnsupported,
+        embedded_context: MarkerUnsupported,
+        meta: None,
+      }),
+      MarkerSupported({
+        stdio: MarkerUnsupported,
+        http: MarkerUnsupported,
+        meta: None,
+      }),
+      MarkerUnsupported,
+      MarkerUnsupported,
+    ),
+    None,
+  )
+  agent_state_test_denied(
+    outer_only,
+    agent_state_test_fork("{\"sessionId\":\"s\",\"cwd\":\"/\"}"),
+    "session/fork",
+    "session.fork",
+  )
+  // The fork marker alone opens the bare request but not the payload-field
+  // markers fork shares with session/new and session/resume.
+  let fork_only = agent_state_test_initialized(
+    agent_state_test_gate_capabilities(
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      fork=true,
+    ),
+    None,
+  )
+  agent_state_test_dispatched(
+    fork_only,
+    agent_state_test_fork(
+      "{\"sessionId\":\"s\",\"cwd\":\"/\",\"mcpServers\":[]}",
+    ),
+  )
+  agent_state_test_denied(
+    fork_only,
+    agent_state_test_fork(
+      "{\"sessionId\":\"s\",\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp\"]}",
+    ),
+    "session/fork",
+    "session.additionalDirectories",
+  )
+  agent_state_test_denied(
+    fork_only,
+    agent_state_test_fork(
+      "{\"sessionId\":\"s\",\"cwd\":\"/\",\"mcpServers\":" +
+      agent_state_test_mcp_servers("http") +
+      "}",
+    ),
+    "session/fork",
+    "session.mcp.http",
+  )
+  let all = agent_state_test_initialized(
+    agent_state_test_all_capabilities(),
+    None,
+  )
+  agent_state_test_dispatched(
+    all,
+    agent_state_test_fork(
+      "{\"sessionId\":\"s\",\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp\"],\"mcpServers\":" +
+      agent_state_test_mcp_servers("mixed") +
+      "}",
+    ),
+  )
 }
 
 ///|

@@ -370,7 +370,7 @@ fn experimental_v2_fold_tool_call_chunk(
         PatchOmitted | PatchNull => PatchValue([chunk.content])
       }
       calls[index] = { ..call, content, }
-      Ok({ ..state, tool_calls: calls })
+      Ok({ ..state, tool_calls: calls, })
     }
     None => Err(ChunkForUnknownToolCall(tool_call_id=chunk.tool_call_id))
   }
@@ -470,7 +470,7 @@ fn experimental_v2_fold_terminal_chunk(
     }
     None => {
       let terminal = experimental_v2_fold_terminal_defaults(chunk.terminal_id)
-      terminals.push({ ..terminal, output_chunks: [chunk.data] })
+      terminals.push({ ..terminal, output_chunks: [chunk.data], })
       Ok({ ..state, terminals, })
     }
   }
@@ -557,15 +557,15 @@ fn experimental_v2_fold_state_update(
 ) -> Result[ExperimentalV2SessionFold, ExperimentalV2SessionFoldError] {
   match state_update {
     Known(StateRunning(_)) =>
-      Ok({ ..state, phase: TurnRunning, stop_reason: None })
+      Ok({ ..state, phase: TurnRunning, stop_reason: None, })
     Known(StateRequiresAction(_)) =>
       if state.phase is TurnIdle {
         Err(IllegalStateTransition(from=state.phase, to=TurnRequiresAction))
       } else {
-        Ok({ ..state, phase: TurnRequiresAction })
+        Ok({ ..state, phase: TurnRequiresAction, })
       }
     Known(StateIdle(idle)) =>
-      Ok({ ..state, phase: TurnIdle, stop_reason: idle.stop_reason })
+      Ok({ ..state, phase: TurnIdle, stop_reason: idle.stop_reason, })
     Extension(..) | Future(..) => {
       // An unknown state cannot move the lifecycle; preserve the whole
       // update for replay and proxying.
@@ -656,9 +656,12 @@ pub fn experimental_v2_session_fold_apply(
       experimental_v2_fold_terminal_chunk(state, chunk)
     Known(UpdatePlan(update)) => experimental_v2_fold_plan_update(state, update)
     Known(UpdateAvailableCommands(update)) =>
-      Ok({ ..state, available_commands: Some(update.available_commands.copy()) })
+      Ok({
+        ..state,
+        available_commands: Some(update.available_commands.copy()),
+      })
     Known(UpdateConfigOptions(update)) =>
-      Ok({ ..state, config_options: Some(update.config_options.copy()) })
+      Ok({ ..state, config_options: Some(update.config_options.copy()), })
     Known(UpdateSessionInfo(update)) =>
       Ok({
         ..state,
@@ -675,7 +678,7 @@ pub fn experimental_v2_session_fold_apply(
           update.meta,
         ),
       })
-    Known(UpdateUsage(update)) => Ok({ ..state, usage: Some(update) })
+    Known(UpdateUsage(update)) => Ok({ ..state, usage: Some(update), })
     Extension(..) | Future(..) => {
       let preserved = state.preserved.copy()
       preserved.push(update)

@@ -83,7 +83,7 @@ pub fn experimental_v2_decode_config_select_option(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { value: option_value, name, description, meta }
+  { value: option_value, name, description, meta, }
 }
 
 ///|
@@ -139,7 +139,7 @@ pub fn experimental_v2_decode_config_select_group(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { group_id, name, options, meta }
+  { group_id, name, options, meta, }
 }
 
 ///|
@@ -323,7 +323,7 @@ pub fn experimental_v2_decode_config_option(
             experimental_v2_required(fields, "options", path=path + ".options"),
             path=path + ".options",
           )
-          PayloadSelect({ current_value, options })
+          PayloadSelect({ current_value, options, })
         }
         _ => {
           experimental_v2_reject_unknown(
@@ -345,7 +345,7 @@ pub fn experimental_v2_decode_config_option(
           })
         }
       }
-      { config_id, name, description, category, payload, meta }
+      { config_id, name, description, category, payload, meta, }
     },
     path~,
   )
@@ -479,7 +479,7 @@ pub fn experimental_v2_decode_set_config_option(
           )
       }
       let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-      { session_id, config_id, value: config_value, meta }
+      { session_id, config_id, value: config_value, meta, }
     },
     path~,
   )
@@ -535,7 +535,7 @@ pub fn experimental_v2_decode_set_config_option_result(
     path=path + ".configOptions",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|

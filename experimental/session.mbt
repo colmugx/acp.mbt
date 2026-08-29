@@ -48,7 +48,7 @@ pub fn experimental_v2_decode_replay_from(
     (_, payload) => {
       let fields = experimental_v2_require_object(payload, path~)
       experimental_v2_reject_unknown(fields, ["type", "_meta"], prefix=path)
-      { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+      { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
     },
     path~,
   )
@@ -107,7 +107,7 @@ pub fn experimental_v2_decode_new_session_params(
     (value, path) => experimental_v2_decode_mcp_servers(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { cwd, additional_directories, mcp_servers, meta }
+  { cwd, additional_directories, mcp_servers, meta, }
 }
 
 ///|
@@ -169,7 +169,7 @@ pub fn experimental_v2_decode_new_session_result(
     (value, path) => experimental_v2_decode_config_options(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, config_options, meta }
+  { session_id, config_options, meta, }
 }
 
 ///|
@@ -247,7 +247,7 @@ pub fn experimental_v2_decode_resume_session_params(
     (value, path) => experimental_v2_decode_replay_from(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, cwd, additional_directories, mcp_servers, replay_from, meta }
+  { session_id, cwd, additional_directories, mcp_servers, replay_from, meta, }
 }
 
 ///|
@@ -309,7 +309,7 @@ pub fn experimental_v2_decode_resume_session_result(
     (value, path) => experimental_v2_decode_config_options(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|
@@ -317,6 +317,147 @@ pub fn experimental_v2_encode_resume_session_result(
   value : ExperimentalV2ResumeSessionResult,
 ) -> Json raise ExperimentalV2DecodeError {
   let fields : Map[String, Json] = Map([])
+  experimental_v2_put_optional(
+    fields,
+    "configOptions",
+    value.config_options,
+    experimental_v2_encode_config_options,
+  )
+  experimental_v2_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
+/// Parameters of `session/fork`.  Upstream unstable (RFD session-fork,
+/// Draft): the method is part of the pinned v2 unstable overlay, not the
+/// stable baseline.  `additional_directories` is the complete resulting
+/// additional-root list for the forked session; omitted or empty activates
+/// none.
+pub(all) struct ExperimentalV2ForkSessionParams {
+  session_id : String
+  cwd : String
+  additional_directories : Array[String]?
+  mcp_servers : Array[ExperimentalV2McpServer]?
+  meta : Json?
+} derive(Eq, Debug)
+
+///|
+/// Upstream unstable (RFD session-fork, Draft).
+pub fn experimental_v2_decode_fork_session_params(
+  value : Json,
+  path? : String = "session/fork",
+) -> ExperimentalV2ForkSessionParams raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  experimental_v2_reject_unknown(
+    fields,
+    ["_meta", "sessionId", "cwd", "additionalDirectories", "mcpServers"],
+    prefix=path,
+  )
+  let session_id = experimental_v2_validate_id(
+    experimental_v2_decode_string(
+      experimental_v2_required(fields, "sessionId", path=path + ".sessionId"),
+      path=path + ".sessionId",
+    ),
+    field_path=path + ".sessionId",
+  )
+  let cwd = experimental_v2_validate_absolute_path(
+    experimental_v2_decode_string(
+      experimental_v2_required(fields, "cwd", path=path + ".cwd"),
+      path=path + ".cwd",
+    ),
+    field_path=path + ".cwd",
+  )
+  let additional_directories = experimental_v2_decode_optional(
+    fields,
+    "additionalDirectories",
+    path=path + ".additionalDirectories",
+    (value, path) => experimental_v2_decode_absolute_paths(value, path~),
+  )
+  let mcp_servers = experimental_v2_decode_optional(
+    fields,
+    "mcpServers",
+    path=path + ".mcpServers",
+    (value, path) => experimental_v2_decode_mcp_servers(value, path~),
+  )
+  let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
+  { session_id, cwd, additional_directories, mcp_servers, meta, }
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft).
+pub fn experimental_v2_encode_fork_session_params(
+  value : ExperimentalV2ForkSessionParams,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["sessionId"] = Json::string(value.session_id)
+  fields["cwd"] = Json::string(
+    experimental_v2_validate_absolute_path(value.cwd, field_path="cwd"),
+  )
+  experimental_v2_put_optional(
+    fields,
+    "additionalDirectories",
+    value.additional_directories,
+    values => {
+      experimental_v2_encode_absolute_paths(values, key="additionalDirectories")
+    },
+  )
+  experimental_v2_put_optional(
+    fields,
+    "mcpServers",
+    value.mcp_servers,
+    experimental_v2_encode_mcp_servers,
+  )
+  experimental_v2_put_meta(fields, value.meta)
+  Json::object(fields)
+}
+
+///|
+/// Result of `session/fork`: the identifier of the newly created forked
+/// session plus its initial config options.  Upstream unstable (RFD
+/// session-fork, Draft); like the v2 `session/new` result it carries no
+/// `modes` field.
+pub(all) struct ExperimentalV2ForkSessionResult {
+  session_id : String
+  config_options : Array[ExperimentalV2SessionConfigOption]?
+  meta : Json?
+} derive(Eq, Debug)
+
+///|
+/// Upstream unstable (RFD session-fork, Draft).
+pub fn experimental_v2_decode_fork_session_result(
+  value : Json,
+  path? : String = "session/fork",
+) -> ExperimentalV2ForkSessionResult raise ExperimentalV2DecodeError {
+  let fields = experimental_v2_require_object(value, path~)
+  experimental_v2_reject_unknown(
+    fields,
+    ["_meta", "sessionId", "configOptions"],
+    prefix=path,
+  )
+  let session_id = experimental_v2_validate_id(
+    experimental_v2_decode_string(
+      experimental_v2_required(fields, "sessionId", path=path + ".sessionId"),
+      path=path + ".sessionId",
+    ),
+    field_path=path + ".sessionId",
+  )
+  let config_options = experimental_v2_decode_optional(
+    fields,
+    "configOptions",
+    path=path + ".configOptions",
+    (value, path) => experimental_v2_decode_config_options(value, path~),
+  )
+  let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
+  { session_id, config_options, meta, }
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft).
+pub fn experimental_v2_encode_fork_session_result(
+  value : ExperimentalV2ForkSessionResult,
+) -> Json raise ExperimentalV2DecodeError {
+  let fields : Map[String, Json] = Map([])
+  fields["sessionId"] = Json::string(value.session_id)
   experimental_v2_put_optional(
     fields,
     "configOptions",
@@ -382,7 +523,7 @@ pub fn experimental_v2_decode_session_info(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, cwd, additional_directories, title, updated_at, meta }
+  { session_id, cwd, additional_directories, title, updated_at, meta, }
 }
 
 ///|
@@ -447,7 +588,7 @@ pub fn experimental_v2_decode_list_sessions_params(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { cwd, cursor, meta }
+  { cwd, cursor, meta, }
 }
 
 ///|
@@ -498,7 +639,7 @@ pub fn experimental_v2_decode_list_sessions_result(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { sessions, next_cursor, meta }
+  { sessions, next_cursor, meta, }
 }
 
 ///|
@@ -539,7 +680,7 @@ pub fn experimental_v2_decode_delete_session_params(
     field_path=path + ".sessionId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -565,7 +706,7 @@ pub fn experimental_v2_decode_delete_session_result(
 ) -> ExperimentalV2DeleteSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|
@@ -600,7 +741,7 @@ pub fn experimental_v2_decode_close_session_params(
     field_path=path + ".sessionId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -649,7 +790,7 @@ pub fn experimental_v2_decode_prompt_params(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, prompt, meta }
+  { session_id, prompt, meta, }
 }
 
 ///|
@@ -688,7 +829,7 @@ pub fn experimental_v2_decode_cancel_session_params(
     field_path=path + ".sessionId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -716,7 +857,7 @@ pub fn experimental_v2_decode_prompt_result(
 ) -> ExperimentalV2PromptResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|
@@ -741,7 +882,7 @@ pub fn experimental_v2_decode_close_session_result(
 ) -> ExperimentalV2CloseSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|

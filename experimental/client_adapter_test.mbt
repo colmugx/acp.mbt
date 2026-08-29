@@ -157,7 +157,7 @@ test "v2 client adapter rejects an unoffered selected permission option" {
     RequestPermissionCompleted(
       id=String("perm"),
       result=Ok({
-        outcome: Known(OutcomeSelected({ option_id: "deny", meta: None })),
+        outcome: Known(OutcomeSelected({ option_id: "deny", meta: None, })),
         meta: None,
       }),
     ),
@@ -266,7 +266,7 @@ async test "v2 client adapter streams notifications through the sinks" {
   let endpoint = experimental_v2_client_test_endpoint(updates, [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
   let update = experimental_v2_client_test_update_notification(
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   let admission = try! experimental_v2_client_adapter_admit(
     state,

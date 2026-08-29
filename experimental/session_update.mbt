@@ -62,7 +62,7 @@ pub fn experimental_v2_decode_running_state(
 ) -> ExperimentalV2RunningState raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn experimental_v2_decode_idle_state(
     (value, path) => experimental_v2_decode_stop_reason(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { stop_reason, meta }
+  { stop_reason, meta, }
 }
 
 ///|
@@ -125,7 +125,7 @@ pub fn experimental_v2_decode_requires_action_state(
 ) -> ExperimentalV2RequiresActionState raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|
@@ -251,7 +251,7 @@ pub fn experimental_v2_decode_message_upsert(
     },
   )
   let meta = experimental_v2_top_meta(fields, path=path + "._meta")
-  { message_id, content, meta }
+  { message_id, content, meta, }
 }
 
 ///|
@@ -390,7 +390,7 @@ pub fn experimental_v2_decode_plan_entry(
     path=path + ".status",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { content, priority, status, meta }
+  { content, priority, status, meta, }
 }
 
 ///|
@@ -441,7 +441,7 @@ pub fn experimental_v2_decode_plan_items(
     (item, item_path) => experimental_v2_decode_plan_entry(item, path=item_path),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { plan_id, entries, meta }
+  { plan_id, entries, meta, }
 }
 
 ///|
@@ -532,7 +532,7 @@ pub fn experimental_v2_decode_plan_update(
     path=path + ".plan",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { plan, meta }
+  { plan, meta, }
 }
 
 ///|
@@ -571,7 +571,7 @@ pub fn experimental_v2_decode_text_command_input(
     path=path + ".hint",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { hint, meta }
+  { hint, meta, }
 }
 
 ///|
@@ -668,7 +668,7 @@ pub fn experimental_v2_decode_available_command(
     (value, path) => experimental_v2_decode_command_input(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, description, input, meta }
+  { name, description, input, meta, }
 }
 
 ///|
@@ -719,7 +719,7 @@ pub fn experimental_v2_decode_available_commands_update(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { available_commands, meta }
+  { available_commands, meta, }
 }
 
 ///|
@@ -766,7 +766,7 @@ pub fn experimental_v2_decode_config_option_update(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|
@@ -815,7 +815,7 @@ pub fn experimental_v2_decode_session_info_update(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_top_meta(fields, path=path + "._meta")
-  { title, updated_at, meta }
+  { title, updated_at, meta, }
 }
 
 ///|
@@ -864,7 +864,7 @@ pub fn experimental_v2_decode_cost(
     field_path=path + ".currency",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { amount, currency, meta }
+  { amount, currency, meta, }
 }
 
 ///|
@@ -940,7 +940,7 @@ pub fn experimental_v2_decode_usage_update(
     (value, path) => experimental_v2_decode_cost(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { used, size, cost, meta }
+  { used, size, cost, meta, }
 }
 
 ///|
@@ -1212,7 +1212,7 @@ pub fn experimental_v2_decode_update_session_notification(
     path=path + ".update",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, update, meta }
+  { session_id, update, meta, }
 }
 
 ///|

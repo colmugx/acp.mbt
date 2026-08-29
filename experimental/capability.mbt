@@ -52,7 +52,7 @@ pub fn experimental_v2_decode_marker_payload(
 ) -> ExperimentalV2MarkerPayload raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
-  { meta: experimental_v2_nested_meta(fields, path=path + "._meta") }
+  { meta: experimental_v2_nested_meta(fields, path=path + "._meta"), }
 }
 
 ///|
@@ -91,7 +91,7 @@ pub fn experimental_v2_decode_elicitation_capabilities(
     path,
   ) => experimental_v2_decode_marker_payload(value, path~))
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { form, url, meta }
+  { form, url, meta, }
 }
 
 ///|
@@ -138,7 +138,7 @@ pub fn experimental_v2_decode_client_capabilities(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { elicitation, meta }
+  { elicitation, meta, }
 }
 
 ///|
@@ -196,7 +196,7 @@ pub fn experimental_v2_decode_prompt_capabilities(
     (value, path) => experimental_v2_decode_marker_payload(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { image, audio, embedded_context, meta }
+  { image, audio, embedded_context, meta, }
 }
 
 ///|
@@ -258,7 +258,7 @@ pub fn experimental_v2_decode_mcp_capabilities(
     (value, path) => experimental_v2_decode_marker_payload(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { stdio, http, meta }
+  { stdio, http, meta, }
 }
 
 ///|
@@ -286,12 +286,16 @@ pub fn experimental_v2_encode_mcp_capabilities(
 /// Session-surface extensions supported by the Agent.  The baseline methods
 /// (`session/new`, `session/list`, `session/resume`, `session/close`,
 /// `session/prompt`, `session/cancel`, `session/update`) are implied by the
-/// `session` marker itself and have no per-method markers.
+/// `session` marker itself and have no per-method markers.  `fork` mirrors the
+/// pinned v2 unstable overlay (`SessionForkCapabilities`): supplying `{}`
+/// advertises `session/fork` support.  Upstream unstable (RFD session-fork,
+/// Draft).
 pub(all) struct ExperimentalV2SessionCapabilities {
   prompt : ExperimentalV2Marker[ExperimentalV2PromptCapabilities]
   mcp : ExperimentalV2Marker[ExperimentalV2McpCapabilities]
   delete : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   additional_directories : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  fork : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, Debug)
 
@@ -303,7 +307,7 @@ pub fn experimental_v2_decode_session_capabilities(
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
     fields,
-    ["_meta", "prompt", "mcp", "delete", "additionalDirectories"],
+    ["_meta", "prompt", "mcp", "delete", "additionalDirectories", "fork"],
     prefix=path,
   )
   let prompt = experimental_v2_decode_marker(
@@ -328,8 +332,14 @@ pub fn experimental_v2_decode_session_capabilities(
     path=path + ".additionalDirectories",
     (value, path) => experimental_v2_decode_marker_payload(value, path~),
   )
+  let fork = experimental_v2_decode_marker(
+    fields,
+    "fork",
+    path=path + ".fork",
+    (value, path) => experimental_v2_decode_marker_payload(value, path~),
+  )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { prompt, mcp, delete, additional_directories, meta }
+  { prompt, mcp, delete, additional_directories, fork, meta, }
 }
 
 ///|
@@ -359,6 +369,12 @@ pub fn experimental_v2_encode_session_capabilities(
     fields,
     "additionalDirectories",
     value.additional_directories,
+    experimental_v2_encode_marker_payload,
+  )
+  experimental_v2_put_marker(
+    fields,
+    "fork",
+    value.fork,
     experimental_v2_encode_marker_payload,
   )
   experimental_v2_put_meta(fields, value.meta)
@@ -399,7 +415,7 @@ pub fn experimental_v2_decode_agent_capabilities(
     (value, path) => experimental_v2_decode_marker_payload(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session, auth, meta }
+  { session, auth, meta, }
 }
 
 ///|

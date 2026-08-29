@@ -389,3 +389,36 @@ async test "v2 manifest is the exact method set of the pinned v2 schema and meta
     manifest_drift_sort_rows(actual),
   )
 }
+
+///|
+/// Membership gate for the unstable overlay: the pinned v2
+/// `meta.unstable.json` bytes (vendored, same four-key shape as the stable
+/// `meta.json`) must list `session/fork` among the Agent-handled methods, the
+/// unstable manifest must be exactly `[session/fork]`, and the stable
+/// manifest must keep excluding it.  Any shape deviation aborts instead of
+/// guessing, reusing the stable pinned-meta parser's defensive rules.
+async test "v2 unstable manifest is a deliberate session/fork subset of the pinned unstable meta bytes" {
+  let meta = @fs.read_file("spec/schema/v2/meta.unstable.json").json()
+  let unstable_agent_names : Array[String] = []
+  for row in pinned_v2_meta_rows(meta) {
+    // The meta groups name the handler side, so `agentMethods` rows are the
+    // Client->Agent entries.
+    if row.1 is ClientToAgent {
+      unstable_agent_names.push(row.0)
+    }
+  }
+  if unstable_agent_names.is_empty() {
+    abort("pinned v2 meta.unstable.json lists no agent methods")
+  }
+  if !manifest_drift_contains(unstable_agent_names, "session/fork") {
+    abort(
+      "pinned v2 meta.unstable.json does not list session/fork among its agent methods",
+    )
+  }
+  assert_eq(manifest_method_names(experimental_v2_unstable_method_manifest()), [
+    "session/fork",
+  ])
+  assert_false(
+    manifest_has_name(experimental_v2_method_manifest(), "session/fork"),
+  )
+}

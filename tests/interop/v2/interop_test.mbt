@@ -153,6 +153,7 @@ fn interop_v2_agent_advertisement() -> @experimental.ExperimentalV2InitializeRes
         mcp: MarkerUnsupported,
         delete: MarkerUnsupported,
         additional_directories: MarkerUnsupported,
+        fork: MarkerUnsupported,
         meta: None,
       }),
       auth: MarkerUnsupported,

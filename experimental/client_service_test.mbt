@@ -2,7 +2,7 @@
 fn experimental_v2_client_test_info(
   name : String,
 ) -> ExperimentalV2Implementation {
-  { name, title: None, version: "1", meta: None }
+  { name, title: None, version: "1", meta: None, }
 }
 
 ///|
@@ -13,12 +13,12 @@ fn experimental_v2_client_test_capabilities(
   {
     elicitation: MarkerSupported({
       form: if form {
-        MarkerSupported({ meta: None })
+        MarkerSupported({ meta: None, })
       } else {
         MarkerUnsupported
       },
       url: if url {
-        MarkerSupported({ meta: None })
+        MarkerSupported({ meta: None, })
       } else {
         MarkerUnsupported
       },
@@ -43,6 +43,7 @@ fn experimental_v2_client_test_initialize_result(
         mcp: MarkerUnsupported,
         delete: MarkerUnsupported,
         additional_directories: MarkerUnsupported,
+        fork: MarkerUnsupported,
         meta: None,
       }),
       auth: MarkerUnsupported,
@@ -88,7 +89,7 @@ fn experimental_v2_client_test_permission_request() -> ExperimentalV2RequestPerm
 ///|
 fn experimental_v2_client_test_selected_response() -> ExperimentalV2RequestPermissionResponse {
   {
-    outcome: Known(OutcomeSelected({ option_id: "allow", meta: None })),
+    outcome: Known(OutcomeSelected({ option_id: "allow", meta: None, })),
     meta: None,
   }
 }
@@ -105,7 +106,7 @@ fn experimental_v2_client_test_elicitation_form_request() -> ExperimentalV2Elici
         description: None,
         meta: None,
       },
-      scope: ScopeSession({ session_id: "session", tool_call_id: None }),
+      scope: ScopeSession({ session_id: "session", tool_call_id: None, }),
     }),
     meta: None,
   })
@@ -113,14 +114,14 @@ fn experimental_v2_client_test_elicitation_form_request() -> ExperimentalV2Elici
 
 ///|
 fn experimental_v2_client_test_decline_response() -> ExperimentalV2ElicitationCreateResponse {
-  Known({ action: ActionDecline, meta: None })
+  Known({ action: ActionDecline, meta: None, })
 }
 
 ///|
 fn experimental_v2_client_test_update_notification(
   update : ExperimentalV2SessionUpdate,
 ) -> ExperimentalV2UpdateSessionNotification {
-  { session_id: "session", update, meta: None }
+  { session_id: "session", update, meta: None, }
 }
 
 ///|
@@ -206,7 +207,7 @@ test "v2 client spec rejects empty identity and freezes the baseline" {
   )
   try
     experimental_v2_client_spec(
-      info={ name: "", title: None, version: "1", meta: None },
+      info={ name: "", title: None, version: "1", meta: None, },
       session~,
     )
   catch {
@@ -218,7 +219,7 @@ test "v2 client spec rejects empty identity and freezes the baseline" {
   }
   try
     experimental_v2_client_spec(
-      info={ name: "client", title: None, version: "", meta: None },
+      info={ name: "client", title: None, version: "", meta: None, },
       session~,
     )
   catch {

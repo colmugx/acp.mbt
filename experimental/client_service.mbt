@@ -152,7 +152,7 @@ pub fn experimental_v2_client_elicitation_service(
   if form is None && url is None && complete is None {
     raise MissingElicitationHandler
   }
-  { form_handler: form, url_handler: url, complete_handler: complete }
+  { form_handler: form, url_handler: url, complete_handler: complete, }
 }
 
 ///|
@@ -179,7 +179,7 @@ pub fn experimental_v2_client_spec(
   if info.version == "" {
     raise InvalidImplementation(reason="client version must not be empty")
   }
-  { info, session, elicitation }
+  { info, session, elicitation, }
 }
 
 ///|
@@ -198,7 +198,7 @@ fn experimental_v2_client_endpoint_marker(
   supported : Bool,
 ) -> ExperimentalV2Marker[ExperimentalV2MarkerPayload] {
   if supported {
-    MarkerSupported({ meta: None })
+    MarkerSupported({ meta: None, })
   } else {
     MarkerUnsupported
   }
@@ -214,7 +214,7 @@ fn experimental_v2_client_endpoint_capabilities(
   spec : ExperimentalV2ClientSpec,
 ) -> ExperimentalV2ClientCapabilities {
   match spec.elicitation {
-    None => { elicitation: MarkerUnsupported, meta: None }
+    None => { elicitation: MarkerUnsupported, meta: None, }
     Some(service) => {
       let form = experimental_v2_client_endpoint_marker(
         service.form_handler is Some(_),
@@ -224,10 +224,10 @@ fn experimental_v2_client_endpoint_capabilities(
       )
       match (form, url) {
         (MarkerUnsupported, MarkerUnsupported) =>
-          { elicitation: MarkerUnsupported, meta: None }
+          { elicitation: MarkerUnsupported, meta: None, }
         _ =>
           {
-            elicitation: MarkerSupported({ form, url, meta: None }),
+            elicitation: MarkerSupported({ form, url, meta: None, }),
             meta: None,
           }
       }

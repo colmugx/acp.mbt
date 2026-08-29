@@ -16,12 +16,12 @@ test "v2 batch decodes mixed request and notification entries" {
   assert_eq(batch.length(), 2)
   assert_true(
     batch[0]
-    is Request({ id: Number(7), method_name: "session/list", params: None }),
+    is Request({ id: Number(7), method_name: "session/list", params: None, }),
   )
   assert_true(
     batch[1]
     is Notification(
-      { method_name: "$/cancel_request", params: Some(Object(_)) }
+      { method_name: "$/cancel_request", params: Some(Object(_)), }
     ),
   )
   assert_false(experimental_v2_batch_is_notification_only(batch))
