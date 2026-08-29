@@ -171,6 +171,7 @@ async fn client_connection_test_request_broker(
       } else {
         Err(client_connection_test_broker_failure("session/resume"))
       }
+    SessionFork(_) => Err(client_connection_test_broker_failure("session/fork"))
     SessionList(params) =>
       if params == client_connection_test_list_sessions() {
         Ok(

@@ -10,7 +10,7 @@ fn agent_runtime_test_ports(
   traces : Array[@runtime.RuntimeTraceEvent],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -481,7 +481,7 @@ fn agent_runtime_test_outbound_ports(
   failures : Array[(RequestId, @runtime.RuntimeOutboundFailureKind)],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -559,7 +559,7 @@ fn agent_runtime_test_update_params(text : String) -> SessionUpdateParams {
   {
     session_id: "created",
     update: UserMessageChunk({
-      content: Text({ annotations: Omitted, text, meta: Omitted }),
+      content: Text({ annotations: Omitted, text, meta: Omitted, }),
       message_id: Omitted,
       meta: Omitted,
     }),
@@ -627,7 +627,7 @@ async test "agent runtime outbound streams updates and round-trips permission" {
       agent_runtime_test_permission_request(),
     )
     replies.push(permission)
-    { stop_reason: EndTurn, meta: Omitted }
+    { stop_reason: EndTurn, meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -717,7 +717,7 @@ async test "agent runtime outbound maps a peer error reply to a typed broker fai
     } catch {
       error => observed.push(error)
     }
-    { stop_reason: EndTurn, meta: Omitted }
+    { stop_reason: EndTurn, meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -788,7 +788,7 @@ async test "agent runtime outbound maps the cancelled error code to a typed canc
     } catch {
       error => observed.push(error)
     }
-    { stop_reason: EndTurn, meta: Omitted }
+    { stop_reason: EndTurn, meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -852,7 +852,7 @@ async test "agent runtime outbound settles a parked submitter once on close" {
     } catch {
       error => observed.push(error)
     }
-    { stop_reason: EndTurn, meta: Omitted }
+    { stop_reason: EndTurn, meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -923,7 +923,7 @@ async test "agent runtime outbound maps an undecodable reply to a typed mismatch
     } catch {
       error => observed.push(error)
     }
-    { stop_reason: EndTurn, meta: Omitted }
+    { stop_reason: EndTurn, meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []

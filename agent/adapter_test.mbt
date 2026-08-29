@@ -4,7 +4,30 @@ async fn agent_adapter_test_resume(
   _params : ResumeSessionParams,
 ) -> ResumeSessionResult {
   @async.pause()
-  { modes: Omitted, config_options: Omitted, meta: Omitted }
+  { modes: Omitted, config_options: Omitted, meta: Omitted, }
+}
+
+///|
+async fn agent_adapter_test_fork(
+  _context : AgentContext,
+  _params : ForkSessionParams,
+) -> ForkSessionResult {
+  @async.pause()
+  {
+    session_id: "forked",
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
+}
+
+///|
+async fn agent_adapter_test_failing_fork(
+  _context : AgentContext,
+  _params : ForkSessionParams,
+) -> ForkSessionResult {
+  @async.pause()
+  raise HandlerError::Application(message="fork failed")
 }
 
 ///|
@@ -13,7 +36,7 @@ async fn agent_adapter_test_delete(
   _params : DeleteSessionParams,
 ) -> DeleteSessionResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -22,7 +45,7 @@ async fn agent_adapter_test_close(
   _params : CloseSessionParams,
 ) -> CloseSessionResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -31,7 +54,7 @@ async fn agent_adapter_test_set_mode(
   _params : SetSessionModeParams,
 ) -> SetSessionModeResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -40,7 +63,7 @@ async fn agent_adapter_test_set_config(
   _params : SetSessionConfigOptionParams,
 ) -> SetSessionConfigOptionResult {
   @async.pause()
-  { config_options: [], meta: Omitted }
+  { config_options: [], meta: Omitted, }
 }
 
 ///|
@@ -161,6 +184,7 @@ fn agent_adapter_test_sessions(
     cancel~,
     load=agent_service_test_load,
     resume_session=agent_adapter_test_resume,
+    fork_session=agent_adapter_test_fork,
     list=agent_service_test_list,
     delete=agent_adapter_test_delete,
     close=agent_adapter_test_close,
@@ -592,6 +616,59 @@ async test "adapter admits executes and completes every stable session request" 
     ),
   )
   ignore(agent_adapter_test_success(prompt_step, String("prompt")))
+}
+
+///|
+async test "adapter completes session fork with a typed frame for success and failure" {
+  let endpoint = agent_adapter_test_endpoint()
+  let initialized = agent_adapter_test_initialized(endpoint, Number(1))
+  let context = agent_service_test_context()
+  let forked = agent_adapter_test_invoke(
+    initialized.state,
+    endpoint,
+    context,
+    agent_adapter_test_request(
+      Number(2),
+      "session/fork",
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+    ),
+  )
+  let decoded = fork_session_result_from_json(
+    agent_adapter_test_success(forked, Number(2)),
+  )
+  assert_eq(decoded.session_id, "forked")
+  let failing_endpoint = agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("adapter-fork-failing"),
+      sessions=agent_session_service(
+        new_session=agent_service_test_new,
+        prompt=agent_service_test_prompt,
+        cancel=agent_service_test_cancel,
+        fork_session=agent_adapter_test_failing_fork,
+      ),
+      support=agent_support(),
+    ).unwrap(),
+  )
+  let failing_initialized = agent_adapter_test_initialized(
+    failing_endpoint,
+    Number(3),
+  )
+  let failed = agent_adapter_test_invoke(
+    failing_initialized.state,
+    failing_endpoint,
+    context,
+    agent_adapter_test_request(
+      Number(4),
+      "session/fork",
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+    ),
+  )
+  assert_eq(agent_adapter_test_error_code(failed), InternalError)
+  assert_eq(failed.outputs.length(), 1)
+  match agent_adapter_test_response(failed) {
+    Error(failure) => assert_true(failure.error.message.contains("fork failed"))
+    Success(_) => fail("a failing fork handler must not produce success")
+  }
 }
 
 ///|

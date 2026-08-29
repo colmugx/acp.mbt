@@ -8,6 +8,7 @@ pub(all) enum AgentAdapterInvocation {
   SessionNewInvocation(id~ : RequestId, params~ : NewSessionParams)
   SessionLoadInvocation(id~ : RequestId, params~ : LoadSessionParams)
   SessionResumeInvocation(id~ : RequestId, params~ : ResumeSessionParams)
+  SessionForkInvocation(id~ : RequestId, params~ : ForkSessionParams)
   SessionListInvocation(id~ : RequestId, params~ : ListSessionsParams)
   SessionDeleteInvocation(id~ : RequestId, params~ : DeleteSessionParams)
   SessionCloseInvocation(id~ : RequestId, params~ : CloseSessionParams)
@@ -41,6 +42,10 @@ pub(all) enum AgentAdapterCompletion {
   SessionResumeCompleted(
     id~ : RequestId,
     result~ : Result[ResumeSessionResult, HandlerError]
+  )
+  SessionForkCompleted(
+    id~ : RequestId,
+    result~ : Result[ForkSessionResult, HandlerError]
   )
   SessionListCompleted(
     id~ : RequestId,
@@ -114,6 +119,13 @@ pub async fn agent_adapter_execute(
           endpoint.resume_session(context, params)
         }),
       )
+    SessionForkInvocation(id~, params~) =>
+      SessionForkCompleted(
+        id~,
+        result=agent_adapter_call(async fn() {
+          endpoint.fork_session(context, params)
+        }),
+      )
     SessionListInvocation(id~, params~) =>
       SessionListCompleted(
         id~,
@@ -177,6 +189,7 @@ pub fn agent_adapter_invocation_method_name(
     SessionNewInvocation(id=_, params=_) => "session/new"
     SessionLoadInvocation(id=_, params=_) => "session/load"
     SessionResumeInvocation(id=_, params=_) => "session/resume"
+    SessionForkInvocation(id=_, params=_) => "session/fork"
     SessionListInvocation(id=_, params=_) => "session/list"
     SessionDeleteInvocation(id=_, params=_) => "session/delete"
     SessionCloseInvocation(id=_, params=_) => "session/close"
@@ -219,6 +232,11 @@ pub fn agent_adapter_failure_completion(
       )
     SessionResumeInvocation(id~, params=_) =>
       SessionResumeCompleted(
+        id~,
+        result=Err(Application(message="agent handler failed")),
+      )
+    SessionForkInvocation(id~, params=_) =>
+      SessionForkCompleted(
         id~,
         result=Err(Application(message="agent handler failed")),
       )
@@ -277,6 +295,8 @@ pub fn agent_adapter_cancel_completion(
       SessionLoadCompleted(id~, result=Err(Cancelled))
     SessionResumeInvocation(id~, params=_) =>
       SessionResumeCompleted(id~, result=Err(Cancelled))
+    SessionForkInvocation(id~, params=_) =>
+      SessionForkCompleted(id~, result=Err(Cancelled))
     SessionListInvocation(id~, params=_) =>
       SessionListCompleted(id~, result=Err(Cancelled))
     SessionDeleteInvocation(id~, params=_) =>

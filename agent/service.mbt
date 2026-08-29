@@ -51,6 +51,9 @@ pub type AgentLoadSessionHandler = async (AgentContext, LoadSessionParams) -> Lo
 pub type AgentResumeSessionHandler = async (AgentContext, ResumeSessionParams) -> ResumeSessionResult
 
 ///|
+pub type AgentForkSessionHandler = async (AgentContext, ForkSessionParams) -> ForkSessionResult
+
+///|
 pub type AgentListSessionsHandler = async (AgentContext, ListSessionsParams) -> ListSessionsResult
 
 ///|
@@ -84,6 +87,7 @@ pub struct AgentSessionService {
   cancel_handler : AgentCancelHandler
   load_handler : AgentLoadSessionHandler?
   resume_handler : AgentResumeSessionHandler?
+  fork_handler : AgentForkSessionHandler?
   list_handler : AgentListSessionsHandler?
   delete_handler : AgentDeleteSessionHandler?
   close_handler : AgentCloseSessionHandler?
@@ -100,6 +104,7 @@ pub fn agent_session_service(
   cancel~ : AgentCancelHandler,
   load? : AgentLoadSessionHandler,
   resume_session? : AgentResumeSessionHandler,
+  fork_session? : AgentForkSessionHandler,
   list? : AgentListSessionsHandler,
   delete? : AgentDeleteSessionHandler,
   close? : AgentCloseSessionHandler,
@@ -112,6 +117,7 @@ pub fn agent_session_service(
     cancel_handler: cancel,
     load_handler: load,
     resume_handler: resume_session,
+    fork_handler: fork_session,
     list_handler: list,
     delete_handler: delete,
     close_handler: close,
@@ -207,6 +213,6 @@ pub fn agent_spec(
   } else if info.version.length() == 0 {
     Err(InvalidImplementation(reason="agent version must not be empty"))
   } else {
-    Ok({ info, sessions, support, auth })
+    Ok({ info, sessions, support, auth, })
   }
 }

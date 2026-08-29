@@ -244,7 +244,7 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
         ) -> PromptResult {
           @async.pause()
           seen.push(params)
-          { stop_reason: EndTurn, meta: Omitted }
+          { stop_reason: EndTurn, meta: Omitted, }
         },
         cancel=agent_service_test_cancel,
       ),
@@ -462,7 +462,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   let authenticated = agent_adapter_complete(
     auth_admission.0,
     auth_admission.1,
-    AuthenticateCompleted(id=Number(7), result=Ok({ meta: Omitted })),
+    AuthenticateCompleted(id=Number(7), result=Ok({ meta: Omitted, })),
   )
   ignore(agent_adapter_test_success(authenticated, Number(7)))
   assert_true(authenticated.state.protocol().authentication is Authenticated)
@@ -493,7 +493,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   let logged_out = agent_adapter_complete(
     logout_admission.0,
     logout_admission.1,
-    LogoutCompleted(id=Number(9), result=Ok({ meta: Omitted })),
+    LogoutCompleted(id=Number(9), result=Ok({ meta: Omitted, })),
   )
   ignore(agent_adapter_test_success(logged_out, Number(9)))
   assert_true(
@@ -542,7 +542,7 @@ async test "matrix G05 cancelled permission settles the turn after final updates
     match request {
       SessionRequestPermission(params) => {
         permissions.push(params)
-        Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted }))
+        Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted, }))
       }
       _ => abort("expected the typed permission request")
     }
@@ -600,7 +600,7 @@ async test "matrix G05 cancelled permission settles the turn after final updates
             meta: Omitted,
           })
           assert_true(response.outcome is Cancelled)
-          { stop_reason: Cancelled, meta: Omitted }
+          { stop_reason: Cancelled, meta: Omitted, }
         },
         cancel=agent_service_test_cancel,
       ),

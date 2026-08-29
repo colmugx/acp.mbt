@@ -1,6 +1,6 @@
 ///|
 fn agent_service_test_info(name : String) -> Implementation {
-  { name, title: Omitted, version: "test", meta: Omitted }
+  { name, title: Omitted, version: "test", meta: Omitted, }
 }
 
 ///|
@@ -23,7 +23,7 @@ async fn agent_service_test_prompt(
   _params : PromptParams,
 ) -> PromptResult {
   @async.pause()
-  { stop_reason: EndTurn, meta: Omitted }
+  { stop_reason: EndTurn, meta: Omitted, }
 }
 
 ///|
@@ -40,7 +40,21 @@ async fn agent_service_test_load(
   _params : LoadSessionParams,
 ) -> LoadSessionResult {
   @async.pause()
-  { modes: Omitted, config_options: Omitted, meta: Omitted }
+  { modes: Omitted, config_options: Omitted, meta: Omitted, }
+}
+
+///|
+async fn agent_service_test_fork(
+  _context : AgentContext,
+  _params : ForkSessionParams,
+) -> ForkSessionResult {
+  @async.pause()
+  {
+    session_id: "forked",
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
 }
 
 ///|
@@ -49,7 +63,7 @@ async fn agent_service_test_list(
   _params : ListSessionsParams,
 ) -> ListSessionsResult {
   @async.pause()
-  { sessions: [], next_cursor: Omitted, meta: Omitted }
+  { sessions: [], next_cursor: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -58,7 +72,7 @@ async fn agent_service_test_authenticate(
   _params : AuthenticateParams,
 ) -> AuthenticateResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -67,7 +81,7 @@ async fn agent_service_test_logout(
   _params : LogoutParams,
 ) -> LogoutResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -77,7 +91,7 @@ async fn agent_service_test_request_broker(
   @async.pause()
   match request {
     SessionRequestPermission(_) =>
-      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted }))
+      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted, }))
     other => Err(AgentContextUnavailable(method_name=other.method_name()))
   }
 }
@@ -139,6 +153,39 @@ test "agent service constructor keeps required callbacks typed" {
     support=agent_support(),
   )
   assert_true(spec is Ok(_))
+}
+
+///|
+test "agent service constructor accepts an optional typed fork handler" {
+  let with_fork = agent_session_service(
+    new_session=agent_service_test_new,
+    prompt=agent_service_test_prompt,
+    cancel=agent_service_test_cancel,
+    fork_session=agent_service_test_fork,
+  )
+  let with_fork_capabilities = agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("with-fork"),
+      sessions=with_fork,
+      support=agent_support(),
+    ).unwrap(),
+  ).capabilities()
+  match with_fork_capabilities.session_capabilities {
+    Value(session) => assert_true(session.fork is Value(_))
+    _ => fail("a present fork handler should be advertised")
+  }
+  let without_fork = agent_service_test_sessions(true)
+  let without_fork_capabilities = agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("without-fork"),
+      sessions=without_fork,
+      support=agent_support(),
+    ).unwrap(),
+  ).capabilities()
+  match without_fork_capabilities.session_capabilities {
+    Value(session) => assert_eq(session.fork, Omitted)
+    _ => fail("other optional services should still be advertised")
+  }
 }
 
 ///|
@@ -221,14 +268,14 @@ test "capabilities derive from optional services and support values" {
   assert_eq(capabilities.load_session, Value(true))
   match capabilities.session_capabilities {
     Value(session) => {
-      assert_eq(session.list, Value({ meta: Omitted }))
+      assert_eq(session.list, Value({ meta: Omitted, }))
       assert_eq(session.delete, Omitted)
     }
     _ => fail("optional list service should be advertised")
   }
   match capabilities.auth {
     Value(auth_capability) =>
-      assert_eq(auth_capability.logout, Value({ meta: Omitted }))
+      assert_eq(auth_capability.logout, Value({ meta: Omitted, }))
     _ => fail("auth service should be advertised")
   }
   match capabilities.mcp_capabilities {
