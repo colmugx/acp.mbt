@@ -95,7 +95,7 @@ fn mcp_decode_env_variable(
     path=path + ".value",
   )
   let meta = mcp_nullable_meta(fields, path=path + "._meta")
-  { name, value: variable_value, meta }
+  { name, value: variable_value, meta, }
 }
 
 ///|
@@ -149,7 +149,7 @@ fn mcp_decode_http_header(
     path=path + ".value",
   )
   let meta = mcp_nullable_meta(fields, path=path + "._meta")
-  { name, value: header_value, meta }
+  { name, value: header_value, meta, }
 }
 
 ///|
@@ -213,7 +213,7 @@ fn mcp_decode_stdio_fields(
     path=path + ".env",
   )
   let meta = mcp_nullable_meta(fields, path=path + "._meta")
-  { name, command, args, env, meta }
+  { name, command, args, env, meta, }
 }
 
 ///|
@@ -247,7 +247,7 @@ fn mcp_decode_http_fields(
     path=path + ".headers",
   )
   let meta = mcp_nullable_meta(fields, path=path + "._meta")
-  { name, url, headers, meta }
+  { name, url, headers, meta, }
 }
 
 ///|
@@ -278,7 +278,7 @@ fn mcp_decode_sse_fields(
     path=path + ".headers",
   )
   let meta = mcp_nullable_meta(fields, path=path + "._meta")
-  { name, url, headers, meta }
+  { name, url, headers, meta, }
 }
 
 ///|

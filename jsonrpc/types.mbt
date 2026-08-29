@@ -126,7 +126,7 @@ pub fn JsonRpcRequest::new(
   params? : Json,
 ) -> JsonRpcRequest raise JsonRpcCodecError {
   validate_params(params)
-  { id, method_name, params }
+  { id, method_name, params, }
 }
 
 ///|
@@ -136,7 +136,7 @@ pub fn JsonRpcNotification::new(
   params? : Json,
 ) -> JsonRpcNotification raise JsonRpcCodecError {
   validate_params(params)
-  { method_name, params }
+  { method_name, params, }
 }
 
 ///|
@@ -145,7 +145,7 @@ pub fn JsonRpcResponse::success(
   id~ : RequestId,
   result~ : Json,
 ) -> JsonRpcResponse {
-  Success({ id, result })
+  Success({ id, result, })
 }
 
 ///|
@@ -154,7 +154,7 @@ pub fn JsonRpcResponse::error(
   id~ : JsonRpcId,
   error~ : JsonRpcError,
 ) -> JsonRpcResponse {
-  Error({ id, error })
+  Error({ id, error, })
 }
 
 ///|

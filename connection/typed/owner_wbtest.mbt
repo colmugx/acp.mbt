@@ -44,7 +44,7 @@ fn typed_owner_test_admit(
   value : Int,
 ) -> TypedRequestAdmission[TypedOwnerTestState, Int, Int] {
   Invoke(
-    state={ ..state, phase: "admitted-" + value.to_string() },
+    state={ ..state, phase: "admitted-" + value.to_string(), },
     invocation=value,
   )
 }
@@ -54,7 +54,7 @@ fn typed_owner_test_notification(
   state : TypedOwnerTestState,
   value : Int,
 ) -> TypedNotificationAdmission[TypedOwnerTestState, Int] {
-  Invoke(state={ ..state, phase: "notification-admitted" }, invocation=value)
+  Invoke(state={ ..state, phase: "notification-admitted", }, invocation=value)
 }
 
 ///|
@@ -71,7 +71,7 @@ fn typed_owner_test_complete(
   let completed_invocations = Array::copy(state.completed_invocations)
   completed_invocations.push(invocation)
   {
-    state: { ..state, completed, completed_ids, completed_invocations },
+    state: { ..state, completed, completed_ids, completed_invocations, },
     result: completion,
   }
 }
@@ -83,7 +83,10 @@ fn typed_owner_test_complete_notification(
   _completion : Int,
 ) -> TypedNotificationCompletion[TypedOwnerTestState] {
   {
-    state: { ..state, notification_completed: state.notification_completed + 1 },
+    state: {
+      ..state,
+      notification_completed: state.notification_completed + 1,
+    },
   }
 }
 
@@ -102,7 +105,7 @@ fn typed_owner_test_complete_outcome(
       completed_ids.push(id)
       let completed_invocations = Array::copy(state.completed_invocations)
       completed_invocations.push(invocation)
-      { ..state, completed, completed_ids, completed_invocations }
+      { ..state, completed, completed_ids, completed_invocations, }
     }
     TestFailed(message) => {
       let failed = Array::copy(state.failed)
@@ -110,9 +113,9 @@ fn typed_owner_test_complete_outcome(
       { ..state, failed, }
     }
     TestCancelled =>
-      { ..state, cancelled_completions: state.cancelled_completions + 1 }
+      { ..state, cancelled_completions: state.cancelled_completions + 1, }
   }
-  { state: next, result: completion }
+  { state: next, result: completion, }
 }
 
 ///|
@@ -123,16 +126,16 @@ fn typed_owner_test_complete_notification_outcome(
 ) -> TypedNotificationCompletion[TypedOwnerTestState] {
   let next = match completion {
     TestSucceeded(_) =>
-      { ..state, notification_completed: state.notification_completed + 1 }
+      { ..state, notification_completed: state.notification_completed + 1, }
     TestFailed(message) => {
       let failed = Array::copy(state.notification_failed)
       failed.push(message)
-      { ..state, notification_failed: failed }
+      { ..state, notification_failed: failed, }
     }
     TestCancelled =>
-      { ..state, notification_cancelled: state.notification_cancelled + 1 }
+      { ..state, notification_cancelled: state.notification_cancelled + 1, }
   }
-  { state: next }
+  { state: next, }
 }
 
 ///|
@@ -844,7 +847,7 @@ async test "typed owner keeps the legacy connection runtime callable" {
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let options = @runtime.runtime_default_options()
   let ports : @runtime.RuntimePorts = {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)

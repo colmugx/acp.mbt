@@ -98,7 +98,7 @@ async test "root facade exposes the generic owner runner seam" {
       })
     },
     admit_notification: (_state, _notification) => {
-      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [] })
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [], })
     },
     execute: async fn(_invocation) {
       @async.pause()

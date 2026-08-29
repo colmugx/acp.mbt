@@ -35,7 +35,7 @@ pub fn framing_state(max_frame_bytes~ : Int) -> FramingState raise FramingError 
   if max_frame_bytes <= 0 {
     raise InvalidMaxFrameSize
   }
-  { pending: b"", max_frame_bytes, closed: false }
+  { pending: b"", max_frame_bytes, closed: false, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn framing_feed(
   let pending = combined
     .view(start=line_start, end=combined.length())
     .to_owned()
-  { state: { ..state, pending, }, frames }
+  { state: { ..state, pending, }, frames, }
 }
 
 ///|
@@ -91,5 +91,5 @@ pub fn framing_finish(state : FramingState) -> FramingStep raise FramingError {
   if !state.pending.is_empty() {
     raise UnexpectedEof
   }
-  { state: { ..state, closed: true }, frames: [] }
+  { state: { ..state, closed: true, }, frames: [], }
 }

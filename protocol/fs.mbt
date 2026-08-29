@@ -105,7 +105,7 @@ fn fs_decode_read_text_file_params_fields(
   )
   let limit = fs_decode_nullable_uint64(fields, "limit", path=path + ".limit")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, path: file_path, line, limit, meta }
+  { session_id, path: file_path, line, limit, meta, }
 }
 
 ///|
@@ -156,7 +156,7 @@ pub fn read_text_file_result_from_json(
     path=path + ".content",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { content, meta }
+  { content, meta, }
 }
 
 ///|
@@ -199,7 +199,7 @@ pub fn write_text_file_params_from_json(
     path=path + ".content",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, path: file_path, content, meta }
+  { session_id, path: file_path, content, meta, }
 }
 
 ///|

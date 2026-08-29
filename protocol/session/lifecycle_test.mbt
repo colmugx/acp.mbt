@@ -60,7 +60,7 @@ test "session list delete close cancel and update envelopes round trip" {
     ),
     delete_params,
   )
-  let delete_result : DeleteSessionResult = { meta: Null }
+  let delete_result : DeleteSessionResult = { meta: Null, }
   assert_eq(
     delete_session_result_from_json(
       delete_session_result_to_json(delete_result),
@@ -76,13 +76,13 @@ test "session list delete close cancel and update envelopes round trip" {
     close_session_params_from_json(close_session_params_to_json(close_params)),
     close_params,
   )
-  let close_result : CloseSessionResult = { meta: Omitted }
+  let close_result : CloseSessionResult = { meta: Omitted, }
   assert_eq(
     close_session_result_from_json(close_session_result_to_json(close_result)),
     close_result,
   )
 
-  let cancel : CancelParams = { session_id: "s-cancel", meta: Null }
+  let cancel : CancelParams = { session_id: "s-cancel", meta: Null, }
   assert_eq(cancel_params_from_json(cancel_params_to_json(cancel)), cancel)
 
   let update : SessionUpdateParams = {

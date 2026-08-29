@@ -269,7 +269,7 @@ fn decode_tool_location(
     }
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { path: path_value, line, meta }
+  { path: path_value, line, meta, }
 }
 
 ///|
@@ -343,7 +343,7 @@ fn decode_diff(
     path=path + ".newText",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { path: path_value, old_text, new_text, meta }
+  { path: path_value, old_text, new_text, meta, }
 }
 
 ///|
@@ -397,7 +397,7 @@ fn decode_terminal(
     field_path=path + ".terminalId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { terminal_id, meta }
+  { terminal_id, meta, }
 }
 
 ///|
@@ -772,7 +772,7 @@ fn decode_permission_option(
     path=path + ".kind",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { option_id, name, kind, meta }
+  { option_id, name, kind, meta, }
 }
 
 ///|
@@ -832,7 +832,7 @@ fn decode_selected_permission_outcome(
     path=path + ".optionId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { option_id, meta }
+  { option_id, meta, }
 }
 
 ///|
@@ -906,7 +906,7 @@ pub fn request_permission_request_from_json(
     None => raise MissingField(path=path + ".options")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, tool_call, options, meta }
+  { session_id, tool_call, options, meta, }
 }
 
 ///|
@@ -942,7 +942,7 @@ pub fn request_permission_response_from_json(
     None => raise MissingField(path=path + ".outcome")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { outcome, meta }
+  { outcome, meta, }
 }
 
 ///|

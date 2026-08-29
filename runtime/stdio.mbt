@@ -29,7 +29,7 @@ let runtime_stderr_fd : Int = 2
 /// name, becomes `?`, so one trace event can never be forged into several
 /// lines or into frame-like content on the diagnostics channel.
 fn runtime_trace_sanitize(value : String) -> String {
-  let buffer = StringBuilder::new()
+  let buffer = StringBuilder()
   for ch in value {
     if ch >= '\u{20}' && ch <= '\u{7e}' {
       buffer.write_char(ch)
@@ -132,8 +132,8 @@ pub fn runtime_stdio_ports(
   trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> RuntimePorts {
   {
-    reader: { read: max_len => @stdio.stdin.read_some(max_len~) },
-    writer: { write: frame => @stdio.stdout.write(frame) },
+    reader: { read: max_len => @stdio.stdin.read_some(max_len~), },
+    writer: { write: frame => @stdio.stdout.write(frame), },
     handlers: {
       request: _ => {
         abort(

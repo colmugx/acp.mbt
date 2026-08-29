@@ -10,7 +10,7 @@ fn client_runtime_test_ports(
   traces : Array[@runtime.RuntimeTraceEvent],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -138,7 +138,7 @@ async test "client runtime bridge observes session updates and answers permissio
       arrived.put(())
       @async.pause()
       {
-        outcome: Selected({ option_id: "allow", meta: Omitted }),
+        outcome: Selected({ option_id: "allow", meta: Omitted, }),
         meta: Omitted,
       }
     },
@@ -208,7 +208,7 @@ async test "client runtime bridge completes two requests in reverse order exactl
     } else {
       gate_second.get()
     }
-    { content: "read", meta: Omitted }
+    { content: "read", meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -260,7 +260,7 @@ async test "client runtime bridge cancels one pending request by typed id" {
     } else {
       gate_sibling.get()
     }
-    { content: "read", meta: Omitted }
+    { content: "read", meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -307,7 +307,7 @@ async test "client runtime bridge close aborts pending work and settles inbound"
   ) {
     arrived.put(())
     gate.get()
-    { content: "read", meta: Omitted }
+    { content: "read", meta: Omitted, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -455,7 +455,7 @@ fn client_runtime_test_outbound_ports(
   failures : Array[(RequestId, @runtime.RuntimeOutboundFailureKind)],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)

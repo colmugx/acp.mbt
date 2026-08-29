@@ -1,6 +1,6 @@
 ///|
 fn client_service_test_info(name : String) -> Implementation {
-  { name, title: Omitted, version: "test", meta: Omitted }
+  { name, title: Omitted, version: "test", meta: Omitted, }
 }
 
 ///|
@@ -13,7 +13,7 @@ async fn client_service_test_permission(
   _request : RequestPermissionRequest,
 ) -> RequestPermissionResponse {
   @async.pause()
-  { outcome: Cancelled, meta: Omitted }
+  { outcome: Cancelled, meta: Omitted, }
 }
 
 ///|
@@ -21,7 +21,7 @@ async fn client_service_test_read(
   _params : ReadTextFileParams,
 ) -> ReadTextFileResult {
   @async.pause()
-  { content: "read", meta: Omitted }
+  { content: "read", meta: Omitted, }
 }
 
 ///|
@@ -40,7 +40,7 @@ async fn client_service_test_write(
   _params : WriteTextFileParams,
 ) -> WriteTextFileResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -48,7 +48,7 @@ async fn client_service_test_create(
   _params : TerminalCreateParams,
 ) -> TerminalCreateResult {
   @async.pause()
-  { terminal_id: "terminal", meta: Omitted }
+  { terminal_id: "terminal", meta: Omitted, }
 }
 
 ///|
@@ -56,7 +56,7 @@ async fn client_service_test_output(
   _params : TerminalOutputParams,
 ) -> TerminalOutputResult {
   @async.pause()
-  { output: "output", truncated: false, exit_status: Omitted, meta: Omitted }
+  { output: "output", truncated: false, exit_status: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -64,7 +64,7 @@ async fn client_service_test_wait(
   _params : TerminalWaitForExitParams,
 ) -> TerminalWaitForExitResult {
   @async.pause()
-  { exit_code: Value(0UL), signal: Omitted, meta: Omitted }
+  { exit_code: Value(0UL), signal: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -72,7 +72,7 @@ async fn client_service_test_kill(
   _params : TerminalKillParams,
 ) -> TerminalKillResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -80,7 +80,7 @@ async fn client_service_test_release(
   _params : TerminalReleaseParams,
 ) -> TerminalReleaseResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -88,7 +88,7 @@ async fn client_service_test_form(
   _params : ElicitationFormParams,
 ) -> ElicitationCreateResult {
   @async.pause()
-  { action: Accept, content: Omitted, meta: Omitted }
+  { action: Accept, content: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -96,7 +96,7 @@ async fn client_service_test_url(
   _params : ElicitationUrlParams,
 ) -> ElicitationCreateResult {
   @async.pause()
-  { action: Accept, content: Omitted, meta: Omitted }
+  { action: Accept, content: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -177,7 +177,7 @@ test "client services reject contradictory optional combinations" {
 ///|
 test "client spec validates implementation and required baseline service" {
   let invalid = client_spec(
-    info={ name: "", title: Omitted, version: "test", meta: Omitted },
+    info={ name: "", title: Omitted, version: "test", meta: Omitted, },
     session=client_service_test_session(),
   )
   match invalid {

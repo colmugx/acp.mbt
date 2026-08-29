@@ -158,9 +158,9 @@ fn decode_message_object(
     let params = decode_params(fields.get("params"))
     if has_id {
       let id = decode_request_id(fields.get("id"))
-      Request({ id, method_name, params })
+      Request({ id, method_name, params, })
     } else {
-      Notification({ method_name, params })
+      Notification({ method_name, params, })
     }
   } else if has_result || has_error {
     if has_params {
@@ -178,7 +178,7 @@ fn decode_message_object(
         Some(value) => value
         None => raise MissingField(path="result")
       }
-      Response(Success({ id, result }))
+      Response(Success({ id, result, }))
     } else {
       let id = decode_id(fields.get("id"))
       let error_value = match fields.get("error") {
@@ -186,7 +186,7 @@ fn decode_message_object(
         None => raise MissingField(path="error")
       }
       let error = decode_error(error_value)
-      Response(Error({ id, error }))
+      Response(Error({ id, error, }))
     }
   } else {
     raise InvalidRequest(reason="message must contain method or result/error")
@@ -600,7 +600,7 @@ fn decode_error(value : Json) -> JsonRpcError raise JsonRpcCodecError {
         None => raise InvalidError(reason="error.message is required")
       }
       let data = fields.get("data")
-      { code: JsonRpcErrorCode::from_int(code), message, data }
+      { code: JsonRpcErrorCode::from_int(code), message, data, }
     }
     _ => raise InvalidError(reason="error must be an object")
   }

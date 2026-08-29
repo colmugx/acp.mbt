@@ -194,7 +194,7 @@ fn client_adapter_success(
   id : RequestId,
   result : Json,
 ) -> ClientAdapterStep {
-  { state, outputs: [Response(JsonRpcResponse::success(id~, result~))] }
+  { state, outputs: [Response(JsonRpcResponse::success(id~, result~))], }
 }
 
 ///|
@@ -203,7 +203,7 @@ fn client_adapter_trace(
   method_name : String,
   error : JsonRpcError,
 ) -> ClientAdapterStep {
-  { state, outputs: [Command(TraceError(method_name~, error~))] }
+  { state, outputs: [Command(TraceError(method_name~, error~))], }
 }
 
 ///|
@@ -472,7 +472,7 @@ fn client_adapter_complete_notification(
   result : Result[Unit, HandlerError],
 ) -> ClientAdapterStep {
   match result {
-    Ok(_) => { state, outputs: [] }
+    Ok(_) => { state, outputs: [], }
     Err(error) =>
       client_adapter_trace(
         state,
@@ -519,7 +519,7 @@ fn client_adapter_admit_request(
   match client_adapter_reduce_request(state, request) {
     Err(error) => Immediate(client_adapter_response(state, id, error))
     Ok(step) =>
-      client_adapter_request_invocation({ protocol: step.state }, id, request)
+      client_adapter_request_invocation({ protocol: step.state, }, id, request)
   }
 }
 
@@ -535,7 +535,7 @@ fn client_adapter_admit_notification(
           Immediate(client_adapter_trace(state, "session/update", error))
         Ok(step) =>
           Invoke(
-            state={ protocol: step.state },
+            state={ protocol: step.state, },
             invocation=SessionUpdateInvocation(params~),
           )
       }
@@ -545,7 +545,7 @@ fn client_adapter_admit_notification(
           Immediate(client_adapter_trace(state, "elicitation/complete", error))
         Ok(step) =>
           Invoke(
-            state={ protocol: step.state },
+            state={ protocol: step.state, },
             invocation=ElicitationCompleteInvocation(params~),
           )
       }
@@ -555,7 +555,7 @@ fn client_adapter_admit_notification(
           Immediate(client_adapter_trace(state, "$/cancel_request", error))
         Ok(step) =>
           Immediate({
-            state: { protocol: step.state },
+            state: { protocol: step.state, },
             outputs: [Command(CancelRequest(request_id~))],
           })
       }

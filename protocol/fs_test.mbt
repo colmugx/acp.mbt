@@ -22,7 +22,7 @@ test "filesystem host methods preserve nullable fields and round trip" {
   }
   assert_eq(decoded_read, read)
 
-  let read_result : ReadTextFileResult = { content: "héllo\n", meta: Omitted }
+  let read_result : ReadTextFileResult = { content: "héllo\n", meta: Omitted, }
   assert_eq(
     read_text_file_result_from_json(read_text_file_result_to_json(read_result)),
     read_result,
@@ -39,7 +39,7 @@ test "filesystem host methods preserve nullable fields and round trip" {
     write,
   )
 
-  let write_result : WriteTextFileResult = { meta: fs_test_meta() }
+  let write_result : WriteTextFileResult = { meta: fs_test_meta(), }
   assert_eq(
     write_text_file_result_from_json(
       write_text_file_result_to_json(write_result),

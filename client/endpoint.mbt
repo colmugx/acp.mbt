@@ -13,7 +13,7 @@ pub struct ClientEndpoint {
 ///|
 fn client_endpoint_marker(enabled : Bool) -> ProtocolNullable[CapabilityMarker] {
   if enabled {
-    Value({ meta: Omitted })
+    Value({ meta: Omitted, })
   } else {
     Omitted
   }
@@ -37,7 +37,7 @@ fn client_endpoint_file_system_capabilities(
     Some(service) => {
       let read = client_endpoint_bool(service.read_handler is Some(_))
       let write = client_endpoint_bool(service.write_handler is Some(_))
-      Value({ read_text_file: read, write_text_file: write, meta: Omitted })
+      Value({ read_text_file: read, write_text_file: write, meta: Omitted, })
     }
   }
 }
@@ -52,7 +52,7 @@ fn client_endpoint_elicitation_capabilities(
       let form = client_endpoint_marker(service.form_handler is Some(_))
       let url = client_endpoint_marker(service.url_handler is Some(_))
       if service.form_handler is Some(_) || service.url_handler is Some(_) {
-        Value({ form, url, meta: Omitted })
+        Value({ form, url, meta: Omitted, })
       } else {
         Omitted
       }

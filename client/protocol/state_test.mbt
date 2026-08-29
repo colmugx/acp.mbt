@@ -17,7 +17,7 @@ using @protocol_data {
 
 ///|
 fn client_state_test_marker() -> CapabilityMarker {
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -29,9 +29,9 @@ fn client_state_test_capabilities(
   url : ProtocolNullable[CapabilityMarker],
 ) -> ClientCapabilities {
   {
-    fs: Value({ read_text_file: read, write_text_file: write, meta: Omitted }),
+    fs: Value({ read_text_file: read, write_text_file: write, meta: Omitted, }),
     terminal,
-    elicitation: Value({ form, url, meta: Omitted }),
+    elicitation: Value({ form, url, meta: Omitted, }),
     session: Omitted,
     plan: Omitted,
     auth: Omitted,

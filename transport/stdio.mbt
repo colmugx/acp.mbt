@@ -15,8 +15,8 @@ pub fn stdio_transport(
   trace : (RuntimeTraceEvent) -> Unit,
 ) -> RuntimePorts {
   {
-    reader: { read: max_len => @stdio.stdin.read_some(max_len~) },
-    writer: { write: frame => @stdio.Output::write(@stdio.stdout, frame) },
+    reader: { read: max_len => @stdio.stdin.read_some(max_len~), },
+    writer: { write: frame => @stdio.Output::write(@stdio.stdout, frame), },
     handlers,
     cancel_outbound,
     trace,

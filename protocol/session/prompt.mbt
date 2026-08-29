@@ -96,7 +96,7 @@ pub fn prompt_params_from_json(
     path=path + ".prompt",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, prompt, meta }
+  { session_id, prompt, meta, }
 }
 
 ///|
@@ -124,7 +124,7 @@ pub fn prompt_result_from_json(
     path=path + ".stopReason",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { stop_reason, meta }
+  { stop_reason, meta, }
 }
 
 ///|

@@ -4,7 +4,7 @@ using @runtime {runtime_default_options}
 ///|
 fn runtime_test_options() -> RuntimeOptions {
   let options = runtime_default_options()
-  { ..options, max_frame_bytes: 256 }
+  { ..options, max_frame_bytes: 256, }
 }
 
 ///|
@@ -101,7 +101,7 @@ async test "runtime uses one reader and one serial writer for a request" {
   let traces : Array[RuntimeTraceEvent] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -148,8 +148,8 @@ async test "runtime notifications never produce a response" {
   let output : Array[Bytes] = []
   let handled : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: frame => output.push(frame) },
+    reader: { read: _ => input.get(), },
+    writer: { write: frame => output.push(frame), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => handled.put(()),
@@ -180,7 +180,7 @@ async test "runtime preserves a typed handler error response" {
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -223,7 +223,7 @@ async test "runtime cancellation completes the inbound request explicitly" {
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let cancel_frame = "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n"
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -265,8 +265,8 @@ async test "runtime cancellation completes the inbound request explicitly" {
 async test "runtime reports malformed JSON and partial EOF" {
   let malformed_input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let malformed_ports : RuntimePorts = {
-    reader: { read: _ => malformed_input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => malformed_input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -287,8 +287,8 @@ async test "runtime reports malformed JSON and partial EOF" {
 
   let partial_input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let partial_ports : RuntimePorts = {
-    reader: { read: _ => partial_input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => partial_input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -316,7 +316,7 @@ async test "runtime normalizes reader and handler failures" {
         raise @jsonrpc.JsonRpcCodecError::ParseError(message="reader fault")
       },
     },
-    writer: { write: _ => () },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -335,8 +335,8 @@ async test "runtime normalizes reader and handler failures" {
 
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let handler_ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => {
         raise @jsonrpc.JsonRpcCodecError::ParseError(message="handler fault")
@@ -358,7 +358,7 @@ async test "runtime normalizes reader and handler failures" {
 
   let writer_input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let writer_ports : RuntimePorts = {
-    reader: { read: _ => writer_input.get() },
+    reader: { read: _ => writer_input.get(), },
     writer: {
       write: _ => {
         raise @jsonrpc.JsonRpcCodecError::ParseError(message="writer fault")
@@ -415,7 +415,7 @@ async test "runtime cancellation converts a late raised handler failure" {
   let cancel_frame = "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":1}}\n"
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -520,9 +520,9 @@ async test "notification completion events remove exact tokens in reverse" {
     task.wait()
   })
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 11, request_id: None, cancel: () => () },
-    { task_token: 22, request_id: None, cancel: () => () },
-    { task_token: 33, request_id: None, cancel: () => () },
+    { task_token: 11, request_id: None, cancel: () => (), },
+    { task_token: 22, request_id: None, cancel: () => (), },
+    { task_token: 33, request_id: None, cancel: () => (), },
   ]
   let cancellation_event = events.get()
   let cancellation_token = match cancellation_event {
@@ -539,9 +539,9 @@ async test "notification completion events remove exact tokens in reverse" {
 test "runtime close cancels only active task controls" {
   let cancelled : Array[Int] = []
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 1, request_id: None, cancel: () => cancelled.push(1) },
-    { task_token: 2, request_id: None, cancel: () => cancelled.push(2) },
-    { task_token: 3, request_id: None, cancel: () => cancelled.push(3) },
+    { task_token: 1, request_id: None, cancel: () => cancelled.push(1), },
+    { task_token: 2, request_id: None, cancel: () => cancelled.push(2), },
+    { task_token: 3, request_id: None, cancel: () => cancelled.push(3), },
   ]
   let active = runtime_remove_task(tasks, 2)
   runtime_cancel_active_tasks(active, _ => ())
@@ -560,8 +560,8 @@ async test "runtime close does not enqueue over-capacity notification cancels" {
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let close_cancellations : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => gate.get() catch { _ => () },
@@ -580,7 +580,7 @@ async test "runtime close does not enqueue over-capacity notification cancels" {
     "{\"jsonrpc\":\"2.0\",\"method\":\"n3\"}\n"
   input.put(Some(@utf8.encode(frames)))
   input.put(None)
-  let options = { ..runtime_test_options(), queue_capacity: 2 }
+  let options = { ..runtime_test_options(), queue_capacity: 2, }
   connection_runtime_run(ports, options)
   assert_eq(close_cancellations.length(), 3)
 }
@@ -591,8 +591,8 @@ async test "runtime close does not enqueue over-capacity notification failures" 
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let close_cancellations : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => {
@@ -618,7 +618,7 @@ async test "runtime close does not enqueue over-capacity notification failures" 
     "{\"jsonrpc\":\"2.0\",\"method\":\"n3\"}\n"
   input.put(Some(@utf8.encode(frames)))
   input.put(None)
-  let options = { ..runtime_test_options(), queue_capacity: 2 }
+  let options = { ..runtime_test_options(), queue_capacity: 2, }
   connection_runtime_run(ports, options)
   assert_eq(close_cancellations.length(), 3)
 }
@@ -629,8 +629,8 @@ async test "runtime close does not enqueue over-capacity request cancels" {
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let close_cancellations : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => {
         gate.get() catch {
@@ -654,7 +654,7 @@ async test "runtime close does not enqueue over-capacity request cancels" {
     "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"r3\"}\n"
   input.put(Some(@utf8.encode(frames)))
   input.put(None)
-  let options = { ..runtime_test_options(), queue_capacity: 2 }
+  let options = { ..runtime_test_options(), queue_capacity: 2, }
   connection_runtime_run(ports, options)
   assert_eq(close_cancellations.length(), 3)
 }
@@ -665,8 +665,8 @@ async test "runtime close does not enqueue over-capacity request failures" {
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let close_cancellations : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: _ => () },
+    reader: { read: _ => input.get(), },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => {
         gate.get() catch {
@@ -692,7 +692,7 @@ async test "runtime close does not enqueue over-capacity request failures" {
     "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"r3\"}\n"
   input.put(Some(@utf8.encode(frames)))
   input.put(None)
-  let options = { ..runtime_test_options(), queue_capacity: 2 }
+  let options = { ..runtime_test_options(), queue_capacity: 2, }
   connection_runtime_run(ports, options)
   assert_eq(close_cancellations.length(), 3)
 }
@@ -704,8 +704,8 @@ async test "runtime ignores duplicate handler completion exactly once" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(1))
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -725,7 +725,7 @@ async test "runtime ignores duplicate handler completion exactly once" {
   let decoder = framing_state(max_frame_bytes=256)
   let shutdown = Ref::Ref(false)
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 7, request_id: Some(Number(1)), cancel: () => () },
+    { task_token: 7, request_id: Some(Number(1)), cancel: () => (), },
   ]
   @async.with_task_group(group => {
     let first = runtime_apply_event(
@@ -777,8 +777,8 @@ async test "runtime ignores duplicate notification completion exactly once" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(1))
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -800,7 +800,7 @@ async test "runtime ignores duplicate notification completion exactly once" {
   let decoder = framing_state(max_frame_bytes=256)
   let shutdown = Ref::Ref(false)
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 11, request_id: None, cancel: () => () },
+    { task_token: 11, request_id: None, cancel: () => (), },
   ]
   @async.with_task_group(group => {
     let first = runtime_apply_event(
@@ -846,8 +846,8 @@ async test "runtime ignores duplicate notification failure after close" {
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -869,7 +869,7 @@ async test "runtime ignores duplicate notification failure after close" {
   let decoder = framing_state(max_frame_bytes=256)
   let shutdown = Ref::Ref(false)
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 22, request_id: None, cancel: () => () },
+    { task_token: 22, request_id: None, cancel: () => (), },
   ]
   @async.with_task_group(group => {
     ignore(
@@ -919,8 +919,8 @@ async test "runtime ignores duplicate notification cancellation after completion
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -942,7 +942,7 @@ async test "runtime ignores duplicate notification cancellation after completion
   let decoder = framing_state(max_frame_bytes=256)
   let shutdown = Ref::Ref(false)
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 23, request_id: None, cancel: () => () },
+    { task_token: 23, request_id: None, cancel: () => (), },
   ]
   @async.with_task_group(group => {
     let first = runtime_apply_event(
@@ -999,8 +999,8 @@ async test "runtime completion command failure closes another pending request" {
     IncomingRequest(runtime_wbtest_request(Number(7))),
   )
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1023,7 +1023,7 @@ async test "runtime completion command failure closes another pending request" {
         runtime_test_options(),
         ports,
         events,
-        [{ task_token: 5, request_id: Some(Number(7)), cancel: () => () }],
+        [{ task_token: 5, request_id: Some(Number(7)), cancel: () => (), }],
         0,
         shutdown,
       ),
@@ -1068,8 +1068,8 @@ async test "runtime response callback failure closes remaining outbound once" {
     _ => abort("runtime fixture response must encode")
   }
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1126,8 +1126,8 @@ async test "runtime writer failure completes every outbound exactly once" {
     OutgoingRequest(runtime_wbtest_request(Number(61))),
   )
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1171,8 +1171,8 @@ async test "runtime outbound cancellation uses callback once and rejects missing
   let traces : Array[RuntimeTraceEvent] = []
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1195,7 +1195,7 @@ async test "runtime outbound cancellation uses callback once and rejects missing
     traces.filter(event => event.phase == "cancel_requested").length(),
     1,
   )
-  let missing_ports : RuntimePorts = { ..ports, cancel_outbound: None }
+  let missing_ports : RuntimePorts = { ..ports, cancel_outbound: None, }
   try
     runtime_emit_command(
       CancelOutboundTask(id=Number(71)),
@@ -1229,8 +1229,8 @@ async test "runtime completion reducer failure closes every pending outbound onc
     OutgoingRequest(runtime_wbtest_request(Number(81))),
   )
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1297,8 +1297,8 @@ async test "runtime rejects completion with a mismatched task request" {
   let request = runtime_wbtest_request(Number(2))
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1321,7 +1321,7 @@ async test "runtime rejects completion with a mismatched task request" {
         runtime_test_options(),
         ports,
         events,
-        [{ task_token: 7, request_id: Some(Number(1)), cancel: () => () }],
+        [{ task_token: 7, request_id: Some(Number(1)), cancel: () => (), }],
         0,
         shutdown,
       ),
@@ -1354,8 +1354,8 @@ async test "runtime rejects failed completion with a mismatched task request" {
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let state = connection_state()
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1367,7 +1367,7 @@ async test "runtime rejects failed completion with a mismatched task request" {
   }
   let shutdown = Ref::Ref(false)
   let tasks : Array[RuntimeTaskControl] = [
-    { task_token: 8, request_id: Some(Number(11)), cancel: () => () },
+    { task_token: 8, request_id: Some(Number(11)), cancel: () => (), },
   ]
   let mut mismatch_error_matches = false
   @async.with_task_group(group => {
@@ -1424,8 +1424,8 @@ async test "runtime ignores a late failed handler after completion" {
       IncomingRequest(runtime_wbtest_request(Number(13))),
     ).state
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1446,7 +1446,7 @@ async test "runtime ignores a late failed handler after completion" {
       runtime_test_options(),
       ports,
       events,
-      [{ task_token: 9, request_id: Some(Number(13)), cancel: () => () }],
+      [{ task_token: 9, request_id: Some(Number(13)), cancel: () => (), }],
       0,
       shutdown,
     )
@@ -1503,8 +1503,8 @@ async test "runtime traces an unwritten inbound failure when writer is broken" {
       IncomingRequest(runtime_wbtest_request(Number(14))),
     ).state
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1577,8 +1577,8 @@ async test "runtime traces only unwritten inbound failures after bounded writer 
   )
   let state = pending.state
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1654,7 +1654,13 @@ struct RuntimeOwnerTestState {
 
 ///|
 fn runtime_owner_test_state() -> RuntimeOwnerTestState {
-  { admitted: [], completed: [], cancelled: [], aborted: [], notifications: [] }
+  {
+    admitted: [],
+    completed: [],
+    cancelled: [],
+    aborted: [],
+    notifications: [],
+  }
 }
 
 ///|
@@ -1721,7 +1727,7 @@ fn runtime_owner_test_port() -> RuntimeOwnerPort[
     plan_local_effect: _ => RuntimeOwnerNoCommands,
     cancel_request: (state, id, _) => {
       (
-        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id), },
         -1,
       )
     },
@@ -1782,7 +1788,7 @@ fn runtime_owner_run_runtime_ports(
   traces : Array[RuntimeTraceEvent],
 ) -> RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -1827,8 +1833,8 @@ async test "runtime applies owner commands in order" {
   let traces : Array[RuntimeTraceEvent] = []
   let cancelled : Array[RequestId] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1889,8 +1895,8 @@ async test "runtime owner close command stops interpretation" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(2))
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -1935,8 +1941,8 @@ async test "runtime owner missing cancellation stops interpretation" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Blocking(2))
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -2321,8 +2327,8 @@ async test "runtime owner runtime rejects token and id mismatch fail-fast" {
   let shutdown = Ref::Ref(false)
   let cancelled : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -2412,8 +2418,8 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -2572,7 +2578,7 @@ fn runtime_owner_effect_test_port() -> RuntimeOwnerPort[
     plan_local_effect: _ => RuntimeOwnerNoCommands,
     cancel_request: (state, id, _) => {
       (
-        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id), },
         -1,
       )
     },
@@ -3164,8 +3170,8 @@ async test "runtime dispatch threads updated context across events" {
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -3242,8 +3248,8 @@ async test "runtime dispatch threads updated context across events" {
 async test "runtime applies immediate request completion before owner commands" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -3333,8 +3339,8 @@ async test "runtime engine returns generic dispatch state after close" {
   let cancellations : Array[Unit] = []
   let closes : Array[Unit] = []
   let ports : RuntimePorts = {
-    reader: { read: _ => input.get() },
-    writer: { write: frame => output.push(frame) },
+    reader: { read: _ => input.get(), },
+    writer: { write: frame => output.push(frame), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -3408,8 +3414,8 @@ fn runtime_wbtest_trace_ports(
   traces : Array[RuntimeTraceEvent],
 ) -> RuntimePorts {
   {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -3465,7 +3471,7 @@ fn runtime_owner_recording_port(
     cancel_request: (state, id, _) => {
       cancelled.push(id)
       (
-        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id) },
+        { ..state, cancelled: runtime_owner_test_push_id(state.cancelled, id), },
         -1,
       )
     },
@@ -4585,7 +4591,7 @@ fn runtime_outbound_run_ports(
   failures : Array[(RequestId, RuntimeOutboundFailureKind)],
 ) -> RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -4680,8 +4686,8 @@ async test "runtime outbound submission fails fast under writer backpressure" {
   writer_queue.put(RuntimeFrame(@utf8.encode("occupied\n")))
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -4695,7 +4701,7 @@ async test "runtime outbound submission fails fast under writer backpressure" {
   }
   let shutdown = Ref::Ref(false)
   let reply : @aqueue.Queue[RuntimeOutboundReply] = Queue(kind=Unbounded)
-  let options = { ..runtime_test_options(), queue_capacity: 1 }
+  let options = { ..runtime_test_options(), queue_capacity: 1, }
   let mut backpressure_limit = 0
   @async.with_task_group(group => {
     // The drain task only runs after the offer already failed synchronously,
@@ -4846,8 +4852,8 @@ async test "runtime outbound notification fails with writer kind under backpress
   writer_queue.put(RuntimeFrame(@utf8.encode("occupied\n")))
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let ports : RuntimePorts = {
-    reader: { read: _ => None },
-    writer: { write: _ => () },
+    reader: { read: _ => None, },
+    writer: { write: _ => (), },
     handlers: {
       request: _ => HandlerSuccess(Json::null()),
       notification: _ => (),
@@ -4861,7 +4867,7 @@ async test "runtime outbound notification fails with writer kind under backpress
   }
   let shutdown = Ref::Ref(false)
   let ack : @aqueue.Queue[RuntimeOutboundAck] = Queue(kind=Unbounded)
-  let options = { ..runtime_test_options(), queue_capacity: 1 }
+  let options = { ..runtime_test_options(), queue_capacity: 1, }
   let mut backpressure_limit = 0
   @async.with_task_group(group => {
     let drain = group.spawn(() => {
@@ -5041,7 +5047,7 @@ async test "runtime outbound submit after shutdown fails immediately" {
   let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
   let shutdown : Ref[Bool] = Ref(false)
   shutdown.val = true
-  let guarded : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let guarded : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1, }
   let mut local_rejected = false
   try
     ignore(guarded.submit_request(method_name="ask", params=Json::null()))
@@ -5063,7 +5069,7 @@ async test "runtime outbound submit rejects a full event queue without parking" 
   let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
   events.put(RuntimeEof)
   let shutdown : Ref[Bool] = Ref(false)
-  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1, }
   let mut observed_limit = 0
   try
     ignore(channel.submit_request(method_name="ask", params=Json::null()))
@@ -5203,7 +5209,7 @@ async test "runtime outbound sync notification rejects a full event queue" {
   let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
   events.put(RuntimeEof)
   let shutdown : Ref[Bool] = Ref(false)
-  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1, }
   match
     channel.submit_notification_sync(
       method_name="session/cancel",
@@ -5244,7 +5250,7 @@ async test "runtime outbound sync notification after shutdown fails closed" {
   let events : @aqueue.Queue[RuntimeEventOf[Unit]] = Queue(kind=Blocking(1))
   let shutdown : Ref[Bool] = Ref(false)
   shutdown.val = true
-  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1 }
+  let channel : RuntimeOutboundChannel[Unit] = { events, shutdown, limit: 1, }
   match
     channel.submit_notification_sync(
       method_name="session/cancel",

@@ -34,7 +34,7 @@ fn broker_channel_test_ports(
   failures : Array[(RequestId, RuntimeOutboundFailureKind)],
 ) -> RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -77,7 +77,7 @@ fn broker_channel_test_owner_port() -> RuntimeOwnerPort[Unit, Unit, Unit, Unit] 
       })
     },
     admit_notification: (_state, _notification) => {
-      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [] })
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [], })
     },
     execute: _invocation => (),
     execute_failure: (_state, _invocation) => (),
@@ -99,7 +99,7 @@ fn broker_channel_test_owner_port() -> RuntimeOwnerPort[Unit, Unit, Unit, Unit] 
 
 ///|
 fn broker_channel_test_new_params(cwd : String) -> NewSessionParams {
-  { cwd, additional_directories: Omitted, mcp_servers: [], meta: Omitted }
+  { cwd, additional_directories: Omitted, mcp_servers: [], meta: Omitted, }
 }
 
 ///|
@@ -300,7 +300,7 @@ async test "client connection over channel submits session cancel notifications"
       let connection = client_connection_over_channel(channel~)
       // The stable v1 Client-to-Agent notification goes through the same
       // synchronous submission path; Ok records event-queue acceptance.
-      connection.cancel({ session_id: "session", meta: Omitted })
+      connection.cancel({ session_id: "session", meta: Omitted, })
       let _ = captured.try_put(channel) catch { _ => false }
     })
     written.get()
@@ -349,7 +349,7 @@ async test "client connection over channel maps closed notifications to typed un
     let channel = captured.get()
     let connection = client_connection_over_channel(channel~)
     try {
-      connection.cancel({ session_id: "session", meta: Omitted })
+      connection.cancel({ session_id: "session", meta: Omitted, })
       observed.push("unexpected-success")
     } catch {
       ClientConnectionUnavailable(method_name~) => observed.push(method_name)

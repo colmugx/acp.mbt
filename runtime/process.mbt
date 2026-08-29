@@ -103,8 +103,8 @@ pub async fn[G] runtime_process_ports(
   }
   {
     ports: {
-      reader: { read: max_len => child_stdout.read_some(max_len~) },
-      writer: { write: frame => child_stdin.write(frame) },
+      reader: { read: max_len => child_stdout.read_some(max_len~), },
+      writer: { write: frame => child_stdin.write(frame), },
       handlers,
       cancel_outbound,
       trace,

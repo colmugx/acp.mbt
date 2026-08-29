@@ -258,7 +258,7 @@ pub(all) suberror RuntimeOwnerError {
 pub fn[S, I, C, E] runtime_owner_new(
   port : RuntimeOwnerPort[S, I, C, E],
 ) -> RuntimeOwner[S, I] {
-  { state: port.initial_state, tasks: [], next_task_token: 0, closed: false }
+  { state: port.initial_state, tasks: [], next_task_token: 0, closed: false, }
 }
 
 ///|
@@ -309,7 +309,7 @@ pub fn[I] RuntimeOwnerTask::cancel_requested(
 fn[I] runtime_owner_cancelled_task(
   task : RuntimeOwnerTask[I],
 ) -> RuntimeOwnerTask[I] {
-  { ..task, cancel_requested: true }
+  { ..task, cancel_requested: true, }
 }
 
 ///|
@@ -366,7 +366,10 @@ pub fn[S, I, C, E] runtime_owner_admit_request(
   }
   match (port.admit_request)(owner.state, request.id, request) {
     RuntimeOwnerRequestImmediate(completion~) =>
-      ({ ..owner, state: completion.state }, RuntimeOwnerImmediate(completion~))
+      (
+        { ..owner, state: completion.state, },
+        RuntimeOwnerImmediate(completion~),
+      )
     RuntimeOwnerRequestInvoke(state~, invocation~) => {
       let task : RuntimeOwnerTask[I] = {
         task_token: owner.next_task_token,
@@ -402,7 +405,7 @@ pub fn[S, I, C, E] runtime_owner_admit_notification(
   match (port.admit_notification)(owner.state, notification) {
     RuntimeOwnerNotificationImmediate(completion~) =>
       (
-        { ..owner, state: completion.state },
+        { ..owner, state: completion.state, },
         RuntimeOwnerNotificationImmediate(completion~),
       )
     RuntimeOwnerNotificationInvoke(state~, invocation~) => {
@@ -543,7 +546,7 @@ pub fn[S, I, C, E] runtime_owner_complete_request(
               )
               let next = runtime_owner_remove_task(owner, token)
               RuntimeOwnerCompletionApplied(
-                owner={ ..next, state: completion.state },
+                owner={ ..next, state: completion.state, },
                 completion~,
               )
             }
@@ -587,7 +590,7 @@ pub fn[S, I, C, E] runtime_owner_complete_notification(
           )
           let next = runtime_owner_remove_task(owner, token)
           RuntimeOwnerCompletionApplied(
-            owner={ ..next, state: completion.state },
+            owner={ ..next, state: completion.state, },
             completion~,
           )
         }
@@ -631,7 +634,7 @@ pub fn[S, I, C, E] runtime_owner_cancel_request(
         task.invocation,
       )
       RuntimeOwnerCancelRequested(
-        owner={ ..next, state: cancelled_state },
+        owner={ ..next, state: cancelled_state, },
         task=cancelled_task,
         event=RuntimeOwnerRequestCompleted(
           token=task.task_token,
@@ -747,7 +750,7 @@ priv struct RuntimeOutboundRegistry {
 
 ///|
 fn runtime_outbound_registry() -> RuntimeOutboundRegistry {
-  { next_outbound_id: 1, waiters: [] }
+  { next_outbound_id: 1, waiters: [], }
 }
 
 ///|
@@ -757,7 +760,7 @@ fn runtime_outbound_push_waiter(
   reply : @aqueue.Queue[RuntimeOutboundReply],
 ) -> Array[RuntimeOutboundWaiter] {
   let next = Array::copy(waiters)
-  next.push({ id, reply })
+  next.push({ id, reply, })
   next
 }
 
@@ -825,7 +828,7 @@ async fn runtime_outbound_release(
   match found {
     None => ()
     Some(queue) => {
-      outbound.val = { ..outbound.val, waiters: next }
+      outbound.val = { ..outbound.val, waiters: next, }
       runtime_outbound_reply_put(queue, reply)
     }
   }
@@ -843,7 +846,7 @@ async fn runtime_outbound_release_all(
   for waiter in outbound.val.waiters {
     runtime_outbound_reply_put(waiter.reply, RuntimeOutboundFailed(kind~))
   }
-  outbound.val = { ..outbound.val, waiters: [] }
+  outbound.val = { ..outbound.val, waiters: [], }
 }
 
 ///|
@@ -1917,7 +1920,7 @@ async fn[D] runtime_emit_command_of(
       match ports.handlers.outbound_failure {
         None => raise OutboundCompletionFailed
         Some(callback) =>
-          callback(id, { reason: runtime_outbound_failure_kind(reason) }) catch {
+          callback(id, { reason: runtime_outbound_failure_kind(reason), }) catch {
             _ => {
               (ports.trace)(
                 runtime_trace_event(
@@ -2491,7 +2494,13 @@ async fn[G, C, D] runtime_apply_request_completion(
         ),
       )
       runtime_event_step(
-        { state, decoder, tasks: remaining_tasks, next_task_token, stop: false },
+        {
+          state,
+          decoder,
+          tasks: remaining_tasks,
+          next_task_token,
+          stop: false,
+        },
         dispatch_context,
       )
     }
@@ -2712,7 +2721,13 @@ async fn[G, C, D] runtime_apply_notification_completion(
         runtime_trace_event("runtime", "task_completed", "", "", "notification"),
       )
       runtime_event_step(
-        { state, decoder, tasks: remaining_tasks, next_task_token, stop: false },
+        {
+          state,
+          decoder,
+          tasks: remaining_tasks,
+          next_task_token,
+          stop: false,
+        },
         owner_context,
       )
     }
@@ -2734,7 +2749,7 @@ async fn[G, C, D] runtime_apply_notification_completion(
         outbound,
       )
       runtime_event_step(
-        { state, decoder, tasks: [], next_task_token, stop: true },
+        { state, decoder, tasks: [], next_task_token, stop: true, },
         closed_context,
       )
     }
@@ -3168,7 +3183,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 ),
               )
               runtime_event_step(
-                { state, decoder, tasks, next_task_token, stop: false },
+                { state, decoder, tasks, next_task_token, stop: false, },
                 next_context,
               )
             }
@@ -3190,7 +3205,7 @@ async fn[G, C, D] runtime_apply_event_of(
                 ),
               )
               runtime_event_step(
-                { state, decoder, tasks, next_task_token, stop: false },
+                { state, decoder, tasks, next_task_token, stop: false, },
                 next_context,
               )
             }
@@ -3437,7 +3452,7 @@ async fn[G, C, D] runtime_apply_event_of(
             ),
           )
           runtime_event_step(
-            { state, decoder, tasks, next_task_token, stop: false },
+            { state, decoder, tasks, next_task_token, stop: false, },
             next_context,
           )
         }
@@ -3619,7 +3634,7 @@ async fn[G, C, D] runtime_apply_event_of(
             ),
           )
           runtime_event_step(
-            { state, decoder, tasks, next_task_token, stop: false },
+            { state, decoder, tasks, next_task_token, stop: false, },
             next_context,
           )
         }
@@ -3788,7 +3803,7 @@ async fn[G, C, D] runtime_apply_event_of(
             ),
           )
           runtime_event_step(
-            { state, decoder, tasks, next_task_token, stop: false },
+            { state, decoder, tasks, next_task_token, stop: false, },
             next_context,
           )
         }
@@ -3821,7 +3836,7 @@ async fn[G, C, D] runtime_apply_event_of(
             ),
           )
           runtime_event_step(
-            { state, decoder, tasks, next_task_token, stop: false },
+            { state, decoder, tasks, next_task_token, stop: false, },
             next_context,
           )
         }
@@ -3854,7 +3869,7 @@ async fn[G, C, D] runtime_apply_event_of(
             ),
           )
           runtime_event_step(
-            { state, decoder, tasks, next_task_token, stop: false },
+            { state, decoder, tasks, next_task_token, stop: false, },
             next_context,
           )
         }
@@ -3928,7 +3943,7 @@ async fn[G, C, D] runtime_apply_event_of(
         outbound,
       )
       runtime_event_step(
-        { state, decoder, tasks: [], next_task_token, stop: true },
+        { state, decoder, tasks: [], next_task_token, stop: true, },
         closed_context,
       )
     }

@@ -136,7 +136,7 @@ pub fn session_mode_from_json(
     path=path + ".description",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { id, name, description, meta }
+  { id, name, description, meta, }
 }
 
 ///|
@@ -196,7 +196,7 @@ pub fn session_mode_state_from_json(
     path=path + ".availableModes",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  let state : SessionModeState = { current_mode_id, available_modes, meta }
+  let state : SessionModeState = { current_mode_id, available_modes, meta, }
   session_config_validate_current_mode(
     state,
     field_path=path + ".currentModeId",
@@ -265,7 +265,7 @@ pub fn set_session_mode_params_from_json(
     path=path + ".modeId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, mode_id, meta }
+  { session_id, mode_id, meta, }
 }
 
 ///|
@@ -367,7 +367,7 @@ pub fn set_session_config_option_params_from_json(
     path=path + ".configId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, config_id, value: config_value, meta }
+  { session_id, config_id, value: config_value, meta, }
 }
 
 ///|
@@ -396,7 +396,7 @@ pub fn set_session_config_option_result_from_json(
     path=path + ".configOptions",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|

@@ -57,7 +57,7 @@ pub fn client_file_system_service(
       service_name="fs/read_text_file or fs/write_text_file",
     )
   }
-  { read_handler: read, write_handler: write }
+  { read_handler: read, write_handler: write, }
 }
 
 ///|
@@ -140,7 +140,7 @@ pub fn client_elicitation_service(
   if form is None && url is None && complete is None {
     raise MissingRequiredService(service_name="elicitation handler")
   }
-  { form_handler: form, url_handler: url, complete_handler: complete }
+  { form_handler: form, url_handler: url, complete_handler: complete, }
 }
 
 ///|
@@ -170,7 +170,7 @@ pub fn client_spec(
   } else if info.version.length() == 0 {
     Err(InvalidImplementation(reason="client version must not be empty"))
   } else {
-    Ok({ info, session, file_system, terminal, elicitation })
+    Ok({ info, session, file_system, terminal, elicitation, })
   }
 }
 

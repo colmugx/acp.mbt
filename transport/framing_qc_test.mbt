@@ -39,14 +39,14 @@ impl @qc.Arbitrary for FramingFeedCase with fn arbitrary(size, rs) {
   let cuts_source : @qc.Generator[Array[Bool]] = @qc.spawn()
   let lines = framing_qc_clean_lines(lines_source.run(size, rs))
   let cuts = cuts_source.run(size, rs)
-  { lines, cuts }
+  { lines, cuts, }
 }
 
 ///|
 impl @shrink.Shrink for FramingFeedCase with fn shrink(self) {
   let variants : Array[FramingFeedCase] = []
   for lines in @shrink.Shrink::shrink(self.lines) {
-    variants.push({ ..self, lines: framing_qc_clean_lines(lines) })
+    variants.push({ ..self, lines: framing_qc_clean_lines(lines), })
   }
   for cuts in @shrink.Shrink::shrink(self.cuts) {
     variants.push({ ..self, cuts, })

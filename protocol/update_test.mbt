@@ -120,7 +120,7 @@ fn update_test_config() -> ConfigOptionUpdate {
         name: "Thinking",
         description: Omitted,
         category: Value(ThoughtLevel),
-        kind: Boolean({ current_value: true }),
+        kind: Boolean({ current_value: true, }),
         meta: update_test_omitted_json(),
       },
       {
@@ -769,7 +769,7 @@ test "e09 fold config option update replaces the complete set" {
         name: "Thinking",
         description: Omitted,
         category: Value(ThoughtLevel),
-        kind: Boolean({ current_value: false }),
+        kind: Boolean({ current_value: false, }),
         meta: update_test_omitted_json(),
       },
     ],

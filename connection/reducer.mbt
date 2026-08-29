@@ -175,7 +175,7 @@ fn connection_reduce_incoming_request(
     method_name: request.method_name,
     cancel_requested: false,
   })
-  { state: { ..state, inbound, }, commands: [DispatchRequest(request)] }
+  { state: { ..state, inbound, }, commands: [DispatchRequest(request)], }
 }
 
 ///|
@@ -188,7 +188,7 @@ fn connection_reduce_incoming_notification(
     let id = connection_cancel_id(notification.params)
     connection_reduce_wire_cancel_inbound(state, id)
   } else {
-    { state, commands: [DispatchNotification(notification)] }
+    { state, commands: [DispatchNotification(notification)], }
   }
 }
 
@@ -256,7 +256,7 @@ fn connection_reduce_incoming_response(
       let settled_outbound = Array::copy(state.settled_outbound)
       settled_outbound.push(id)
       {
-        state: { ..state, outbound, settled_outbound },
+        state: { ..state, outbound, settled_outbound, },
         commands: [CompleteOutbound(id~, response~)],
       }
     }
@@ -298,7 +298,7 @@ fn connection_reduce_cancel_outbound(
       settled_outbound.push(id)
       let notification = connection_cancel_notification(id)
       {
-        state: { ..state, outbound, settled_outbound },
+        state: { ..state, outbound, settled_outbound, },
         commands: [
           WriteMessage(JsonRpcMessage::notification(notification)),
           CancelOutboundTask(id~),
@@ -327,8 +327,8 @@ fn connection_reduce_cancel_inbound(
       if pending.cancel_requested {
         raise DuplicateCancellation(id~)
       }
-      inbound[index] = { ..pending, cancel_requested: true }
-      { state: { ..state, inbound, }, commands: [CancelInboundTask(id~)] }
+      inbound[index] = { ..pending, cancel_requested: true, }
+      { state: { ..state, inbound, }, commands: [CancelInboundTask(id~)], }
     }
   }
 }
@@ -360,7 +360,7 @@ fn connection_reduce_incoming_completed(
         JsonRpcResponse::success(id~, result~)
       }
       {
-        state: { ..state, inbound, settled_inbound },
+        state: { ..state, inbound, settled_inbound, },
         commands: [WriteMessage(JsonRpcMessage::response(response))],
       }
     }
@@ -394,7 +394,7 @@ fn connection_reduce_incoming_failed(
         JsonRpcResponse::error(id=connection_response_id_json(id), error~)
       }
       {
-        state: { ..state, inbound, settled_inbound },
+        state: { ..state, inbound, settled_inbound, },
         commands: [WriteMessage(JsonRpcMessage::response(response))],
       }
     }

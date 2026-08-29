@@ -276,7 +276,7 @@ fn decode_plan_entry(
     path=path + ".status",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { content, priority, status, meta }
+  { content, priority, status, meta, }
 }
 
 ///|
@@ -314,7 +314,7 @@ pub fn plan_from_json(
     None => raise MissingField(path=path + ".entries")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { entries, meta }
+  { entries, meta, }
 }
 
 ///|
@@ -349,7 +349,7 @@ fn decode_cost(value : Json, path~ : String) -> Cost raise ProtocolDecodeError {
     path=path + ".currency",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { amount, currency, meta }
+  { amount, currency, meta, }
 }
 
 ///|
@@ -390,7 +390,7 @@ pub fn usage_update_from_json(
     Value(value) => Value(decode_cost(value, path=path + ".cost"))
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { used, size, cost, meta }
+  { used, size, cost, meta, }
 }
 
 ///|
@@ -425,7 +425,7 @@ fn decode_unstructured_input(
   protocol_reject_unknown(fields, ["hint", "_meta"], prefix=path)
   let hint = protocol_required_string(fields, "hint", path=path + ".hint")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { hint, meta }
+  { hint, meta, }
 }
 
 ///|
@@ -498,7 +498,7 @@ fn decode_commands(
         Value(decode_command_input(value, path=command_path + ".input"))
     }
     let meta = protocol_meta(fields, path=command_path + "._meta")
-    commands.push({ name, description, input, meta })
+    commands.push({ name, description, input, meta, })
   }
   commands
 }
@@ -516,7 +516,7 @@ pub fn available_commands_update_from_json(
     None => raise MissingField(path=path + ".availableCommands")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { available_commands, meta }
+  { available_commands, meta, }
 }
 
 ///|
@@ -595,7 +595,7 @@ fn decode_select_option(
     path=path + ".description",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { value: option_value, name, description, meta }
+  { value: option_value, name, description, meta, }
 }
 
 ///|
@@ -706,7 +706,7 @@ fn decode_select_group(
     None => raise MissingField(path=path + ".options")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { group, name, options, meta }
+  { group, name, options, meta, }
 }
 
 ///|
@@ -785,7 +785,7 @@ fn decode_config_option(
       Some(value) => decode_select_options(value, path=path + ".options")
       None => raise MissingField(path=path + ".options")
     }
-    Select({ current_value, options })
+    Select({ current_value, options, })
   } else {
     let current_value = protocol_decode_boolean(
       protocol_required(fields, "currentValue", path=path + ".currentValue"),
@@ -794,7 +794,7 @@ fn decode_config_option(
     Boolean({ current_value, })
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { id, name, description, category, kind, meta }
+  { id, name, description, category, kind, meta, }
 }
 
 ///|
@@ -837,7 +837,7 @@ pub fn current_mode_update_from_json(
     path=path + ".currentModeId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { current_mode_id, meta }
+  { current_mode_id, meta, }
 }
 
 ///|
@@ -864,7 +864,7 @@ pub fn config_option_update_from_json(
     None => raise MissingField(path=path + ".configOptions")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { config_options, meta }
+  { config_options, meta, }
 }
 
 ///|
@@ -893,7 +893,7 @@ pub fn session_info_update_from_json(
     path=path + ".updatedAt",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { title, updated_at, meta }
+  { title, updated_at, meta, }
 }
 
 ///|
@@ -965,7 +965,7 @@ pub fn session_info_from_json(
     path=path + ".updatedAt",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, cwd, additional_directories, title, updated_at, meta }
+  { session_id, cwd, additional_directories, title, updated_at, meta, }
 }
 
 ///|
@@ -1485,16 +1485,16 @@ fn session_update_append_chunk(
           let message = next[index]
           let blocks = message.blocks.copy()
           blocks.push(chunk.content)
-          next[index] = { message_id: message.message_id, blocks }
+          next[index] = { message_id: message.message_id, blocks, }
         }
         None =>
-          next.push({ message_id: chunk.message_id, blocks: [chunk.content] })
+          next.push({ message_id: chunk.message_id, blocks: [chunk.content], })
       }
       next
     }
     _ => {
       let next = messages.copy()
-      next.push({ message_id: chunk.message_id, blocks: [chunk.content] })
+      next.push({ message_id: chunk.message_id, blocks: [chunk.content], })
       next
     }
   }
@@ -1711,7 +1711,7 @@ pub fn session_update_apply(
         None => {
           let calls = state.tool_calls.copy()
           calls.push(call)
-          Ok({ ..state, tool_calls: calls })
+          Ok({ ..state, tool_calls: calls, })
         }
       }
     ToolCallUpdate(patch) =>
@@ -1720,21 +1720,21 @@ pub fn session_update_apply(
         Some(index) => {
           let calls = state.tool_calls.copy()
           calls[index] = session_update_patch_tool_call(calls[index], patch)
-          Ok({ ..state, tool_calls: calls })
+          Ok({ ..state, tool_calls: calls, })
         }
         None => Err(UnknownToolCall(tool_call_id=patch.tool_call_id))
       }
-    Plan(value) => Ok({ ..state, plan: Some(value) })
+    Plan(value) => Ok({ ..state, plan: Some(value), })
     AvailableCommandsUpdate(value) =>
-      Ok({ ..state, available_commands: value.available_commands.copy() })
+      Ok({ ..state, available_commands: value.available_commands.copy(), })
     CurrentModeUpdate(value) =>
       if session_update_mode_known(state.known_modes, value.current_mode_id) {
-        Ok({ ..state, current_mode_id: Some(value.current_mode_id) })
+        Ok({ ..state, current_mode_id: Some(value.current_mode_id), })
       } else {
         Err(UnknownMode(mode_id=value.current_mode_id))
       }
     ConfigOptionUpdate(value) =>
-      Ok({ ..state, config_options: value.config_options.copy() })
+      Ok({ ..state, config_options: value.config_options.copy(), })
     SessionInfoUpdate(value) => {
       let title = match value.title {
         Omitted => state.session_title
@@ -1750,8 +1750,8 @@ pub fn session_update_apply(
             return Err(InvalidTimestamp(field="updatedAt", value=timestamp))
           }
       }
-      Ok({ ..state, session_title: title, session_updated_at: updated_at })
+      Ok({ ..state, session_title: title, session_updated_at: updated_at, })
     }
-    UsageUpdate(value) => Ok({ ..state, usage: Some(value) })
+    UsageUpdate(value) => Ok({ ..state, usage: Some(value), })
   }
 }

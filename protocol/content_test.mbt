@@ -62,12 +62,12 @@ test "content wrappers preserve omitted and explicit null fields" {
     text: "nullable",
     meta: Null,
   })
-  let chunk : ContentChunk = { content: block, message_id: Null, meta: Null }
+  let chunk : ContentChunk = { content: block, message_id: Null, meta: Null, }
   let decoded_block = content_block_from_json(content_block_to_json(block))
   let decoded_chunk = content_chunk_from_json(content_chunk_to_json(chunk))
   assert_eq(decoded_block, block)
   assert_eq(decoded_chunk, chunk)
-  let wrapper : Content = { content: block, meta: Null }
+  let wrapper : Content = { content: block, meta: Null, }
   assert_eq(content_from_json(content_to_json(wrapper)), wrapper)
 }
 

@@ -5,7 +5,7 @@ fn terminal_test_meta() -> ProtocolNullable[Json] {
 
 ///|
 fn terminal_test_env() -> TerminalEnvVariable {
-  { name: "LANG", value: "C.UTF-8", meta: Omitted }
+  { name: "LANG", value: "C.UTF-8", meta: Omitted, }
 }
 
 ///|
@@ -102,7 +102,7 @@ test "terminal host methods round trip every wire shape" {
     terminal_kill_params_from_json(terminal_kill_params_to_json(kill_params)),
     kill_params,
   )
-  let kill_result : TerminalKillResult = { meta: Null }
+  let kill_result : TerminalKillResult = { meta: Null, }
   assert_eq(
     terminal_kill_result_from_json(terminal_kill_result_to_json(kill_result)),
     kill_result,
@@ -119,7 +119,7 @@ test "terminal host methods round trip every wire shape" {
     ),
     release_params,
   )
-  let release_result : TerminalReleaseResult = { meta: Omitted }
+  let release_result : TerminalReleaseResult = { meta: Omitted, }
   assert_eq(
     terminal_release_result_from_json(
       terminal_release_result_to_json(release_result),

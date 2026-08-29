@@ -133,7 +133,7 @@ async fn client_adapter_test_permission_selected(
   _request : RequestPermissionRequest,
 ) -> RequestPermissionResponse {
   @async.pause()
-  { outcome: Selected({ option_id: "allow", meta: Omitted }), meta: Omitted }
+  { outcome: Selected({ option_id: "allow", meta: Omitted, }), meta: Omitted, }
 }
 
 ///|
@@ -141,7 +141,7 @@ async fn client_adapter_test_permission_unknown(
   _request : RequestPermissionRequest,
 ) -> RequestPermissionResponse {
   @async.pause()
-  { outcome: Selected({ option_id: "deny", meta: Omitted }), meta: Omitted }
+  { outcome: Selected({ option_id: "deny", meta: Omitted, }), meta: Omitted, }
 }
 
 ///|
@@ -198,7 +198,7 @@ async fn client_adapter_test_thrown_cancel(
     task.cancel()
     task.wait()
   })
-  { content: "unreachable", meta: Omitted }
+  { content: "unreachable", meta: Omitted, }
 }
 
 ///|
@@ -708,7 +708,7 @@ async test "Client adapter completion matching is fail-fast" {
 
   let wrong : ClientAdapterCompletion = FsWriteTextFileCompleted(
     id=Number(20),
-    result=Ok({ meta: Omitted }),
+    result=Ok({ meta: Omitted, }),
   )
   try client_adapter_complete(reserved, invocation, wrong) catch {
     CompletionMismatch(method_name="fs/read_text_file") => ()
@@ -719,7 +719,7 @@ async test "Client adapter completion matching is fail-fast" {
 
   let wrong_id : ClientAdapterCompletion = FsReadTextFileCompleted(
     id=Number(21),
-    result=Ok({ content: "wrong", meta: Omitted }),
+    result=Ok({ content: "wrong", meta: Omitted, }),
   )
   try client_adapter_complete(reserved, invocation, wrong_id) catch {
     CompletionMismatch(method_name="fs/read_text_file") => ()

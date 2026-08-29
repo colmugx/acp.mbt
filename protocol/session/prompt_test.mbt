@@ -42,14 +42,14 @@ test "session prompt content blocks and metadata round trip" {
 
 ///|
 test "all five stable stop reasons use exact discriminators" {
-  let end_turn : PromptResult = { stop_reason: EndTurn, meta: Omitted }
-  let max_tokens : PromptResult = { stop_reason: MaxTokens, meta: Omitted }
+  let end_turn : PromptResult = { stop_reason: EndTurn, meta: Omitted, }
+  let max_tokens : PromptResult = { stop_reason: MaxTokens, meta: Omitted, }
   let max_turn_requests : PromptResult = {
     stop_reason: MaxTurnRequests,
     meta: Omitted,
   }
-  let refusal : PromptResult = { stop_reason: Refusal, meta: Omitted }
-  let cancelled : PromptResult = { stop_reason: Cancelled, meta: Omitted }
+  let refusal : PromptResult = { stop_reason: Refusal, meta: Omitted, }
+  let cancelled : PromptResult = { stop_reason: Cancelled, meta: Omitted, }
   assert_eq(
     prompt_result_to_json(end_turn),
     protocol_parse_json("{\"stopReason\":\"end_turn\"}"),

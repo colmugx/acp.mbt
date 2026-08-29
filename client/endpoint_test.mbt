@@ -31,7 +31,12 @@ fn client_endpoint_test_read_params() -> ReadTextFileParams {
 
 ///|
 fn client_endpoint_test_write_params() -> WriteTextFileParams {
-  { session_id: "session", path: "/tmp/output", content: "body", meta: Omitted }
+  {
+    session_id: "session",
+    path: "/tmp/output",
+    content: "body",
+    meta: Omitted,
+  }
 }
 
 ///|
@@ -58,7 +63,7 @@ fn client_endpoint_test_permission() -> RequestPermissionRequest {
 fn client_endpoint_test_update() -> SessionUpdateParams {
   {
     session_id: "session",
-    update: CurrentModeUpdate({ current_mode_id: "code", meta: Omitted }),
+    update: CurrentModeUpdate({ current_mode_id: "code", meta: Omitted, }),
     meta: Omitted,
   }
 }
@@ -88,7 +93,7 @@ fn client_endpoint_test_url() -> ElicitationUrlParams {
 
 ///|
 fn client_endpoint_test_complete() -> ElicitationCompleteParams {
-  { elicitation_id: "elicitation", meta: Omitted }
+  { elicitation_id: "elicitation", meta: Omitted, }
 }
 
 ///|
@@ -126,8 +131,8 @@ test "client Reader programs isolate capabilities per environment" {
   assert_eq(full_capabilities.terminal, Value(true))
   match full_capabilities.elicitation {
     Value(elicitation) => {
-      assert_eq(elicitation.form, Value({ meta: Omitted }))
-      assert_eq(elicitation.url, Value({ meta: Omitted }))
+      assert_eq(elicitation.form, Value({ meta: Omitted, }))
+      assert_eq(elicitation.url, Value({ meta: Omitted, }))
     }
     _ => fail("full environment should advertise elicitation")
   }

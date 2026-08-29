@@ -31,7 +31,7 @@ fn session_config_test_modes() -> SessionModeState {
         description: Value("Answer questions"),
         meta: session_config_test_meta(),
       },
-      { id: "code", name: "Code", description: Omitted, meta: Null },
+      { id: "code", name: "Code", description: Omitted, meta: Null, },
     ],
     meta: Value({ "source": Json::string("test") }),
   }
@@ -44,7 +44,7 @@ fn session_config_test_boolean_option() -> SessionConfigOption {
     name: "Confirm actions",
     description: Null,
     category: Value(ModelConfig),
-    kind: Boolean({ current_value: true }),
+    kind: Boolean({ current_value: true, }),
     meta: session_config_test_meta(),
   }
 }
@@ -277,7 +277,7 @@ test "mode state rejects a current mode outside available modes" {
   let inconsistent : SessionModeState = {
     current_mode_id: "gone",
     available_modes: [
-      { id: "ask", name: "Ask", description: Omitted, meta: Omitted },
+      { id: "ask", name: "Ask", description: Omitted, meta: Omitted, },
     ],
     meta: Omitted,
   }

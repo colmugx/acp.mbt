@@ -570,7 +570,7 @@ fn manifest_boundary_strip_dot_slash(path : String) -> String {
     chars.push(ch)
   }
   if chars.length() >= 2 && chars[0] == '.' && chars[1] == '/' {
-    let out = StringBuilder::new()
+    let out = StringBuilder()
     let mut index = 2
     while index < chars.length() {
       out.write_char(chars[index])

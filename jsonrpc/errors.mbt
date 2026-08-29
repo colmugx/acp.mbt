@@ -62,61 +62,61 @@ pub fn JsonRpcError::new(
   message~ : String,
   data? : Json,
 ) -> JsonRpcError {
-  { code, message, data }
+  { code, message, data, }
 }
 
 ///|
 /// Construct a parse-error object using the standard message.
 pub fn JsonRpcError::parse_error(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::ParseError
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct an invalid-request object using the standard message.
 pub fn JsonRpcError::invalid_request(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::InvalidRequest
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct a method-not-found object using the standard message.
 pub fn JsonRpcError::method_not_found(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::MethodNotFound
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct an invalid-params object using the standard message.
 pub fn JsonRpcError::invalid_params(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::InvalidParams
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct an internal-error object using the standard message.
 pub fn JsonRpcError::internal_error(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::InternalError
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct a request-cancelled object using the standard message.
 pub fn JsonRpcError::request_cancelled(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::RequestCancelled
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct an authentication-required object using the standard message.
 pub fn JsonRpcError::auth_required(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::AuthRequired
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }
 
 ///|
 /// Construct a resource-not-found object using the standard message.
 pub fn JsonRpcError::resource_not_found(data? : Json) -> JsonRpcError {
   let code = JsonRpcErrorCode::ResourceNotFound
-  { code, message: code.default_message(), data }
+  { code, message: code.default_message(), data, }
 }

@@ -201,7 +201,7 @@ fn decode_annotations_fields(
     Value(value) => Value(decode_finite_number(value, path=path + ".priority"))
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { audience, last_modified, priority, meta }
+  { audience, last_modified, priority, meta, }
 }
 
 ///|
@@ -255,7 +255,7 @@ fn decode_text_content_fields(
   let annotations = decode_nullable_annotations(fields, path~)
   let text = protocol_required_string(fields, "text", path=path + ".text")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { annotations, text, meta }
+  { annotations, text, meta, }
 }
 
 ///|
@@ -302,7 +302,7 @@ fn decode_image_content_fields(
   )
   let uri = protocol_nullable_string(fields, "uri", path=path + ".uri")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { annotations, data, mime_type, uri, meta }
+  { annotations, data, mime_type, uri, meta, }
 }
 
 ///|
@@ -352,7 +352,7 @@ fn decode_audio_content_fields(
     path=path + ".mimeType",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { annotations, data, mime_type, meta }
+  { annotations, data, mime_type, meta, }
 }
 
 ///|
@@ -417,7 +417,7 @@ fn decode_resource_link_fields(
   let title = protocol_nullable_string(fields, "title", path=path + ".title")
   let uri = protocol_required_string(fields, "uri", path=path + ".uri")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { annotations, description, mime_type, name, size, title, uri, meta }
+  { annotations, description, mime_type, name, size, title, uri, meta, }
 }
 
 ///|
@@ -475,7 +475,7 @@ fn decode_text_resource_contents_fields(
   let text = protocol_required_string(fields, "text", path=path + ".text")
   let uri = protocol_required_string(fields, "uri", path=path + ".uri")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { mime_type, text, uri, meta }
+  { mime_type, text, uri, meta, }
 }
 
 ///|
@@ -522,7 +522,7 @@ fn decode_blob_resource_contents_fields(
   )
   let uri = protocol_required_string(fields, "uri", path=path + ".uri")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { blob, mime_type, uri, meta }
+  { blob, mime_type, uri, meta, }
 }
 
 ///|
@@ -609,7 +609,7 @@ fn decode_embedded_resource_fields(
     None => raise MissingField(path=path + ".resource")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { annotations, resource, meta }
+  { annotations, resource, meta, }
 }
 
 ///|
@@ -709,7 +709,7 @@ fn content_from_fields(
     None => raise MissingField(path=path + ".content")
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { content, meta }
+  { content, meta, }
 }
 
 ///|
@@ -753,7 +753,7 @@ fn content_chunk_from_fields(
     path=path + ".messageId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { content, message_id, meta }
+  { content, message_id, meta, }
 }
 
 ///|

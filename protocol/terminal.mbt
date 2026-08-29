@@ -150,7 +150,7 @@ fn terminal_decode_env_variable(
     path=path + ".value",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { name, value: variable_value, meta }
+  { name, value: variable_value, meta, }
 }
 
 ///|
@@ -284,7 +284,7 @@ fn terminal_decode_exit_status(
   )
   let signal = protocol_nullable_string(fields, "signal", path=path + ".signal")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { exit_code, signal, meta }
+  { exit_code, signal, meta, }
 }
 
 ///|
@@ -380,7 +380,7 @@ pub fn terminal_create_params_from_json(
     path=path + ".outputByteLimit",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, command, args, env, cwd, output_byte_limit, meta }
+  { session_id, command, args, env, cwd, output_byte_limit, meta, }
 }
 
 ///|
@@ -438,7 +438,7 @@ pub fn terminal_create_result_from_json(
     path=path + ".terminalId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { terminal_id, meta }
+  { terminal_id, meta, }
 }
 
 ///|
@@ -471,7 +471,7 @@ pub fn terminal_output_params_from_json(
     path~,
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, terminal_id, meta }
+  { session_id, terminal_id, meta, }
 }
 
 ///|
@@ -510,7 +510,7 @@ pub fn terminal_output_result_from_json(
       Value(terminal_decode_exit_status(value, path=path + ".exitStatus"))
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { output, truncated, exit_status, meta }
+  { output, truncated, exit_status, meta, }
 }
 
 ///|
@@ -571,7 +571,7 @@ pub fn terminal_wait_for_exit_params_from_json(
     value,
     path~,
   )
-  { session_id, terminal_id, meta }
+  { session_id, terminal_id, meta, }
 }
 
 ///|
@@ -626,7 +626,7 @@ pub fn terminal_wait_for_exit_result_from_json(
     value,
     path~,
   )
-  { exit_code, signal, meta }
+  { exit_code, signal, meta, }
 }
 
 ///|
@@ -664,7 +664,7 @@ pub fn terminal_kill_params_from_json(
     value,
     path~,
   )
-  { session_id, terminal_id, meta }
+  { session_id, terminal_id, meta, }
 }
 
 ///|
@@ -685,7 +685,7 @@ pub fn terminal_kill_result_from_json(
   value : Json,
   path? : String = "terminal/kill",
 ) -> TerminalKillResult raise ProtocolDecodeError {
-  { meta: terminal_decode_empty_result(value, path~) }
+  { meta: terminal_decode_empty_result(value, path~), }
 }
 
 ///|
@@ -706,7 +706,7 @@ pub fn terminal_release_params_from_json(
     value,
     path~,
   )
-  { session_id, terminal_id, meta }
+  { session_id, terminal_id, meta, }
 }
 
 ///|
@@ -727,7 +727,7 @@ pub fn terminal_release_result_from_json(
   value : Json,
   path? : String = "terminal/release",
 ) -> TerminalReleaseResult raise ProtocolDecodeError {
-  { meta: terminal_decode_empty_result(value, path~) }
+  { meta: terminal_decode_empty_result(value, path~), }
 }
 
 ///|

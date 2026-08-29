@@ -17,7 +17,7 @@ fn tool_test_content() -> Content {
 
 ///|
 fn tool_test_location() -> ToolCallLocation {
-  { path: "/tmp/acp.txt", line: Value(1), meta: tool_test_omitted_json() }
+  { path: "/tmp/acp.txt", line: Value(1), meta: tool_test_omitted_json(), }
 }
 
 ///|
@@ -40,7 +40,7 @@ fn tool_test_call(kind : ToolKind) -> ToolCall {
     content: Value([
       Content(tool_test_content()),
       Diff(tool_test_diff()),
-      Terminal({ terminal_id: "term-1", meta: tool_test_omitted_json() }),
+      Terminal({ terminal_id: "term-1", meta: tool_test_omitted_json(), }),
     ]),
     locations: Value([tool_test_location()]),
     raw_input: Value({ "path": Json::string("/tmp/acp.txt") }),
@@ -260,7 +260,7 @@ test "permission options outcomes and request payload round trip" {
     ),
     request,
   )
-  let response : RequestPermissionResponse = { outcome: cancelled, meta: Null }
+  let response : RequestPermissionResponse = { outcome: cancelled, meta: Null, }
   assert_eq(
     request_permission_response_from_json(
       request_permission_response_to_json(response),

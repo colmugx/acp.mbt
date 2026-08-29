@@ -286,7 +286,7 @@ test "matrix F11 terminal tool content requires a usable terminal id" {
   } noraise {
     _ => fail("expected terminal content decoding to fail")
   }
-  let degenerate : Terminal = { terminal_id: "", meta: Omitted }
+  let degenerate : Terminal = { terminal_id: "", meta: Omitted, }
   try terminal_to_json(degenerate) catch {
     InvalidField(path="terminalId", reason=_) => ()
     _ => fail("expected empty terminalId encode rejection")
@@ -359,7 +359,11 @@ test "matrix G06 terminal output and truncated flags round trip both ways" {
   let truncated_result : TerminalOutputResult = {
     output: "边界テスト🚀",
     truncated: true,
-    exit_status: Value({ exit_code: Value(1UL), signal: Omitted, meta: Omitted }),
+    exit_status: Value({
+      exit_code: Value(1UL),
+      signal: Omitted,
+      meta: Omitted,
+    }),
     meta: Omitted,
   }
   assert_eq(

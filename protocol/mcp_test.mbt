@@ -9,7 +9,7 @@ test "stdio MCP server round trips arrays and validates absolute command" {
     name: "files",
     command: "/usr/local/bin/mcp-files",
     args: ["--root", "/tmp"],
-    env: [{ name: "MODE", value: "test", meta: mcp_test_meta() }],
+    env: [{ name: "MODE", value: "test", meta: mcp_test_meta(), }],
     meta: Null,
   })
   let encoded = mcp_server_to_json(server)
@@ -28,7 +28,7 @@ test "http and sse MCP unions preserve discriminator and headers" {
     name: "remote-http",
     url: "https://example.test/mcp",
     headers: [
-      { name: "Authorization", value: "Bearer token", meta: mcp_test_meta() },
+      { name: "Authorization", value: "Bearer token", meta: mcp_test_meta(), },
     ],
     meta: mcp_test_meta(),
   })

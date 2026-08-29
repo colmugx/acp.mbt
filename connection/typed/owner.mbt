@@ -108,7 +108,7 @@ pub(all) enum TypedCloseResult[S, I] {
 
 ///|
 pub fn[S, I] typed_owner_new(state : S) -> TypedOwner[S, I] {
-  { state, tasks: [], next_token: 0, closed: false }
+  { state, tasks: [], next_token: 0, closed: false, }
 }
 
 ///|
@@ -153,7 +153,7 @@ pub fn[I] TypedOwnerTask::cancel_requested(self : TypedOwnerTask[I]) -> Bool {
 
 ///|
 fn[I] typed_owner_task_cancelled(task : TypedOwnerTask[I]) -> TypedOwnerTask[I] {
-  { ..task, cancel_requested: true }
+  { ..task, cancel_requested: true, }
 }
 
 ///|
@@ -225,7 +225,7 @@ pub fn[S, I, Q, R] typed_owner_admit_request(
       let tasks = Array::copy(owner.tasks)
       tasks.push(task)
       (
-        { state, tasks, next_token: owner.next_token + 1, closed: false },
+        { state, tasks, next_token: owner.next_token + 1, closed: false, },
         InvokeTask(task~),
       )
     }
@@ -256,7 +256,7 @@ pub fn[S, I, N] typed_owner_admit_notification(
       let tasks = Array::copy(owner.tasks)
       tasks.push(task)
       (
-        { state, tasks, next_token: owner.next_token + 1, closed: false },
+        { state, tasks, next_token: owner.next_token + 1, closed: false, },
         InvokeTask(task~),
       )
     }
@@ -312,7 +312,7 @@ pub fn[S, I, C, R] typed_owner_complete_request(
                 completion,
               )
               Applied(
-                owner={ ..next, state: completed.state },
+                owner={ ..next, state: completed.state, },
                 result=completed.result,
               )
             }
@@ -345,7 +345,7 @@ pub fn[S, I, C] typed_owner_complete_notification(
         Some(task) => {
           let next = typed_owner_remove_task(owner, token)
           let completed = complete(next.state, task.invocation, completion)
-          Applied(owner={ ..next, state: completed.state })
+          Applied(owner={ ..next, state: completed.state, })
         }
       }
   }
@@ -383,7 +383,7 @@ pub fn[S, I] typed_owner_cancel_request(
         typed_owner_task_cancelled(task),
       )
       Requested(
-        owner={ ..next, state: next_state },
+        owner={ ..next, state: next_state, },
         task=typed_owner_task_cancelled(task),
       )
     }

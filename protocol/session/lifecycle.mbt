@@ -132,7 +132,7 @@ pub fn list_sessions_params_from_json(
   let cwd = session_lifecycle_decode_nullable_cwd(fields, path=path + ".cwd")
   let cursor = protocol_nullable_string(fields, "cursor", path=path + ".cursor")
   let meta = protocol_meta(fields, path=path + "._meta")
-  { cwd, cursor, meta }
+  { cwd, cursor, meta, }
 }
 
 ///|
@@ -171,7 +171,7 @@ pub fn list_sessions_result_from_json(
     path=path + ".nextCursor",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { sessions, next_cursor, meta }
+  { sessions, next_cursor, meta, }
 }
 
 ///|
@@ -202,7 +202,7 @@ pub fn delete_session_params_from_json(
     path=path + ".sessionId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -222,7 +222,7 @@ pub fn delete_session_result_from_json(
   value : Json,
   path? : String = "session/delete",
 ) -> DeleteSessionResult raise ProtocolDecodeError {
-  { meta: session_lifecycle_decode_meta_only(value, path~) }
+  { meta: session_lifecycle_decode_meta_only(value, path~), }
 }
 
 ///|
@@ -249,7 +249,7 @@ pub fn close_session_params_from_json(
     path=path + ".sessionId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -269,7 +269,7 @@ pub fn close_session_result_from_json(
   value : Json,
   path? : String = "session/close",
 ) -> CloseSessionResult raise ProtocolDecodeError {
-  { meta: session_lifecycle_decode_meta_only(value, path~) }
+  { meta: session_lifecycle_decode_meta_only(value, path~), }
 }
 
 ///|
@@ -296,7 +296,7 @@ pub fn cancel_params_from_json(
     path=path + ".sessionId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, meta }
+  { session_id, meta, }
 }
 
 ///|
@@ -328,7 +328,7 @@ pub fn session_update_params_from_json(
     path=path + ".update",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { session_id, update, meta }
+  { session_id, update, meta, }
 }
 
 ///|

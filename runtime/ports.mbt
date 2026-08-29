@@ -139,7 +139,7 @@ pub(all) struct RuntimeOptions {
 
 ///|
 pub fn runtime_default_options() -> RuntimeOptions {
-  { max_frame_bytes: 1024 * 1024, queue_capacity: 64, read_chunk_bytes: 4096 }
+  { max_frame_bytes: 1024 * 1024, queue_capacity: 64, read_chunk_bytes: 4096, }
 }
 
 ///|
@@ -161,7 +161,7 @@ pub fn runtime_trace_event(
   method_name : String,
   error_kind : String,
 ) -> RuntimeTraceEvent {
-  { direction, phase, request_id, method_name, error_kind }
+  { direction, phase, request_id, method_name, error_kind, }
 }
 
 ///|

@@ -715,7 +715,7 @@ pub fn elicitation_create_params_from_json(
         ),
         path=path + ".requestedSchema",
       )
-      Form({ scope, message, requested_schema, meta })
+      Form({ scope, message, requested_schema, meta, })
     }
     "url" => {
       if fields.contains("requestedSchema") {
@@ -732,7 +732,7 @@ pub fn elicitation_create_params_from_json(
         protocol_required(fields, "url", path=path + ".url"),
         path=path + ".url",
       )
-      Url({ scope, elicitation_id, message, url, meta })
+      Url({ scope, elicitation_id, message, url, meta, })
     }
     _ => abort("unreachable")
   }
@@ -812,7 +812,7 @@ pub fn elicitation_create_result_from_json(
       }
   }
   let meta = protocol_meta(fields, path=path + "._meta")
-  { action, content, meta }
+  { action, content, meta, }
 }
 
 ///|
@@ -861,7 +861,7 @@ pub fn elicitation_complete_params_from_json(
     path=path + ".elicitationId",
   )
   let meta = protocol_meta(fields, path=path + "._meta")
-  { elicitation_id, meta }
+  { elicitation_id, meta, }
 }
 
 ///|

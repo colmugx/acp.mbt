@@ -62,7 +62,7 @@ pub(all) suberror ClientProtocolError {
 pub fn client_protocol_state_new(
   capabilities~ : ProtocolNullable[ClientCapabilities],
 ) -> ClientProtocolState {
-  { phase: AwaitingReady, capabilities }
+  { phase: AwaitingReady, capabilities, }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn client_protocol_state_new(
 pub fn client_protocol_state_ready(
   capabilities~ : ProtocolNullable[ClientCapabilities],
 ) -> ClientProtocolState {
-  { phase: Ready, capabilities }
+  { phase: Ready, capabilities, }
 }
 
 ///|
@@ -200,14 +200,14 @@ fn client_reduce_request(
   client_require_ready(state, method_name)
   match request {
     SessionRequestPermission(_) =>
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     FsReadTextFile(_) => {
       client_require_capability(
         client_fs_read_supported(state),
         method_name,
         "fs.readTextFile",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     FsWriteTextFile(_) => {
       client_require_capability(
@@ -215,7 +215,7 @@ fn client_reduce_request(
         method_name,
         "fs.writeTextFile",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     TerminalCreate(_)
     | TerminalOutput(_)
@@ -223,7 +223,7 @@ fn client_reduce_request(
     | TerminalKill(_)
     | TerminalRelease(_) => {
       client_require_terminal(state, method_name)
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     ElicitationCreate(params) => {
       match params {
@@ -240,7 +240,7 @@ fn client_reduce_request(
             "elicitation.url",
           )
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
   }
 }
@@ -254,7 +254,7 @@ fn client_reduce_notification(
     SessionUpdate(_) => {
       let method_name = notification.method_name()
       client_require_ready(state, method_name)
-      { state, commands: [DispatchNotification(notification)] }
+      { state, commands: [DispatchNotification(notification)], }
     }
     ElicitationComplete(_) => {
       let method_name = notification.method_name()
@@ -264,10 +264,10 @@ fn client_reduce_notification(
         method_name,
         "elicitation.url",
       )
-      { state, commands: [DispatchNotification(notification)] }
+      { state, commands: [DispatchNotification(notification)], }
     }
     CancelRequest(request_id) =>
-      { state, commands: [CancelRequest(request_id~)] }
+      { state, commands: [CancelRequest(request_id~)], }
   }
 }
 
@@ -282,7 +282,7 @@ pub fn client_protocol_reduce(
     Ready =>
       match state.phase {
         Ready => raise AlreadyReady
-        AwaitingReady => { state: { ..state, phase: Ready }, commands: [] }
+        AwaitingReady => { state: { ..state, phase: Ready, }, commands: [], }
       }
     Request(request) => client_reduce_request(state, request)
     Notification(notification) =>

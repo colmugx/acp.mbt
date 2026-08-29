@@ -44,7 +44,7 @@ fn client_process_test_owner_port() -> @connection.RuntimeOwnerPort[
       })
     },
     admit_notification: (_state, _notification) => {
-      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [] })
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [], })
     },
     execute: async fn(_invocation) {
       @async.pause()
@@ -132,7 +132,7 @@ async test "client_connect_process validates options before spawning" {
       initial_state=client_adapter_test_state(endpoint),
       handlers=client_process_test_handlers([]),
       command="/bin/cat",
-      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0 },
+      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0, },
       trace=_ => (),
     )
     ()
