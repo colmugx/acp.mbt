@@ -16,6 +16,7 @@ pub(all) enum ExperimentalV2AgentRequest {
   SessionList(ExperimentalV2ListSessionsParams)
   SessionDelete(ExperimentalV2DeleteSessionParams)
   SessionResume(ExperimentalV2ResumeSessionParams)
+  SessionFork(ExperimentalV2ForkSessionParams)
   SessionClose(ExperimentalV2CloseSessionParams)
   SessionSetConfigOption(ExperimentalV2SetConfigOptionParams)
 } derive(Eq, Debug)
@@ -33,6 +34,7 @@ pub fn ExperimentalV2AgentRequest::method_name(
     SessionList(_) => "session/list"
     SessionDelete(_) => "session/delete"
     SessionResume(_) => "session/resume"
+    SessionFork(_) => "session/fork"
     SessionClose(_) => "session/close"
     SessionSetConfigOption(_) => "session/set_config_option"
   }
@@ -174,7 +176,7 @@ pub fn experimental_v2_agent_state_new(
   {
     phase: AgentAwaitingInitialize,
     authentication: AuthNotAdvertised,
-    client_capabilities: { elicitation: MarkerUnsupported, meta: None },
+    client_capabilities: { elicitation: MarkerUnsupported, meta: None, },
     client_info: None,
     config,
   }
@@ -243,6 +245,19 @@ fn experimental_v2_agent_additional_directories_supported(
     state,
     session => MarkerSupported(session),
     session => session.additional_directories,
+  )
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft): the `session.fork` marker of
+/// the pinned v2 unstable overlay, gated exactly like `session.delete`.
+fn experimental_v2_agent_fork_supported(
+  state : ExperimentalV2AgentState,
+) -> Bool {
+  experimental_v2_agent_session_nested(
+    state,
+    session => MarkerSupported(session),
+    session => session.fork,
   )
 }
 
@@ -448,7 +463,7 @@ fn experimental_v2_agent_reduce_initialize(
           commands: [SendInitialize(result~, accepted=true)],
         }
       } else {
-        { state, commands: [SendInitialize(result~, accepted=false)] }
+        { state, commands: [SendInitialize(result~, accepted=false)], }
       }
     }
   }
@@ -466,7 +481,7 @@ fn experimental_v2_agent_reduce_login(
       if !experimental_v2_agent_auth_method_advertised(state, params.method_id) {
         raise AuthMethodNotAdvertised(method_id=params.method_id)
       }
-      { state, commands: [Login(method_id=params.method_id)] }
+      { state, commands: [Login(method_id=params.method_id)], }
     }
   }
 }
@@ -478,7 +493,7 @@ fn experimental_v2_agent_reduce_logout(
   match state.authentication {
     AuthNotAdvertised => raise AuthNotAdvertised(method_name="auth/logout")
     AuthPending => raise NotLoggedIn
-    AuthLoggedIn => { state, commands: [Logout] }
+    AuthLoggedIn => { state, commands: [Logout], }
   }
 }
 
@@ -502,7 +517,7 @@ fn experimental_v2_agent_reduce_request_initialized(
           experimental_v2_agent_check_mcp_servers(state, "session/new", servers)
         None => ()
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionPrompt(params) => {
       experimental_v2_agent_check_prompt_blocks(
@@ -510,17 +525,17 @@ fn experimental_v2_agent_reduce_request_initialized(
         "session/prompt",
         params.prompt,
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionList(_) | SessionClose(_) | SessionSetConfigOption(_) =>
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     SessionDelete(_) => {
       experimental_v2_agent_require_capability(
         experimental_v2_agent_delete_supported(state),
         "session/delete",
         "session.delete",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionResume(params) => {
       experimental_v2_agent_check_additional_directories(
@@ -535,7 +550,27 @@ fn experimental_v2_agent_reduce_request_initialized(
           )
         None => ()
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
+    }
+    SessionFork(params) => {
+      experimental_v2_agent_require_capability(
+        experimental_v2_agent_fork_supported(state),
+        "session/fork",
+        "session.fork",
+      )
+      experimental_v2_agent_check_additional_directories(
+        state,
+        "session/fork",
+        params.additional_directories,
+      )
+      match params.mcp_servers {
+        Some(servers) =>
+          experimental_v2_agent_check_mcp_servers(
+            state, "session/fork", servers,
+          )
+        None => ()
+      }
+      { state, commands: [DispatchRequest(request)], }
     }
   }
 }
@@ -549,9 +584,9 @@ fn experimental_v2_agent_reduce_notification(
   experimental_v2_agent_require_initialized(state, method_name)
   match notification {
     SessionCancel(params) =>
-      { state, commands: [CancelSession(session_id=params.session_id)] }
+      { state, commands: [CancelSession(session_id=params.session_id)], }
     CancelRequest(request_id) =>
-      { state, commands: [CancelRequest(request_id~)] }
+      { state, commands: [CancelRequest(request_id~)], }
   }
 }
 
@@ -568,7 +603,7 @@ fn experimental_v2_agent_reduce_login_succeeded(
     AuthNotAdvertised => raise AuthNotAdvertised(method_name="auth/login")
     AuthLoggedIn => raise AlreadyLoggedIn
     AuthPending =>
-      { state: { ..state, authentication: AuthLoggedIn }, commands: [] }
+      { state: { ..state, authentication: AuthLoggedIn, }, commands: [], }
   }
 }
 
@@ -581,7 +616,7 @@ fn experimental_v2_agent_reduce_logged_out(
     AuthNotAdvertised => raise AuthNotAdvertised(method_name="auth/logout")
     AuthPending => raise NotLoggedIn
     AuthLoggedIn =>
-      { state: { ..state, authentication: AuthPending }, commands: [] }
+      { state: { ..state, authentication: AuthPending, }, commands: [], }
   }
 }
 

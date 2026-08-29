@@ -102,7 +102,7 @@ pub(all) suberror ExperimentalV2ClientProtocolError {
 pub fn experimental_v2_client_state_new(
   capabilities~ : ExperimentalV2ClientCapabilities,
 ) -> ExperimentalV2ClientState {
-  { phase: ClientAwaitingInitialize, capabilities, agent: None }
+  { phase: ClientAwaitingInitialize, capabilities, agent: None, }
 }
 
 ///|
@@ -186,7 +186,7 @@ fn experimental_v2_client_reduce_initialize_result(
     ClientAwaitingInitialize =>
       if result.protocol_version == experimental_v2_protocol_version {
         {
-          state: { ..state, phase: ClientReady, agent: Some(result) },
+          state: { ..state, phase: ClientReady, agent: Some(result), },
           commands: [],
         }
       } else {
@@ -215,7 +215,7 @@ fn experimental_v2_client_reduce_request(
       // The v2 baseline defines no client capability marker for permission
       // requests (ClientCapabilities carries only `elicitation`); the method
       // is always available once ready.
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     ElicitationCreate(params) => {
       match params {
         Known(known) =>
@@ -240,7 +240,7 @@ fn experimental_v2_client_reduce_request(
             "elicitation." + tag,
           )
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
   }
 }
@@ -260,10 +260,10 @@ fn experimental_v2_client_reduce_notification(
         notification,
       )
       experimental_v2_client_require_ready(state, method_name)
-      { state, commands: [DispatchNotification(notification)] }
+      { state, commands: [DispatchNotification(notification)], }
     }
     CancelRequest(request_id) =>
-      { state, commands: [CancelRequest(request_id~)] }
+      { state, commands: [CancelRequest(request_id~)], }
   }
 }
 

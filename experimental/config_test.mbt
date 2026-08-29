@@ -138,8 +138,8 @@ test "v2 config option boolean payload round-trips" {
       {
         config_id: "verbose",
         category: Some(CategoryMode),
-        payload: PayloadBoolean({ current_value: true }),
-        ..,
+        payload: PayloadBoolean({ current_value: true, }),
+        ..
       }
     ),
   )
@@ -162,7 +162,7 @@ test "v2 config option select payload round-trips grouped options" {
             options: OptionsGrouped([{ options: [_, _], .. }]),
           }
         ),
-        ..,
+        ..
       }
     ),
   )

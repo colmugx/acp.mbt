@@ -11,7 +11,7 @@ fn experimental_v2_runtime_test_ports(
   failures : Array[(@jsonrpc.RequestId, @runtime.RuntimeOutboundFailureKind)],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -124,7 +124,7 @@ async fn experimental_v2_runtime_test_streaming_prompt(
       UpdateUserMessage({
         message_id: "m1",
         content: PatchValue([
-          Known(BlockText({ text: "hello", annotations: None, meta: None })),
+          Known(BlockText({ text: "hello", annotations: None, meta: None, })),
         ]),
         meta: PatchOmitted,
       }),
@@ -133,14 +133,14 @@ async fn experimental_v2_runtime_test_streaming_prompt(
   }
   let running : ExperimentalV2UpdateSessionNotification = {
     session_id: "created",
-    update: Known(UpdateState(Known(StateRunning({ meta: None })))),
+    update: Known(UpdateState(Known(StateRunning({ meta: None, })))),
     meta: None,
   }
   let idle : ExperimentalV2UpdateSessionNotification = {
     session_id: "created",
     update: Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None })),
+        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None, })),
       ),
     ),
     meta: None,
@@ -167,7 +167,7 @@ async fn experimental_v2_runtime_test_streaming_prompt(
   replies.push(reply)
   context.session_update(idle)
   streamed.push(idle)
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -326,7 +326,7 @@ async test "v2 agent runtime outbound settles a parked submitter once on close" 
     } catch {
       error => observed.push(error)
     }
-    { meta: None }
+    { meta: None, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -419,7 +419,7 @@ async test "v2 agent runtime outbound maps the cancelled error code to a typed c
     } catch {
       error => observed.push(error)
     }
-    { meta: None }
+    { meta: None, }
   })
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -561,7 +561,7 @@ async test "v2 agent serve stdio validates options before binding stdio" {
       endpoint~,
       context_factory=_channel => experimental_v2_agent_fail_fast_context(),
       initial_state=experimental_v2_agent_test_adapter_state(endpoint),
-      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0 },
+      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0, },
       trace=_ => (),
     )
     ()

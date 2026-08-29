@@ -40,6 +40,10 @@ pub(all) enum ExperimentalV2AgentInvocation {
     id~ : @jsonrpc.RequestId,
     params~ : ExperimentalV2DeleteSessionParams
   )
+  SessionForkInvocation(
+    id~ : @jsonrpc.RequestId,
+    params~ : ExperimentalV2ForkSessionParams
+  )
 } derive(Eq, Debug)
 
 ///|
@@ -104,6 +108,13 @@ pub(all) enum ExperimentalV2AgentCompletion {
     id~ : @jsonrpc.RequestId,
     result~ : Result[
       ExperimentalV2DeleteSessionResult,
+      ExperimentalV2AgentHandlerError,
+    ]
+  )
+  SessionForkCompleted(
+    id~ : @jsonrpc.RequestId,
+    result~ : Result[
+      ExperimentalV2ForkSessionResult,
       ExperimentalV2AgentHandlerError,
     ]
   )
@@ -215,6 +226,13 @@ pub async fn experimental_v2_agent_execute(
           endpoint.delete_session(context, params)
         }),
       )
+    SessionForkInvocation(id~, params~) =>
+      SessionForkCompleted(
+        id~,
+        result=experimental_v2_agent_execute_call(async fn() {
+          endpoint.fork_session(context, params)
+        }),
+      )
   }
 }
 
@@ -235,6 +253,7 @@ pub fn experimental_v2_agent_invocation_method_name(
     SessionSetConfigOptionInvocation(id=_, params=_) =>
       "session/set_config_option"
     SessionDeleteInvocation(id=_, params=_) => "session/delete"
+    SessionForkInvocation(id=_, params=_) => "session/fork"
   }
 }
 
@@ -262,6 +281,8 @@ fn experimental_v2_agent_failed_completion(
       SessionSetConfigOptionCompleted(id~, result=Err(error))
     SessionDeleteInvocation(id~, params=_) =>
       SessionDeleteCompleted(id~, result=Err(error))
+    SessionForkInvocation(id~, params=_) =>
+      SessionForkCompleted(id~, result=Err(error))
   }
 }
 

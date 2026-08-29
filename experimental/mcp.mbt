@@ -26,7 +26,7 @@ pub fn experimental_v2_decode_env_variable(
     path=path + ".value",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, value: item_value, meta }
+  { name, value: item_value, meta, }
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn experimental_v2_decode_http_header(
     path=path + ".value",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, value: item_value, meta }
+  { name, value: item_value, meta, }
 }
 
 ///|
@@ -133,7 +133,7 @@ pub fn experimental_v2_decode_mcp_server_stdio(
     })
   })
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, command, args, env, meta }
+  { name, command, args, env, meta, }
 }
 
 ///|
@@ -197,7 +197,7 @@ pub fn experimental_v2_decode_mcp_server_http(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, url, headers, meta }
+  { name, url, headers, meta, }
 }
 
 ///|

@@ -133,7 +133,7 @@ fn experimental_v2_client_trace(
   method_name : String,
   error : @jsonrpc.JsonRpcError,
 ) -> ExperimentalV2ClientAdapterStep {
-  { state, outputs: [Command(TraceError(method_name~, error~))] }
+  { state, outputs: [Command(TraceError(method_name~, error~))], }
 }
 
 ///|
@@ -380,7 +380,7 @@ fn experimental_v2_client_admit_request(
   match experimental_v2_client_adapter_reduce_request(state, request) {
     Err(error) => Immediate(experimental_v2_client_response(state, id, error))
     Ok(step) => {
-      let next : ExperimentalV2ClientAdapterState = { protocol: step.state }
+      let next : ExperimentalV2ClientAdapterState = { protocol: step.state, }
       match request {
         SessionRequestPermission(params) =>
           Invoke(
@@ -412,7 +412,7 @@ fn experimental_v2_client_admit_notification(
           )
         Ok(step) =>
           Invoke(
-            state={ protocol: step.state },
+            state={ protocol: step.state, },
             invocation=SessionUpdateInvocation(params~),
           )
       }
@@ -425,7 +425,7 @@ fn experimental_v2_client_admit_notification(
           )
         Ok(step) =>
           Invoke(
-            state={ protocol: step.state },
+            state={ protocol: step.state, },
             invocation=ElicitationCompleteInvocation(params~),
           )
       }
@@ -438,7 +438,7 @@ fn experimental_v2_client_admit_notification(
           )
         Ok(step) =>
           Immediate({
-            state: { protocol: step.state },
+            state: { protocol: step.state, },
             outputs: [Command(CancelRequest(request_id~))],
           })
       }
@@ -561,7 +561,7 @@ fn experimental_v2_client_complete_permission(
       experimental_v2_client_complete_result(
         state,
         id,
-        Ok({ outcome: Known(OutcomeCancelled), meta: None }),
+        Ok({ outcome: Known(OutcomeCancelled), meta: None, }),
         experimental_v2_encode_request_permission_response,
       )
     Err(error) =>
@@ -608,7 +608,7 @@ fn experimental_v2_client_complete_notification(
   result : Result[Unit, ExperimentalV2ClientHandlerError],
 ) -> ExperimentalV2ClientAdapterStep {
   match result {
-    Ok(_) => { state, outputs: [] }
+    Ok(_) => { state, outputs: [], }
     Err(error) =>
       experimental_v2_client_trace(
         state,

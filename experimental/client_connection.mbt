@@ -9,6 +9,7 @@ pub(all) enum ExperimentalV2ClientForwardRequest {
   SessionList(ExperimentalV2ListSessionsParams)
   SessionResume(ExperimentalV2ResumeSessionParams)
   SessionDelete(ExperimentalV2DeleteSessionParams)
+  SessionFork(ExperimentalV2ForkSessionParams)
   SessionClose(ExperimentalV2CloseSessionParams)
   SessionPrompt(ExperimentalV2PromptParams)
   SessionSetConfigOption(ExperimentalV2SetConfigOptionParams)
@@ -27,6 +28,7 @@ pub fn ExperimentalV2ClientForwardRequest::method_name(
     SessionList(_) => "session/list"
     SessionResume(_) => "session/resume"
     SessionDelete(_) => "session/delete"
+    SessionFork(_) => "session/fork"
     SessionClose(_) => "session/close"
     SessionPrompt(_) => "session/prompt"
     SessionSetConfigOption(_) => "session/set_config_option"
@@ -45,6 +47,7 @@ pub(all) enum ExperimentalV2ClientForwardReply {
   ReplyListSessions(ExperimentalV2ListSessionsResult)
   ReplyResumeSession(ExperimentalV2ResumeSessionResult)
   ReplyDeleteSession(ExperimentalV2DeleteSessionResult)
+  ReplyForkSession(ExperimentalV2ForkSessionResult)
   ReplyCloseSession(ExperimentalV2CloseSessionResult)
   ReplyPrompt(ExperimentalV2PromptResult)
   ReplySetConfigOption(ExperimentalV2SetConfigOptionResult)
@@ -63,6 +66,7 @@ pub fn ExperimentalV2ClientForwardReply::method_name(
     ReplyListSessions(_) => "session/list"
     ReplyResumeSession(_) => "session/resume"
     ReplyDeleteSession(_) => "session/delete"
+    ReplyForkSession(_) => "session/fork"
     ReplyCloseSession(_) => "session/close"
     ReplyPrompt(_) => "session/prompt"
     ReplySetConfigOption(_) => "session/set_config_option"
@@ -137,7 +141,7 @@ pub fn experimental_v2_client_connection(
   request_broker~ : ExperimentalV2ClientForwardRequestBroker,
   notification_broker~ : ExperimentalV2ClientForwardNotificationBroker,
 ) -> ExperimentalV2ClientConnection {
-  { request_broker, notification_broker }
+  { request_broker, notification_broker, }
 }
 
 ///|
@@ -278,6 +282,21 @@ pub async fn ExperimentalV2ClientConnection::delete_session(
     ReplyDeleteSession(result) => result
     reply =>
       raise ReplyMismatch(method_name="session/delete: " + reply.method_name())
+  }
+}
+
+///|
+/// Send `session/fork`.  Upstream unstable (RFD session-fork, Draft); callers
+/// must first observe the `session.fork` capability marker in the agent's
+/// `initialize` result.
+pub async fn ExperimentalV2ClientConnection::fork_session(
+  self : ExperimentalV2ClientConnection,
+  params : ExperimentalV2ForkSessionParams,
+) -> ExperimentalV2ForkSessionResult raise ExperimentalV2ClientConnectionError {
+  match experimental_v2_client_connection_request(self, SessionFork(params)) {
+    ReplyForkSession(result) => result
+    reply =>
+      raise ReplyMismatch(method_name="session/fork: " + reply.method_name())
   }
 }
 

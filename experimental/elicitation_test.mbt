@@ -11,8 +11,10 @@ test "v2 elicitation create form round-trips the property DSL" {
         message: "Configure the run",
         mode: ElicitationForm(
           {
-            scope: ScopeSession({ session_id: "s1", tool_call_id: Some("tc1") }),
-            ..,
+            scope: ScopeSession(
+              { session_id: "s1", tool_call_id: Some("tc1"), }
+            ),
+            ..
           }
         ),
         meta: Some(Object(_)),
@@ -40,7 +42,7 @@ test "v2 elicitation create form round-trips the property DSL" {
           {
             items: MultiSelectItemsString({ enum_values: ["fast", "slow"], .. }),
             default: Some(["fast"]),
-            ..,
+            ..
           }
         )
       )
@@ -55,7 +57,7 @@ test "v2 elicitation create form round-trips the property DSL" {
             items: MultiSelectItemsTitled(
               { any_of: [{ value: "node", title: "Node", .. }], .. }
             ),
-            ..,
+            ..
           }
         )
       )
@@ -74,11 +76,11 @@ test "v2 elicitation create form round-trips the property DSL" {
                   value: "mocha",
                   title: "Mocha",
                   description: Some("Classic"),
-                  ..,
+                  ..
                 },
               ]
             ),
-            ..,
+            ..
           }
         )
       )
@@ -96,9 +98,9 @@ test "v2 elicitation create form round-trips the property DSL" {
     is Known(
       {
         mode: ElicitationForm(
-          { scope: ScopeRequest({ request_id: RequestIdNumber(7L) }), .. }
+          { scope: ScopeRequest({ request_id: RequestIdNumber(7L), }), .. }
         ),
-        ..,
+        ..
       }
     ),
   )
@@ -120,7 +122,7 @@ test "v2 elicitation create url round-trips" {
           {
             elicitation_id: "e1",
             url: "https://example.test/login",
-            scope: ScopeSession({ session_id: "s1", tool_call_id: None }),
+            scope: ScopeSession({ session_id: "s1", tool_call_id: None, }),
           }
         ),
         meta: None,
@@ -412,7 +414,7 @@ test "v2 elicitation create response action shapes" {
   guard accepted
     is Known(
       {
-        action: ActionAccept({ content: Some(content) }),
+        action: ActionAccept({ content: Some(content), }),
         meta: Some(Object(_)),
       }
     ) else {
@@ -430,7 +432,7 @@ test "v2 elicitation create response action shapes" {
     experimental_v2_encode_elicitation_create_response,
   )
   assert_true(
-    bare_accept is Known({ action: ActionAccept({ content: None }), .. }),
+    bare_accept is Known({ action: ActionAccept({ content: None, }), .. }),
   )
   for action in ["decline", "cancel"] {
     let response = model_test_round_trip(
@@ -439,7 +441,7 @@ test "v2 elicitation create response action shapes" {
       experimental_v2_encode_elicitation_create_response,
     )
     assert_true(
-      response is Known({ action: ActionDecline | ActionCancel, meta: None }),
+      response is Known({ action: ActionDecline | ActionCancel, meta: None, }),
     )
   }
   // Unknown actions keep their raw result object.
@@ -496,7 +498,7 @@ test "v2 elicitation complete notification round-trips" {
     value => experimental_v2_decode_complete_elicitation_notification(value),
     experimental_v2_encode_complete_elicitation_notification,
   )
-  assert_true(notification is { elicitation_id: "e1", meta: Some(Object(_)) })
+  assert_true(notification is { elicitation_id: "e1", meta: Some(Object(_)), })
   let cases : Array[(String, ExperimentalV2DecodeError)] = [
     ("{}", MissingField(path="elicitation/complete.elicitationId")),
     (

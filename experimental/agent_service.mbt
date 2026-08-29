@@ -98,6 +98,14 @@ pub type ExperimentalV2AgentDeleteSessionHandler = async (
 ) -> ExperimentalV2DeleteSessionResult
 
 ///|
+/// Typed async handler for the `session.fork`-gated optional operation.
+/// Upstream unstable (RFD session-fork, Draft).
+pub type ExperimentalV2AgentForkSessionHandler = async (
+  ExperimentalV2AgentContext,
+  ExperimentalV2ForkSessionParams,
+) -> ExperimentalV2ForkSessionResult
+
+///|
 /// Typed async handler for `auth/login`.
 pub type ExperimentalV2AgentLoginHandler = async (
   ExperimentalV2AgentContext,
@@ -123,12 +131,15 @@ pub struct ExperimentalV2AgentSessionService {
   prompt_handler : ExperimentalV2AgentPromptHandler
   set_config_option_handler : ExperimentalV2AgentSetConfigOptionHandler
   delete_handler : ExperimentalV2AgentDeleteSessionHandler?
+  fork_handler : ExperimentalV2AgentForkSessionHandler?
 }
 
 ///|
 /// Compose the required v2 baseline session callbacks once.  `delete` is the
 /// only optional callback and couples to the `session.delete` capability
-/// marker at spec validation.
+/// marker at spec validation.  `fork_session` couples to the `session.fork`
+/// marker of the pinned v2 unstable overlay the same way.  Upstream unstable
+/// (RFD session-fork, Draft) for `fork_session`.
 pub fn experimental_v2_agent_session_service(
   new_session~ : ExperimentalV2AgentNewSessionHandler,
   list~ : ExperimentalV2AgentListSessionsHandler,
@@ -137,6 +148,7 @@ pub fn experimental_v2_agent_session_service(
   prompt~ : ExperimentalV2AgentPromptHandler,
   set_config_option~ : ExperimentalV2AgentSetConfigOptionHandler,
   delete? : ExperimentalV2AgentDeleteSessionHandler? = None,
+  fork_session? : ExperimentalV2AgentForkSessionHandler? = None,
 ) -> ExperimentalV2AgentSessionService {
   {
     new_handler: new_session,
@@ -146,6 +158,7 @@ pub fn experimental_v2_agent_session_service(
     prompt_handler: prompt,
     set_config_option_handler: set_config_option,
     delete_handler: delete,
+    fork_handler: fork_session,
   }
 }
 
@@ -163,7 +176,7 @@ pub fn experimental_v2_agent_auth_service(
   login~ : ExperimentalV2AgentLoginHandler,
   logout~ : ExperimentalV2AgentLogoutHandler,
 ) -> ExperimentalV2AgentAuthService {
-  { login_handler: login, logout_handler: logout }
+  { login_handler: login, logout_handler: logout, }
 }
 
 ///|
@@ -177,6 +190,9 @@ pub(all) suberror ExperimentalV2AgentCompositionError {
   AuthServiceMismatch(reason~ : String)
   /// The `session.delete` marker and the delete service disagree.
   DeleteServiceMismatch(reason~ : String)
+  /// The `session.fork` marker and the fork service disagree.  Upstream
+  /// unstable (RFD session-fork, Draft).
+  ForkServiceMismatch(reason~ : String)
   /// The required baseline session methods imply a supported `session`
   /// capability marker.
   SessionMarkerMissing
@@ -220,8 +236,10 @@ fn experimental_v2_agent_duplicate_method_id(
 /// (a non-empty advertisement without the service is a composition error, and
 /// so is the reverse) with the same non-empty/duplicate-free method list the
 /// endpoint state constructor enforces; the `session` marker must be
-/// supported because its baseline methods are required services; and the
-/// `session.delete` marker exists exactly when the delete service does.
+/// supported because its baseline methods are required services; the
+/// `session.delete` marker exists exactly when the delete service does; and
+/// the `session.fork` marker exists exactly when the fork service does
+/// (upstream unstable, RFD session-fork, Draft).
 pub fn experimental_v2_agent_spec(
   info~ : ExperimentalV2Implementation,
   capabilities~ : ExperimentalV2AgentCapabilities,
@@ -274,7 +292,21 @@ pub fn experimental_v2_agent_spec(
       reason="the delete service requires the session.delete marker",
     )
   }
-  { info, capabilities, sessions, auth_methods, auth }
+  let fork_supported : Bool = match capabilities.session {
+    MarkerSupported(session) => session.fork is MarkerSupported(_)
+    MarkerUnsupported => false
+  }
+  if fork_supported && sessions.fork_handler is None {
+    raise ForkServiceMismatch(
+      reason="the session.fork marker requires the fork service",
+    )
+  }
+  if !fork_supported && sessions.fork_handler is Some(_) {
+    raise ForkServiceMismatch(
+      reason="the fork service requires the session.fork marker",
+    )
+  }
+  { info, capabilities, sessions, auth_methods, auth, }
 }
 
 ///|
@@ -291,9 +323,9 @@ pub struct ExperimentalV2AgentEndpoint {
 
 ///|
 /// Derive the endpoint's advertised capabilities from the validated spec.
-/// The `session.delete` marker is rebuilt from delete-service presence so the
-/// endpoint cannot drift from its services; every other marker is the spec's
-/// validated value.
+/// The `session.delete` and `session.fork` markers are rebuilt from
+/// delete/fork-service presence so the endpoint cannot drift from its
+/// services; every other marker is the spec's validated value.
 fn experimental_v2_agent_endpoint_capabilities(
   spec : ExperimentalV2AgentSpec,
 ) -> ExperimentalV2AgentCapabilities {
@@ -305,7 +337,16 @@ fn experimental_v2_agent_endpoint_capabilities(
       } else {
         MarkerUnsupported
       }
-      { ..spec.capabilities, session: MarkerSupported({ ..session, delete, }) }
+      let fork : ExperimentalV2Marker[ExperimentalV2MarkerPayload] = if spec.sessions.fork_handler
+        is Some(_) {
+        session.fork
+      } else {
+        MarkerUnsupported
+      }
+      {
+        ..spec.capabilities,
+        session: MarkerSupported({ ..session, delete, fork, }),
+      }
     }
     MarkerUnsupported => spec.capabilities
   }
@@ -455,6 +496,23 @@ pub async fn ExperimentalV2AgentEndpoint::delete_session(
         handler(context, params)
       })
     None => raise UnavailableOperation(method_name="session/delete")
+  }
+}
+
+///|
+/// Invoke the optional typed `session/fork` handler.  Upstream unstable (RFD
+/// session-fork, Draft).
+pub async fn ExperimentalV2AgentEndpoint::fork_session(
+  self : ExperimentalV2AgentEndpoint,
+  context : ExperimentalV2AgentContext,
+  params : ExperimentalV2ForkSessionParams,
+) -> ExperimentalV2ForkSessionResult raise ExperimentalV2AgentHandlerError {
+  match self.sessions.fork_handler {
+    Some(handler) =>
+      experimental_v2_agent_handler_call("session/fork", async fn() {
+        handler(context, params)
+      })
+    None => raise UnavailableOperation(method_name="session/fork")
   }
 }
 

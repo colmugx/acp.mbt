@@ -33,15 +33,15 @@ pub(all) struct ExperimentalV2Method {
 pub fn experimental_v2_method_manifest() -> Array[ExperimentalV2Method] {
   [
     // Client -> Agent requests.
-    { method_name: "initialize", direction: ClientToAgent, kind: Request },
-    { method_name: "auth/login", direction: ClientToAgent, kind: Request },
-    { method_name: "auth/logout", direction: ClientToAgent, kind: Request },
-    { method_name: "session/new", direction: ClientToAgent, kind: Request },
-    { method_name: "session/prompt", direction: ClientToAgent, kind: Request },
-    { method_name: "session/list", direction: ClientToAgent, kind: Request },
-    { method_name: "session/delete", direction: ClientToAgent, kind: Request },
-    { method_name: "session/resume", direction: ClientToAgent, kind: Request },
-    { method_name: "session/close", direction: ClientToAgent, kind: Request },
+    { method_name: "initialize", direction: ClientToAgent, kind: Request, },
+    { method_name: "auth/login", direction: ClientToAgent, kind: Request, },
+    { method_name: "auth/logout", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/new", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/prompt", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/list", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/delete", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/resume", direction: ClientToAgent, kind: Request, },
+    { method_name: "session/close", direction: ClientToAgent, kind: Request, },
     {
       method_name: "session/set_config_option",
       direction: ClientToAgent,
@@ -82,4 +82,17 @@ pub fn experimental_v2_method_manifest() -> Array[ExperimentalV2Method] {
       kind: Notification,
     },
   ]
+}
+
+///|
+/// Return a fresh manifest for the v2 unstable-overlay method surface this
+/// facade mirrors.  Upstream unstable (RFD session-fork, Draft).
+///
+/// This is a **deliberate subset** of the pinned v2 unstable overlay
+/// (`spec/schema/v2/meta.unstable.json`, vendored): only `session/fork` is
+/// implemented.  The stable manifest above deliberately excludes every
+/// unstable name, and its exact-set drift gate against the pinned stable
+/// `meta.json`/`schema.json` bytes is unchanged by this overlay.
+pub fn experimental_v2_unstable_method_manifest() -> Array[ExperimentalV2Method] {
+  [{ method_name: "session/fork", direction: ClientToAgent, kind: Request, }]
 }

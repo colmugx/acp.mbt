@@ -17,9 +17,9 @@ test "v2 marker helpers collapse omitted and null to unsupported" {
   )
   assert_true(
     experimental_v2_decode_marker(fields, "b", path="b", decode)
-    is MarkerSupported({ meta: None }),
+    is MarkerSupported({ meta: None, }),
   )
-  let payload : ExperimentalV2MarkerPayload = { meta: None }
+  let payload : ExperimentalV2MarkerPayload = { meta: None, }
   let encoded : Map[String, Json] = Map([])
   experimental_v2_put_marker(encoded, "b", MarkerSupported(payload), payload => {
     experimental_v2_encode_marker_payload(payload)
@@ -62,7 +62,7 @@ test "v2 client capabilities marker tri-case for elicitation" {
       experimental_v2_parse_json(source),
     )
   }
-  assert_true(decode("{}") is { elicitation: MarkerUnsupported, meta: None })
+  assert_true(decode("{}") is { elicitation: MarkerUnsupported, meta: None, })
   assert_true(
     decode("{\"elicitation\":null}") is { elicitation: MarkerUnsupported, .. },
   )
@@ -70,9 +70,9 @@ test "v2 client capabilities marker tri-case for elicitation" {
     decode("{\"elicitation\":{}}")
     is {
       elicitation: MarkerSupported(
-        { form: MarkerUnsupported, url: MarkerUnsupported, meta: None }
+        { form: MarkerUnsupported, url: MarkerUnsupported, meta: None, }
       ),
-      ..,
+      ..
     },
   )
   let decoded = decode(
@@ -82,9 +82,9 @@ test "v2 client capabilities marker tri-case for elicitation" {
     decoded.elicitation
     is MarkerSupported(
       {
-        form: MarkerSupported({ meta: None }),
-        url: MarkerSupported({ meta: Some(Object(_)) }),
-        ..,
+        form: MarkerSupported({ meta: None, }),
+        url: MarkerSupported({ meta: Some(Object(_)), }),
+        ..
       }
     ),
   )
@@ -108,7 +108,7 @@ test "v2 client capabilities marker tri-case for elicitation" {
 ///|
 test "v2 agent capabilities decode the full session tree" {
   let decoded = model_test_round_trip(
-    "{\"session\":{\"prompt\":{\"image\":{},\"audio\":null,\"embeddedContext\":{}},\"mcp\":{\"stdio\":{},\"http\":{}},\"delete\":{},\"additionalDirectories\":{}},\"auth\":{}}",
+    "{\"session\":{\"prompt\":{\"image\":{},\"audio\":null,\"embeddedContext\":{}},\"mcp\":{\"stdio\":{},\"http\":{}},\"delete\":{},\"additionalDirectories\":{},\"fork\":{}},\"auth\":{}}",
     value => experimental_v2_decode_agent_capabilities(value),
     experimental_v2_encode_agent_capabilities,
   )
@@ -121,7 +121,7 @@ test "v2 agent capabilities decode the full session tree" {
             image: MarkerSupported(_),
             audio: MarkerUnsupported,
             embedded_context: MarkerSupported(_),
-            ..,
+            ..
           }
         ),
         mcp: MarkerSupported(
@@ -129,11 +129,45 @@ test "v2 agent capabilities decode the full session tree" {
         ),
         delete: MarkerSupported(_),
         additional_directories: MarkerSupported(_),
-        ..,
+        fork: MarkerSupported(_),
+        ..
       }
     ),
   )
-  assert_true(decoded.auth is MarkerSupported({ meta: None }))
+  assert_true(decoded.auth is MarkerSupported({ meta: None, }))
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft): the `fork` marker follows the
+/// same tri-state presence rule as `delete`.
+test "v2 session fork marker is tri-state and encodes null as omission" {
+  let decode = source => {
+    experimental_v2_decode_session_capabilities(
+      experimental_v2_parse_json(source),
+    )
+  }
+  assert_true(decode("{}") is { fork: MarkerUnsupported, .. })
+  assert_true(decode("{\"fork\":null}") is { fork: MarkerUnsupported, .. })
+  assert_true(
+    decode("{\"fork\":{}}") is { fork: MarkerSupported({ meta: None, }), .. },
+  )
+  // An explicit wire null encodes back as an omission, not as null.
+  let nulled = decode("{\"fork\":null}")
+  let encoded = experimental_v2_require_object(
+    experimental_v2_encode_session_capabilities(nulled),
+    path="session",
+  )
+  assert_true(encoded.get("fork") is None)
+  try
+    experimental_v2_decode_session_capabilities(
+      experimental_v2_parse_json("{\"fork\":1}"),
+    )
+  catch {
+    ExpectedObject(path="session.fork") => ()
+    _ => fail("expected ExpectedObject for a non-object fork marker")
+  } noraise {
+    _ => fail("expected ExpectedObject for a non-object fork marker")
+  }
 }
 
 ///|

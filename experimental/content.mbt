@@ -81,7 +81,7 @@ pub fn experimental_v2_decode_annotations(
     (value, path) => experimental_v2_decode_priority(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { audience, last_modified, priority, meta }
+  { audience, last_modified, priority, meta, }
 }
 
 ///|
@@ -177,7 +177,7 @@ pub fn experimental_v2_decode_text_content(
   )
   let annotations = experimental_v2_decode_optional_annotations(fields, path~)
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { text, annotations, meta }
+  { text, annotations, meta, }
 }
 
 ///|
@@ -229,7 +229,7 @@ pub fn experimental_v2_decode_image_content(
   ) => experimental_v2_decode_string(value, path~))
   let annotations = experimental_v2_decode_optional_annotations(fields, path~)
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { data, mime_type, uri, annotations, meta }
+  { data, mime_type, uri, annotations, meta, }
 }
 
 ///|
@@ -282,7 +282,7 @@ pub fn experimental_v2_decode_audio_content(
   )
   let annotations = experimental_v2_decode_optional_annotations(fields, path~)
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { data, mime_type, annotations, meta }
+  { data, mime_type, annotations, meta, }
 }
 
 ///|
@@ -384,7 +384,7 @@ pub fn experimental_v2_decode_icon(
     path=path + ".theme",
     (value, path) => experimental_v2_decode_icon_theme(value, path~),
   )
-  { src, mime_type, sizes, theme }
+  { src, mime_type, sizes, theme, }
 }
 
 ///|
@@ -478,7 +478,7 @@ pub fn experimental_v2_decode_resource_link(
   )
   let annotations = experimental_v2_decode_optional_annotations(fields, path~)
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, uri, title, description, icons, mime_type, size, annotations, meta }
+  { name, uri, title, description, icons, mime_type, size, annotations, meta, }
 }
 
 ///|
@@ -543,7 +543,7 @@ pub fn experimental_v2_decode_text_resource_contents(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { text, uri, mime_type, meta }
+  { text, uri, mime_type, meta, }
 }
 
 ///|
@@ -598,7 +598,7 @@ pub fn experimental_v2_decode_blob_resource_contents(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { blob, uri, mime_type, meta }
+  { blob, uri, mime_type, meta, }
 }
 
 ///|
@@ -686,7 +686,7 @@ pub fn experimental_v2_decode_embedded_resource(
   )
   let annotations = experimental_v2_decode_optional_annotations(fields, path~)
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { resource, annotations, meta }
+  { resource, annotations, meta, }
 }
 
 ///|
@@ -816,7 +816,7 @@ pub fn experimental_v2_decode_content(
     path=path + ".content",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { content, meta }
+  { content, meta, }
 }
 
 ///|
@@ -860,7 +860,7 @@ pub fn experimental_v2_decode_content_chunk(
     path=path + ".content",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { message_id, content, meta }
+  { message_id, content, meta, }
 }
 
 ///|

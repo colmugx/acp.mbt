@@ -48,7 +48,7 @@ pub fn experimental_v2_batch_expanding_reader(
     pending: b"",
     eof: false,
   }
-  { read: count => experimental_v2_batch_expanding_read(state, count) }
+  { read: count => experimental_v2_batch_expanding_read(state, count), }
 }
 
 ///|

@@ -13,7 +13,7 @@ fn experimental_v2_broker_encode(
   method_name : String,
   encode : () -> Json raise ExperimentalV2DecodeError,
 ) -> ExperimentalV2BrokerPayload raise ExperimentalV2DecodeError {
-  { method_name, params: encode() }
+  { method_name, params: encode(), }
 }
 
 ///|
@@ -381,6 +381,10 @@ fn experimental_v2_broker_client_request_payload(
       experimental_v2_broker_encode("session/delete", () => {
         experimental_v2_encode_delete_session_params(params)
       })
+    SessionFork(params) =>
+      experimental_v2_broker_encode("session/fork", () => {
+        experimental_v2_encode_fork_session_params(params)
+      })
     SessionClose(params) =>
       experimental_v2_broker_encode("session/close", () => {
         experimental_v2_encode_close_session_params(params)
@@ -495,6 +499,8 @@ fn experimental_v2_broker_decode_client_reply(
       ReplyResumeSession(experimental_v2_decode_resume_session_result(value))
     SessionDelete(_) =>
       ReplyDeleteSession(experimental_v2_decode_delete_session_result(value))
+    SessionFork(_) =>
+      ReplyForkSession(experimental_v2_decode_fork_session_result(value))
     SessionClose(_) =>
       ReplyCloseSession(experimental_v2_decode_close_session_result(value))
     SessionPrompt(_) => ReplyPrompt(experimental_v2_decode_prompt_result(value))

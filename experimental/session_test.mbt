@@ -69,7 +69,7 @@ test "v2 session resume params round-trip replayFrom start" {
     value => experimental_v2_decode_resume_session_params(value),
     experimental_v2_encode_resume_session_params,
   )
-  assert_true(decoded.replay_from is Some(Known({ meta: Some(Object(_)) })))
+  assert_true(decoded.replay_from is Some(Known({ meta: Some(Object(_)), })))
   let omitted = model_test_round_trip(
     "{\"sessionId\":\"s1\",\"cwd\":\"/work\"}",
     value => experimental_v2_decode_resume_session_params(value),
@@ -219,6 +219,93 @@ test "v2 session delete and close params validate the session id" {
     _ => fail("expected InvalidField for an empty sessionId")
   } noraise {
     _ => fail("expected InvalidField for an empty sessionId")
+  }
+}
+
+///|
+test "v2 session fork params round-trip the unstable overlay shape" {
+  let decoded = model_test_round_trip(
+    "{\"sessionId\":\"s1\",\"cwd\":\"/work\",\"additionalDirectories\":[\"/a\"],\"mcpServers\":[{\"type\":\"stdio\",\"name\":\"n\",\"command\":\"/bin/n\"}],\"_meta\":{}}",
+    value => experimental_v2_decode_fork_session_params(value),
+    experimental_v2_encode_fork_session_params,
+  )
+  assert_eq(decoded.session_id, "s1")
+  assert_eq(decoded.cwd, "/work")
+  assert_eq(decoded.additional_directories, Some(["/a"]))
+  assert_true(decoded.mcp_servers is Some([Known(_)]))
+  let bare = model_test_round_trip(
+    "{\"sessionId\":\"s1\",\"cwd\":\"/work\"}",
+    value => experimental_v2_decode_fork_session_params(value),
+    experimental_v2_encode_fork_session_params,
+  )
+  assert_true(bare.additional_directories is None)
+  assert_true(bare.mcp_servers is None)
+  // Omitted and null mcpServers are the same "no servers" value (v2 unstable
+  // overlay convention).
+  assert_true(
+    experimental_v2_decode_fork_session_params(
+      experimental_v2_parse_json(
+        "{\"sessionId\":\"s1\",\"cwd\":\"/work\",\"mcpServers\":null}",
+      ),
+    ).mcp_servers
+    is None,
+  )
+}
+
+///|
+test "v2 session fork params require sessionId and absolute cwd and reject modes" {
+  try
+    experimental_v2_decode_fork_session_params(
+      experimental_v2_parse_json("{\"cwd\":\"/work\"}"),
+    )
+  catch {
+    MissingField(path="session/fork.sessionId") => ()
+    _ => fail("expected MissingField for an absent fork sessionId")
+  } noraise {
+    _ => fail("expected MissingField for an absent fork sessionId")
+  }
+  try
+    experimental_v2_decode_fork_session_params(
+      experimental_v2_parse_json("{\"sessionId\":\"s\",\"cwd\":\"w\"}"),
+    )
+  catch {
+    InvalidPath(path="session/fork.cwd", value="w") => ()
+    _ => fail("expected InvalidPath for a relative fork cwd")
+  } noraise {
+    _ => fail("expected InvalidPath for a relative fork cwd")
+  }
+  try
+    experimental_v2_decode_fork_session_params(
+      experimental_v2_parse_json(
+        "{\"sessionId\":\"s\",\"cwd\":\"/w\",\"modes\":[]}",
+      ),
+    )
+  catch {
+    UnknownField(path="session/fork.modes") => ()
+    _ => fail("expected UnknownField for the v1-only modes field")
+  } noraise {
+    _ => fail("expected UnknownField for the v1-only modes field")
+  }
+}
+
+///|
+test "v2 session fork result round-trips and requires sessionId" {
+  let decoded = model_test_round_trip(
+    "{\"sessionId\":\"fork-1\",\"configOptions\":[{\"type\":\"boolean\",\"configId\":\"verbose\",\"name\":\"Verbose\",\"currentValue\":true}]}",
+    value => experimental_v2_decode_fork_session_result(value),
+    experimental_v2_encode_fork_session_result,
+  )
+  assert_eq(decoded.session_id, "fork-1")
+  assert_true(decoded.config_options is Some([Known(_)]))
+  try
+    experimental_v2_decode_fork_session_result(
+      experimental_v2_parse_json("{\"configOptions\":[]}"),
+    )
+  catch {
+    MissingField(path="session/fork.sessionId") => ()
+    _ => fail("expected MissingField for an absent fork result sessionId")
+  } noraise {
+    _ => fail("expected MissingField for an absent fork result sessionId")
   }
 }
 

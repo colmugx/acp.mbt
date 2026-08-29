@@ -161,6 +161,6 @@ test "v2 terminal exit status boundaries and nullable equivalence" {
   )
   assert_true(
     null_fields.exit_status
-    is PatchValue({ exit_code: None, signal: None, meta: None }),
+    is PatchValue({ exit_code: None, signal: None, meta: None, }),
   )
 }

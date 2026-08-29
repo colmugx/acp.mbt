@@ -1,6 +1,6 @@
 ///|
 fn session_fold_test_text_block(text : String) -> ExperimentalV2ContentBlock {
-  Known(BlockText({ text, annotations: None, meta: None }))
+  Known(BlockText({ text, annotations: None, meta: None, }))
 }
 
 ///|
@@ -8,7 +8,7 @@ fn session_fold_test_chunk(
   message_id : String,
   text : String,
 ) -> ExperimentalV2ContentChunk {
-  { message_id, content: session_fold_test_text_block(text), meta: None }
+  { message_id, content: session_fold_test_text_block(text), meta: None, }
 }
 
 ///|
@@ -16,7 +16,7 @@ fn session_fold_test_upsert(
   message_id : String,
   content : ExperimentalV2Patch[Array[ExperimentalV2ContentBlock]],
 ) -> ExperimentalV2MessageUpsert {
-  { message_id, content, meta: PatchOmitted }
+  { message_id, content, meta: PatchOmitted, }
 }
 
 ///|
@@ -50,7 +50,7 @@ fn session_fold_test_tool_content(
 
 ///|
 fn session_fold_test_location(path : String) -> ExperimentalV2ToolCallLocation {
-  { path, line: None, meta: None }
+  { path, line: None, meta: None, }
 }
 
 ///|
@@ -58,7 +58,7 @@ fn session_fold_test_plan_entry(
   content : String,
   status : ExperimentalV2PlanEntryStatus,
 ) -> ExperimentalV2PlanEntry {
-  { content, priority: PlanPriorityHigh, status, meta: None }
+  { content, priority: PlanPriorityHigh, status, meta: None, }
 }
 
 ///|
@@ -71,7 +71,7 @@ fn session_fold_test_config_option(
     name: "Option \{config_id}",
     description: None,
     category: None,
-    payload: PayloadBoolean({ current_value: flag }),
+    payload: PayloadBoolean({ current_value: flag, }),
     meta: None,
   })
 }
@@ -236,7 +236,7 @@ test "v2 fold message upsert applies exact tri-state content over chunks" {
     ),
   )
   assert_eq(created.user_messages, [
-    { message_id: "u1", blocks: [], meta: None },
+    { message_id: "u1", blocks: [], meta: None, },
   ])
   // A null _meta clears the slot back to None.
   let meta_cleared = session_fold_test_apply(
@@ -385,7 +385,7 @@ test "v2 fold tool call first update creates with defaults then patches" {
 test "v2 fold tool call content chunk before any update fails typed" {
   let state = session_fold_test_apply(
     experimental_v2_session_fold_new(),
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   let before = state
   match
@@ -457,7 +457,7 @@ test "v2 fold plan updates replace entries per plan id" {
       PlanItemsContent(
         {
           entries: [{ status: PlanStatusCompleted, .. }, { content: "b", .. }],
-          ..,
+          ..
         }
       )
     ),
@@ -469,7 +469,7 @@ test "v2 fold plan updates replace entries per plan id" {
     Known(
       UpdatePlan({
         plan: Known(
-          PlanItemsContent({ plan_id: "p2", entries: [], meta: None }),
+          PlanItemsContent({ plan_id: "p2", entries: [], meta: None, }),
         ),
         meta: None,
       }),
@@ -585,10 +585,10 @@ test "v2 fold terminal upsert patches and output chunks store raw bytes" {
   // Chunks append raw base64 data in received order.
   let chunked = session_fold_test_apply_all(created, [
     Known(
-      UpdateTerminalOutputChunk({ terminal_id: "t1", data: "aGk=", meta: None }),
+      UpdateTerminalOutputChunk({ terminal_id: "t1", data: "aGk=", meta: None, }),
     ),
     Known(
-      UpdateTerminalOutputChunk({ terminal_id: "t1", data: "d29y", meta: None }),
+      UpdateTerminalOutputChunk({ terminal_id: "t1", data: "d29y", meta: None, }),
     ),
   ])
   assert_eq(chunked.terminals[0].output_chunks, ["aGk=", "d29y"])
@@ -600,20 +600,24 @@ test "v2 fold terminal upsert patches and output chunks store raw bytes" {
         terminal_id: "t1",
         command: PatchOmitted,
         cwd: PatchOmitted,
-        output: PatchValue({ data: "aGk=", meta: None }),
-        exit_status: PatchValue({ exit_code: Some(0), signal: None, meta: None }),
+        output: PatchValue({ data: "aGk=", meta: None, }),
+        exit_status: PatchValue({
+          exit_code: Some(0),
+          signal: None,
+          meta: None,
+        }),
         meta: PatchOmitted,
       }),
     ),
   )
   assert_eq(
     snapshotted.terminals[0].output,
-    PatchValue({ data: "aGk=", meta: None }),
+    PatchValue({ data: "aGk=", meta: None, }),
   )
   assert_eq(snapshotted.terminals[0].output_chunks, ["aGk=", "d29y"])
   assert_eq(
     snapshotted.terminals[0].exit_status,
-    PatchValue({ exit_code: Some(0), signal: None, meta: None }),
+    PatchValue({ exit_code: Some(0), signal: None, meta: None, }),
   )
   // A null output clears the snapshot slot; the chunk log survives.
   let cleared = session_fold_test_apply(
@@ -665,24 +669,24 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
   // A turn starts on running and clears any previous stop reason.
   let running = session_fold_test_apply(
     fresh,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   assert_eq(running.phase, TurnRunning)
   let blocked = session_fold_test_apply(
     running,
-    Known(UpdateState(Known(StateRequiresAction({ meta: None })))),
+    Known(UpdateState(Known(StateRequiresAction({ meta: None, })))),
   )
   assert_eq(blocked.phase, TurnRequiresAction)
   let resumed = session_fold_test_apply(
     blocked,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   assert_eq(resumed.phase, TurnRunning)
   let ended = session_fold_test_apply(
     resumed,
     Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None })),
+        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None, })),
       ),
     ),
   )
@@ -691,16 +695,18 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
   // A requires_action -> idle edge is the cancel-while-blocked path.
   let blocked_again = session_fold_test_apply(
     ended,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   let cancelled_while_blocked = session_fold_test_apply(
     session_fold_test_apply(
       blocked_again,
-      Known(UpdateState(Known(StateRequiresAction({ meta: None })))),
+      Known(UpdateState(Known(StateRequiresAction({ meta: None, })))),
     ),
     Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonCancelled), meta: None })),
+        Known(
+          StateIdle({ stop_reason: Some(StopReasonCancelled), meta: None, }),
+        ),
       ),
     ),
   )
@@ -710,29 +716,29 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
   // without one overwrites it with None.
   let next_turn = session_fold_test_apply(
     cancelled_while_blocked,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   assert_eq(next_turn.stop_reason, None)
   let idle_again = session_fold_test_apply(
     next_turn,
-    Known(UpdateState(Known(StateIdle({ stop_reason: None, meta: None })))),
+    Known(UpdateState(Known(StateIdle({ stop_reason: None, meta: None, })))),
   )
   assert_eq(idle_again.stop_reason, None)
   // Re-reporting the current phase stays legal; the idle -> requires_action
   // edge is the single typed rejection.
   let rerunning = session_fold_test_apply(
     idle_again,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   let rerun = session_fold_test_apply(
     rerunning,
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   assert_eq(rerun.phase, TurnRunning)
   match
     experimental_v2_session_fold_apply(
       experimental_v2_session_fold_new(),
-      Known(UpdateState(Known(StateRequiresAction({ meta: None })))),
+      Known(UpdateState(Known(StateRequiresAction({ meta: None, })))),
     ) {
     Err(IllegalStateTransition(from=TurnIdle, to=TurnRequiresAction)) => ()
     Err(_) => fail("expected the illegal transition error")
@@ -743,7 +749,7 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
 ///|
 test "v2 fold cancel path keeps accepting updates until idle cancelled" {
   let state = session_fold_test_apply_all(experimental_v2_session_fold_new(), [
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
     Known(
       UpdateToolCall({
         ..session_fold_test_tool_call_update("call-1"),
@@ -766,7 +772,9 @@ test "v2 fold cancel path keeps accepting updates until idle cancelled" {
     state,
     Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonCancelled), meta: None })),
+        Known(
+          StateIdle({ stop_reason: Some(StopReasonCancelled), meta: None, }),
+        ),
       ),
     ),
   )
@@ -777,13 +785,13 @@ test "v2 fold cancel path keeps accepting updates until idle cancelled" {
   // Background updates continue while idle and leave the phase alone.
   let state = session_fold_test_apply(
     state,
-    Known(UpdateUsage({ used: 10UL, size: 100UL, cost: None, meta: None })),
+    Known(UpdateUsage({ used: 10UL, size: 100UL, cost: None, meta: None, })),
   )
   assert_eq(state.phase, TurnIdle)
   assert_eq(state.stop_reason, Some(StopReasonCancelled))
   assert_eq(
     state.usage,
-    Some({ used: 10UL, size: 100UL, cost: None, meta: None }),
+    Some({ used: 10UL, size: 100UL, cost: None, meta: None, }),
   )
 }
 
@@ -858,7 +866,7 @@ test "v2 fold replacement sets and session info tri-state" {
   )
   let recomanded = session_fold_test_apply(
     commanded,
-    Known(UpdateAvailableCommands({ available_commands: [], meta: None })),
+    Known(UpdateAvailableCommands({ available_commands: [], meta: None, })),
   )
   assert_eq(recomanded.available_commands, Some([]))
   let used = session_fold_test_apply(
@@ -867,7 +875,7 @@ test "v2 fold replacement sets and session info tri-state" {
       UpdateUsage({
         used: 1024UL,
         size: 200000UL,
-        cost: Some({ amount: 0.5, currency: "USD", meta: None }),
+        cost: Some({ amount: 0.5, currency: "USD", meta: None, }),
         meta: None,
       }),
     ),
@@ -877,17 +885,17 @@ test "v2 fold replacement sets and session info tri-state" {
     Some({
       used: 1024UL,
       size: 200000UL,
-      cost: Some({ amount: 0.5, currency: "USD", meta: None }),
+      cost: Some({ amount: 0.5, currency: "USD", meta: None, }),
       meta: None,
     }),
   )
   let reused = session_fold_test_apply(
     used,
-    Known(UpdateUsage({ used: 1UL, size: 2UL, cost: None, meta: None })),
+    Known(UpdateUsage({ used: 1UL, size: 2UL, cost: None, meta: None, })),
   )
   assert_eq(
     reused.usage,
-    Some({ used: 1UL, size: 2UL, cost: None, meta: None }),
+    Some({ used: 1UL, size: 2UL, cost: None, meta: None, }),
   )
   // Session info patches each slot tri-state, independently.
   let titled = session_fold_test_apply(
@@ -943,7 +951,7 @@ test "v2 fold unknown session updates are preserved raw and re-emittable" {
   let state = session_fold_test_apply_all(
     session_fold_test_apply(
       experimental_v2_session_fold_new(),
-      Known(UpdateState(Known(StateRunning({ meta: None })))),
+      Known(UpdateState(Known(StateRunning({ meta: None, })))),
     ),
     [extension, future],
   )
@@ -976,7 +984,7 @@ test "v2 fold unknown state update is preserved without moving the phase" {
   let state = session_fold_test_apply(
     session_fold_test_apply(
       experimental_v2_session_fold_new(),
-      Known(UpdateState(Known(StateRunning({ meta: None })))),
+      Known(UpdateState(Known(StateRunning({ meta: None, })))),
     ),
     update,
   )
@@ -1060,7 +1068,7 @@ test "v2 fold apply is pure, deterministic, and leaves inputs untouched" {
 ///|
 test "v2 fold replay from start reproduces the live folded state" {
   let live_sequence : Array[ExperimentalV2SessionUpdate] = [
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
     Known(UpdateUserMessageChunk(session_fold_test_chunk("u1", "question"))),
     Known(
       UpdateAgentMessageChunk(session_fold_test_chunk("a1", "partial answer")),
@@ -1072,8 +1080,8 @@ test "v2 fold replay from start reproduces the live folded state" {
         status: PatchValue(ToolCallStatusInProgress),
       }),
     ),
-    Known(UpdateState(Known(StateRequiresAction({ meta: None })))),
-    Known(UpdateState(Known(StateRunning({ meta: None })))),
+    Known(UpdateState(Known(StateRequiresAction({ meta: None, })))),
+    Known(UpdateState(Known(StateRunning({ meta: None, })))),
     Known(
       UpdatePlan({
         plan: Known(
@@ -1088,7 +1096,7 @@ test "v2 fold replay from start reproduces the live folded state" {
     ),
     Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None })),
+        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None, })),
       ),
     ),
     Known(

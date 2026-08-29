@@ -29,7 +29,7 @@ async test "v2 batch expanding reader rewrites intact batches and passes lone fr
   )
   input.put(None)
   let reader = experimental_v2_batch_expanding_reader(
-    reader={ read: _ => input.get() },
+    reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
   let drained = batch_expand_test_drain(reader)
@@ -48,7 +48,7 @@ async test "v2 batch expanding reader passes fault batches byte-exact" {
   )
   input.put(None)
   let reader = experimental_v2_batch_expanding_reader(
-    reader={ read: _ => input.get() },
+    reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
   let drained = batch_expand_test_drain(reader)
@@ -65,7 +65,7 @@ async test "v2 batch expanding reader raises on a partial final line" {
   input.put(batch_expand_test_chunk("{\"jsonrpc\":\"2.0\",\"id\":1"))
   input.put(None)
   let reader = experimental_v2_batch_expanding_reader(
-    reader={ read: _ => input.get() },
+    reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
   let raised : Array[Unit] = []

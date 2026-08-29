@@ -103,7 +103,7 @@ pub fn experimental_v2_decode_diff_patch(
     experimental_v2_required(fields, "text", path=path + ".text"),
     path=path + ".text",
   )
-  { format, text }
+  { format, text, }
 }
 
 ///|
@@ -168,7 +168,7 @@ pub fn experimental_v2_decode_diff_path_change(
     fields,
     path~,
   )
-  { path: change_path, file_type, mime_type, meta }
+  { path: change_path, file_type, mime_type, meta, }
 }
 
 ///|
@@ -228,7 +228,7 @@ pub fn experimental_v2_decode_diff_path_pair_change(
     fields,
     path~,
   )
-  { old_path, path: change_path, file_type, mime_type, meta }
+  { old_path, path: change_path, file_type, mime_type, meta, }
 }
 
 ///|
@@ -380,7 +380,7 @@ pub fn experimental_v2_decode_diff(
     (value, path) => experimental_v2_decode_diff_patch(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { changes, patch, meta }
+  { changes, patch, meta, }
 }
 
 ///|

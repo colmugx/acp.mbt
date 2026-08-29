@@ -12,7 +12,7 @@ fn experimental_v2_client_connection_test_broker(
     ],
   ],
 ) -> ExperimentalV2ClientForwardRequestBroker {
-  let cursor : Ref[Int] = { val: 0 }
+  let cursor : Ref[Int] = { val: 0, }
   async fn(request) {
     submitted.push(request)
     if cursor.val >= replies.length() {
@@ -40,6 +40,7 @@ async test "v2 client connection forwards initialize and pins version 2" {
               mcp: MarkerUnsupported,
               delete: MarkerUnsupported,
               additional_directories: MarkerUnsupported,
+              fork: MarkerUnsupported,
               meta: None,
             }),
             auth: MarkerUnsupported,
@@ -122,12 +123,12 @@ async test "v2 client connection reports mismatched replies typed" {
   let submitted : Array[ExperimentalV2ClientForwardRequest] = []
   let connection = experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
-      Ok(ReplyCloseSession({ meta: None })),
+      Ok(ReplyCloseSession({ meta: None, })),
     ]),
     notification_broker=_notification => Ok(()),
   )
   try
-    connection.prompt({ session_id: "session", prompt: [], meta: None })
+    connection.prompt({ session_id: "session", prompt: [], meta: None, })
   catch {
     ReplyMismatch(method_name~) =>
       assert_eq(method_name, "session/prompt: session/close")
@@ -170,7 +171,7 @@ async test "v2 client connection classifies broker failures and cancels" {
     },
     notification_broker=_notification => Ok(()),
   )
-  try defect.list_sessions({ cwd: None, cursor: None, meta: None }) catch {
+  try defect.list_sessions({ cwd: None, cursor: None, meta: None, }) catch {
     BrokerFailure(method_name~) => assert_eq(method_name, "session/list")
     _ => fail("expected a typed broker failure")
   } noraise {
@@ -188,10 +189,60 @@ async test "v2 client connection submits notifications synchronously" {
       Ok(())
     },
   )
-  connection.cancel_session({ session_id: "session", meta: None })
+  connection.cancel_session({ session_id: "session", meta: None, })
   connection.cancel_request(RequestIdNumber(7))
   assert_eq(notifications, [
-    SessionCancel({ session_id: "session", meta: None }),
+    SessionCancel({ session_id: "session", meta: None, }),
     CancelRequest(RequestIdNumber(7)),
   ])
+}
+
+///|
+/// Upstream unstable (RFD session-fork, Draft): the client send path forwards
+/// the typed fork request and settles its reply (or typed mismatch).
+async test "v2 client connection forwards session fork typed" {
+  let submitted : Array[ExperimentalV2ClientForwardRequest] = []
+  let connection = experimental_v2_client_connection(
+    request_broker=experimental_v2_client_connection_test_broker(submitted, [
+      Ok(
+        ReplyForkSession({
+          session_id: "fork-1",
+          config_options: None,
+          meta: None,
+        }),
+      ),
+    ]),
+    notification_broker=_notification => Ok(()),
+  )
+  let forked = connection.fork_session({
+    session_id: "session",
+    cwd: "/",
+    additional_directories: None,
+    mcp_servers: None,
+    meta: None,
+  })
+  assert_eq(forked.session_id, "fork-1")
+  assert_eq(submitted.length(), 1)
+  assert_true(submitted[0] is SessionFork(_))
+  let mismatch = experimental_v2_client_connection(
+    request_broker=experimental_v2_client_connection_test_broker(submitted, [
+      Ok(ReplyDeleteSession({ meta: None, })),
+    ]),
+    notification_broker=_notification => Ok(()),
+  )
+  try
+    mismatch.fork_session({
+      session_id: "session",
+      cwd: "/",
+      additional_directories: None,
+      mcp_servers: None,
+      meta: None,
+    })
+  catch {
+    ReplyMismatch(method_name~) =>
+      assert_eq(method_name, "session/fork: session/delete")
+    _ => fail("expected a typed reply mismatch")
+  } noraise {
+    _ => fail("expected a typed reply mismatch")
+  }
 }

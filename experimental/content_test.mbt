@@ -145,7 +145,7 @@ test "v2 resource link round-trips icons and open audience roles" {
         audience: Some(
           [RoleUser, RoleExtension(tag="_role"), RoleFuture(raw="sys")]
         ),
-        ..,
+        ..
       }
     ),
   )

@@ -2,23 +2,29 @@
 fn experimental_v2_agent_test_info(
   name : String,
 ) -> ExperimentalV2Implementation {
-  { name, title: None, version: "test", meta: None }
+  { name, title: None, version: "test", meta: None, }
 }
 
 ///|
 fn experimental_v2_agent_test_capabilities(
   delete? : Bool = false,
+  fork? : Bool = false,
 ) -> ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
       prompt: MarkerUnsupported,
       mcp: MarkerUnsupported,
       delete: if delete {
-        MarkerSupported({ meta: None })
+        MarkerSupported({ meta: None, })
       } else {
         MarkerUnsupported
       },
       additional_directories: MarkerUnsupported,
+      fork: if fork {
+        MarkerSupported({ meta: None, })
+      } else {
+        MarkerUnsupported
+      },
       meta: None,
     }),
     auth: MarkerUnsupported,
@@ -28,7 +34,7 @@ fn experimental_v2_agent_test_capabilities(
 
 ///|
 fn experimental_v2_agent_test_token_method() -> ExperimentalV2AuthMethod {
-  Known({ method_id: "token", name: "Token", description: None, meta: None })
+  Known({ method_id: "token", name: "Token", description: None, meta: None, })
 }
 
 ///|
@@ -37,7 +43,7 @@ async fn experimental_v2_agent_test_new(
   _params : ExperimentalV2NewSessionParams,
 ) -> ExperimentalV2NewSessionResult {
   @async.pause()
-  { session_id: "created", config_options: None, meta: None }
+  { session_id: "created", config_options: None, meta: None, }
 }
 
 ///|
@@ -46,7 +52,7 @@ async fn experimental_v2_agent_test_list(
   _params : ExperimentalV2ListSessionsParams,
 ) -> ExperimentalV2ListSessionsResult {
   @async.pause()
-  { sessions: [], next_cursor: None, meta: None }
+  { sessions: [], next_cursor: None, meta: None, }
 }
 
 ///|
@@ -55,7 +61,7 @@ async fn experimental_v2_agent_test_resume(
   _params : ExperimentalV2ResumeSessionParams,
 ) -> ExperimentalV2ResumeSessionResult {
   @async.pause()
-  { config_options: None, meta: None }
+  { config_options: None, meta: None, }
 }
 
 ///|
@@ -64,7 +70,7 @@ async fn experimental_v2_agent_test_close(
   _params : ExperimentalV2CloseSessionParams,
 ) -> ExperimentalV2CloseSessionResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -73,7 +79,7 @@ async fn experimental_v2_agent_test_prompt(
   _params : ExperimentalV2PromptParams,
 ) -> ExperimentalV2PromptResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -82,7 +88,7 @@ async fn experimental_v2_agent_test_set_config(
   _params : ExperimentalV2SetConfigOptionParams,
 ) -> ExperimentalV2SetConfigOptionResult {
   @async.pause()
-  { config_options: [], meta: None }
+  { config_options: [], meta: None, }
 }
 
 ///|
@@ -91,7 +97,16 @@ async fn experimental_v2_agent_test_delete(
   _params : ExperimentalV2DeleteSessionParams,
 ) -> ExperimentalV2DeleteSessionResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
+}
+
+///|
+async fn experimental_v2_agent_test_fork(
+  _context : ExperimentalV2AgentContext,
+  _params : ExperimentalV2ForkSessionParams,
+) -> ExperimentalV2ForkSessionResult {
+  @async.pause()
+  { session_id: "forked", config_options: None, meta: None, }
 }
 
 ///|
@@ -100,7 +115,7 @@ async fn experimental_v2_agent_test_login(
   _params : ExperimentalV2LoginParams,
 ) -> ExperimentalV2LoginResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -109,7 +124,7 @@ async fn experimental_v2_agent_test_logout(
   _params : ExperimentalV2LogoutParams,
 ) -> ExperimentalV2LogoutResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -117,6 +132,7 @@ fn experimental_v2_agent_test_sessions(
   with_delete : Bool,
   prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
   new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  fork_session? : ExperimentalV2AgentForkSessionHandler? = None,
 ) -> ExperimentalV2AgentSessionService {
   experimental_v2_agent_session_service(
     new_session~,
@@ -130,6 +146,7 @@ fn experimental_v2_agent_test_sessions(
     } else {
       None
     },
+    fork_session~,
   )
 }
 
@@ -139,14 +156,23 @@ fn experimental_v2_agent_test_spec(
   with_auth? : Bool = false,
   prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
   new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  with_fork? : Bool = false,
 ) -> ExperimentalV2AgentSpec {
   try! experimental_v2_agent_spec(
     info=experimental_v2_agent_test_info("agent"),
-    capabilities=experimental_v2_agent_test_capabilities(delete=with_delete),
+    capabilities=experimental_v2_agent_test_capabilities(
+      delete=with_delete,
+      fork=with_fork,
+    ),
     sessions=experimental_v2_agent_test_sessions(
       with_delete,
       prompt~,
       new_session~,
+      fork_session=if with_fork {
+        Some(experimental_v2_agent_test_fork)
+      } else {
+        None
+      },
     ),
     auth_methods=if with_auth {
       Some([experimental_v2_agent_test_token_method()])
@@ -172,6 +198,7 @@ fn experimental_v2_agent_test_endpoint(
   with_auth? : Bool = false,
   prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
   new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  with_fork? : Bool = false,
 ) -> ExperimentalV2AgentEndpoint {
   experimental_v2_agent_endpoint_from_spec(
     experimental_v2_agent_test_spec(
@@ -179,6 +206,7 @@ fn experimental_v2_agent_test_endpoint(
       with_auth~,
       prompt~,
       new_session~,
+      with_fork~,
     ),
   )
 }
@@ -196,7 +224,7 @@ fn experimental_v2_agent_test_adapter_state(
 test "v2 agent spec rejects an empty implementation identity" {
   try
     experimental_v2_agent_spec(
-      info={ name: "", title: None, version: "1", meta: None },
+      info={ name: "", title: None, version: "1", meta: None, },
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
     )
@@ -209,7 +237,7 @@ test "v2 agent spec rejects an empty implementation identity" {
   }
   try
     experimental_v2_agent_spec(
-      info={ name: "agent", title: None, version: "", meta: None },
+      info={ name: "agent", title: None, version: "", meta: None, },
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
     )
@@ -364,6 +392,92 @@ test "v2 agent spec couples the session.delete marker and delete service" {
 }
 
 ///|
+/// Upstream unstable (RFD session-fork, Draft): the fork marker and fork
+/// service couple both directions exactly like delete.
+test "v2 agent spec couples the session.fork marker and fork service" {
+  try
+    experimental_v2_agent_spec(
+      info=experimental_v2_agent_test_info("agent"),
+      capabilities=experimental_v2_agent_test_capabilities(fork=true),
+      sessions=experimental_v2_agent_test_sessions(false),
+    )
+  catch {
+    ForkServiceMismatch(reason~) =>
+      inspect(
+        reason,
+        content="the session.fork marker requires the fork service",
+      )
+    _ => fail("expected ForkServiceMismatch")
+  } noraise {
+    _ => fail("expected ForkServiceMismatch")
+  }
+  try
+    experimental_v2_agent_spec(
+      info=experimental_v2_agent_test_info("agent"),
+      capabilities=experimental_v2_agent_test_capabilities(),
+      sessions=experimental_v2_agent_test_sessions(
+        false,
+        fork_session=Some(experimental_v2_agent_test_fork),
+      ),
+    )
+  catch {
+    ForkServiceMismatch(reason~) =>
+      inspect(
+        reason,
+        content="the fork service requires the session.fork marker",
+      )
+    _ => fail("expected ForkServiceMismatch")
+  } noraise {
+    _ => fail("expected ForkServiceMismatch")
+  }
+}
+
+///|
+async test "v2 agent endpoint derives the fork marker and dispatches typed" {
+  let endpoint = experimental_v2_agent_test_endpoint(with_fork=true)
+  match endpoint.capabilities().session {
+    MarkerSupported(session) => assert_true(session.fork is MarkerSupported(_))
+    MarkerUnsupported => fail("session marker must stay supported")
+  }
+  let forked = endpoint.fork_session(
+    experimental_v2_agent_fail_fast_context(),
+    {
+      session_id: "created",
+      cwd: "/",
+      additional_directories: None,
+      mcp_servers: None,
+      meta: None,
+    },
+  )
+  assert_eq(forked.session_id, "forked")
+  // Without the fork service the marker is derived away and the endpoint
+  // answers typed instead of guessing.
+  match experimental_v2_agent_test_endpoint().capabilities().session {
+    MarkerSupported(session) =>
+      assert_true(session.fork is MarkerUnsupported(_))
+    MarkerUnsupported => fail("session marker must stay supported")
+  }
+  try
+    experimental_v2_agent_test_endpoint().fork_session(
+      experimental_v2_agent_fail_fast_context(),
+      {
+        session_id: "created",
+        cwd: "/",
+        additional_directories: None,
+        mcp_servers: None,
+        meta: None,
+      },
+    )
+  catch {
+    UnavailableOperation(method_name~) =>
+      inspect(method_name, content="session/fork")
+    _ => fail("expected UnavailableOperation")
+  } noraise {
+    _ => fail("expected UnavailableOperation")
+  }
+}
+
+///|
 test "v2 agent endpoint derives capabilities and authMethods from services" {
   let endpoint = experimental_v2_agent_test_endpoint()
   match endpoint.capabilities().session {
@@ -501,7 +615,7 @@ async test "v2 agent handler normalization prefixes and names defects" {
 
 ///|
 test "v2 prompt result codec round-trips" {
-  let value : ExperimentalV2PromptResult = { meta: None }
+  let value : ExperimentalV2PromptResult = { meta: None, }
   let encoded = try! experimental_v2_encode_prompt_result(value)
   inspect(encoded.stringify(), content="{}")
   let decoded = try! experimental_v2_decode_prompt_result(

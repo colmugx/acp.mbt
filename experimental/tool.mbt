@@ -138,7 +138,7 @@ pub fn experimental_v2_decode_tool_call_location(
     (value, path) => experimental_v2_decode_uint32(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { path: location_path, line, meta }
+  { path: location_path, line, meta, }
 }
 
 ///|
@@ -381,7 +381,7 @@ pub fn experimental_v2_decode_tool_call_content_chunk(
     path=path + ".content",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { tool_call_id, content, meta }
+  { tool_call_id, content, meta, }
 }
 
 ///|

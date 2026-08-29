@@ -33,7 +33,7 @@ pub fn experimental_v2_decode_implementation(
     path=path + ".version",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { name, title, version, meta }
+  { name, title, version, meta, }
 }
 
 ///|
@@ -101,7 +101,7 @@ pub fn experimental_v2_decode_initialize_params(
   )
   let capabilities : ExperimentalV2ClientCapabilities = match
     fields.get("capabilities") {
-    None => { elicitation: MarkerUnsupported, meta: None }
+    None => { elicitation: MarkerUnsupported, meta: None, }
     Some(value) =>
       experimental_v2_decode_client_capabilities(
         value,
@@ -109,7 +109,7 @@ pub fn experimental_v2_decode_initialize_params(
       )
   }
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { protocol_version, info, capabilities, meta }
+  { protocol_version, info, capabilities, meta, }
 }
 
 ///|
@@ -162,7 +162,7 @@ pub fn experimental_v2_decode_initialize_result(
   )
   let capabilities : ExperimentalV2AgentCapabilities = match
     fields.get("capabilities") {
-    None => { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None }
+    None => { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None, }
     Some(value) =>
       experimental_v2_decode_agent_capabilities(
         value,
@@ -176,7 +176,7 @@ pub fn experimental_v2_decode_initialize_result(
     (value, path) => experimental_v2_decode_auth_methods(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { protocol_version, info, capabilities, auth_methods, meta }
+  { protocol_version, info, capabilities, auth_methods, meta, }
 }
 
 ///|

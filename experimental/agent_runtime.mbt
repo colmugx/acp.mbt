@@ -121,7 +121,7 @@ pub fn experimental_v2_agent_runtime_owner_port(
     // has already cancelled their tasks and settled their wire ids, so the
     // adapter drops the stale reservation instead of keeping it in a dead
     // state snapshot.
-    abort: (state, _task) => { ..state, reservation: Idle },
+    abort: (state, _task) => { ..state, reservation: Idle, },
   }
 }
 
@@ -194,7 +194,7 @@ fn experimental_v2_agent_runtime_request_completion(
     }
   }
   match response {
-    Some(response) => { state: step.state, response, effects }
+    Some(response) => { state: step.state, response, effects, }
     None => abort("v2 agent adapter request step must carry one response")
   }
 }
@@ -220,7 +220,7 @@ fn experimental_v2_agent_runtime_notification_completion(
       Command(command) => effects.push(Local(effect=command))
     }
   }
-  { state: step.state, effects }
+  { state: step.state, effects, }
 }
 
 ///|
@@ -247,7 +247,7 @@ fn experimental_v2_agent_runtime_trace_completion(
   ExperimentalV2AgentAdapterState,
   ExperimentalV2AgentAdapterCommand,
 ] {
-  { state, effects: experimental_v2_agent_runtime_trace_effects(method_name) }
+  { state, effects: experimental_v2_agent_runtime_trace_effects(method_name), }
 }
 
 ///|

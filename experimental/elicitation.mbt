@@ -71,7 +71,7 @@ pub fn experimental_v2_decode_enum_option(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { value: const_value, title, description, meta }
+  { value: const_value, title, description, meta, }
 }
 
 ///|
@@ -326,7 +326,7 @@ pub fn experimental_v2_decode_number_property(
     (value, path) => experimental_v2_decode_finite_number(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { title, description, minimum, maximum, default, meta }
+  { title, description, minimum, maximum, default, meta, }
 }
 
 ///|
@@ -406,7 +406,7 @@ pub fn experimental_v2_decode_integer_property(
     (value, path) => experimental_v2_decode_int64(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { title, description, minimum, maximum, default, meta }
+  { title, description, minimum, maximum, default, meta, }
 }
 
 ///|
@@ -472,7 +472,7 @@ pub fn experimental_v2_decode_boolean_property(
     (value, path) => experimental_v2_decode_boolean(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { title, description, default, meta }
+  { title, description, default, meta, }
 }
 
 ///|
@@ -559,7 +559,7 @@ pub fn experimental_v2_decode_multi_select_property(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { title, description, min_items, max_items, items, default, meta }
+  { title, description, min_items, max_items, items, default, meta, }
 }
 
 ///|
@@ -640,7 +640,7 @@ pub fn experimental_v2_decode_multi_select_items(
           field_path=path + ".enum",
         )
         let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-        MultiSelectItemsString({ enum_values, meta })
+        MultiSelectItemsString({ enum_values, meta, })
       } else if tag.has_prefix("_") {
         MultiSelectItemsExtension(tag~, raw=value)
       } else {
@@ -662,7 +662,7 @@ pub fn experimental_v2_decode_multi_select_items(
           field_path=path + ".anyOf",
         )
         let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-        MultiSelectItemsTitled({ any_of, meta })
+        MultiSelectItemsTitled({ any_of, meta, })
       } else {
         raise InvalidField(
           path~,
@@ -866,7 +866,7 @@ pub fn experimental_v2_decode_elicitation_schema(
     (value, path) => experimental_v2_decode_string(value, path~),
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { title, properties, required, description, meta }
+  { title, properties, required, description, meta, }
 }
 
 ///|
@@ -949,7 +949,7 @@ fn experimental_v2_decode_elicitation_scope(
         )
       },
     )
-    ScopeSession({ session_id, tool_call_id })
+    ScopeSession({ session_id, tool_call_id, })
   } else if has_request {
     let request_id = experimental_v2_decode_request_id(
       experimental_v2_required(fields, "requestId", path=path + ".requestId"),
@@ -1058,7 +1058,11 @@ pub fn experimental_v2_decode_elicitation_create_request(
             path=path + ".requestedSchema",
           )
           let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-          { message, mode: ElicitationForm({ requested_schema, scope }), meta }
+          {
+            message,
+            mode: ElicitationForm({ requested_schema, scope, }),
+            meta,
+          }
         }
         "url" => {
           experimental_v2_reject_unknown(
@@ -1092,7 +1096,7 @@ pub fn experimental_v2_decode_elicitation_create_request(
           let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
           {
             message,
-            mode: ElicitationUrl({ elicitation_id, url, scope }),
+            mode: ElicitationUrl({ elicitation_id, url, scope, }),
             meta,
           }
         }
@@ -1277,7 +1281,7 @@ pub fn experimental_v2_decode_elicitation_create_response(
               decoded
             },
           )
-          { action: ActionAccept({ content, }), meta }
+          { action: ActionAccept({ content, }), meta, }
         }
         "decline" => {
           experimental_v2_reject_unknown(
@@ -1286,7 +1290,7 @@ pub fn experimental_v2_decode_elicitation_create_response(
             prefix=path,
           )
           let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-          { action: ActionDecline, meta }
+          { action: ActionDecline, meta, }
         }
         "cancel" => {
           experimental_v2_reject_unknown(
@@ -1295,7 +1299,7 @@ pub fn experimental_v2_decode_elicitation_create_response(
             prefix=path,
           )
           let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-          { action: ActionCancel, meta }
+          { action: ActionCancel, meta, }
         }
         _ =>
           // decode_open only passes known tags; keep exhaustiveness explicit.
@@ -1384,7 +1388,7 @@ pub fn experimental_v2_decode_complete_elicitation_notification(
     field_path=path + ".elicitationId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { elicitation_id, meta }
+  { elicitation_id, meta, }
 }
 
 ///|

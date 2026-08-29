@@ -13,7 +13,7 @@ fn experimental_v2_broker_test_ports(
   failures : Array[(@jsonrpc.RequestId, @runtime.RuntimeOutboundFailureKind)],
 ) -> @runtime.RuntimePorts {
   {
-    reader: { read: _ => input.get() },
+    reader: { read: _ => input.get(), },
     writer: {
       write: frame => {
         output.push(frame)
@@ -65,7 +65,7 @@ fn experimental_v2_broker_test_owner_port() -> @connection.RuntimeOwnerPort[
       })
     },
     admit_notification: (_state, _notification) => {
-      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [] })
+      RuntimeOwnerNotificationImmediate(completion={ state: (), effects: [], })
     },
     execute: _invocation => (),
     execute_failure: (_state, _invocation) => (),
@@ -176,7 +176,7 @@ async test "v2 client connection over channel round-trips initialize and pins ve
       )
       let accepted = connection.initialize(params)
       let offers : Array[Int] = []
-      try connection.initialize({ ..params, meta: None }) catch {
+      try connection.initialize({ ..params, meta: None, }) catch {
         UnsupportedVersion(method_name~, offered~) => {
           assert_eq(method_name, "initialize")
           offers.push(offered)
@@ -305,7 +305,7 @@ async test "v2 client connection over channel classifies wire error codes" {
         _ => fail("expected a typed cancellation")
       }
       try {
-        let _ = connection.new_session({ ..params, cwd: "/second" })
+        let _ = connection.new_session({ ..params, cwd: "/second", })
         fail("expected a typed broker failure")
       } catch {
         ExperimentalV2ClientConnectionError::BrokerFailure(method_name~) =>
@@ -357,7 +357,7 @@ async test "v2 client connection over channel submits sync notifications" {
     let submitter = group.spawn(() => {
       let channel = captured.get()
       let connection = experimental_v2_client_connection_over_channel(channel~)
-      connection.cancel_session({ session_id: "session", meta: None })
+      connection.cancel_session({ session_id: "session", meta: None, })
       connection.cancel_request(RequestIdStr("peer-request"))
     })
     ignore(written.get())
@@ -423,7 +423,7 @@ async test "v2 client connection over channel maps closed notifications to typed
     let channel = captured.get()
     let connection = experimental_v2_client_connection_over_channel(channel~)
     try {
-      connection.cancel_session({ session_id: "session", meta: None })
+      connection.cancel_session({ session_id: "session", meta: None, })
       fail("expected a typed unavailability")
     } catch {
       ExperimentalV2ClientConnectionError::Unavailable(method_name~) =>

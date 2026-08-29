@@ -195,7 +195,10 @@ async test "v2 agent adapter rejects requests before initialize" {
 
 ///|
 async test "v2 agent adapter completes every baseline session method" {
-  let endpoint = experimental_v2_agent_test_endpoint(with_delete=true)
+  let endpoint = experimental_v2_agent_test_endpoint(
+    with_delete=true,
+    with_fork=true,
+  )
   let state = experimental_v2_agent_test_initialized(endpoint)
   // Meta-only baseline results encode as the empty object; the payload
   // carriers must keep their required keys.
@@ -215,6 +218,11 @@ async test "v2 agent adapter completes every baseline session method" {
       Some("configOptions"),
     ),
     ("session/delete", "{\"sessionId\":\"created\"}", None),
+    (
+      "session/fork",
+      "{\"sessionId\":\"created\",\"cwd\":\"/\"}",
+      Some("sessionId"),
+    ),
   ]
   for index, entry in cases {
     let method_name = entry.0
@@ -296,6 +304,25 @@ async test "v2 agent adapter gates capability-marked methods without invoking" {
     ),
   )
   match denied {
+    Immediate(step) =>
+      assert_eq(
+        try! experimental_v2_agent_test_error_code(step),
+        ResourceNotFound,
+      )
+    Invoke(..) => fail("a gated method must not invoke")
+  }
+  // Upstream unstable (RFD session-fork, Draft): the unadvertised fork method
+  // denies without invoking too.
+  let fork_denied = try! experimental_v2_agent_adapter_admit(
+    state,
+    endpoint,
+    experimental_v2_agent_test_request(
+      String("fork-denied"),
+      "session/fork",
+      "{\"sessionId\":\"created\",\"cwd\":\"/\"}",
+    ),
+  )
+  match fork_denied {
     Immediate(step) =>
       assert_eq(
         try! experimental_v2_agent_test_error_code(step),
@@ -415,7 +442,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
   let step = try! experimental_v2_agent_adapter_complete(
     reserved,
     invocation,
-    AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None })),
+    AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None, })),
   )
   ignore(try! experimental_v2_agent_test_success_result(step))
   assert_true(step.state.protocol.authentication is AuthLoggedIn)
@@ -424,7 +451,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
     experimental_v2_agent_adapter_complete(
       step.state,
       invocation,
-      AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None })),
+      AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None, })),
     )
   catch {
     LateCompletion(request_id~) => assert_eq(request_id, String("login-1"))
@@ -522,7 +549,7 @@ async test "v2 agent adapter completes logout back to pending" {
       let step = try! experimental_v2_agent_adapter_complete(
         state,
         invocation,
-        AuthLogoutCompleted(id=String("logout-1"), result=Ok({ meta: None })),
+        AuthLogoutCompleted(id=String("logout-1"), result=Ok({ meta: None, })),
       )
       ignore(try! experimental_v2_agent_test_success_result(step))
       assert_true(step.state.protocol.authentication is AuthPending)
@@ -589,7 +616,7 @@ async test "v2 agent adapter completes late and mismatched typed" {
       invocation,
       SessionNewCompleted(
         id=String("list-1"),
-        result=Ok({ session_id: "created", config_options: None, meta: None }),
+        result=Ok({ session_id: "created", config_options: None, meta: None, }),
       ),
     )
   catch {
@@ -606,7 +633,7 @@ async test "v2 agent adapter completes late and mismatched typed" {
       invocation,
       SessionListCompleted(
         id=String("other"),
-        result=Ok({ sessions: [], next_cursor: None, meta: None }),
+        result=Ok({ sessions: [], next_cursor: None, meta: None, }),
       ),
     )
   catch {

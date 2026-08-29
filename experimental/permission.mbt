@@ -80,7 +80,7 @@ pub fn experimental_v2_decode_permission_option(
     path=path + ".kind",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { option_id, name, kind, meta }
+  { option_id, name, kind, meta, }
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn experimental_v2_decode_selected_permission_outcome(
     field_path=path + ".optionId",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { option_id, meta }
+  { option_id, meta, }
 }
 
 ///|
@@ -281,7 +281,7 @@ pub fn experimental_v2_decode_command_permission_subject(
     },
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { command, cwd, tool_call_id, terminal_id, meta }
+  { command, cwd, tool_call_id, terminal_id, meta, }
 }
 
 ///|
@@ -427,7 +427,7 @@ pub fn experimental_v2_decode_request_permission_request(
     )
   }
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { session_id, title, description, subject, options, meta }
+  { session_id, title, description, subject, options, meta, }
 }
 
 ///|
@@ -473,7 +473,7 @@ pub fn experimental_v2_decode_request_permission_response(
     path=path + ".outcome",
   )
   let meta = experimental_v2_nested_meta(fields, path=path + "._meta")
-  { outcome, meta }
+  { outcome, meta, }
 }
 
 ///|
