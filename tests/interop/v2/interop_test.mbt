@@ -38,7 +38,7 @@ struct InteropV2ClientRecordings {
 
 ///|
 fn interop_v2_client_recordings() -> InteropV2ClientRecordings {
-  { updates: [], permissions: [], responses: [], failures: [] }
+  { updates: [], permissions: [], responses: [], failures: [], }
 }
 
 ///|
@@ -74,7 +74,7 @@ fn interop_v2_client_handlers(
 
 ///|
 fn interop_v2_client_info() -> @experimental.ExperimentalV2Implementation {
-  { name: "v2-interop-client", title: None, version: "test", meta: None }
+  { name: "v2-interop-client", title: None, version: "test", meta: None, }
 }
 
 ///|
@@ -153,7 +153,7 @@ fn interop_v2_agent_advertisement() -> @experimental.ExperimentalV2InitializeRes
         mcp: MarkerUnsupported,
         delete: MarkerUnsupported,
         additional_directories: MarkerUnsupported,
-        fork: MarkerUnsupported,
+        fork: MarkerSupported({ meta: None, }),
         meta: None,
       }),
       auth: MarkerUnsupported,
@@ -318,7 +318,7 @@ async test "v2 moonbit client drives a v2 moonbit agent process end to end over 
       message_id: "fixture-user-message",
       blocks: [
         Known(
-          BlockText({ text: "Find the matches", annotations: None, meta: None }),
+          BlockText({ text: "Find the matches", annotations: None, meta: None, }),
         ),
       ],
       meta: None,
@@ -328,8 +328,8 @@ async test "v2 moonbit client drives a v2 moonbit agent process end to end over 
     {
       message_id: "fixture-agent-message",
       blocks: [
-        Known(BlockText({ text: "Inter", annotations: None, meta: None })),
-        Known(BlockText({ text: "op", annotations: None, meta: None })),
+        Known(BlockText({ text: "Inter", annotations: None, meta: None, })),
+        Known(BlockText({ text: "op", annotations: None, meta: None, })),
       ],
       meta: None,
     },
@@ -523,6 +523,84 @@ async test "v2 agent tolerates a late wire cancel and keeps serving" {
 }
 
 ///|
+/// The `session/fork` round-trip interop proof for the pinned v2 unstable
+/// overlay (upstream unstable, RFD session-fork, Draft).  The fixture agent
+/// mounts the fork service behind the `session.fork` marker, so the real
+/// initialize result advertises it; the client then forks the live
+/// `interop-session` and the deterministic `forked-`-prefixed id proves the
+/// request and its typed result (no `modes` by v2 shape) both crossed the
+/// real pipes, framing, and both engines.
+async test "v2 client forks a live v2 agent session over stdio" {
+  let fixture = interop_v2_fixture_program.wait()
+  let recordings = interop_v2_client_recordings()
+  let endpoint = interop_v2_client_endpoint(recordings)
+  let connections : @aqueue.Queue[@experimental.ExperimentalV2ClientConnection] = Queue(
+    kind=Unbounded,
+  )
+  let child_stdins : @aqueue.Queue[@process.WriteToProcess] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let driver = group.spawn(() => {
+      let connection = connections.get()
+      let child_stdin = child_stdins.get()
+      let initialized = connection.initialize(
+        @experimental.experimental_v2_client_initialize_params(
+          info=interop_v2_client_info(),
+          capabilities=endpoint.capabilities(),
+        ),
+      )
+      assert_eq(
+        initialized.protocol_version,
+        @experimental.experimental_v2_protocol_version,
+      )
+      // The mounted fork handler surfaces as the session.fork marker in the
+      // real advertisement.
+      assert_eq(
+        initialized.capabilities,
+        interop_v2_agent_advertisement().capabilities,
+      )
+      let forked = connection.fork_session({
+        session_id: "interop-session",
+        cwd: "/",
+        additional_directories: None,
+        mcp_servers: None,
+        meta: None,
+      })
+      assert_eq(forked, {
+        session_id: "forked-interop-session",
+        config_options: None,
+        meta: None,
+      })
+      child_stdin.close()
+    })
+    @experimental.experimental_v2_client_connect_process(
+      endpoint_factory=channel => {
+        let _ = connections.try_put(
+          @experimental.experimental_v2_client_connection_over_channel(channel~),
+        ) catch {
+          _ => false
+        }
+        endpoint
+      },
+      initial_state=interop_v2_client_state(endpoint),
+      handlers=interop_v2_client_handlers(recordings),
+      command=fixture,
+      args=["serve"],
+      spawned=ports => {
+        let _ = child_stdins.try_put(ports.child_stdin) catch { _ => false }
+      },
+      trace=_ => (),
+    )
+    driver.wait()
+  })
+  // Initialize and session/fork each settled exactly one reply, nothing
+  // failed.
+  assert_eq(recordings.responses, ["1", "2"])
+  assert_eq(recordings.failures.length(), 0)
+}
+
+///|
 /// Newline-delimited frame reader over the spawned child's real stdout, so
 /// the batch scenario can observe the exact wire frames the agent writes.
 struct InteropV2FrameReader {
@@ -691,7 +769,7 @@ async test "v2 agent processes a two-entry batch frame" {
       try! @experimental.experimental_v2_decode_new_session_result(
         created.result,
       ),
-      { session_id: "interop-session", config_options: None, meta: None },
+      { session_id: "interop-session", config_options: None, meta: None, },
     )
     // The ACP stdio shutdown signal: the agent exits on its own EOF, and the
     // drained stream holds no further frame — the notification never replied.

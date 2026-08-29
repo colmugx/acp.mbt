@@ -41,7 +41,7 @@ struct InteropClientRecordings {
 
 ///|
 fn interop_client_recordings() -> InteropClientRecordings {
-  { updates: [], permissions: [], responses: [], failures: [] }
+  { updates: [], permissions: [], responses: [], failures: [], }
 }
 
 ///|
@@ -138,7 +138,7 @@ fn interop_client_initialize_params() -> @protocol_data.InitializeParams {
 
 ///|
 fn interop_client_new_session_params() -> @session_protocol.NewSessionParams {
-  { cwd: "/", additional_directories: Omitted, mcp_servers: [], meta: Omitted }
+  { cwd: "/", additional_directories: Omitted, mcp_servers: [], meta: Omitted, }
 }
 
 ///|
@@ -284,8 +284,8 @@ async test "moonbit client drives a moonbit agent process end to end over stdio"
     {
       message_id: Value("fixture-message"),
       blocks: [
-        Text({ annotations: Omitted, text: "Inter", meta: Omitted }),
-        Text({ annotations: Omitted, text: "op", meta: Omitted }),
+        Text({ annotations: Omitted, text: "Inter", meta: Omitted, }),
+        Text({ annotations: Omitted, text: "op", meta: Omitted, }),
       ],
     },
   ])
@@ -442,6 +442,85 @@ async test "moonbit client late cancel keeps the agent connection serving" {
     driver.wait()
   })
   // Both engine requests settled exactly one reply and nothing failed.
+  assert_eq(recordings.responses, ["1", "2"])
+  assert_eq(recordings.failures.length(), 0)
+}
+
+///|
+/// The `session/fork` round-trip interop proof (upstream unstable, RFD
+/// session-fork, Draft).  The fixture agent mounts the fork service, so the
+/// real initialize result must advertise the derived `session.fork` marker;
+/// the client then forks the live `interop-session` and the deterministic
+/// `forked-`-prefixed id proves the request and its typed result both crossed
+/// the real pipes, framing, and both engines.
+async test "moonbit client forks a session on a live agent process over stdio" {
+  let fixture = interop_fixture_program.wait()
+  let recordings = interop_client_recordings()
+  let endpoint = interop_client_endpoint(recordings)
+  let connections : @aqueue.Queue[@client.ClientConnection] = Queue(
+    kind=Unbounded,
+  )
+  let child_stdins : @aqueue.Queue[@process.WriteToProcess] = Queue(
+    kind=Unbounded,
+  )
+  @async.with_task_group(group => {
+    let driver = group.spawn(() => {
+      let connection = connections.get()
+      let child_stdin = child_stdins.get()
+      let initialized = connection.initialize(
+        interop_client_initialize_params(),
+      )
+      assert_eq(initialized.protocol_version, 1)
+      // Capability derivation is service presence: the mounted fork handler
+      // must surface as the session.fork marker in the real advertisement.
+      match initialized.agent_capabilities {
+        Value(
+          {
+            session_capabilities: Value({ fork: Value({ meta: Omitted, }), .. }),
+            ..
+          }
+        ) => ()
+        _ =>
+          fail(
+            "expected the derived session.fork marker in the initialize result",
+          )
+      }
+      let forked = connection.fork_session({
+        cwd: "/",
+        session_id: "interop-session",
+        additional_directories: Omitted,
+        mcp_servers: Omitted,
+        meta: Omitted,
+      })
+      assert_eq(forked, {
+        session_id: "forked-interop-session",
+        modes: Omitted,
+        config_options: Omitted,
+        meta: Omitted,
+      })
+      child_stdin.close()
+    })
+    @client.client_connect_process(
+      endpoint_factory=channel => {
+        let _ = connections.try_put(
+          @broker.client_connection_over_channel(channel~),
+        ) catch {
+          _ => false
+        }
+        endpoint
+      },
+      initial_state=interop_client_state(endpoint),
+      handlers=interop_client_handlers(recordings),
+      command=fixture,
+      args=["serve"],
+      spawned=ports => {
+        let _ = child_stdins.try_put(ports.child_stdin) catch { _ => false }
+      },
+      trace=_ => (),
+    )
+    driver.wait()
+  })
+  // Initialize and session/fork each settled exactly one reply, nothing failed.
   assert_eq(recordings.responses, ["1", "2"])
   assert_eq(recordings.failures.length(), 0)
 }

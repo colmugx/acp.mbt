@@ -21,6 +21,8 @@
 ///   the final prompt result `_meta`, then `state_update idle` with
 ///   `stopReason end_turn`.  `session/list` answers one canned session and a
 ///   late `$/cancel_request` is tolerated by the engine's best-effort cancel.
+///   `session/fork` (upstream unstable overlay) answers one deterministic
+///   `forked-`-prefixed session id.
 /// - `die`: the identical streamed turn and permission round-trip, then the
 ///   process terminates itself mid-prompt through libc `exit` — unlike a
 ///   panic it writes nothing to stdout, so the child's stdout stays pure
@@ -70,7 +72,7 @@ fn interop_v2_fixture_capabilities() -> @v2.ExperimentalV2AgentCapabilities {
       mcp: MarkerUnsupported,
       delete: MarkerUnsupported,
       additional_directories: MarkerUnsupported,
-      fork: MarkerUnsupported,
+      fork: MarkerSupported({ meta: None, }),
       meta: None,
     }),
     auth: MarkerUnsupported,
@@ -97,6 +99,7 @@ fn interop_v2_fixture_endpoint(
       close=interop_v2_fixture_close_session,
       prompt=interop_v2_fixture_prompt(mode),
       set_config_option=interop_v2_fixture_set_config_option,
+      fork_session=Some(interop_v2_fixture_fork_session),
     ),
   )
   @v2.experimental_v2_agent_endpoint_from_spec(spec)
@@ -117,7 +120,7 @@ async fn interop_v2_fixture_new_session(
   _params : @v2.ExperimentalV2NewSessionParams,
 ) -> @v2.ExperimentalV2NewSessionResult {
   @async.pause()
-  { session_id: "interop-session", config_options: None, meta: None }
+  { session_id: "interop-session", config_options: None, meta: None, }
 }
 
 ///|
@@ -148,7 +151,7 @@ async fn interop_v2_fixture_resume_session(
   _params : @v2.ExperimentalV2ResumeSessionParams,
 ) -> @v2.ExperimentalV2ResumeSessionResult {
   @async.pause()
-  { config_options: None, meta: None }
+  { config_options: None, meta: None, }
 }
 
 ///|
@@ -157,7 +160,7 @@ async fn interop_v2_fixture_close_session(
   _params : @v2.ExperimentalV2CloseSessionParams,
 ) -> @v2.ExperimentalV2CloseSessionResult {
   @async.pause()
-  { meta: None }
+  { meta: None, }
 }
 
 ///|
@@ -166,7 +169,24 @@ async fn interop_v2_fixture_set_config_option(
   _params : @v2.ExperimentalV2SetConfigOptionParams,
 ) -> @v2.ExperimentalV2SetConfigOptionResult {
   @async.pause()
-  { config_options: [], meta: None }
+  { config_options: [], meta: None, }
+}
+
+///|
+/// The deterministic `session/fork` answer of the pinned v2 unstable overlay:
+/// the forked session id is the requested id prefixed with `forked-`, and the
+/// result carries no `modes` by v2 shape.  Upstream unstable (RFD
+/// session-fork, Draft).
+async fn interop_v2_fixture_fork_session(
+  _context : @v2.ExperimentalV2AgentContext,
+  params : @v2.ExperimentalV2ForkSessionParams,
+) -> @v2.ExperimentalV2ForkSessionResult {
+  @async.pause()
+  {
+    session_id: "forked-" + params.session_id,
+    config_options: None,
+    meta: None,
+  }
 }
 
 ///|
@@ -201,7 +221,7 @@ fn interop_v2_fixture_prompt(
     }
     context.session_update(interop_v2_fixture_tool_call_patch(selected))
     context.session_update(interop_v2_fixture_idle())
-    { meta: Some(interop_v2_fixture_selected_meta(selected)) }
+    { meta: Some(interop_v2_fixture_selected_meta(selected)), }
   }
 }
 
@@ -250,7 +270,7 @@ fn interop_v2_fixture_agent_chunk(
     update: Known(
       UpdateAgentMessageChunk({
         message_id: "fixture-agent-message",
-        content: Known(BlockText({ text, annotations: None, meta: None })),
+        content: Known(BlockText({ text, annotations: None, meta: None, })),
         meta: None,
       }),
     ),
@@ -308,7 +328,7 @@ fn interop_v2_fixture_tool_call_patch(
 fn interop_v2_fixture_running() -> @v2.ExperimentalV2UpdateSessionNotification {
   {
     session_id: "interop-session",
-    update: Known(UpdateState(Known(StateRunning({ meta: None })))),
+    update: Known(UpdateState(Known(StateRunning({ meta: None, })))),
     meta: None,
   }
 }
@@ -319,7 +339,7 @@ fn interop_v2_fixture_idle() -> @v2.ExperimentalV2UpdateSessionNotification {
     session_id: "interop-session",
     update: Known(
       UpdateState(
-        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None })),
+        Known(StateIdle({ stop_reason: Some(StopReasonEndTurn), meta: None, })),
       ),
     ),
     meta: None,

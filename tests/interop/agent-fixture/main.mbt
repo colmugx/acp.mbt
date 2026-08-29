@@ -71,6 +71,7 @@ fn interop_fixture_endpoint(mode : String) -> @agent.AgentEndpoint {
       new_session=interop_fixture_new_session,
       prompt=interop_fixture_prompt(mode),
       cancel=interop_fixture_cancel,
+      fork_session=interop_fixture_fork_session,
     ),
     support=@agent.agent_support(),
   ).unwrap()
@@ -116,6 +117,24 @@ async fn interop_fixture_cancel(
   _params : @session_protocol.CancelParams,
 ) -> Unit {
   @async.pause()
+}
+
+///|
+/// The deterministic `session/fork` answer: the forked session id is the
+/// requested id prefixed with `forked-`, everything else omitted, so the e2e
+/// client can assert the round-trip reached this handler through the real
+/// wire.  Upstream unstable (RFD session-fork, Draft).
+async fn interop_fixture_fork_session(
+  _context : @agent.AgentContext,
+  params : @session_protocol.ForkSessionParams,
+) -> @session_protocol.ForkSessionResult {
+  @async.pause()
+  {
+    session_id: "forked-" + params.session_id,
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
 }
 
 ///|
@@ -170,7 +189,7 @@ fn interop_fixture_agent_chunk(
   {
     session_id: "interop-session",
     update: AgentMessageChunk({
-      content: Text({ annotations: Omitted, text, meta: Omitted }),
+      content: Text({ annotations: Omitted, text, meta: Omitted, }),
       message_id: Value("fixture-message"),
       meta: Omitted,
     }),
