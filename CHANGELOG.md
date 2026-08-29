@@ -7,6 +7,51 @@ landed on `main`; it is not a release announcement.
 
 ## [Unreleased] — v1-pending
 
+### session/fork (upstream unstable)
+
+`session/fork` is an upstream **unstable overlay** method (RFD session-fork,
+Draft; unstable artifacts of the pinned commit `b8dd9b2`). It is implemented
+in **both facades** as a deliberate unstable subset — never as stable v1 or
+v2 stable-baseline surface.
+
+- Pin and governance inputs: the two unstable method-metadata artifacts are
+  vendored (`spec/schema/v1/meta.unstable.json`,
+  `spec/schema/v2/meta.unstable.json`) solely as membership-gate input, and
+  the two unstable schemas are hash-recorded in `spec/LOCK.md` as verified,
+  deliberately non-vendored references. `a762c21`
+- Full fork support on both facades: strict wire types and codecs, the
+  optional agent handler chain (gate, service, endpoint, invocation,
+  adapter), the client send side (`ClientConnection::fork_session` over the
+  typed broker), and the facade exports. v1 chain `e712905`, `2faf7fe`,
+  `bd5ebbb`, `a559f22`; v2 mirror `f65cf24`.
+- Wire facts: the params follow the `session/resume` shape — `sessionId`
+  (the session being forked) and absolute `cwd` required, `mcpServers`
+  optional (unlike `session/load`), `additionalDirectories`/`_meta`
+  optional. The v1 result carries optional `modes` (same shape as
+  `NewSessionResult`); the v2 result has **no** `modes` field, mirroring
+  the v2 `session/new` result per the pinned v2 unstable schema. Verified
+  by `agent/matrix_test.mbt` ("matrix session fork wire frame mirrors the
+  resume recipe") and `client/matrix_test.mbt` ("matrix session fork wire
+  frame mirrors the resume client recipe").
+- Capability markers: v1 `agentCapabilities.sessionCapabilities.fork`
+  (marker, same shape as list/delete/resume/close) and v2
+  `capabilities.session.fork` (object-presence marker). Gating reuses the
+  generic capability denial; there is no fork-specific error code.
+  `e712905`, `f65cf24`
+- Unstable governance: the stable manifests and their exact-set drift
+  gates are unchanged (v1 stays 25 entries, v2 stays 16; `session/fork`
+  remains outside both stable sets). Fork lives in separate unstable
+  manifests — `acp_v1_unstable_method_manifest` /
+  `experimental_v2_unstable_method_manifest` — each exactly
+  `session/fork`, proven a deliberate subset of the pinned unstable
+  overlay by membership gates derived from the vendored unstable meta
+  bytes. `a470501` (`method/manifest_test.mbt`: "unstable v1 manifest is
+  a session/fork subset of the vendored unstable meta"); `f65cf24`
+  (`experimental/manifest_test.mbt`: "v2 unstable manifest is a
+  deliberate session/fork subset of the pinned unstable meta bytes").
+  Precedent: the 2026-08-17 decision admitting the upstream unstable
+  `plan`/`auth` capability fields.
+
 ### Error forwarding (behavior change)
 
 - Adapter errors no longer collapse onto payload-free standard messages.
@@ -219,10 +264,12 @@ implementation; see the *Experimental: ACP v2 Draft baseline* section below.
 
 The ACP v2 Draft stable baseline is implemented behind the explicit
 `colmugx/acp/experimental` facade. This is Draft quality: breaking changes
-may occur at any time. The unstable overlay is not implemented and never
-vendored — `schema/v2/meta.unstable.json` is hash-recorded in `spec/LOCK.md`
-as an exclusion reference only, and `schema/v2/schema.unstable.json` was
-never retrieved. Version negotiation is v2-only with no downgrade: the
+may occur at any time. The unstable overlay was not implemented and not
+vendored at the v2 baseline (2026-08-23); as of the `session/fork` wave
+(2026-08-29) one deliberate unstable subset is implemented in both
+  facades and the unstable metas are vendored as membership-gate input —
+  see the *session/fork (upstream unstable)* section above. Version
+  negotiation is v2-only with no downgrade: the
 client always offers `protocolVersion: 2` and fails terminally
 (`UnsupportedVersion` plus close) on any other negotiated version, while
 the agent answers a version-1 offer with `2` and stays un-initialized until
@@ -326,8 +373,11 @@ Per `docs/implementation-plan/09-posoco-and-release-boundary.md`:
 - Stable `colmugx/acp` targets ACP wire v1 only, on the native target
   only. The v1 method set and schema are locked to the pinned upstream
   commit recorded in `spec/LOCK.md`; the stable facade will not gain
-  breaking changes without a new version, and no unstable or v2 name is
-  vendored or exposed by the stable package.
+  breaking changes without a new version, and no v2 name is vendored or
+  exposed by the stable package. The sole unstable exception is the
+  deliberate `session/fork` subset (2026-08-29), carried by a separate
+  unstable manifest outside the stable 25-entry set — see the
+  *session/fork (upstream unstable)* section.
 - `colmugx/acp/experimental` is the ACP v2 Draft facade implementing the
   pinned stable baseline (see the *Experimental: ACP v2 Draft baseline*
   section above). It is Draft-only, breaking changes may occur at any
