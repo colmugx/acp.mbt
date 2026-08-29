@@ -1,0 +1,43 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/transport"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn framing_feed(FramingState, Bytes) -> FramingStep raise FramingError
+
+pub fn framing_finish(FramingState) -> FramingStep raise FramingError
+
+pub fn framing_state(max_frame_bytes~ : Int) -> FramingState raise FramingError
+
+pub fn stdio_transport(@runtime.RuntimeHandlerPort, (async (@jsonrpc.RequestId) -> Unit)?, (@runtime.RuntimeTraceEvent) -> Unit) -> @runtime.RuntimePorts
+
+// Errors
+pub(all) suberror FramingError {
+  InvalidMaxFrameSize
+  Closed
+  EmptyFrame
+  InvalidUtf8
+  FrameTooLarge(limit~ : Int, actual~ : Int)
+  UnexpectedEof
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct FramingState {
+  pending : Bytes
+  max_frame_bytes : Int
+  closed : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct FramingStep {
+  state : FramingState
+  frames : Array[String]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

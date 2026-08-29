@@ -1,0 +1,79 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/agent/protocol"
+
+import {
+  "colmugx/acp/agent/message",
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn agent_protocol_reduce(AgentProtocolState, AgentProtocolEvent) -> AgentProtocolStep raise AgentProtocolError
+
+pub fn agent_protocol_state_new(config~ : AgentProtocolConfig) -> AgentProtocolState
+
+// Errors
+pub(all) suberror AgentProtocolError {
+  NotInitialized(method_name~ : String)
+  AlreadyInitialized
+  CapabilityDenied(method_name~ : String, capability~ : String)
+  AuthenticationRequired(method_name~ : String)
+  AuthenticationMethodNotAdvertised(method_id~ : String)
+  AuthenticationNotRequired
+  AlreadyAuthenticated
+  NotAuthenticated
+  InvalidEvent(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum AgentAuthenticationState {
+  NotRequired
+  AwaitingAuthentication
+  Authenticated
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentProtocolCommand {
+  SendInitialize(result~ : @colmugx/acp/protocol.InitializeResult, accepted~ : Bool)
+  DispatchRequest(@message.AgentRequest)
+  DispatchNotification(@message.AgentNotification)
+  Authenticate(method_id~ : String)
+  Logout
+  CancelSession(session_id~ : String)
+  CancelRequest(request_id~ : @jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentProtocolConfig {
+  agent_capabilities : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.AgentCapabilities]
+  auth_methods : @colmugx/acp/protocol.ProtocolNullable[Array[@colmugx/acp/protocol.AuthMethod]]
+  agent_info : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentProtocolEvent {
+  Request(@message.AgentRequest)
+  Notification(@message.AgentNotification)
+  AuthenticationSucceeded(method_id~ : String)
+  LoggedOut
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentProtocolPhase {
+  AwaitingInitialize
+  Initialized
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentProtocolState {
+  phase : AgentProtocolPhase
+  protocol_version : @colmugx/acp/protocol.ProtocolNullable[Int]
+  client_capabilities : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]
+  client_info : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]
+  authentication : AgentAuthenticationState
+  config : AgentProtocolConfig
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentProtocolStep {
+  state : AgentProtocolState
+  commands : Array[AgentProtocolCommand]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

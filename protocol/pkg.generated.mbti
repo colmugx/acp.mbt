@@ -1,0 +1,1068 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/protocol"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn agent_auth_capabilities_from_json(Json, path? : String) -> AgentAuthCapabilities raise ProtocolDecodeError
+
+pub fn agent_auth_capabilities_to_json(AgentAuthCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn agent_capabilities_from_json(Json, path? : String) -> AgentCapabilities raise ProtocolDecodeError
+
+pub fn agent_capabilities_to_json(AgentCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn agent_mcp_capabilities_from_json(Json, path? : String) -> AgentMcpCapabilities raise ProtocolDecodeError
+
+pub fn agent_mcp_capabilities_to_json(AgentMcpCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn agent_prompt_capabilities_from_json(Json, path? : String) -> AgentPromptCapabilities raise ProtocolDecodeError
+
+pub fn agent_prompt_capabilities_to_json(AgentPromptCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn agent_session_capabilities_from_json(Json, path? : String) -> AgentSessionCapabilities raise ProtocolDecodeError
+
+pub fn agent_session_capabilities_to_json(AgentSessionCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn annotations_from_json(Json, path? : String) -> Annotations raise ProtocolDecodeError
+
+pub fn annotations_to_json(Annotations) -> Json raise ProtocolDecodeError
+
+pub fn audio_content_from_json(Json, path? : String) -> AudioContent raise ProtocolDecodeError
+
+pub fn audio_content_to_json(AudioContent) -> Json raise ProtocolDecodeError
+
+pub fn auth_method_from_json(Json, path? : String) -> AuthMethod raise ProtocolDecodeError
+
+pub fn auth_method_to_json(AuthMethod) -> Json raise ProtocolDecodeError
+
+pub fn authenticate_params_from_json(Json, path? : String) -> AuthenticateParams raise ProtocolDecodeError
+
+pub fn authenticate_params_to_json(AuthenticateParams) -> Json raise ProtocolDecodeError
+
+pub fn authenticate_result_from_json(Json, path? : String) -> AuthenticateResult raise ProtocolDecodeError
+
+pub fn authenticate_result_to_json(AuthenticateResult) -> Json raise ProtocolDecodeError
+
+pub fn available_command_input_from_json(Json, path? : String) -> AvailableCommandInput raise ProtocolDecodeError
+
+pub fn available_command_input_to_json(AvailableCommandInput) -> Json raise ProtocolDecodeError
+
+pub fn available_commands_update_from_json(Json, path? : String) -> AvailableCommandsUpdate raise ProtocolDecodeError
+
+pub fn available_commands_update_to_json(AvailableCommandsUpdate) -> Json raise ProtocolDecodeError
+
+pub fn blob_resource_contents_from_json(Json, path? : String) -> BlobResourceContents raise ProtocolDecodeError
+
+pub fn blob_resource_contents_to_json(BlobResourceContents) -> Json raise ProtocolDecodeError
+
+pub fn capability_marker_from_json(Json, path? : String) -> CapabilityMarker raise ProtocolDecodeError
+
+pub fn capability_marker_to_json(CapabilityMarker) -> Json raise ProtocolDecodeError
+
+pub fn client_auth_capabilities_from_json(Json, path? : String) -> ClientAuthCapabilities raise ProtocolDecodeError
+
+pub fn client_auth_capabilities_to_json(ClientAuthCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn client_capabilities_from_json(Json, path? : String) -> ClientCapabilities raise ProtocolDecodeError
+
+pub fn client_capabilities_to_json(ClientCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn client_config_option_capabilities_from_json(Json, path? : String) -> ClientConfigOptionCapabilities raise ProtocolDecodeError
+
+pub fn client_config_option_capabilities_to_json(ClientConfigOptionCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn client_elicitation_capabilities_from_json(Json, path? : String) -> ClientElicitationCapabilities raise ProtocolDecodeError
+
+pub fn client_elicitation_capabilities_to_json(ClientElicitationCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn client_file_system_capabilities_from_json(Json, path? : String) -> ClientFileSystemCapabilities raise ProtocolDecodeError
+
+pub fn client_file_system_capabilities_to_json(ClientFileSystemCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn client_session_capabilities_from_json(Json, path? : String) -> ClientSessionCapabilities raise ProtocolDecodeError
+
+pub fn client_session_capabilities_to_json(ClientSessionCapabilities) -> Json raise ProtocolDecodeError
+
+pub fn config_option_update_from_json(Json, path? : String) -> ConfigOptionUpdate raise ProtocolDecodeError
+
+pub fn config_option_update_to_json(ConfigOptionUpdate) -> Json raise ProtocolDecodeError
+
+pub fn content_block_from_json(Json, path? : String) -> ContentBlock raise ProtocolDecodeError
+
+pub fn content_block_to_json(ContentBlock) -> Json raise ProtocolDecodeError
+
+pub fn content_chunk_from_json(Json, path? : String) -> ContentChunk raise ProtocolDecodeError
+
+pub fn content_chunk_to_json(ContentChunk) -> Json raise ProtocolDecodeError
+
+pub fn content_from_json(Json, path? : String) -> Content raise ProtocolDecodeError
+
+pub fn content_to_json(Content) -> Json raise ProtocolDecodeError
+
+pub fn cost_from_json(Json, path? : String) -> Cost raise ProtocolDecodeError
+
+pub fn cost_to_json(Cost) -> Json raise ProtocolDecodeError
+
+pub fn current_mode_update_from_json(Json, path? : String) -> CurrentModeUpdate raise ProtocolDecodeError
+
+pub fn current_mode_update_to_json(CurrentModeUpdate) -> Json raise ProtocolDecodeError
+
+pub fn diff_from_json(Json, path? : String) -> Diff raise ProtocolDecodeError
+
+pub fn diff_to_json(Diff) -> Json raise ProtocolDecodeError
+
+pub fn elicitation_complete_params_from_json(Json, path? : String) -> ElicitationCompleteParams raise ProtocolDecodeError
+
+pub fn elicitation_complete_params_to_json(ElicitationCompleteParams) -> Json raise ProtocolDecodeError
+
+pub fn elicitation_create_params_from_json(Json, path? : String) -> ElicitationCreateParams raise ProtocolDecodeError
+
+pub fn elicitation_create_params_to_json(ElicitationCreateParams) -> Json raise ProtocolDecodeError
+
+pub fn elicitation_create_result_from_json(Json, path? : String) -> ElicitationCreateResult raise ProtocolDecodeError
+
+pub fn elicitation_create_result_to_json(ElicitationCreateResult) -> Json raise ProtocolDecodeError
+
+pub fn embedded_resource_from_json(Json, path? : String) -> EmbeddedResource raise ProtocolDecodeError
+
+pub fn embedded_resource_resource_from_json(Json, path? : String) -> EmbeddedResourceResource raise ProtocolDecodeError
+
+pub fn embedded_resource_resource_to_json(EmbeddedResourceResource) -> Json raise ProtocolDecodeError
+
+pub fn embedded_resource_to_json(EmbeddedResource) -> Json raise ProtocolDecodeError
+
+pub fn image_content_from_json(Json, path? : String) -> ImageContent raise ProtocolDecodeError
+
+pub fn image_content_to_json(ImageContent) -> Json raise ProtocolDecodeError
+
+pub fn implementation_from_json(Json, path? : String) -> Implementation raise ProtocolDecodeError
+
+pub fn implementation_to_json(Implementation) -> Json raise ProtocolDecodeError
+
+pub fn initialize_params_from_json(Json, path? : String) -> InitializeParams raise ProtocolDecodeError
+
+pub fn initialize_params_to_json(InitializeParams) -> Json raise ProtocolDecodeError
+
+pub fn initialize_result_from_json(Json, path? : String) -> InitializeResult raise ProtocolDecodeError
+
+pub fn initialize_result_to_json(InitializeResult) -> Json raise ProtocolDecodeError
+
+pub fn logout_params_from_json(Json, path? : String) -> LogoutParams raise ProtocolDecodeError
+
+pub fn logout_params_to_json(LogoutParams) -> Json raise ProtocolDecodeError
+
+pub fn logout_result_from_json(Json, path? : String) -> LogoutResult raise ProtocolDecodeError
+
+pub fn logout_result_to_json(LogoutResult) -> Json raise ProtocolDecodeError
+
+pub fn mcp_server_from_json(Json, path? : String) -> McpServer raise ProtocolDecodeError
+
+pub fn mcp_server_to_json(McpServer) -> Json raise ProtocolDecodeError
+
+pub fn permission_option_from_json(Json, path? : String) -> PermissionOption raise ProtocolDecodeError
+
+pub fn permission_option_to_json(PermissionOption) -> Json raise ProtocolDecodeError
+
+pub fn plan_entry_from_json(Json, path? : String) -> PlanEntry raise ProtocolDecodeError
+
+pub fn plan_entry_to_json(PlanEntry) -> Json raise ProtocolDecodeError
+
+pub fn plan_from_json(Json, path? : String) -> Plan raise ProtocolDecodeError
+
+pub fn plan_to_json(Plan) -> Json raise ProtocolDecodeError
+
+pub fn protocol_decode_boolean(Json, path~ : String) -> Bool raise ProtocolDecodeError
+
+pub fn protocol_decode_string(Json, path~ : String) -> String raise ProtocolDecodeError
+
+pub fn protocol_field(Map[String, Json], String) -> ProtocolNullable[Json]
+
+pub fn protocol_meta(Map[String, Json], path~ : String) -> ProtocolNullable[Json] raise ProtocolDecodeError
+
+pub fn protocol_nullable_string(Map[String, Json], String, path~ : String) -> ProtocolNullable[String] raise ProtocolDecodeError
+
+pub fn protocol_parse_json(String) -> Json raise ProtocolDecodeError
+
+pub fn protocol_put_meta(Map[String, Json], ProtocolNullable[Json]) -> Unit raise ProtocolDecodeError
+
+pub fn[T] protocol_put_nullable(Map[String, Json], String, ProtocolNullable[T], (T) -> Json) -> Unit
+
+pub fn protocol_reject_unknown(Map[String, Json], ArrayView[String], prefix~ : String) -> Unit raise ProtocolDecodeError
+
+pub fn protocol_require_array(Json, path~ : String) -> Array[Json] raise ProtocolDecodeError
+
+pub fn protocol_require_object(Json, path~ : String) -> Map[String, Json] raise ProtocolDecodeError
+
+pub fn protocol_required(Map[String, Json], String, path~ : String) -> Json raise ProtocolDecodeError
+
+pub fn protocol_required_string(Map[String, Json], String, path~ : String) -> String raise ProtocolDecodeError
+
+pub fn protocol_stringify_json(Json) -> String
+
+pub fn protocol_validate_absolute_path(String, field_path~ : String) -> String raise ProtocolDecodeError
+
+pub fn read_text_file_params_from_json(Json, path? : String) -> ReadTextFileParams raise ProtocolDecodeError
+
+pub fn read_text_file_params_to_json(ReadTextFileParams) -> Json raise ProtocolDecodeError
+
+pub fn read_text_file_result_from_json(Json, path? : String) -> ReadTextFileResult raise ProtocolDecodeError
+
+pub fn read_text_file_result_to_json(ReadTextFileResult) -> Json raise ProtocolDecodeError
+
+pub fn request_permission_outcome_from_json(Json, path? : String) -> RequestPermissionOutcome raise ProtocolDecodeError
+
+pub fn request_permission_outcome_to_json(RequestPermissionOutcome) -> Json raise ProtocolDecodeError
+
+pub fn request_permission_request_from_json(Json, path? : String) -> RequestPermissionRequest raise ProtocolDecodeError
+
+pub fn request_permission_request_to_json(RequestPermissionRequest) -> Json raise ProtocolDecodeError
+
+pub fn request_permission_response_from_json(Json, path? : String) -> RequestPermissionResponse raise ProtocolDecodeError
+
+pub fn request_permission_response_to_json(RequestPermissionResponse) -> Json raise ProtocolDecodeError
+
+pub fn resource_link_from_json(Json, path? : String) -> ResourceLink raise ProtocolDecodeError
+
+pub fn resource_link_to_json(ResourceLink) -> Json raise ProtocolDecodeError
+
+pub fn selected_permission_outcome_from_json(Json, path? : String) -> SelectedPermissionOutcome raise ProtocolDecodeError
+
+pub fn selected_permission_outcome_to_json(SelectedPermissionOutcome) -> Json raise ProtocolDecodeError
+
+pub fn session_config_option_category_from_json(Json, path? : String) -> SessionConfigOptionCategory raise ProtocolDecodeError
+
+pub fn session_config_option_category_to_json(SessionConfigOptionCategory) -> Json
+
+pub fn session_config_option_from_json(Json, path? : String) -> SessionConfigOption raise ProtocolDecodeError
+
+pub fn session_config_option_to_json(SessionConfigOption) -> Json raise ProtocolDecodeError
+
+pub fn session_config_select_group_from_json(Json, path? : String) -> SessionConfigSelectGroup raise ProtocolDecodeError
+
+pub fn session_config_select_group_to_json(SessionConfigSelectGroup) -> Json raise ProtocolDecodeError
+
+pub fn session_config_select_option_from_json(Json, path? : String) -> SessionConfigSelectOption raise ProtocolDecodeError
+
+pub fn session_config_select_option_to_json(SessionConfigSelectOption) -> Json raise ProtocolDecodeError
+
+pub fn session_config_select_options_from_json(Json, path? : String) -> SessionConfigSelectOptions raise ProtocolDecodeError
+
+pub fn session_config_select_options_to_json(SessionConfigSelectOptions) -> Json raise ProtocolDecodeError
+
+pub fn session_info_from_json(Json, path? : String) -> SessionInfo raise ProtocolDecodeError
+
+pub fn session_info_to_json(SessionInfo) -> Json raise ProtocolDecodeError
+
+pub fn session_info_update_from_json(Json, path? : String) -> SessionInfoUpdate raise ProtocolDecodeError
+
+pub fn session_info_update_to_json(SessionInfoUpdate) -> Json raise ProtocolDecodeError
+
+pub fn session_update_apply(SessionUpdateFold, SessionUpdate) -> Result[SessionUpdateFold, SessionUpdateFoldError]
+
+pub fn session_update_fold(known_modes~ : Array[String]) -> SessionUpdateFold
+
+pub fn session_update_from_json(Json, path? : String) -> SessionUpdate raise ProtocolDecodeError
+
+pub fn session_update_to_json(SessionUpdate) -> Json raise ProtocolDecodeError
+
+pub fn terminal_create_params_from_json(Json, path? : String) -> TerminalCreateParams raise ProtocolDecodeError
+
+pub fn terminal_create_params_to_json(TerminalCreateParams) -> Json raise ProtocolDecodeError
+
+pub fn terminal_create_result_from_json(Json, path? : String) -> TerminalCreateResult raise ProtocolDecodeError
+
+pub fn terminal_create_result_to_json(TerminalCreateResult) -> Json raise ProtocolDecodeError
+
+pub fn terminal_from_json(Json, path? : String) -> Terminal raise ProtocolDecodeError
+
+pub fn terminal_kill_params_from_json(Json, path? : String) -> TerminalKillParams raise ProtocolDecodeError
+
+pub fn terminal_kill_params_to_json(TerminalKillParams) -> Json raise ProtocolDecodeError
+
+pub fn terminal_kill_result_from_json(Json, path? : String) -> TerminalKillResult raise ProtocolDecodeError
+
+pub fn terminal_kill_result_to_json(TerminalKillResult) -> Json raise ProtocolDecodeError
+
+pub fn terminal_output_params_from_json(Json, path? : String) -> TerminalOutputParams raise ProtocolDecodeError
+
+pub fn terminal_output_params_to_json(TerminalOutputParams) -> Json raise ProtocolDecodeError
+
+pub fn terminal_output_result_from_json(Json, path? : String) -> TerminalOutputResult raise ProtocolDecodeError
+
+pub fn terminal_output_result_to_json(TerminalOutputResult) -> Json raise ProtocolDecodeError
+
+pub fn terminal_release_params_from_json(Json, path? : String) -> TerminalReleaseParams raise ProtocolDecodeError
+
+pub fn terminal_release_params_to_json(TerminalReleaseParams) -> Json raise ProtocolDecodeError
+
+pub fn terminal_release_result_from_json(Json, path? : String) -> TerminalReleaseResult raise ProtocolDecodeError
+
+pub fn terminal_release_result_to_json(TerminalReleaseResult) -> Json raise ProtocolDecodeError
+
+pub fn terminal_to_json(Terminal) -> Json raise ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_params_from_json(Json, path? : String) -> TerminalWaitForExitParams raise ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_params_to_json(TerminalWaitForExitParams) -> Json raise ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_result_from_json(Json, path? : String) -> TerminalWaitForExitResult raise ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_result_to_json(TerminalWaitForExitResult) -> Json raise ProtocolDecodeError
+
+pub fn text_content_from_json(Json, path? : String) -> TextContent raise ProtocolDecodeError
+
+pub fn text_content_to_json(TextContent) -> Json raise ProtocolDecodeError
+
+pub fn text_resource_contents_from_json(Json, path? : String) -> TextResourceContents raise ProtocolDecodeError
+
+pub fn text_resource_contents_to_json(TextResourceContents) -> Json raise ProtocolDecodeError
+
+pub fn tool_call_content_from_json(Json, path? : String) -> ToolCallContent raise ProtocolDecodeError
+
+pub fn tool_call_content_to_json(ToolCallContent) -> Json raise ProtocolDecodeError
+
+pub fn tool_call_from_json(Json, path? : String) -> ToolCall raise ProtocolDecodeError
+
+pub fn tool_call_location_from_json(Json, path? : String) -> ToolCallLocation raise ProtocolDecodeError
+
+pub fn tool_call_location_to_json(ToolCallLocation) -> Json raise ProtocolDecodeError
+
+pub fn tool_call_to_json(ToolCall) -> Json raise ProtocolDecodeError
+
+pub fn tool_call_update_from_json(Json, path? : String) -> ToolCallUpdate raise ProtocolDecodeError
+
+pub fn tool_call_update_to_json(ToolCallUpdate) -> Json raise ProtocolDecodeError
+
+pub fn unstructured_command_input_from_json(Json, path? : String) -> UnstructuredCommandInput raise ProtocolDecodeError
+
+pub fn unstructured_command_input_to_json(UnstructuredCommandInput) -> Json raise ProtocolDecodeError
+
+pub fn usage_update_from_json(Json, path? : String) -> UsageUpdate raise ProtocolDecodeError
+
+pub fn usage_update_to_json(UsageUpdate) -> Json raise ProtocolDecodeError
+
+pub fn write_text_file_params_from_json(Json, path? : String) -> WriteTextFileParams raise ProtocolDecodeError
+
+pub fn write_text_file_params_to_json(WriteTextFileParams) -> Json raise ProtocolDecodeError
+
+pub fn write_text_file_result_from_json(Json, path? : String) -> WriteTextFileResult raise ProtocolDecodeError
+
+pub fn write_text_file_result_to_json(WriteTextFileResult) -> Json raise ProtocolDecodeError
+
+// Errors
+pub(all) suberror ProtocolDecodeError {
+  JsonParse(message~ : String)
+  ExpectedObject(path~ : String)
+  ExpectedArray(path~ : String)
+  ExpectedString(path~ : String)
+  ExpectedBoolean(path~ : String)
+  ExpectedNumber(path~ : String)
+  MissingField(path~ : String)
+  UnknownField(path~ : String)
+  InvalidField(path~ : String, reason~ : String)
+  InvalidDiscriminator(path~ : String, value~ : String)
+  InvalidPath(path~ : String, value~ : String)
+  InvalidBase64(path~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror SessionUpdateFoldError {
+  DuplicateToolCall(tool_call_id~ : String)
+  UnknownToolCall(tool_call_id~ : String)
+  UnknownMode(mode_id~ : String)
+  InvalidTimestamp(field~ : String, value~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct AgentAuthCapabilities {
+  logout : ProtocolNullable[CapabilityMarker]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentCapabilities {
+  load_session : ProtocolNullable[Bool]
+  prompt_capabilities : ProtocolNullable[AgentPromptCapabilities]
+  mcp_capabilities : ProtocolNullable[AgentMcpCapabilities]
+  auth : ProtocolNullable[AgentAuthCapabilities]
+  session_capabilities : ProtocolNullable[AgentSessionCapabilities]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentMcpCapabilities {
+  http : ProtocolNullable[Bool]
+  sse : ProtocolNullable[Bool]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentPromptCapabilities {
+  image : ProtocolNullable[Bool]
+  audio : ProtocolNullable[Bool]
+  embedded_context : ProtocolNullable[Bool]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentSessionCapabilities {
+  list : ProtocolNullable[CapabilityMarker]
+  delete : ProtocolNullable[CapabilityMarker]
+  resume_capability : ProtocolNullable[CapabilityMarker]
+  close : ProtocolNullable[CapabilityMarker]
+  additional_directories : ProtocolNullable[CapabilityMarker]
+  fork : ProtocolNullable[CapabilityMarker]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Annotations {
+  audience : ProtocolNullable[Array[Role]]
+  last_modified : ProtocolNullable[String]
+  priority : ProtocolNullable[Double]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AudioContent {
+  annotations : ProtocolNullable[Annotations]
+  data : String
+  mime_type : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AuthMethod {
+  id : String
+  name : String
+  description : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AuthenticateParams {
+  method_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AuthenticateResult {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AvailableCommand {
+  name : String
+  description : String
+  input : ProtocolNullable[AvailableCommandInput]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AvailableCommandInput {
+  Unstructured(UnstructuredCommandInput)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AvailableCommandsUpdate {
+  available_commands : Array[AvailableCommand]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct BlobResourceContents {
+  blob : String
+  mime_type : ProtocolNullable[String]
+  uri : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CapabilityMarker {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientAuthCapabilities {
+  terminal : ProtocolNullable[Bool]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientCapabilities {
+  fs : ProtocolNullable[ClientFileSystemCapabilities]
+  terminal : ProtocolNullable[Bool]
+  elicitation : ProtocolNullable[ClientElicitationCapabilities]
+  session : ProtocolNullable[ClientSessionCapabilities]
+  plan : ProtocolNullable[CapabilityMarker]
+  auth : ProtocolNullable[ClientAuthCapabilities]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientConfigOptionCapabilities {
+  boolean : ProtocolNullable[CapabilityMarker]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientElicitationCapabilities {
+  form : ProtocolNullable[CapabilityMarker]
+  url : ProtocolNullable[CapabilityMarker]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientFileSystemCapabilities {
+  read_text_file : ProtocolNullable[Bool]
+  write_text_file : ProtocolNullable[Bool]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientSessionCapabilities {
+  config_options : ProtocolNullable[ClientConfigOptionCapabilities]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ConfigOptionUpdate {
+  config_options : Array[SessionConfigOption]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Content {
+  content : ContentBlock
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ContentBlock {
+  Text(TextContent)
+  Image(ImageContent)
+  Audio(AudioContent)
+  ResourceLink(ResourceLink)
+  Resource(EmbeddedResource)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ContentChunk {
+  content : ContentBlock
+  message_id : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Cost {
+  amount : Double
+  currency : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CurrentModeUpdate {
+  current_mode_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Diff {
+  path : String
+  old_text : ProtocolNullable[String]
+  new_text : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ElicitationAction {
+  Accept
+  Decline
+  Cancel
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ElicitationCompleteParams {
+  elicitation_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ElicitationCreateParams {
+  Form(ElicitationFormParams)
+  Url(ElicitationUrlParams)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ElicitationCreateResult {
+  action : ElicitationAction
+  content : ProtocolNullable[Json]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ElicitationFormParams {
+  scope : ElicitationScope
+  message : String
+  requested_schema : Json
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ElicitationScope {
+  Request(@jsonrpc.RequestId)
+  Session(session_id~ : String, tool_call_id~ : ProtocolNullable[String])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ElicitationUrlParams {
+  scope : ElicitationScope
+  elicitation_id : String
+  message : String
+  url : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct EmbeddedResource {
+  annotations : ProtocolNullable[Annotations]
+  resource : EmbeddedResourceResource
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum EmbeddedResourceResource {
+  Text(TextResourceContents)
+  Blob(BlobResourceContents)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ImageContent {
+  annotations : ProtocolNullable[Annotations]
+  data : String
+  mime_type : String
+  uri : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Implementation {
+  name : String
+  title : ProtocolNullable[String]
+  version : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InitializeParams {
+  protocol_version : Int
+  client_capabilities : ProtocolNullable[ClientCapabilities]
+  client_info : ProtocolNullable[Implementation]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InitializeResult {
+  protocol_version : Int
+  agent_capabilities : ProtocolNullable[AgentCapabilities]
+  auth_methods : ProtocolNullable[Array[AuthMethod]]
+  agent_info : ProtocolNullable[Implementation]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LogoutParams {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LogoutResult {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct McpEnvVariable {
+  name : String
+  value : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct McpHttpHeader {
+  name : String
+  value : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum McpServer {
+  Stdio(McpServerStdio)
+  Http(McpServerHttp)
+  Sse(McpServerSse)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct McpServerHttp {
+  name : String
+  url : String
+  headers : Array[McpHttpHeader]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct McpServerSse {
+  name : String
+  url : String
+  headers : Array[McpHttpHeader]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct McpServerStdio {
+  name : String
+  command : String
+  args : Array[String]
+  env : Array[McpEnvVariable]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PermissionOption {
+  option_id : String
+  name : String
+  kind : PermissionOptionKind
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PermissionOptionKind {
+  AllowOnce
+  AllowAlways
+  RejectOnce
+  RejectAlways
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Plan {
+  entries : Array[PlanEntry]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PlanEntry {
+  content : String
+  priority : PlanEntryPriority
+  status : PlanEntryStatus
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PlanEntryPriority {
+  High
+  Medium
+  Low
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PlanEntryStatus {
+  Pending
+  InProgress
+  Completed
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ProtocolNullable[T] {
+  Omitted
+  Null
+  Value(T)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ReadTextFileParams {
+  session_id : String
+  path : String
+  line : ProtocolNullable[UInt64]
+  limit : ProtocolNullable[UInt64]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ReadTextFileResult {
+  content : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RequestPermissionOutcome {
+  Cancelled
+  Selected(SelectedPermissionOutcome)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RequestPermissionRequest {
+  session_id : String
+  tool_call : ToolCallUpdate
+  options : Array[PermissionOption]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RequestPermissionResponse {
+  outcome : RequestPermissionOutcome
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ResourceLink {
+  annotations : ProtocolNullable[Annotations]
+  description : ProtocolNullable[String]
+  mime_type : ProtocolNullable[String]
+  name : String
+  size : ProtocolNullable[Int64]
+  title : ProtocolNullable[String]
+  uri : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Role {
+  User
+  Assistant
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SelectedPermissionOutcome {
+  option_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionConfigBoolean {
+  current_value : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionConfigOption {
+  id : String
+  name : String
+  description : ProtocolNullable[String]
+  category : ProtocolNullable[SessionConfigOptionCategory]
+  kind : SessionConfigOptionKind
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionConfigOptionCategory {
+  Mode
+  Model
+  ModelConfig
+  ThoughtLevel
+  Other(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionConfigOptionKind {
+  Select(SessionConfigSelect)
+  Boolean(SessionConfigBoolean)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionConfigSelect {
+  current_value : String
+  options : SessionConfigSelectOptions
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionConfigSelectGroup {
+  group : String
+  name : String
+  options : Array[SessionConfigSelectOption]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionConfigSelectOption {
+  value : String
+  name : String
+  description : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionConfigSelectOptions {
+  Ungrouped(Array[SessionConfigSelectOption])
+  Grouped(Array[SessionConfigSelectGroup])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionInfo {
+  session_id : String
+  cwd : String
+  additional_directories : ProtocolNullable[Array[String]]
+  title : ProtocolNullable[String]
+  updated_at : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionInfoUpdate {
+  title : ProtocolNullable[String]
+  updated_at : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionUpdate {
+  UserMessageChunk(ContentChunk)
+  AgentMessageChunk(ContentChunk)
+  AgentThoughtChunk(ContentChunk)
+  ToolCall(ToolCall)
+  ToolCallUpdate(ToolCallUpdate)
+  Plan(Plan)
+  AvailableCommandsUpdate(AvailableCommandsUpdate)
+  CurrentModeUpdate(CurrentModeUpdate)
+  ConfigOptionUpdate(ConfigOptionUpdate)
+  SessionInfoUpdate(SessionInfoUpdate)
+  UsageUpdate(UsageUpdate)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionUpdateFold {
+  known_modes : Array[String]
+  user_messages : Array[SessionUpdateMessage]
+  agent_messages : Array[SessionUpdateMessage]
+  agent_thoughts : Array[SessionUpdateMessage]
+  tool_calls : Array[ToolCall]
+  plan : Plan?
+  available_commands : Array[AvailableCommand]
+  current_mode_id : String?
+  config_options : Array[SessionConfigOption]
+  session_title : ProtocolNullable[String]
+  session_updated_at : ProtocolNullable[String]
+  usage : UsageUpdate?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionUpdateMessage {
+  message_id : ProtocolNullable[String]
+  blocks : Array[ContentBlock]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Terminal {
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalCreateParams {
+  session_id : String
+  command : String
+  args : ProtocolNullable[Array[String]]
+  env : ProtocolNullable[Array[TerminalEnvVariable]]
+  cwd : ProtocolNullable[String]
+  output_byte_limit : ProtocolNullable[UInt64]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalCreateResult {
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalEnvVariable {
+  name : String
+  value : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalExitStatus {
+  exit_code : ProtocolNullable[UInt64]
+  signal : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalKillParams {
+  session_id : String
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalKillResult {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalOutputParams {
+  session_id : String
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalOutputResult {
+  output : String
+  truncated : Bool
+  exit_status : ProtocolNullable[TerminalExitStatus]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalReleaseParams {
+  session_id : String
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalReleaseResult {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalWaitForExitParams {
+  session_id : String
+  terminal_id : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalWaitForExitResult {
+  exit_code : ProtocolNullable[UInt64]
+  signal : ProtocolNullable[String]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TextContent {
+  annotations : ProtocolNullable[Annotations]
+  text : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TextResourceContents {
+  mime_type : ProtocolNullable[String]
+  text : String
+  uri : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ToolCall {
+  tool_call_id : String
+  title : String
+  kind : ProtocolNullable[ToolKind]
+  status : ProtocolNullable[ToolCallStatus]
+  content : ProtocolNullable[Array[ToolCallContent]]
+  locations : ProtocolNullable[Array[ToolCallLocation]]
+  raw_input : ProtocolNullable[Json]
+  raw_output : ProtocolNullable[Json]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ToolCallContent {
+  Content(Content)
+  Diff(Diff)
+  Terminal(Terminal)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ToolCallLocation {
+  path : String
+  line : ProtocolNullable[UInt64]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ToolCallStatus {
+  Pending
+  InProgress
+  Completed
+  Failed
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ToolCallUpdate {
+  tool_call_id : String
+  kind : ProtocolNullable[ToolKind]
+  status : ProtocolNullable[ToolCallStatus]
+  title : ProtocolNullable[String]
+  content : ProtocolNullable[Array[ToolCallContent]]
+  locations : ProtocolNullable[Array[ToolCallLocation]]
+  raw_input : ProtocolNullable[Json]
+  raw_output : ProtocolNullable[Json]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ToolKind {
+  Read
+  Edit
+  Delete
+  Move
+  Search
+  Execute
+  Think
+  Fetch
+  SwitchMode
+  Other
+} derive(Eq, @debug.Debug)
+
+pub(all) struct UnstructuredCommandInput {
+  hint : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct UsageUpdate {
+  used : UInt64
+  size : UInt64
+  cost : ProtocolNullable[Cost]
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct WriteTextFileParams {
+  session_id : String
+  path : String
+  content : String
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct WriteTextFileResult {
+  meta : ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+pub type ElicitationId = String
+
+pub type MessageId = String
+
+pub type PermissionOptionId = String
+
+pub type SessionConfigGroupId = String
+
+pub type SessionConfigId = String
+
+pub type SessionConfigValueId = String
+
+pub type SessionId = String
+
+pub type SessionModeId = String
+
+pub type TerminalId = String
+
+pub type ToolCallId = String
+
+// Traits

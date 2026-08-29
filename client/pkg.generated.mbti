@@ -1,0 +1,246 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/client"
+
+import {
+  "colmugx/acp/agent/message",
+  "colmugx/acp/connection",
+  "colmugx/acp/error",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol/session",
+  "colmugx/acp/runtime",
+  "colmugx/reader",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn client_adapter_admit(ClientAdapterState, ClientEndpoint, @jsonrpc.JsonRpcMessage) -> ClientAdapterAdmission raise ClientAdapterError
+
+pub fn client_adapter_cancel_completion(ClientAdapterInvocation) -> ClientAdapterCompletion
+
+pub fn client_adapter_complete(ClientAdapterState, ClientAdapterInvocation, ClientAdapterCompletion) -> ClientAdapterStep raise ClientAdapterError
+
+pub async fn client_adapter_execute(ClientAdapterInvocation, ClientEndpoint) -> ClientAdapterCompletion noraise
+
+pub fn client_adapter_failure_completion(ClientAdapterInvocation) -> ClientAdapterCompletion
+
+pub fn client_adapter_invocation_method_name(ClientAdapterInvocation) -> String
+
+pub fn client_adapter_state_new(protocol~ : @colmugx/acp/client/protocol.ClientProtocolState) -> ClientAdapterState
+
+pub async fn client_connect_process(endpoint_factory~ : (@connection.RuntimeOutboundChannel[ClientAdapterCompletion]) -> ClientEndpoint, initial_state~ : ClientAdapterState, handlers~ : @runtime.RuntimeHandlerPort, command~ : String, args? : Array[String], extra_env? : Map[String, String], inherit_env? : Bool, spawned? : (@runtime.RuntimeProcessPorts) -> Unit, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub fn client_connection(request_broker~ : async (@message.AgentRequest) -> Result[ClientReply, ClientConnectionError], notification_broker~ : (@message.AgentNotification) -> Result[Unit, ClientConnectionError]) -> ClientConnection
+
+pub fn client_elicitation_service(form? : async (@colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult, url? : async (@colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult, complete? : async (@colmugx/acp/protocol.ElicitationCompleteParams) -> Unit) -> ClientElicitationService raise @error.ClientCompositionError
+
+pub fn client_file_system_service(read? : async (@colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult, write? : async (@colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult) -> ClientFileSystemService raise @error.ClientCompositionError
+
+pub fn[Env] client_program(@reader.Reader[Env, Result[ClientSpec, @error.ClientCompositionError]]) -> @reader.Reader[Env, Result[ClientEndpoint, @error.ClientCompositionError]]
+
+pub fn[Env] client_program_from((Env) -> Result[ClientSpec, @error.ClientCompositionError]) -> @reader.Reader[Env, Result[ClientEndpoint, @error.ClientCompositionError]]
+
+pub fn client_runtime_owner_port(endpoint~ : ClientEndpoint, initial_state~ : ClientAdapterState) -> @connection.RuntimeOwnerPort[ClientAdapterState, ClientAdapterInvocation, ClientAdapterCompletion, ClientAdapterCommand]
+
+pub async fn client_runtime_run(endpoint~ : ClientEndpoint, initial_state~ : ClientAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn client_runtime_run_with_outbound(endpoint_factory~ : (@connection.RuntimeOutboundChannel[ClientAdapterCompletion]) -> ClientEndpoint, initial_state~ : ClientAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub fn client_session_service(session_update~ : async (@session.SessionUpdateParams) -> Unit, request_permission~ : async (@colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse) -> ClientSessionService
+
+pub fn client_spec(info~ : @colmugx/acp/protocol.Implementation, session~ : ClientSessionService, file_system? : ClientFileSystemService, terminal? : ClientTerminalService, elicitation? : ClientElicitationService) -> Result[ClientSpec, @error.ClientCompositionError]
+
+pub fn client_terminal_service(create~ : async (@colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult, output~ : async (@colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult, wait_for_exit~ : async (@colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult, kill~ : async (@colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult, release~ : async (@colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult) -> ClientTerminalService
+
+// Errors
+pub(all) suberror ClientAdapterError {
+  EndpointMismatch(reason~ : String)
+  UnexpectedMessage(kind~ : String)
+  CompletionMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ClientConnectionError {
+  ClientConnectionUnsupportedVersion(method_name~ : String, version~ : Int)
+  ClientConnectionUnavailable(method_name~ : String)
+  ClientConnectionCancelled(method_name~ : String)
+  ClientConnectionBrokerFailure(method_name~ : String)
+  ClientConnectionReplyMismatch(method_name~ : String, expected~ : String, actual~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum ClientAdapterAdmission {
+  Immediate(ClientAdapterStep)
+  Invoke(state~ : ClientAdapterState, invocation~ : ClientAdapterInvocation)
+}
+
+pub(all) enum ClientAdapterCommand {
+  CancelRequest(request_id~ : @jsonrpc.RequestId)
+  TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ClientAdapterCompletion {
+  RequestPermissionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.RequestPermissionResponse, @error.HandlerError])
+  FsReadTextFileCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.ReadTextFileResult, @error.HandlerError])
+  FsWriteTextFileCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.WriteTextFileResult, @error.HandlerError])
+  TerminalCreateCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.TerminalCreateResult, @error.HandlerError])
+  TerminalOutputCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.TerminalOutputResult, @error.HandlerError])
+  TerminalWaitForExitCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.TerminalWaitForExitResult, @error.HandlerError])
+  TerminalKillCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.TerminalKillResult, @error.HandlerError])
+  TerminalReleaseCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.TerminalReleaseResult, @error.HandlerError])
+  ElicitationCreateCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.ElicitationCreateResult, @error.HandlerError])
+  SessionUpdateCompleted(result~ : Result[Unit, @error.HandlerError])
+  ElicitationCompleteCompleted(result~ : Result[Unit, @error.HandlerError])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ClientAdapterInvocation {
+  RequestPermissionInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.RequestPermissionRequest)
+  FsReadTextFileInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.ReadTextFileParams)
+  FsWriteTextFileInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.WriteTextFileParams)
+  TerminalCreateInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.TerminalCreateParams)
+  TerminalOutputInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.TerminalOutputParams)
+  TerminalWaitForExitInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.TerminalWaitForExitParams)
+  TerminalKillInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.TerminalKillParams)
+  TerminalReleaseInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.TerminalReleaseParams)
+  ElicitationCreateInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.ElicitationCreateParams)
+  SessionUpdateInvocation(params~ : @session.SessionUpdateParams)
+  ElicitationCompleteInvocation(params~ : @colmugx/acp/protocol.ElicitationCompleteParams)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ClientAdapterOutput {
+  Response(@jsonrpc.JsonRpcResponse)
+  Command(ClientAdapterCommand)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientAdapterState {
+  protocol : @colmugx/acp/client/protocol.ClientProtocolState
+} derive(Eq, @debug.Debug)
+pub fn ClientAdapterState::protocol(Self) -> @colmugx/acp/client/protocol.ClientProtocolState
+
+pub(all) struct ClientAdapterStep {
+  state : ClientAdapterState
+  outputs : Array[ClientAdapterOutput]
+} derive(Eq, @debug.Debug)
+
+pub struct ClientConnection {
+  request_broker : async (@message.AgentRequest) -> Result[ClientReply, ClientConnectionError]
+  notification_broker : (@message.AgentNotification) -> Result[Unit, ClientConnectionError]
+}
+pub async fn ClientConnection::authenticate(Self, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult raise ClientConnectionError
+pub fn ClientConnection::cancel(Self, @session.CancelParams) -> Unit raise ClientConnectionError
+pub fn ClientConnection::cancel_request(Self, @jsonrpc.RequestId) -> Unit raise ClientConnectionError
+pub async fn ClientConnection::close_session(Self, @session.CloseSessionParams) -> @session.CloseSessionResult raise ClientConnectionError
+pub async fn ClientConnection::delete_session(Self, @session.DeleteSessionParams) -> @session.DeleteSessionResult raise ClientConnectionError
+pub async fn ClientConnection::fork_session(Self, @session.ForkSessionParams) -> @session.ForkSessionResult raise ClientConnectionError
+pub async fn ClientConnection::initialize(Self, @colmugx/acp/protocol.InitializeParams) -> @colmugx/acp/protocol.InitializeResult raise ClientConnectionError
+pub async fn ClientConnection::list_sessions(Self, @session.ListSessionsParams) -> @session.ListSessionsResult raise ClientConnectionError
+pub async fn ClientConnection::load_session(Self, @session.LoadSessionParams) -> @session.LoadSessionResult raise ClientConnectionError
+pub async fn ClientConnection::logout(Self, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult raise ClientConnectionError
+pub async fn ClientConnection::new_session(Self, @session.NewSessionParams) -> @session.NewSessionResult raise ClientConnectionError
+pub async fn ClientConnection::prompt(Self, @session.PromptParams) -> @session.PromptResult raise ClientConnectionError
+pub async fn ClientConnection::resume_session(Self, @session.ResumeSessionParams) -> @session.ResumeSessionResult raise ClientConnectionError
+pub async fn ClientConnection::set_config_option(Self, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult raise ClientConnectionError
+pub async fn ClientConnection::set_mode(Self, @session.SetSessionModeParams) -> @session.SetSessionModeResult raise ClientConnectionError
+
+pub struct ClientElicitationService {
+  form_handler : (async (@colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult)?
+  url_handler : (async (@colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult)?
+  complete_handler : (async (@colmugx/acp/protocol.ElicitationCompleteParams) -> Unit)?
+}
+
+pub struct ClientEndpoint {
+  info : @colmugx/acp/protocol.Implementation
+  session : ClientSessionService
+  file_system : ClientFileSystemService?
+  terminal : ClientTerminalService?
+  elicitation : ClientElicitationService?
+  capabilities : @colmugx/acp/protocol.ClientCapabilities
+}
+pub fn ClientEndpoint::capabilities(Self) -> @colmugx/acp/protocol.ClientCapabilities
+pub async fn ClientEndpoint::elicitation_complete(Self, @colmugx/acp/protocol.ElicitationCompleteParams) -> Unit raise @error.HandlerError
+pub async fn ClientEndpoint::elicitation_form(Self, @colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult raise @error.HandlerError
+pub async fn ClientEndpoint::elicitation_url(Self, @colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult raise @error.HandlerError
+pub fn ClientEndpoint::info(Self) -> @colmugx/acp/protocol.Implementation
+pub async fn ClientEndpoint::read_text_file(Self, @colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult raise @error.HandlerError
+pub async fn ClientEndpoint::request_permission(Self, @colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse raise @error.HandlerError
+pub async fn ClientEndpoint::session_update(Self, @session.SessionUpdateParams) -> Unit raise @error.HandlerError
+pub async fn ClientEndpoint::terminal_create(Self, @colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult raise @error.HandlerError
+pub async fn ClientEndpoint::terminal_kill(Self, @colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult raise @error.HandlerError
+pub async fn ClientEndpoint::terminal_output(Self, @colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult raise @error.HandlerError
+pub async fn ClientEndpoint::terminal_release(Self, @colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult raise @error.HandlerError
+pub async fn ClientEndpoint::terminal_wait_for_exit(Self, @colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult raise @error.HandlerError
+pub async fn ClientEndpoint::write_text_file(Self, @colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult raise @error.HandlerError
+
+pub struct ClientFileSystemService {
+  read_handler : (async (@colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult)?
+  write_handler : (async (@colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult)?
+}
+
+pub(all) enum ClientReply {
+  ClientReplyInitialize(@colmugx/acp/protocol.InitializeResult)
+  ClientReplyAuthenticate(@colmugx/acp/protocol.AuthenticateResult)
+  ClientReplyLogout(@colmugx/acp/protocol.LogoutResult)
+  ClientReplyNewSession(@session.NewSessionResult)
+  ClientReplyLoadSession(@session.LoadSessionResult)
+  ClientReplyResumeSession(@session.ResumeSessionResult)
+  ClientReplyForkSession(@session.ForkSessionResult)
+  ClientReplyListSessions(@session.ListSessionsResult)
+  ClientReplyDeleteSession(@session.DeleteSessionResult)
+  ClientReplyCloseSession(@session.CloseSessionResult)
+  ClientReplySetMode(@session.SetSessionModeResult)
+  ClientReplySetConfigOption(@session.SetSessionConfigOptionResult)
+  ClientReplyPrompt(@session.PromptResult)
+} derive(Eq, @debug.Debug)
+pub fn ClientReply::method_name(Self) -> String
+
+pub struct ClientSessionService {
+  session_update_handler : async (@session.SessionUpdateParams) -> Unit
+  request_permission_handler : async (@colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse
+}
+
+pub struct ClientSpec {
+  info : @colmugx/acp/protocol.Implementation
+  session : ClientSessionService
+  file_system : ClientFileSystemService?
+  terminal : ClientTerminalService?
+  elicitation : ClientElicitationService?
+}
+
+pub struct ClientTerminalService {
+  create_handler : async (@colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult
+  output_handler : async (@colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult
+  wait_for_exit_handler : async (@colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult
+  kill_handler : async (@colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult
+  release_handler : async (@colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult
+}
+
+// Type aliases
+pub type ClientElicitationCompleteHandler = async (@colmugx/acp/protocol.ElicitationCompleteParams) -> Unit
+
+pub type ClientElicitationFormHandler = async (@colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult
+
+pub type ClientElicitationUrlHandler = async (@colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult
+
+pub type ClientNotificationBroker = (@message.AgentNotification) -> Result[Unit, ClientConnectionError]
+
+pub type ClientProgram[Env] = @reader.Reader[Env, Result[ClientEndpoint, @error.ClientCompositionError]]
+
+pub type ClientReadTextFileHandler = async (@colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult
+
+pub type ClientRequestBroker = async (@message.AgentRequest) -> Result[ClientReply, ClientConnectionError]
+
+pub type ClientRequestPermissionHandler = async (@colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse
+
+pub type ClientSessionUpdateHandler = async (@session.SessionUpdateParams) -> Unit
+
+pub type ClientTerminalCreateHandler = async (@colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult
+
+pub type ClientTerminalKillHandler = async (@colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult
+
+pub type ClientTerminalOutputHandler = async (@colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult
+
+pub type ClientTerminalReleaseHandler = async (@colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult
+
+pub type ClientTerminalWaitForExitHandler = async (@colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult
+
+pub type ClientWriteTextFileHandler = async (@colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult
+
+// Traits

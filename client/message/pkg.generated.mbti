@@ -1,0 +1,47 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/client/message"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol",
+  "colmugx/acp/protocol/session",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn decode_client_notification(String, Json?) -> ClientNotification raise ClientMessageError
+
+pub fn decode_client_request(String, Json?) -> ClientRequest raise ClientMessageError
+
+// Errors
+pub(all) suberror ClientMessageError {
+  InvalidParams(method_name~ : String, cause~ : @protocol.ProtocolDecodeError)
+  UnknownMethod(method_name~ : String)
+  WrongDirection(method_name~ : String)
+  WrongKind(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum ClientNotification {
+  SessionUpdate(@session.SessionUpdateParams)
+  ElicitationComplete(@protocol.ElicitationCompleteParams)
+  CancelRequest(@jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+pub fn ClientNotification::method_name(Self) -> String
+
+pub(all) enum ClientRequest {
+  SessionRequestPermission(@protocol.RequestPermissionRequest)
+  FsReadTextFile(@protocol.ReadTextFileParams)
+  FsWriteTextFile(@protocol.WriteTextFileParams)
+  TerminalCreate(@protocol.TerminalCreateParams)
+  TerminalOutput(@protocol.TerminalOutputParams)
+  TerminalWaitForExit(@protocol.TerminalWaitForExitParams)
+  TerminalKill(@protocol.TerminalKillParams)
+  TerminalRelease(@protocol.TerminalReleaseParams)
+  ElicitationCreate(@protocol.ElicitationCreateParams)
+} derive(Eq, @debug.Debug)
+pub fn ClientRequest::method_name(Self) -> String
+
+// Type aliases
+
+// Traits

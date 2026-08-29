@@ -1,0 +1,120 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/connection/typed"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn[S, I, N] typed_owner_admit_notification(TypedOwner[S, I], N, (S, N) -> TypedNotificationAdmission[S, I]) -> (TypedOwner[S, I], TypedNotificationAction[I]) raise TypedOwnerError
+
+pub fn[S, I, Q, R] typed_owner_admit_request(TypedOwner[S, I], @jsonrpc.RequestId, Q, (S, @jsonrpc.RequestId, Q) -> TypedRequestAdmission[S, I, R]) -> (TypedOwner[S, I], TypedRequestAction[I, R]) raise TypedOwnerError
+
+pub fn[S, I] typed_owner_cancel_request(TypedOwner[S, I], @jsonrpc.RequestId, (S, @jsonrpc.RequestId, I) -> S) -> TypedCancelResult[S, I]
+
+pub fn[S, I] typed_owner_close(TypedOwner[S, I], (S, TypedOwnerTask[I]) -> S) -> TypedCloseResult[S, I]
+
+pub fn[S, I, C] typed_owner_complete_notification(TypedOwner[S, I], TypedOwnerEvent[C], (S, I, C) -> TypedNotificationCompletion[S]) -> TypedNotificationCompletionResult[S, I]
+
+pub fn[S, I, C, R] typed_owner_complete_request(TypedOwner[S, I], TypedOwnerEvent[C], (S, @jsonrpc.RequestId, I, C) -> TypedRequestCompletion[S, R]) -> TypedRequestCompletionResult[S, I, R]
+
+pub async fn[I, C] typed_owner_execute(TypedOwnerTask[I], async (I) -> C) -> TypedOwnerEvent[C]
+
+pub fn[S, I] typed_owner_new(S) -> TypedOwner[S, I]
+
+// Errors
+pub(all) suberror TypedOwnerError {
+  Closed
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum TypedCancelResult[S, I] {
+  Requested(owner~ : TypedOwner[S, I], task~ : TypedOwnerTask[I])
+  Ignored(reason~ : TypedOwnerIgnore)
+}
+
+pub(all) enum TypedCloseResult[S, I] {
+  Closed(owner~ : TypedOwner[S, I], aborted~ : Array[TypedOwnerTask[I]])
+  AlreadyClosed(owner~ : TypedOwner[S, I])
+}
+
+pub(all) enum TypedNotificationAction[I] {
+  ImmediateNotification
+  InvokeTask(task~ : TypedOwnerTask[I])
+}
+
+pub(all) enum TypedNotificationAdmission[S, I] {
+  Immediate(state~ : S)
+  Invoke(state~ : S, invocation~ : I)
+}
+
+pub(all) struct TypedNotificationCompletion[S] {
+  state : S
+}
+
+pub(all) enum TypedNotificationCompletionResult[S, I] {
+  Applied(owner~ : TypedOwner[S, I])
+  Ignored(reason~ : TypedOwnerIgnore)
+}
+
+pub struct TypedOwner[S, I] {
+  state : S
+  tasks : Array[TypedOwnerTask[I]]
+  next_token : Int
+  closed : Bool
+}
+pub fn[S, I] TypedOwner::is_closed(Self[S, I]) -> Bool
+pub fn[S, I] TypedOwner::state(Self[S, I]) -> S
+pub fn[S, I] TypedOwner::task_count(Self[S, I]) -> Int
+
+pub(all) enum TypedOwnerEvent[C] {
+  RequestCompleted(token~ : Int, id~ : @jsonrpc.RequestId, completion~ : C)
+  NotificationCompleted(token~ : Int, completion~ : C)
+}
+
+pub(all) enum TypedOwnerIgnore {
+  Closed
+  UnknownTask(token~ : Int)
+  UnknownRequest(id~ : @jsonrpc.RequestId)
+  AlreadyCancelled(id~ : @jsonrpc.RequestId)
+  RequestIdMismatch(expected~ : @jsonrpc.RequestId, actual~ : @jsonrpc.RequestId)
+  TaskKindMismatch(token~ : Int)
+} derive(Eq, @debug.Debug)
+
+pub struct TypedOwnerTask[I] {
+  token : Int
+  request_id : @jsonrpc.RequestId?
+  invocation : I
+  is_notification : Bool
+  cancel_requested : Bool
+}
+pub fn[I] TypedOwnerTask::cancel_requested(Self[I]) -> Bool
+pub fn[I] TypedOwnerTask::invocation(Self[I]) -> I
+pub fn[I] TypedOwnerTask::is_notification(Self[I]) -> Bool
+pub fn[I] TypedOwnerTask::request_id(Self[I]) -> @jsonrpc.RequestId?
+pub fn[I] TypedOwnerTask::token(Self[I]) -> Int
+
+pub(all) enum TypedRequestAction[I, R] {
+  ImmediateResult(result~ : R)
+  InvokeTask(task~ : TypedOwnerTask[I])
+}
+
+pub(all) enum TypedRequestAdmission[S, I, R] {
+  Immediate(state~ : S, result~ : R)
+  Invoke(state~ : S, invocation~ : I)
+}
+
+pub(all) struct TypedRequestCompletion[S, R] {
+  state : S
+  result : R
+}
+
+pub(all) enum TypedRequestCompletionResult[S, I, R] {
+  Applied(owner~ : TypedOwner[S, I], result~ : R)
+  Ignored(reason~ : TypedOwnerIgnore)
+}
+
+// Type aliases
+
+// Traits

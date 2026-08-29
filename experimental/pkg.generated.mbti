@@ -1,0 +1,2234 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/experimental"
+
+import {
+  "colmugx/acp/connection",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn experimental_v2_agent_adapter_admit(ExperimentalV2AgentAdapterState, ExperimentalV2AgentEndpoint, @jsonrpc.JsonRpcMessage) -> ExperimentalV2AgentAdmission raise ExperimentalV2AgentAdapterError
+
+pub fn experimental_v2_agent_adapter_complete(ExperimentalV2AgentAdapterState, ExperimentalV2AgentInvocation, ExperimentalV2AgentCompletion) -> ExperimentalV2AgentAdapterStep raise ExperimentalV2AgentAdapterError
+
+pub fn experimental_v2_agent_adapter_state_new(protocol~ : ExperimentalV2AgentState) -> ExperimentalV2AgentAdapterState
+
+pub fn experimental_v2_agent_auth_service(login~ : async (ExperimentalV2AgentContext, ExperimentalV2LoginParams) -> ExperimentalV2LoginResult, logout~ : async (ExperimentalV2AgentContext, ExperimentalV2LogoutParams) -> ExperimentalV2LogoutResult) -> ExperimentalV2AgentAuthService
+
+pub fn experimental_v2_agent_cancel_completion(ExperimentalV2AgentInvocation) -> ExperimentalV2AgentCompletion
+
+pub fn experimental_v2_agent_context(request_broker~ : async (ExperimentalV2AgentOutboundRequest) -> Result[ExperimentalV2AgentOutboundReply, ExperimentalV2AgentContextError], notification_broker~ : async (ExperimentalV2AgentOutboundNotification) -> Result[Unit, ExperimentalV2AgentContextError]) -> ExperimentalV2AgentContext
+
+pub fn[C] experimental_v2_agent_context_over_channel(channel~ : @connection.RuntimeOutboundChannel[C]) -> ExperimentalV2AgentContext
+
+pub fn experimental_v2_agent_endpoint_from_spec(ExperimentalV2AgentSpec) -> ExperimentalV2AgentEndpoint
+
+pub async fn experimental_v2_agent_execute(ExperimentalV2AgentInvocation, ExperimentalV2AgentEndpoint, ExperimentalV2AgentContext) -> ExperimentalV2AgentCompletion noraise
+
+pub fn experimental_v2_agent_fail_fast_context() -> ExperimentalV2AgentContext
+
+pub fn experimental_v2_agent_fail_fast_notification_broker() -> async (ExperimentalV2AgentOutboundNotification) -> Result[Unit, ExperimentalV2AgentContextError]
+
+pub fn experimental_v2_agent_fail_fast_request_broker() -> async (ExperimentalV2AgentOutboundRequest) -> Result[ExperimentalV2AgentOutboundReply, ExperimentalV2AgentContextError]
+
+pub fn experimental_v2_agent_failure_completion(ExperimentalV2AgentInvocation) -> ExperimentalV2AgentCompletion
+
+pub fn experimental_v2_agent_invocation_method_name(ExperimentalV2AgentInvocation) -> String
+
+pub fn experimental_v2_agent_reduce(ExperimentalV2AgentState, ExperimentalV2AgentEvent) -> ExperimentalV2AgentStep raise ExperimentalV2AgentProtocolError
+
+pub fn experimental_v2_agent_runtime_owner_port(endpoint~ : ExperimentalV2AgentEndpoint, context~ : ExperimentalV2AgentContext, initial_state~ : ExperimentalV2AgentAdapterState) -> @connection.RuntimeOwnerPort[ExperimentalV2AgentAdapterState, ExperimentalV2AgentInvocation, ExperimentalV2AgentCompletion, ExperimentalV2AgentAdapterCommand]
+
+pub async fn experimental_v2_agent_runtime_run(endpoint~ : ExperimentalV2AgentEndpoint, context~ : ExperimentalV2AgentContext, initial_state~ : ExperimentalV2AgentAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn experimental_v2_agent_runtime_run_with_outbound(endpoint~ : ExperimentalV2AgentEndpoint, context_factory~ : (@connection.RuntimeOutboundChannel[ExperimentalV2AgentCompletion]) -> ExperimentalV2AgentContext, initial_state~ : ExperimentalV2AgentAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn experimental_v2_agent_serve_stdio(endpoint~ : ExperimentalV2AgentEndpoint, context~ : ExperimentalV2AgentContext, initial_state~ : ExperimentalV2AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit, batch? : Bool) -> Unit
+
+pub async fn experimental_v2_agent_serve_stdio_with_outbound(endpoint~ : ExperimentalV2AgentEndpoint, context_factory~ : (@connection.RuntimeOutboundChannel[ExperimentalV2AgentCompletion]) -> ExperimentalV2AgentContext, initial_state~ : ExperimentalV2AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit, batch? : Bool) -> Unit
+
+pub fn experimental_v2_agent_session_service(new_session~ : async (ExperimentalV2AgentContext, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult, list~ : async (ExperimentalV2AgentContext, ExperimentalV2ListSessionsParams) -> ExperimentalV2ListSessionsResult, resume_session~ : async (ExperimentalV2AgentContext, ExperimentalV2ResumeSessionParams) -> ExperimentalV2ResumeSessionResult, close~ : async (ExperimentalV2AgentContext, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult, prompt~ : async (ExperimentalV2AgentContext, ExperimentalV2PromptParams) -> ExperimentalV2PromptResult, set_config_option~ : async (ExperimentalV2AgentContext, ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> ExperimentalV2SetConfigOptionResult, delete? : (async (ExperimentalV2AgentContext, ExperimentalV2DeleteSessionParams) -> ExperimentalV2DeleteSessionResult)?, fork_session? : (async (ExperimentalV2AgentContext, ExperimentalV2ForkSessionParams) -> ExperimentalV2ForkSessionResult)?) -> ExperimentalV2AgentSessionService
+
+pub fn experimental_v2_agent_spec(info~ : ExperimentalV2Implementation, capabilities~ : ExperimentalV2AgentCapabilities, sessions~ : ExperimentalV2AgentSessionService, auth_methods? : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?, auth? : ExperimentalV2AgentAuthService?) -> ExperimentalV2AgentSpec raise ExperimentalV2AgentCompositionError
+
+pub fn experimental_v2_agent_state_new(config~ : ExperimentalV2AgentEndpointConfig) -> ExperimentalV2AgentState raise ExperimentalV2AgentStateError
+
+pub fn experimental_v2_batch_decode(String) -> Array[ExperimentalV2BatchItem] raise ExperimentalV2BatchDecodeError
+
+pub fn experimental_v2_batch_encode(Array[ExperimentalV2BatchItem]) -> String raise ExperimentalV2BatchEncodeError
+
+pub fn experimental_v2_batch_expanding_ports(ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> @runtime.RuntimePorts
+
+pub fn experimental_v2_batch_expanding_reader(reader~ : @runtime.RuntimeReaderPort, max_frame_bytes~ : Int) -> @runtime.RuntimeReaderPort
+
+pub fn experimental_v2_batch_is_notification_only(Array[ExperimentalV2BatchItem]) -> Bool
+
+pub fn experimental_v2_batch_request_ids(Array[ExperimentalV2BatchItem]) -> Array[@jsonrpc.RequestId]
+
+pub fn experimental_v2_batch_responses_encode(Array[@jsonrpc.JsonRpcResponse]) -> String raise ExperimentalV2BatchEncodeError
+
+pub fn experimental_v2_client_adapter_admit(ExperimentalV2ClientAdapterState, ExperimentalV2ClientEndpoint, @jsonrpc.JsonRpcMessage) -> ExperimentalV2ClientAdmission raise ExperimentalV2ClientAdapterError
+
+pub fn experimental_v2_client_adapter_complete(ExperimentalV2ClientAdapterState, ExperimentalV2ClientInvocation, ExperimentalV2ClientCompletion) -> ExperimentalV2ClientAdapterStep raise ExperimentalV2ClientAdapterError
+
+pub fn experimental_v2_client_adapter_state_new(protocol~ : ExperimentalV2ClientState) -> ExperimentalV2ClientAdapterState
+
+pub fn experimental_v2_client_cancel_completion(ExperimentalV2ClientInvocation) -> ExperimentalV2ClientCompletion
+
+pub async fn experimental_v2_client_connect_process(endpoint_factory~ : (@connection.RuntimeOutboundChannel[ExperimentalV2ClientCompletion]) -> ExperimentalV2ClientEndpoint, initial_state~ : ExperimentalV2ClientAdapterState, handlers~ : @runtime.RuntimeHandlerPort, command~ : String, args? : Array[String], extra_env? : Map[String, String], inherit_env? : Bool, spawned? : (@runtime.RuntimeProcessPorts) -> Unit, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit, batch? : Bool) -> Unit
+
+pub fn experimental_v2_client_connection(request_broker~ : async (ExperimentalV2ClientForwardRequest) -> Result[ExperimentalV2ClientForwardReply, ExperimentalV2ClientConnectionError], notification_broker~ : (ExperimentalV2ClientForwardNotification) -> Result[Unit, ExperimentalV2ClientConnectionError]) -> ExperimentalV2ClientConnection
+
+pub fn[C] experimental_v2_client_connection_over_channel(channel~ : @connection.RuntimeOutboundChannel[C]) -> ExperimentalV2ClientConnection
+
+pub fn experimental_v2_client_elicitation_service(form? : async (String, ExperimentalV2ElicitationFormMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown], url? : async (String, ExperimentalV2ElicitationUrlMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown], complete? : async (ExperimentalV2CompleteElicitationNotification) -> Unit) -> ExperimentalV2ClientElicitationService raise ExperimentalV2ClientCompositionError
+
+pub fn experimental_v2_client_endpoint_from_spec(ExperimentalV2ClientSpec) -> ExperimentalV2ClientEndpoint
+
+pub async fn experimental_v2_client_execute(ExperimentalV2ClientInvocation, ExperimentalV2ClientEndpoint) -> ExperimentalV2ClientCompletion noraise
+
+pub fn experimental_v2_client_failure_completion(ExperimentalV2ClientInvocation) -> ExperimentalV2ClientCompletion
+
+pub fn experimental_v2_client_initialize_params(info~ : ExperimentalV2Implementation, capabilities~ : ExperimentalV2ClientCapabilities) -> ExperimentalV2InitializeParams
+
+pub fn experimental_v2_client_invocation_method_name(ExperimentalV2ClientInvocation) -> String
+
+pub fn experimental_v2_client_reduce(ExperimentalV2ClientState, ExperimentalV2ClientEvent) -> ExperimentalV2ClientStep raise ExperimentalV2ClientProtocolError
+
+pub fn experimental_v2_client_runtime_owner_port(endpoint~ : ExperimentalV2ClientEndpoint, initial_state~ : ExperimentalV2ClientAdapterState) -> @connection.RuntimeOwnerPort[ExperimentalV2ClientAdapterState, ExperimentalV2ClientInvocation, ExperimentalV2ClientCompletion, ExperimentalV2ClientAdapterCommand]
+
+pub async fn experimental_v2_client_runtime_run(endpoint~ : ExperimentalV2ClientEndpoint, initial_state~ : ExperimentalV2ClientAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn experimental_v2_client_runtime_run_with_outbound(endpoint_factory~ : (@connection.RuntimeOutboundChannel[ExperimentalV2ClientCompletion]) -> ExperimentalV2ClientEndpoint, initial_state~ : ExperimentalV2ClientAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub fn experimental_v2_client_session_service(session_update~ : async (ExperimentalV2UpdateSessionNotification) -> Unit, request_permission~ : async (ExperimentalV2RequestPermissionRequest) -> ExperimentalV2RequestPermissionResponse) -> ExperimentalV2ClientSessionService
+
+pub fn experimental_v2_client_spec(info~ : ExperimentalV2Implementation, session~ : ExperimentalV2ClientSessionService, elicitation? : ExperimentalV2ClientElicitationService) -> ExperimentalV2ClientSpec raise ExperimentalV2ClientCompositionError
+
+pub fn experimental_v2_client_state_new(capabilities~ : ExperimentalV2ClientCapabilities) -> ExperimentalV2ClientState
+
+pub fn experimental_v2_collect_replies(Array[String]) -> String raise ExperimentalV2BatchEncodeError
+
+pub fn experimental_v2_decode_agent_capabilities(Json, path? : String) -> ExperimentalV2AgentCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_annotations(Json, path? : String) -> ExperimentalV2Annotations raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_audio_content(Json, path? : String) -> ExperimentalV2AudioContent raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_auth_method(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2AuthMethodAgent] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_available_command(Json, path? : String) -> ExperimentalV2AvailableCommand raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_available_commands_update(Json, path? : String) -> ExperimentalV2AvailableCommandsUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_blob_resource_contents(Json, path? : String) -> ExperimentalV2BlobResourceContents raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_boolean_property(Json, path? : String) -> ExperimentalV2BooleanProperty raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_cancel_session_params(Json, path? : String) -> ExperimentalV2CancelSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_client_capabilities(Json, path? : String) -> ExperimentalV2ClientCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_close_session_params(Json, path? : String) -> ExperimentalV2CloseSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_close_session_result(Json, path? : String) -> ExperimentalV2CloseSessionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_command_input(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2CommandInputKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_command_permission_subject(Json, path? : String) -> ExperimentalV2CommandPermissionSubject raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_complete_elicitation_notification(Json, path? : String) -> ExperimentalV2CompleteElicitationNotification raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_category(Json, path? : String) -> ExperimentalV2ConfigCategory raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_option(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_option_update(Json, path? : String) -> ExperimentalV2ConfigOptionUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_select_group(Json, path? : String) -> ExperimentalV2ConfigSelectGroup raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_select_option(Json, path? : String) -> ExperimentalV2ConfigSelectOption raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_config_select_options(Json, path? : String) -> ExperimentalV2ConfigSelectOptions raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_content(Json, path? : String) -> ExperimentalV2Content raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_content_block(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ContentBlockKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_content_chunk(Json, path? : String) -> ExperimentalV2ContentChunk raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_cost(Json, path? : String) -> ExperimentalV2Cost raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_delete_session_params(Json, path? : String) -> ExperimentalV2DeleteSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_delete_session_result(Json, path? : String) -> ExperimentalV2DeleteSessionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff(Json, path? : String) -> ExperimentalV2Diff raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_change(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2DiffChangeKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_file_type(Json, path? : String) -> ExperimentalV2DiffFileType raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_patch(Json, path? : String) -> ExperimentalV2DiffPatch raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_patch_format(Json, path? : String) -> ExperimentalV2DiffPatchFormat raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_path_change(Json, path? : String) -> ExperimentalV2DiffPathChange raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_diff_path_pair_change(Json, path? : String) -> ExperimentalV2DiffPathPairChange raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_capabilities(Json, path? : String) -> ExperimentalV2ElicitationCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_content_value(Json, path? : String) -> ExperimentalV2ElicitationContentValue raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_create_request(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_create_response(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_property(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ElicitationPropertyKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_elicitation_schema(Json, path? : String) -> ExperimentalV2ElicitationSchema raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_embedded_resource(Json, path? : String) -> ExperimentalV2EmbeddedResource raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_embedded_resource_resource(Json, path? : String) -> ExperimentalV2EmbeddedResourceResource raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_enum_option(Json, path? : String) -> ExperimentalV2EnumOption raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_env_variable(Json, path? : String) -> ExperimentalV2EnvVariable raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_fork_session_params(Json, path? : String) -> ExperimentalV2ForkSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_fork_session_result(Json, path? : String) -> ExperimentalV2ForkSessionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_http_header(Json, path? : String) -> ExperimentalV2HttpHeader raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_icon(Json, path? : String) -> ExperimentalV2Icon raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_icon_theme(Json, path? : String) -> ExperimentalV2IconTheme raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_idle_state(Json, path? : String) -> ExperimentalV2IdleState raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_image_content(Json, path? : String) -> ExperimentalV2ImageContent raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_implementation(Json, path? : String) -> ExperimentalV2Implementation raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_initialize_params(Json, path? : String) -> ExperimentalV2InitializeParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_initialize_result(Json, path? : String) -> ExperimentalV2InitializeResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_integer_property(Json, path? : String) -> ExperimentalV2IntegerProperty raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_list_sessions_params(Json, path? : String) -> ExperimentalV2ListSessionsParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_list_sessions_result(Json, path? : String) -> ExperimentalV2ListSessionsResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_login_params(Json, path? : String) -> ExperimentalV2LoginParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_login_result(Json, path? : String) -> ExperimentalV2LoginResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_logout_params(Json, path? : String) -> ExperimentalV2LogoutParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_logout_result(Json, path? : String) -> ExperimentalV2LogoutResult raise ExperimentalV2DecodeError
+
+pub fn[T] experimental_v2_decode_marker(Map[String, Json], String, path~ : String, (Json, String) -> T raise ExperimentalV2DecodeError) -> ExperimentalV2Marker[T] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_marker_payload(Json, path? : String) -> ExperimentalV2MarkerPayload raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_mcp_capabilities(Json, path? : String) -> ExperimentalV2McpCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_mcp_server(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2McpServerTransport] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_mcp_server_http(Json, path? : String) -> ExperimentalV2McpServerHttp raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_mcp_server_stdio(Json, path? : String) -> ExperimentalV2McpServerStdio raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_message_upsert(Json, path? : String) -> ExperimentalV2MessageUpsert raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_multi_select_items(Json, path? : String) -> ExperimentalV2MultiSelectItems raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_multi_select_property(Json, path? : String) -> ExperimentalV2MultiSelectProperty raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_new_session_params(Json, path? : String) -> ExperimentalV2NewSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_new_session_result(Json, path? : String) -> ExperimentalV2NewSessionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_number_property(Json, path? : String) -> ExperimentalV2NumberProperty raise ExperimentalV2DecodeError
+
+pub fn[T] experimental_v2_decode_open(Json, tag_key~ : String, ArrayView[String], (String, Json) -> T raise ExperimentalV2DecodeError, path~ : String) -> ExperimentalV2Open[T] raise ExperimentalV2DecodeError
+
+pub fn[T] experimental_v2_decode_patch(Map[String, Json], String, path~ : String, (Json, String) -> T raise ExperimentalV2DecodeError) -> ExperimentalV2Patch[T] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_permission_option(Json, path? : String) -> ExperimentalV2PermissionOption raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_permission_option_kind(Json, path? : String) -> ExperimentalV2PermissionOptionKind raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_permission_outcome(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2PermissionOutcomeKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_permission_subject(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2PermissionSubjectKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_entry(Json, path? : String) -> ExperimentalV2PlanEntry raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_entry_priority(Json, path? : String) -> ExperimentalV2PlanEntryPriority raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_entry_status(Json, path? : String) -> ExperimentalV2PlanEntryStatus raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_items(Json, path? : String) -> ExperimentalV2PlanItems raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_update(Json, path? : String) -> ExperimentalV2PlanUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_plan_update_content(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_prompt_capabilities(Json, path? : String) -> ExperimentalV2PromptCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_prompt_params(Json, path? : String) -> ExperimentalV2PromptParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_prompt_result(Json, path? : String) -> ExperimentalV2PromptResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_replay_from(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ReplayFromStart] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_request_id(Json, path? : String) -> ExperimentalV2RequestId raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_request_permission_request(Json, path? : String) -> ExperimentalV2RequestPermissionRequest raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_request_permission_response(Json, path? : String) -> ExperimentalV2RequestPermissionResponse raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_requires_action_state(Json, path? : String) -> ExperimentalV2RequiresActionState raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_resource_link(Json, path? : String) -> ExperimentalV2ResourceLink raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_resume_session_params(Json, path? : String) -> ExperimentalV2ResumeSessionParams raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_resume_session_result(Json, path? : String) -> ExperimentalV2ResumeSessionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_role(Json, path? : String) -> ExperimentalV2Role raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_running_state(Json, path? : String) -> ExperimentalV2RunningState raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_selected_permission_outcome(Json, path? : String) -> ExperimentalV2SelectedPermissionOutcome raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_session_capabilities(Json, path? : String) -> ExperimentalV2SessionCapabilities raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_session_info(Json, path? : String) -> ExperimentalV2SessionInfo raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_session_info_update(Json, path? : String) -> ExperimentalV2SessionInfoUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_session_update(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2SessionUpdateKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_set_config_option(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_set_config_option_result(Json, path? : String) -> ExperimentalV2SetConfigOptionResult raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_state_update(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2StateUpdateKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_stop_reason(Json, path? : String) -> ExperimentalV2StopReason raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_string(Json, path~ : String) -> String raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_string_format(Json, path? : String) -> ExperimentalV2StringFormat raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_string_property(Json, path? : String) -> ExperimentalV2StringProperty raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_terminal(Json, path? : String) -> ExperimentalV2Terminal raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_terminal_exit_status(Json, path? : String) -> ExperimentalV2TerminalExitStatus raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_terminal_output(Json, path? : String) -> ExperimentalV2TerminalOutput raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_terminal_output_chunk(Json, path? : String) -> ExperimentalV2TerminalOutputChunk raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_terminal_update(Json, path? : String) -> ExperimentalV2TerminalUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_text_command_input(Json, path? : String) -> ExperimentalV2TextCommandInput raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_text_content(Json, path? : String) -> ExperimentalV2TextContent raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_text_resource_contents(Json, path? : String) -> ExperimentalV2TextResourceContents raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_content(Json, path? : String) -> ExperimentalV2Open[ExperimentalV2ToolCallContentKnown] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_content_chunk(Json, path? : String) -> ExperimentalV2ToolCallContentChunk raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_location(Json, path? : String) -> ExperimentalV2ToolCallLocation raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_permission_subject(Json, path? : String) -> ExperimentalV2ToolCallPermissionSubject raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_status(Json, path? : String) -> ExperimentalV2ToolCallStatus raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_call_update(Json, path? : String) -> ExperimentalV2ToolCallUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_tool_kind(Json, path? : String) -> ExperimentalV2ToolKind raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_update_session_notification(Json, path? : String) -> ExperimentalV2UpdateSessionNotification raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_decode_usage_update(Json, path? : String) -> ExperimentalV2UsageUpdate raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_agent_capabilities(ExperimentalV2AgentCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_annotations(ExperimentalV2Annotations) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_audio_content(ExperimentalV2AudioContent) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_auth_method(ExperimentalV2Open[ExperimentalV2AuthMethodAgent]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_available_command(ExperimentalV2AvailableCommand) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_available_commands_update(ExperimentalV2AvailableCommandsUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_blob_resource_contents(ExperimentalV2BlobResourceContents) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_boolean_property(ExperimentalV2BooleanProperty) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_cancel_session_params(ExperimentalV2CancelSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_client_capabilities(ExperimentalV2ClientCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_close_session_params(ExperimentalV2CloseSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_close_session_result(ExperimentalV2CloseSessionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_command_input(ExperimentalV2Open[ExperimentalV2CommandInputKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_command_permission_subject(ExperimentalV2CommandPermissionSubject) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_complete_elicitation_notification(ExperimentalV2CompleteElicitationNotification) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_config_category(ExperimentalV2ConfigCategory) -> Json
+
+pub fn experimental_v2_encode_config_option(ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_config_option_update(ExperimentalV2ConfigOptionUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_config_select_group(ExperimentalV2ConfigSelectGroup) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_config_select_option(ExperimentalV2ConfigSelectOption) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_config_select_options(ExperimentalV2ConfigSelectOptions) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_content(ExperimentalV2Content) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_content_block(ExperimentalV2Open[ExperimentalV2ContentBlockKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_content_chunk(ExperimentalV2ContentChunk) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_cost(ExperimentalV2Cost) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_delete_session_params(ExperimentalV2DeleteSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_delete_session_result(ExperimentalV2DeleteSessionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_diff(ExperimentalV2Diff) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_diff_change(ExperimentalV2Open[ExperimentalV2DiffChangeKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_diff_file_type(ExperimentalV2DiffFileType) -> Json
+
+pub fn experimental_v2_encode_diff_patch(ExperimentalV2DiffPatch) -> Json
+
+pub fn experimental_v2_encode_diff_patch_format(ExperimentalV2DiffPatchFormat) -> Json
+
+pub fn experimental_v2_encode_diff_path_change(ExperimentalV2DiffPathChange) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_diff_path_pair_change(ExperimentalV2DiffPathPairChange) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_capabilities(ExperimentalV2ElicitationCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_content_value(ExperimentalV2ElicitationContentValue) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_create_request(ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_create_response(ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_property(ExperimentalV2Open[ExperimentalV2ElicitationPropertyKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_elicitation_schema(ExperimentalV2ElicitationSchema) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_embedded_resource(ExperimentalV2EmbeddedResource) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_embedded_resource_resource(ExperimentalV2EmbeddedResourceResource) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_enum_option(ExperimentalV2EnumOption) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_env_variable(ExperimentalV2EnvVariable) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_fork_session_params(ExperimentalV2ForkSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_fork_session_result(ExperimentalV2ForkSessionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_http_header(ExperimentalV2HttpHeader) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_icon(ExperimentalV2Icon) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_icon_theme(ExperimentalV2IconTheme) -> Json
+
+pub fn experimental_v2_encode_idle_state(ExperimentalV2IdleState) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_image_content(ExperimentalV2ImageContent) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_implementation(ExperimentalV2Implementation) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_initialize_params(ExperimentalV2InitializeParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_initialize_result(ExperimentalV2InitializeResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_integer_property(ExperimentalV2IntegerProperty) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_list_sessions_params(ExperimentalV2ListSessionsParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_list_sessions_result(ExperimentalV2ListSessionsResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_login_params(ExperimentalV2LoginParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_login_result(ExperimentalV2LoginResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_logout_params(ExperimentalV2LogoutParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_logout_result(ExperimentalV2LogoutResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_marker_payload(ExperimentalV2MarkerPayload) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_mcp_capabilities(ExperimentalV2McpCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_mcp_server(ExperimentalV2Open[ExperimentalV2McpServerTransport]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_mcp_server_http(ExperimentalV2McpServerHttp) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_mcp_server_stdio(ExperimentalV2McpServerStdio) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_message_upsert(ExperimentalV2MessageUpsert) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_multi_select_items(ExperimentalV2MultiSelectItems) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_multi_select_property(ExperimentalV2MultiSelectProperty) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_new_session_params(ExperimentalV2NewSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_new_session_result(ExperimentalV2NewSessionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_number_property(ExperimentalV2NumberProperty) -> Json raise ExperimentalV2DecodeError
+
+pub fn[T] experimental_v2_encode_open(ExperimentalV2Open[T], tag_key~ : String, (T) -> Json raise ExperimentalV2DecodeError) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_permission_option(ExperimentalV2PermissionOption) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_permission_option_kind(ExperimentalV2PermissionOptionKind) -> Json
+
+pub fn experimental_v2_encode_permission_outcome(ExperimentalV2Open[ExperimentalV2PermissionOutcomeKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_permission_subject(ExperimentalV2Open[ExperimentalV2PermissionSubjectKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_plan_entry(ExperimentalV2PlanEntry) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_plan_entry_priority(ExperimentalV2PlanEntryPriority) -> Json
+
+pub fn experimental_v2_encode_plan_entry_status(ExperimentalV2PlanEntryStatus) -> Json
+
+pub fn experimental_v2_encode_plan_items(ExperimentalV2PlanItems) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_plan_update(ExperimentalV2PlanUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_plan_update_content(ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_prompt_capabilities(ExperimentalV2PromptCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_prompt_params(ExperimentalV2PromptParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_prompt_result(ExperimentalV2PromptResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_replay_from(ExperimentalV2Open[ExperimentalV2ReplayFromStart]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_request_id(ExperimentalV2RequestId) -> Json
+
+pub fn experimental_v2_encode_request_permission_request(ExperimentalV2RequestPermissionRequest) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_request_permission_response(ExperimentalV2RequestPermissionResponse) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_requires_action_state(ExperimentalV2RequiresActionState) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_resource_link(ExperimentalV2ResourceLink) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_resume_session_params(ExperimentalV2ResumeSessionParams) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_resume_session_result(ExperimentalV2ResumeSessionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_role(ExperimentalV2Role) -> Json
+
+pub fn experimental_v2_encode_running_state(ExperimentalV2RunningState) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_selected_permission_outcome(ExperimentalV2SelectedPermissionOutcome) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_session_capabilities(ExperimentalV2SessionCapabilities) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_session_info(ExperimentalV2SessionInfo) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_session_info_update(ExperimentalV2SessionInfoUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_session_update(ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_set_config_option(ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_set_config_option_result(ExperimentalV2SetConfigOptionResult) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_state_update(ExperimentalV2Open[ExperimentalV2StateUpdateKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_stop_reason(ExperimentalV2StopReason) -> Json
+
+pub fn experimental_v2_encode_string_format(ExperimentalV2StringFormat) -> Json
+
+pub fn experimental_v2_encode_string_property(ExperimentalV2StringProperty) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_terminal(ExperimentalV2Terminal) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_terminal_exit_status(ExperimentalV2TerminalExitStatus) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_terminal_output(ExperimentalV2TerminalOutput) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_terminal_output_chunk(ExperimentalV2TerminalOutputChunk) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_terminal_update(ExperimentalV2TerminalUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_text_command_input(ExperimentalV2TextCommandInput) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_text_content(ExperimentalV2TextContent) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_text_resource_contents(ExperimentalV2TextResourceContents) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_call_content(ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_call_content_chunk(ExperimentalV2ToolCallContentChunk) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_call_location(ExperimentalV2ToolCallLocation) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_call_permission_subject(ExperimentalV2ToolCallPermissionSubject) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_call_status(ExperimentalV2ToolCallStatus) -> Json
+
+pub fn experimental_v2_encode_tool_call_update(ExperimentalV2ToolCallUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_tool_kind(ExperimentalV2ToolKind) -> Json
+
+pub fn experimental_v2_encode_update_session_notification(ExperimentalV2UpdateSessionNotification) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_encode_usage_update(ExperimentalV2UsageUpdate) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_method_manifest() -> Array[ExperimentalV2Method]
+
+pub fn experimental_v2_nested_meta(Map[String, Json], path~ : String) -> Json? raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_parse_json(String) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_patch_field(Map[String, Json], String) -> ExperimentalV2Patch[Json]
+
+pub let experimental_v2_protocol_version : Int
+
+pub fn[T] experimental_v2_put_marker(Map[String, Json], String, ExperimentalV2Marker[T], (T) -> Json raise ExperimentalV2DecodeError) -> Unit raise ExperimentalV2DecodeError
+
+pub fn[T] experimental_v2_put_patch(Map[String, Json], String, ExperimentalV2Patch[T], (T) -> Json raise ExperimentalV2DecodeError) -> Unit raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_put_top_meta(Map[String, Json], ExperimentalV2Patch[Json]) -> Unit raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_reject_unknown(Map[String, Json], ArrayView[String], prefix~ : String) -> Unit raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_require_object(Json, path~ : String) -> Map[String, Json] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_session_fold_apply(ExperimentalV2SessionFold, ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]) -> Result[ExperimentalV2SessionFold, ExperimentalV2SessionFoldError]
+
+pub fn experimental_v2_session_fold_new() -> ExperimentalV2SessionFold
+
+pub fn experimental_v2_split_wire_frame(String) -> ExperimentalV2WireFrameSplit
+
+pub fn experimental_v2_stringify_json(Json) -> String
+
+pub fn experimental_v2_tag_payload(Json, tag_key~ : String, tag~ : String) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_top_meta(Map[String, Json], path~ : String) -> ExperimentalV2Patch[Json] raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_unstable_method_manifest() -> Array[ExperimentalV2Method]
+
+pub fn experimental_v2_untag_payload(Json, tag_key~ : String, path~ : String) -> Json raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_validate_absolute_path(String, field_path~ : String) -> String raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_validate_base64(String, field_path~ : String) -> String raise ExperimentalV2DecodeError
+
+pub fn experimental_v2_validate_id(String, field_path~ : String) -> String raise ExperimentalV2DecodeError
+
+// Errors
+pub(all) suberror ExperimentalV2AgentAdapterError {
+  EndpointMismatch(reason~ : String)
+  UnexpectedMessage(kind~ : String)
+  LateCompletion(request_id~ : @jsonrpc.RequestId)
+  CompletionMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentCompositionError {
+  InvalidImplementation(reason~ : String)
+  EmptyAuthMethods
+  DuplicateAuthMethodId(method_id~ : String)
+  AuthServiceMismatch(reason~ : String)
+  DeleteServiceMismatch(reason~ : String)
+  ForkServiceMismatch(reason~ : String)
+  SessionMarkerMissing
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentContextError {
+  ContextUnavailable(method_name~ : String)
+  ContextCancelled(method_name~ : String)
+  ContextBrokerFailure(method_name~ : String)
+  ContextReplyMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentHandlerError {
+  Application(message~ : String)
+  InvalidParams(message~ : String)
+  Cancelled
+  UnavailableOperation(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentMessageError {
+  UnknownMethod(method_name~ : String)
+  InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentProtocolError {
+  NotInitialized(method_name~ : String)
+  AlreadyInitialized
+  AuthNotAdvertised(method_name~ : String)
+  AuthMethodNotAdvertised(method_id~ : String)
+  AlreadyLoggedIn
+  NotLoggedIn
+  CapabilityDenied(method_name~ : String, capability~ : String)
+  UnknownMethod(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2AgentStateError {
+  EmptyAuthMethods
+  DuplicateAuthMethodId(method_id~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2BatchDecodeError {
+  BatchParseFailed(message~ : String, response~ : @jsonrpc.JsonRpcResponse)
+  EmptyBatch(response~ : @jsonrpc.JsonRpcResponse)
+  NotABatch(value~ : Json)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2BatchEncodeError {
+  EmptyBatchInput
+  EmptyResponsesInput
+  ItemEncodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
+  ResponseEncodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
+  ReplyFrameDecodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientAdapterError {
+  EndpointMismatch(reason~ : String)
+  UnexpectedMessage(kind~ : String)
+  LateCompletion(request_id~ : @jsonrpc.RequestId)
+  CompletionMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientCompositionError {
+  InvalidImplementation(reason~ : String)
+  MissingElicitationHandler
+  ElicitationUrlRequiresComplete(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientConnectionError {
+  UnsupportedVersion(method_name~ : String, offered~ : Int)
+  Unavailable(method_name~ : String)
+  Cancelled(method_name~ : String)
+  BrokerFailure(method_name~ : String)
+  ReplyMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientHandlerError {
+  Application(message~ : String)
+  InvalidParams(message~ : String)
+  Cancelled
+  UnavailableOperation(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientMessageError {
+  UnknownMethod(method_name~ : String)
+  InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2ClientProtocolError {
+  NotReady(method_name~ : String)
+  AlreadyReady
+  UnsupportedVersion(offered~ : Int)
+  CapabilityDenied(method_name~ : String, capability~ : String)
+  UnknownMethod(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2DecodeError {
+  JsonParse(message~ : String)
+  ExpectedObject(path~ : String)
+  ExpectedArray(path~ : String)
+  ExpectedString(path~ : String)
+  ExpectedBoolean(path~ : String)
+  ExpectedNumber(path~ : String)
+  MissingField(path~ : String)
+  UnknownField(path~ : String)
+  InvalidField(path~ : String, reason~ : String)
+  InvalidDiscriminator(path~ : String, value~ : String)
+  InvalidPath(path~ : String, value~ : String)
+  InvalidBase64(path~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ExperimentalV2SessionFoldError {
+  ChunkForUnknownToolCall(tool_call_id~ : String)
+  IllegalStateTransition(from~ : ExperimentalV2TurnPhase, to~ : ExperimentalV2TurnPhase)
+  PlanVariantMissingPlanId
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum ExperimentalV2AgentAdapterCommand {
+  CancelRequest(request_id~ : ExperimentalV2RequestId)
+  TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentAdapterOutput {
+  Response(@jsonrpc.JsonRpcResponse)
+  Notification(@jsonrpc.JsonRpcNotification)
+  Command(ExperimentalV2AgentAdapterCommand)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AgentAdapterState {
+  protocol : ExperimentalV2AgentState
+  reservation : ExperimentalV2AgentReservation
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterState::protocol(Self) -> ExperimentalV2AgentState
+pub fn ExperimentalV2AgentAdapterState::reservation(Self) -> ExperimentalV2AgentReservation
+
+pub(all) struct ExperimentalV2AgentAdapterStep {
+  state : ExperimentalV2AgentAdapterState
+  outputs : Array[ExperimentalV2AgentAdapterOutput]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentAdmission {
+  Immediate(ExperimentalV2AgentAdapterStep)
+  Invoke(state~ : ExperimentalV2AgentAdapterState, invocation~ : ExperimentalV2AgentInvocation)
+}
+
+pub struct ExperimentalV2AgentAuthService {
+  login_handler : async (ExperimentalV2AgentContext, ExperimentalV2LoginParams) -> ExperimentalV2LoginResult
+  logout_handler : async (ExperimentalV2AgentContext, ExperimentalV2LogoutParams) -> ExperimentalV2LogoutResult
+}
+
+pub(all) enum ExperimentalV2AgentAuthentication {
+  AuthNotAdvertised
+  AuthPending
+  AuthLoggedIn
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AgentCapabilities {
+  session : ExperimentalV2Marker[ExperimentalV2SessionCapabilities]
+  auth : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentCommand {
+  SendInitialize(result~ : ExperimentalV2InitializeResult, accepted~ : Bool)
+  DispatchRequest(ExperimentalV2AgentRequest)
+  Login(method_id~ : String)
+  Logout
+  CancelSession(session_id~ : String)
+  CancelRequest(request_id~ : ExperimentalV2RequestId)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentCompletion {
+  AuthLoginCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2LoginResult, ExperimentalV2AgentHandlerError])
+  AuthLogoutCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2LogoutResult, ExperimentalV2AgentHandlerError])
+  SessionNewCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2NewSessionResult, ExperimentalV2AgentHandlerError])
+  SessionListCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2ListSessionsResult, ExperimentalV2AgentHandlerError])
+  SessionResumeCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2ResumeSessionResult, ExperimentalV2AgentHandlerError])
+  SessionCloseCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2CloseSessionResult, ExperimentalV2AgentHandlerError])
+  SessionPromptCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2PromptResult, ExperimentalV2AgentHandlerError])
+  SessionSetConfigOptionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2SetConfigOptionResult, ExperimentalV2AgentHandlerError])
+  SessionDeleteCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2DeleteSessionResult, ExperimentalV2AgentHandlerError])
+  SessionForkCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2ForkSessionResult, ExperimentalV2AgentHandlerError])
+} derive(Eq, @debug.Debug)
+
+pub struct ExperimentalV2AgentContext {
+  request_broker : async (ExperimentalV2AgentOutboundRequest) -> Result[ExperimentalV2AgentOutboundReply, ExperimentalV2AgentContextError]
+  notification_broker : async (ExperimentalV2AgentOutboundNotification) -> Result[Unit, ExperimentalV2AgentContextError]
+}
+pub async fn ExperimentalV2AgentContext::elicitation_complete(Self, ExperimentalV2CompleteElicitationNotification) -> Unit raise ExperimentalV2AgentContextError
+pub async fn ExperimentalV2AgentContext::elicitation_create(Self, ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown]) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown] raise ExperimentalV2AgentContextError
+pub async fn ExperimentalV2AgentContext::request_permission(Self, ExperimentalV2RequestPermissionRequest) -> ExperimentalV2RequestPermissionResponse raise ExperimentalV2AgentContextError
+pub async fn ExperimentalV2AgentContext::session_update(Self, ExperimentalV2UpdateSessionNotification) -> Unit raise ExperimentalV2AgentContextError
+
+pub struct ExperimentalV2AgentEndpoint {
+  info : ExperimentalV2Implementation
+  capabilities : ExperimentalV2AgentCapabilities
+  auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
+  sessions : ExperimentalV2AgentSessionService
+  auth : ExperimentalV2AgentAuthService?
+}
+pub async fn ExperimentalV2AgentEndpoint::auth_login(Self, ExperimentalV2AgentContext, ExperimentalV2LoginParams) -> ExperimentalV2LoginResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::auth_logout(Self, ExperimentalV2AgentContext, ExperimentalV2LogoutParams) -> ExperimentalV2LogoutResult raise ExperimentalV2AgentHandlerError
+pub fn ExperimentalV2AgentEndpoint::auth_methods(Self) -> Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
+pub fn ExperimentalV2AgentEndpoint::capabilities(Self) -> ExperimentalV2AgentCapabilities
+pub async fn ExperimentalV2AgentEndpoint::close_session(Self, ExperimentalV2AgentContext, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult raise ExperimentalV2AgentHandlerError
+pub fn ExperimentalV2AgentEndpoint::config(Self) -> ExperimentalV2AgentEndpointConfig
+pub async fn ExperimentalV2AgentEndpoint::delete_session(Self, ExperimentalV2AgentContext, ExperimentalV2DeleteSessionParams) -> ExperimentalV2DeleteSessionResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::fork_session(Self, ExperimentalV2AgentContext, ExperimentalV2ForkSessionParams) -> ExperimentalV2ForkSessionResult raise ExperimentalV2AgentHandlerError
+pub fn ExperimentalV2AgentEndpoint::info(Self) -> ExperimentalV2Implementation
+pub async fn ExperimentalV2AgentEndpoint::list_sessions(Self, ExperimentalV2AgentContext, ExperimentalV2ListSessionsParams) -> ExperimentalV2ListSessionsResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::new_session(Self, ExperimentalV2AgentContext, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::prompt(Self, ExperimentalV2AgentContext, ExperimentalV2PromptParams) -> ExperimentalV2PromptResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::resume_session(Self, ExperimentalV2AgentContext, ExperimentalV2ResumeSessionParams) -> ExperimentalV2ResumeSessionResult raise ExperimentalV2AgentHandlerError
+pub async fn ExperimentalV2AgentEndpoint::set_config_option(Self, ExperimentalV2AgentContext, ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> ExperimentalV2SetConfigOptionResult raise ExperimentalV2AgentHandlerError
+
+pub(all) struct ExperimentalV2AgentEndpointConfig {
+  info : ExperimentalV2Implementation
+  capabilities : ExperimentalV2AgentCapabilities
+  auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentEvent {
+  ClientRequest(ExperimentalV2AgentRequest)
+  ClientNotification(ExperimentalV2AgentNotification)
+  UnknownClientMethod(method_name~ : String)
+  LoginSucceeded(method_id~ : String)
+  LoggedOut
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentInvocation {
+  AuthLoginInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2LoginParams)
+  AuthLogoutInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2LogoutParams)
+  SessionNewInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2NewSessionParams)
+  SessionListInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2ListSessionsParams)
+  SessionResumeInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2ResumeSessionParams)
+  SessionCloseInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2CloseSessionParams)
+  SessionPromptInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2PromptParams)
+  SessionSetConfigOptionInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown])
+  SessionDeleteInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2DeleteSessionParams)
+  SessionForkInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2ForkSessionParams)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentNotification {
+  SessionCancel(ExperimentalV2CancelSessionParams)
+  CancelRequest(ExperimentalV2RequestId)
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentNotification::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2AgentOutboundNotification {
+  SessionUpdate(ExperimentalV2UpdateSessionNotification)
+  ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentOutboundNotification::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2AgentOutboundReply {
+  ReplyRequestPermission(ExperimentalV2RequestPermissionResponse)
+  ReplyElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentOutboundRequest {
+  RequestPermission(ExperimentalV2RequestPermissionRequest)
+  ElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown])
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentOutboundRequest::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2AgentPhase {
+  AgentAwaitingInitialize
+  AgentInitialized
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2AgentRequest {
+  Initialize(ExperimentalV2InitializeParams)
+  AuthLogin(ExperimentalV2LoginParams)
+  AuthLogout(ExperimentalV2LogoutParams)
+  SessionNew(ExperimentalV2NewSessionParams)
+  SessionPrompt(ExperimentalV2PromptParams)
+  SessionList(ExperimentalV2ListSessionsParams)
+  SessionDelete(ExperimentalV2DeleteSessionParams)
+  SessionResume(ExperimentalV2ResumeSessionParams)
+  SessionFork(ExperimentalV2ForkSessionParams)
+  SessionClose(ExperimentalV2CloseSessionParams)
+  SessionSetConfigOption(ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown])
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentRequest::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2AgentReservation {
+  Idle
+  LoginPending(@jsonrpc.RequestId)
+  LogoutPending(@jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+
+pub struct ExperimentalV2AgentSessionService {
+  new_handler : async (ExperimentalV2AgentContext, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult
+  list_handler : async (ExperimentalV2AgentContext, ExperimentalV2ListSessionsParams) -> ExperimentalV2ListSessionsResult
+  resume_handler : async (ExperimentalV2AgentContext, ExperimentalV2ResumeSessionParams) -> ExperimentalV2ResumeSessionResult
+  close_handler : async (ExperimentalV2AgentContext, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult
+  prompt_handler : async (ExperimentalV2AgentContext, ExperimentalV2PromptParams) -> ExperimentalV2PromptResult
+  set_config_option_handler : async (ExperimentalV2AgentContext, ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> ExperimentalV2SetConfigOptionResult
+  delete_handler : (async (ExperimentalV2AgentContext, ExperimentalV2DeleteSessionParams) -> ExperimentalV2DeleteSessionResult)?
+  fork_handler : (async (ExperimentalV2AgentContext, ExperimentalV2ForkSessionParams) -> ExperimentalV2ForkSessionResult)?
+}
+
+pub struct ExperimentalV2AgentSpec {
+  info : ExperimentalV2Implementation
+  capabilities : ExperimentalV2AgentCapabilities
+  sessions : ExperimentalV2AgentSessionService
+  auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
+  auth : ExperimentalV2AgentAuthService?
+}
+
+pub(all) struct ExperimentalV2AgentState {
+  phase : ExperimentalV2AgentPhase
+  authentication : ExperimentalV2AgentAuthentication
+  client_capabilities : ExperimentalV2ClientCapabilities
+  client_info : ExperimentalV2Implementation?
+  config : ExperimentalV2AgentEndpointConfig
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AgentStep {
+  state : ExperimentalV2AgentState
+  commands : Array[ExperimentalV2AgentCommand]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Annotations {
+  audience : Array[ExperimentalV2Role]?
+  last_modified : String?
+  priority : Double?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AudioContent {
+  data : String
+  mime_type : String
+  annotations : ExperimentalV2Annotations?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AuthMethodAgent {
+  method_id : String
+  name : String
+  description : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AvailableCommand {
+  name : String
+  description : String
+  input : ExperimentalV2Open[ExperimentalV2CommandInputKnown]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2AvailableCommandsUpdate {
+  available_commands : Array[ExperimentalV2AvailableCommand]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2BatchInvalidItem {
+  cause : @jsonrpc.JsonRpcCodecError
+  response : @jsonrpc.JsonRpcResponse
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2BatchItem {
+  Request(@jsonrpc.JsonRpcRequest)
+  Notification(@jsonrpc.JsonRpcNotification)
+  InvalidItem(ExperimentalV2BatchInvalidItem)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2BlobResourceContents {
+  blob : String
+  uri : String
+  mime_type : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2BooleanProperty {
+  title : String?
+  description : String?
+  default : Bool?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2CancelSessionParams {
+  session_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientAdapterCommand {
+  CancelRequest(request_id~ : ExperimentalV2RequestId)
+  TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientAdapterOutput {
+  Response(@jsonrpc.JsonRpcResponse)
+  Command(ExperimentalV2ClientAdapterCommand)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ClientAdapterState {
+  protocol : ExperimentalV2ClientState
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterState::protocol(Self) -> ExperimentalV2ClientState
+
+pub(all) struct ExperimentalV2ClientAdapterStep {
+  state : ExperimentalV2ClientAdapterState
+  outputs : Array[ExperimentalV2ClientAdapterOutput]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientAdmission {
+  Immediate(ExperimentalV2ClientAdapterStep)
+  Invoke(state~ : ExperimentalV2ClientAdapterState, invocation~ : ExperimentalV2ClientInvocation)
+}
+
+pub(all) struct ExperimentalV2ClientCapabilities {
+  elicitation : ExperimentalV2Marker[ExperimentalV2ElicitationCapabilities]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientCommand {
+  DispatchRequest(ExperimentalV2ClientRequest)
+  DispatchNotification(ExperimentalV2ClientNotification)
+  CancelRequest(request_id~ : ExperimentalV2RequestId)
+  CloseConnection
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientCompletion {
+  RequestPermissionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2RequestPermissionResponse, ExperimentalV2ClientHandlerError])
+  ElicitationCreateCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown], ExperimentalV2ClientHandlerError])
+  SessionUpdateCompleted(result~ : Result[Unit, ExperimentalV2ClientHandlerError])
+  ElicitationCompleteCompleted(result~ : Result[Unit, ExperimentalV2ClientHandlerError])
+} derive(Eq, @debug.Debug)
+
+pub struct ExperimentalV2ClientConnection {
+  request_broker : async (ExperimentalV2ClientForwardRequest) -> Result[ExperimentalV2ClientForwardReply, ExperimentalV2ClientConnectionError]
+  notification_broker : (ExperimentalV2ClientForwardNotification) -> Result[Unit, ExperimentalV2ClientConnectionError]
+}
+pub async fn ExperimentalV2ClientConnection::auth_login(Self, ExperimentalV2LoginParams) -> ExperimentalV2LoginResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::auth_logout(Self, ExperimentalV2LogoutParams) -> ExperimentalV2LogoutResult raise ExperimentalV2ClientConnectionError
+pub fn ExperimentalV2ClientConnection::cancel_request(Self, ExperimentalV2RequestId) -> Unit raise ExperimentalV2ClientConnectionError
+pub fn ExperimentalV2ClientConnection::cancel_session(Self, ExperimentalV2CancelSessionParams) -> Unit raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::close_session(Self, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::delete_session(Self, ExperimentalV2DeleteSessionParams) -> ExperimentalV2DeleteSessionResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::fork_session(Self, ExperimentalV2ForkSessionParams) -> ExperimentalV2ForkSessionResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::initialize(Self, ExperimentalV2InitializeParams) -> ExperimentalV2InitializeResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::list_sessions(Self, ExperimentalV2ListSessionsParams) -> ExperimentalV2ListSessionsResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::new_session(Self, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::prompt(Self, ExperimentalV2PromptParams) -> ExperimentalV2PromptResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::resume_session(Self, ExperimentalV2ResumeSessionParams) -> ExperimentalV2ResumeSessionResult raise ExperimentalV2ClientConnectionError
+pub async fn ExperimentalV2ClientConnection::set_config_option(Self, ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> ExperimentalV2SetConfigOptionResult raise ExperimentalV2ClientConnectionError
+
+pub struct ExperimentalV2ClientElicitationService {
+  form_handler : (async (String, ExperimentalV2ElicitationFormMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown])?
+  url_handler : (async (String, ExperimentalV2ElicitationUrlMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown])?
+  complete_handler : (async (ExperimentalV2CompleteElicitationNotification) -> Unit)?
+}
+
+pub struct ExperimentalV2ClientEndpoint {
+  info : ExperimentalV2Implementation
+  session : ExperimentalV2ClientSessionService
+  elicitation : ExperimentalV2ClientElicitationService?
+  capabilities : ExperimentalV2ClientCapabilities
+}
+pub fn ExperimentalV2ClientEndpoint::capabilities(Self) -> ExperimentalV2ClientCapabilities
+pub async fn ExperimentalV2ClientEndpoint::elicitation_complete(Self, ExperimentalV2CompleteElicitationNotification) -> Unit raise ExperimentalV2ClientHandlerError
+pub async fn ExperimentalV2ClientEndpoint::elicitation_create(Self, ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown]) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown] raise ExperimentalV2ClientHandlerError
+pub fn ExperimentalV2ClientEndpoint::info(Self) -> ExperimentalV2Implementation
+pub async fn ExperimentalV2ClientEndpoint::request_permission(Self, ExperimentalV2RequestPermissionRequest) -> ExperimentalV2RequestPermissionResponse raise ExperimentalV2ClientHandlerError
+pub async fn ExperimentalV2ClientEndpoint::session_update(Self, ExperimentalV2UpdateSessionNotification) -> Unit raise ExperimentalV2ClientHandlerError
+
+pub(all) enum ExperimentalV2ClientEvent {
+  InitializeResult(ExperimentalV2InitializeResult)
+  AgentRequest(ExperimentalV2ClientRequest)
+  AgentNotification(ExperimentalV2ClientNotification)
+  UnknownAgentMethod(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientForwardNotification {
+  SessionCancel(ExperimentalV2CancelSessionParams)
+  CancelRequest(ExperimentalV2RequestId)
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardNotification::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2ClientForwardReply {
+  ReplyInitialize(ExperimentalV2InitializeResult)
+  ReplyAuthLogin(ExperimentalV2LoginResult)
+  ReplyAuthLogout(ExperimentalV2LogoutResult)
+  ReplyNewSession(ExperimentalV2NewSessionResult)
+  ReplyListSessions(ExperimentalV2ListSessionsResult)
+  ReplyResumeSession(ExperimentalV2ResumeSessionResult)
+  ReplyDeleteSession(ExperimentalV2DeleteSessionResult)
+  ReplyForkSession(ExperimentalV2ForkSessionResult)
+  ReplyCloseSession(ExperimentalV2CloseSessionResult)
+  ReplyPrompt(ExperimentalV2PromptResult)
+  ReplySetConfigOption(ExperimentalV2SetConfigOptionResult)
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardReply::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2ClientForwardRequest {
+  Initialize(ExperimentalV2InitializeParams)
+  AuthLogin(ExperimentalV2LoginParams)
+  AuthLogout(ExperimentalV2LogoutParams)
+  SessionNew(ExperimentalV2NewSessionParams)
+  SessionList(ExperimentalV2ListSessionsParams)
+  SessionResume(ExperimentalV2ResumeSessionParams)
+  SessionDelete(ExperimentalV2DeleteSessionParams)
+  SessionFork(ExperimentalV2ForkSessionParams)
+  SessionClose(ExperimentalV2CloseSessionParams)
+  SessionPrompt(ExperimentalV2PromptParams)
+  SessionSetConfigOption(ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown])
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardRequest::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2ClientInvocation {
+  RequestPermissionInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2RequestPermissionRequest)
+  ElicitationCreateInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown])
+  SessionUpdateInvocation(params~ : ExperimentalV2UpdateSessionNotification)
+  ElicitationCompleteInvocation(params~ : ExperimentalV2CompleteElicitationNotification)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientNotification {
+  SessionUpdate(ExperimentalV2UpdateSessionNotification)
+  ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
+  CancelRequest(ExperimentalV2RequestId)
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientNotification::method_name(Self) -> String
+
+pub(all) enum ExperimentalV2ClientPhase {
+  ClientAwaitingInitialize
+  ClientReady
+  ClientFailed(ExperimentalV2ClientProtocolError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ClientRequest {
+  SessionRequestPermission(ExperimentalV2RequestPermissionRequest)
+  ElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown])
+} derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientRequest::method_name(Self) -> String
+
+pub struct ExperimentalV2ClientSessionService {
+  session_update_handler : async (ExperimentalV2UpdateSessionNotification) -> Unit
+  request_permission_handler : async (ExperimentalV2RequestPermissionRequest) -> ExperimentalV2RequestPermissionResponse
+}
+
+pub struct ExperimentalV2ClientSpec {
+  info : ExperimentalV2Implementation
+  session : ExperimentalV2ClientSessionService
+  elicitation : ExperimentalV2ClientElicitationService?
+}
+
+pub(all) struct ExperimentalV2ClientState {
+  phase : ExperimentalV2ClientPhase
+  capabilities : ExperimentalV2ClientCapabilities
+  agent : ExperimentalV2InitializeResult?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ClientStep {
+  state : ExperimentalV2ClientState
+  commands : Array[ExperimentalV2ClientCommand]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2CloseSessionParams {
+  session_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2CloseSessionResult {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2CommandInputKnown {
+  CommandInputText(ExperimentalV2TextCommandInput)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2CommandPermissionSubject {
+  command : String
+  cwd : String
+  tool_call_id : String?
+  terminal_id : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2CompleteElicitationNotification {
+  elicitation_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ConfigBoolean {
+  current_value : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ConfigCategory {
+  CategoryMode
+  CategoryModel
+  CategoryModelConfig
+  CategoryThoughtLevel
+  CategoryExtension(tag~ : String)
+  CategoryFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ConfigOptionUpdate {
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ConfigPayload {
+  PayloadSelect(ExperimentalV2ConfigSelect)
+  PayloadBoolean(ExperimentalV2ConfigBoolean)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ConfigSelect {
+  current_value : String
+  options : ExperimentalV2ConfigSelectOptions
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ConfigSelectGroup {
+  group_id : String
+  name : String
+  options : Array[ExperimentalV2ConfigSelectOption]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ConfigSelectOption {
+  value : String
+  name : String
+  description : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ConfigSelectOptions {
+  OptionsUngrouped(Array[ExperimentalV2ConfigSelectOption])
+  OptionsGrouped(Array[ExperimentalV2ConfigSelectGroup])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ConfigValue {
+  ConfigValueId(String)
+  ConfigValueBoolean(Bool)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Content {
+  content : ExperimentalV2Open[ExperimentalV2ContentBlockKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ContentBlockKnown {
+  BlockText(ExperimentalV2TextContent)
+  BlockImage(ExperimentalV2ImageContent)
+  BlockAudio(ExperimentalV2AudioContent)
+  BlockResourceLink(ExperimentalV2ResourceLink)
+  BlockResource(ExperimentalV2EmbeddedResource)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ContentChunk {
+  message_id : String
+  content : ExperimentalV2Open[ExperimentalV2ContentBlockKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Cost {
+  amount : Double
+  currency : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2DeleteSessionParams {
+  session_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2DeleteSessionResult {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Diff {
+  changes : Array[ExperimentalV2Open[ExperimentalV2DiffChangeKnown]]
+  patch : ExperimentalV2DiffPatch?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2DiffChangeKnown {
+  ChangeAdd(ExperimentalV2DiffPathChange)
+  ChangeDelete(ExperimentalV2DiffPathChange)
+  ChangeModify(ExperimentalV2DiffPathChange)
+  ChangeMove(ExperimentalV2DiffPathPairChange)
+  ChangeCopy(ExperimentalV2DiffPathPairChange)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2DiffFileType {
+  DiffFileTypeText
+  DiffFileTypeBinary
+  DiffFileTypeDirectory
+  DiffFileTypeSymlink
+  DiffFileTypeExtension(tag~ : String)
+  DiffFileTypeFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2DiffPatch {
+  format : ExperimentalV2DiffPatchFormat
+  text : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2DiffPatchFormat {
+  DiffPatchFormatGitPatch
+  DiffPatchFormatExtension(tag~ : String)
+  DiffPatchFormatFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2DiffPathChange {
+  path : String
+  file_type : ExperimentalV2DiffFileType?
+  mime_type : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2DiffPathPairChange {
+  old_path : String
+  path : String
+  file_type : ExperimentalV2DiffFileType?
+  mime_type : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationAcceptAction {
+  content : Map[String, ExperimentalV2ElicitationContentValue]?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ElicitationAction {
+  ActionAccept(ExperimentalV2ElicitationAcceptAction)
+  ActionDecline
+  ActionCancel
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationCapabilities {
+  form : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  url : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ElicitationContentValue {
+  ContentString(String)
+  ContentInteger(Int64)
+  ContentNumber(Double)
+  ContentBoolean(Bool)
+  ContentStringArray(Array[String])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationCreateRequestKnown {
+  message : String
+  mode : ExperimentalV2ElicitationKnownMode
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationCreateResponseKnown {
+  action : ExperimentalV2ElicitationAction
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationFormMode {
+  requested_schema : ExperimentalV2ElicitationSchema
+  scope : ExperimentalV2ElicitationScope
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ElicitationKnownMode {
+  ElicitationForm(ExperimentalV2ElicitationFormMode)
+  ElicitationUrl(ExperimentalV2ElicitationUrlMode)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ElicitationPropertyKnown {
+  PropertyString(ExperimentalV2StringProperty)
+  PropertyNumber(ExperimentalV2NumberProperty)
+  PropertyInteger(ExperimentalV2IntegerProperty)
+  PropertyBoolean(ExperimentalV2BooleanProperty)
+  PropertyMultiSelect(ExperimentalV2MultiSelectProperty)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationRequestScope {
+  request_id : ExperimentalV2RequestId
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationSchema {
+  title : String?
+  properties : Map[String, ExperimentalV2Open[ExperimentalV2ElicitationPropertyKnown]]
+  required : Array[String]?
+  description : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ElicitationScope {
+  ScopeSession(ExperimentalV2ElicitationSessionScope)
+  ScopeRequest(ExperimentalV2ElicitationRequestScope)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationSessionScope {
+  session_id : String
+  tool_call_id : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ElicitationUrlMode {
+  elicitation_id : String
+  url : String
+  scope : ExperimentalV2ElicitationScope
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2EmbeddedResource {
+  resource : ExperimentalV2EmbeddedResourceResource
+  annotations : ExperimentalV2Annotations?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2EmbeddedResourceResource {
+  ResourceText(ExperimentalV2TextResourceContents)
+  ResourceBlob(ExperimentalV2BlobResourceContents)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2EnumOption {
+  value : String
+  title : String
+  description : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2EnvVariable {
+  name : String
+  value : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2FoldedMessage {
+  message_id : String
+  blocks : Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2FoldedPlan {
+  plan_id : String
+  content : ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2FoldedTerminal {
+  terminal_id : String
+  command : ExperimentalV2Patch[String]
+  cwd : ExperimentalV2Patch[String]
+  output : ExperimentalV2Patch[ExperimentalV2TerminalOutput]
+  exit_status : ExperimentalV2Patch[ExperimentalV2TerminalExitStatus]
+  meta : ExperimentalV2Patch[Json]
+  output_chunks : Array[String]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2FoldedToolCall {
+  tool_call_id : String
+  title : ExperimentalV2Patch[String]
+  kind : ExperimentalV2Patch[ExperimentalV2ToolKind]
+  status : ExperimentalV2Patch[ExperimentalV2ToolCallStatus]
+  content : ExperimentalV2Patch[Array[ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]]]
+  locations : ExperimentalV2Patch[Array[ExperimentalV2ToolCallLocation]]
+  raw_input : ExperimentalV2Patch[Json]
+  raw_output : ExperimentalV2Patch[Json]
+  meta : ExperimentalV2Patch[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ForkSessionParams {
+  session_id : String
+  cwd : String
+  additional_directories : Array[String]?
+  mcp_servers : Array[ExperimentalV2Open[ExperimentalV2McpServerTransport]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ForkSessionResult {
+  session_id : String
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2HttpHeader {
+  name : String
+  value : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Icon {
+  src : String
+  mime_type : String?
+  sizes : Array[String]?
+  theme : ExperimentalV2IconTheme?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2IconTheme {
+  IconThemeLight
+  IconThemeDark
+  IconThemeExtension(tag~ : String)
+  IconThemeFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2IdleState {
+  stop_reason : ExperimentalV2StopReason?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ImageContent {
+  data : String
+  mime_type : String
+  uri : String?
+  annotations : ExperimentalV2Annotations?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Implementation {
+  name : String
+  title : String?
+  version : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2InitializeParams {
+  protocol_version : Int
+  info : ExperimentalV2Implementation
+  capabilities : ExperimentalV2ClientCapabilities
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2InitializeResult {
+  protocol_version : Int
+  info : ExperimentalV2Implementation
+  capabilities : ExperimentalV2AgentCapabilities
+  auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2IntegerProperty {
+  title : String?
+  description : String?
+  minimum : Int64?
+  maximum : Int64?
+  default : Int64?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ListSessionsParams {
+  cwd : String?
+  cursor : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ListSessionsResult {
+  sessions : Array[ExperimentalV2SessionInfo]
+  next_cursor : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2LoginParams {
+  method_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2LoginResult {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2LogoutParams {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2LogoutResult {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2Marker[T] {
+  MarkerUnsupported
+  MarkerSupported(T)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2MarkerPayload {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2McpCapabilities {
+  stdio : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  http : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2McpServerHttp {
+  name : String
+  url : String
+  headers : Array[ExperimentalV2HttpHeader]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2McpServerStdio {
+  name : String
+  command : String
+  args : Array[String]?
+  env : Array[ExperimentalV2EnvVariable]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2McpServerTransport {
+  TransportStdio(ExperimentalV2McpServerStdio)
+  TransportHttp(ExperimentalV2McpServerHttp)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2MessageUpsert {
+  message_id : String
+  content : ExperimentalV2Patch[Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]]
+  meta : ExperimentalV2Patch[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Method {
+  method_name : String
+  direction : ExperimentalV2MethodDirection
+  kind : ExperimentalV2MethodKind
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2MethodDirection {
+  ClientToAgent
+  AgentToClient
+  Bidirectional
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2MethodKind {
+  Request
+  Notification
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2MultiSelectItems {
+  MultiSelectItemsString(ExperimentalV2StringMultiSelectItems)
+  MultiSelectItemsTitled(ExperimentalV2TitledMultiSelectItems)
+  MultiSelectItemsExtension(tag~ : String, raw~ : Json)
+  MultiSelectItemsFuture(tag~ : String, raw~ : Json)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2MultiSelectProperty {
+  title : String?
+  description : String?
+  min_items : UInt64?
+  max_items : UInt64?
+  items : ExperimentalV2MultiSelectItems
+  default : Array[String]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2NewSessionParams {
+  cwd : String
+  additional_directories : Array[String]?
+  mcp_servers : Array[ExperimentalV2Open[ExperimentalV2McpServerTransport]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2NewSessionResult {
+  session_id : String
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2NumberProperty {
+  title : String?
+  description : String?
+  minimum : Double?
+  maximum : Double?
+  default : Double?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2Open[T] {
+  Known(T)
+  Extension(tag~ : String, raw~ : Json)
+  Future(tag~ : String, raw~ : Json)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2Patch[T] {
+  PatchOmitted
+  PatchNull
+  PatchValue(T)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PermissionOption {
+  option_id : String
+  name : String
+  kind : ExperimentalV2PermissionOptionKind
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PermissionOptionKind {
+  OptionKindAllowOnce
+  OptionKindAllowAlways
+  OptionKindRejectOnce
+  OptionKindRejectAlways
+  OptionKindExtension(tag~ : String)
+  OptionKindFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PermissionOutcomeKnown {
+  OutcomeCancelled
+  OutcomeSelected(ExperimentalV2SelectedPermissionOutcome)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PermissionSubjectKnown {
+  SubjectToolCall(ExperimentalV2ToolCallPermissionSubject)
+  SubjectCommand(ExperimentalV2CommandPermissionSubject)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PlanEntry {
+  content : String
+  priority : ExperimentalV2PlanEntryPriority
+  status : ExperimentalV2PlanEntryStatus
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PlanEntryPriority {
+  PlanPriorityHigh
+  PlanPriorityMedium
+  PlanPriorityLow
+  PlanPriorityExtension(tag~ : String)
+  PlanPriorityFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PlanEntryStatus {
+  PlanStatusPending
+  PlanStatusInProgress
+  PlanStatusCompleted
+  PlanStatusCancelled
+  PlanStatusExtension(tag~ : String)
+  PlanStatusFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PlanItems {
+  plan_id : String
+  entries : Array[ExperimentalV2PlanEntry]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PlanUpdate {
+  plan : ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2PlanUpdateContentKnown {
+  PlanItemsContent(ExperimentalV2PlanItems)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PromptCapabilities {
+  image : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  audio : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  embedded_context : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PromptParams {
+  session_id : String
+  prompt : Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2PromptResult {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ReplayFromStart {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2RequestId {
+  RequestIdNull
+  RequestIdNumber(Int64)
+  RequestIdStr(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2RequestPermissionRequest {
+  session_id : String
+  title : String
+  description : String?
+  subject : ExperimentalV2Open[ExperimentalV2PermissionSubjectKnown]?
+  options : Array[ExperimentalV2PermissionOption]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2RequestPermissionResponse {
+  outcome : ExperimentalV2Open[ExperimentalV2PermissionOutcomeKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2RequiresActionState {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ResourceLink {
+  name : String
+  uri : String
+  title : String?
+  description : String?
+  icons : Array[ExperimentalV2Icon]?
+  mime_type : String?
+  size : Int64?
+  annotations : ExperimentalV2Annotations?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ResumeSessionParams {
+  session_id : String
+  cwd : String
+  additional_directories : Array[String]?
+  mcp_servers : Array[ExperimentalV2Open[ExperimentalV2McpServerTransport]]?
+  replay_from : ExperimentalV2Open[ExperimentalV2ReplayFromStart]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ResumeSessionResult {
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2Role {
+  RoleUser
+  RoleAssistant
+  RoleExtension(tag~ : String)
+  RoleFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2RunningState {
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SelectedPermissionOutcome {
+  option_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SessionCapabilities {
+  prompt : ExperimentalV2Marker[ExperimentalV2PromptCapabilities]
+  mcp : ExperimentalV2Marker[ExperimentalV2McpCapabilities]
+  delete : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  additional_directories : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  fork : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SessionConfigOptionKnown {
+  config_id : String
+  name : String
+  description : String?
+  category : ExperimentalV2ConfigCategory?
+  payload : ExperimentalV2ConfigPayload
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SessionFold {
+  phase : ExperimentalV2TurnPhase
+  stop_reason : ExperimentalV2StopReason?
+  user_messages : Array[ExperimentalV2FoldedMessage]
+  agent_messages : Array[ExperimentalV2FoldedMessage]
+  agent_thoughts : Array[ExperimentalV2FoldedMessage]
+  tool_calls : Array[ExperimentalV2FoldedToolCall]
+  terminals : Array[ExperimentalV2FoldedTerminal]
+  plans : Array[ExperimentalV2FoldedPlan]
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
+  available_commands : Array[ExperimentalV2AvailableCommand]?
+  session_title : String?
+  session_updated_at : String?
+  session_meta : Json?
+  usage : ExperimentalV2UsageUpdate?
+  preserved : Array[ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SessionInfo {
+  session_id : String
+  cwd : String
+  additional_directories : Array[String]?
+  title : String?
+  updated_at : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SessionInfoUpdate {
+  title : ExperimentalV2Patch[String]
+  updated_at : ExperimentalV2Patch[String]
+  meta : ExperimentalV2Patch[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2SessionUpdateKnown {
+  UpdateUserMessageChunk(ExperimentalV2ContentChunk)
+  UpdateUserMessage(ExperimentalV2MessageUpsert)
+  UpdateAgentMessageChunk(ExperimentalV2ContentChunk)
+  UpdateAgentMessage(ExperimentalV2MessageUpsert)
+  UpdateAgentThoughtChunk(ExperimentalV2ContentChunk)
+  UpdateAgentThought(ExperimentalV2MessageUpsert)
+  UpdateState(ExperimentalV2Open[ExperimentalV2StateUpdateKnown])
+  UpdateToolCallContentChunk(ExperimentalV2ToolCallContentChunk)
+  UpdateToolCall(ExperimentalV2ToolCallUpdate)
+  UpdateTerminal(ExperimentalV2TerminalUpdate)
+  UpdateTerminalOutputChunk(ExperimentalV2TerminalOutputChunk)
+  UpdatePlan(ExperimentalV2PlanUpdate)
+  UpdateAvailableCommands(ExperimentalV2AvailableCommandsUpdate)
+  UpdateConfigOptions(ExperimentalV2ConfigOptionUpdate)
+  UpdateSessionInfo(ExperimentalV2SessionInfoUpdate)
+  UpdateUsage(ExperimentalV2UsageUpdate)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SetConfigOptionKnown {
+  session_id : String
+  config_id : String
+  value : ExperimentalV2ConfigValue
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2SetConfigOptionResult {
+  config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2StateUpdateKnown {
+  StateRunning(ExperimentalV2RunningState)
+  StateIdle(ExperimentalV2IdleState)
+  StateRequiresAction(ExperimentalV2RequiresActionState)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2StopReason {
+  StopReasonEndTurn
+  StopReasonMaxTokens
+  StopReasonMaxTurnRequests
+  StopReasonRefusal
+  StopReasonCancelled
+  StopReasonExtension(tag~ : String)
+  StopReasonFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2StringFormat {
+  FormatEmail
+  FormatUri
+  FormatDate
+  FormatDateTime
+  FormatOther(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2StringMultiSelectItems {
+  enum_values : Array[String]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2StringProperty {
+  title : String?
+  description : String?
+  min_length : UInt?
+  max_length : UInt?
+  pattern : String?
+  format : ExperimentalV2StringFormat?
+  default : String?
+  enum_values : Array[String]?
+  one_of : Array[ExperimentalV2EnumOption]?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2Terminal {
+  terminal_id : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TerminalExitStatus {
+  exit_code : UInt?
+  signal : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TerminalOutput {
+  data : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TerminalOutputChunk {
+  terminal_id : String
+  data : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TerminalUpdate {
+  terminal_id : String
+  command : ExperimentalV2Patch[String]
+  cwd : ExperimentalV2Patch[String]
+  output : ExperimentalV2Patch[ExperimentalV2TerminalOutput]
+  exit_status : ExperimentalV2Patch[ExperimentalV2TerminalExitStatus]
+  meta : ExperimentalV2Patch[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TextCommandInput {
+  hint : String
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TextContent {
+  text : String
+  annotations : ExperimentalV2Annotations?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TextResourceContents {
+  text : String
+  uri : String
+  mime_type : String?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2TitledMultiSelectItems {
+  any_of : Array[ExperimentalV2EnumOption]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ToolCallContentChunk {
+  tool_call_id : String
+  content : ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ToolCallContentKnown {
+  ToolCallContentBlock(ExperimentalV2Content)
+  ToolCallContentDiff(ExperimentalV2Diff)
+  ToolCallContentTerminal(ExperimentalV2Terminal)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ToolCallLocation {
+  path : String
+  line : UInt?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ToolCallPermissionSubject {
+  tool_call : ExperimentalV2ToolCallUpdate
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ToolCallStatus {
+  ToolCallStatusPending
+  ToolCallStatusInProgress
+  ToolCallStatusCompleted
+  ToolCallStatusFailed
+  ToolCallStatusCancelled
+  ToolCallStatusExtension(tag~ : String)
+  ToolCallStatusFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2ToolCallUpdate {
+  tool_call_id : String
+  title : ExperimentalV2Patch[String]
+  kind : ExperimentalV2Patch[ExperimentalV2ToolKind]
+  status : ExperimentalV2Patch[ExperimentalV2ToolCallStatus]
+  content : ExperimentalV2Patch[Array[ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]]]
+  locations : ExperimentalV2Patch[Array[ExperimentalV2ToolCallLocation]]
+  raw_input : ExperimentalV2Patch[Json]
+  raw_output : ExperimentalV2Patch[Json]
+  meta : ExperimentalV2Patch[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2ToolKind {
+  ToolKindRead
+  ToolKindEdit
+  ToolKindDelete
+  ToolKindMove
+  ToolKindSearch
+  ToolKindExecute
+  ToolKindThink
+  ToolKindFetch
+  ToolKindSwitchMode
+  ToolKindOther
+  ToolKindExtension(tag~ : String)
+  ToolKindFuture(raw~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2TurnPhase {
+  TurnIdle
+  TurnRunning
+  TurnRequiresAction
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2UpdateSessionNotification {
+  session_id : String
+  update : ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExperimentalV2UsageUpdate {
+  used : UInt64
+  size : UInt64
+  cost : ExperimentalV2Cost?
+  meta : Json?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ExperimentalV2WireFrameSplit {
+  SplitLoneObject(value~ : Json)
+  SplitSingleErrorReply(frame~ : String)
+  SplitBatchFrames(frames~ : Array[String], intact~ : Bool)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+pub type ExperimentalV2AgentCloseSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult
+
+pub type ExperimentalV2AgentDeleteSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2DeleteSessionParams) -> ExperimentalV2DeleteSessionResult
+
+pub type ExperimentalV2AgentForkSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2ForkSessionParams) -> ExperimentalV2ForkSessionResult
+
+pub type ExperimentalV2AgentListSessionsHandler = async (ExperimentalV2AgentContext, ExperimentalV2ListSessionsParams) -> ExperimentalV2ListSessionsResult
+
+pub type ExperimentalV2AgentLoginHandler = async (ExperimentalV2AgentContext, ExperimentalV2LoginParams) -> ExperimentalV2LoginResult
+
+pub type ExperimentalV2AgentLogoutHandler = async (ExperimentalV2AgentContext, ExperimentalV2LogoutParams) -> ExperimentalV2LogoutResult
+
+pub type ExperimentalV2AgentNewSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult
+
+pub type ExperimentalV2AgentNotificationBroker = async (ExperimentalV2AgentOutboundNotification) -> Result[Unit, ExperimentalV2AgentContextError]
+
+pub type ExperimentalV2AgentPromptHandler = async (ExperimentalV2AgentContext, ExperimentalV2PromptParams) -> ExperimentalV2PromptResult
+
+pub type ExperimentalV2AgentRequestBroker = async (ExperimentalV2AgentOutboundRequest) -> Result[ExperimentalV2AgentOutboundReply, ExperimentalV2AgentContextError]
+
+pub type ExperimentalV2AgentResumeSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2ResumeSessionParams) -> ExperimentalV2ResumeSessionResult
+
+pub type ExperimentalV2AgentSetConfigOptionHandler = async (ExperimentalV2AgentContext, ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]) -> ExperimentalV2SetConfigOptionResult
+
+pub type ExperimentalV2AuthMethod = ExperimentalV2Open[ExperimentalV2AuthMethodAgent]
+
+pub type ExperimentalV2Batch = Array[ExperimentalV2BatchItem]
+
+pub type ExperimentalV2ClientElicitationCompleteHandler = async (ExperimentalV2CompleteElicitationNotification) -> Unit
+
+pub type ExperimentalV2ClientElicitationFormHandler = async (String, ExperimentalV2ElicitationFormMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown]
+
+pub type ExperimentalV2ClientElicitationUrlHandler = async (String, ExperimentalV2ElicitationUrlMode) -> ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown]
+
+pub type ExperimentalV2ClientForwardNotificationBroker = (ExperimentalV2ClientForwardNotification) -> Result[Unit, ExperimentalV2ClientConnectionError]
+
+pub type ExperimentalV2ClientForwardRequestBroker = async (ExperimentalV2ClientForwardRequest) -> Result[ExperimentalV2ClientForwardReply, ExperimentalV2ClientConnectionError]
+
+pub type ExperimentalV2ClientRequestPermissionHandler = async (ExperimentalV2RequestPermissionRequest) -> ExperimentalV2RequestPermissionResponse
+
+pub type ExperimentalV2ClientSessionUpdateHandler = async (ExperimentalV2UpdateSessionNotification) -> Unit
+
+pub type ExperimentalV2CommandInput = ExperimentalV2Open[ExperimentalV2CommandInputKnown]
+
+pub type ExperimentalV2ContentBlock = ExperimentalV2Open[ExperimentalV2ContentBlockKnown]
+
+pub type ExperimentalV2DiffChange = ExperimentalV2Open[ExperimentalV2DiffChangeKnown]
+
+pub type ExperimentalV2ElicitationCreateRequest = ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown]
+
+pub type ExperimentalV2ElicitationCreateResponse = ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown]
+
+pub type ExperimentalV2ElicitationProperty = ExperimentalV2Open[ExperimentalV2ElicitationPropertyKnown]
+
+pub type ExperimentalV2McpServer = ExperimentalV2Open[ExperimentalV2McpServerTransport]
+
+pub type ExperimentalV2PermissionOutcome = ExperimentalV2Open[ExperimentalV2PermissionOutcomeKnown]
+
+pub type ExperimentalV2PermissionSubject = ExperimentalV2Open[ExperimentalV2PermissionSubjectKnown]
+
+pub type ExperimentalV2PlanUpdateContent = ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]
+
+pub type ExperimentalV2ReplayFrom = ExperimentalV2Open[ExperimentalV2ReplayFromStart]
+
+pub type ExperimentalV2SessionConfigOption = ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]
+
+pub type ExperimentalV2SessionUpdate = ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]
+
+pub type ExperimentalV2SetConfigOptionParams = ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown]
+
+pub type ExperimentalV2StateUpdate = ExperimentalV2Open[ExperimentalV2StateUpdateKnown]
+
+pub type ExperimentalV2ToolCallContent = ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]
+
+// Traits

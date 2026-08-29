@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/client/protocol"
+
+import {
+  "colmugx/acp/client/message",
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn client_protocol_reduce(ClientProtocolState, ClientProtocolEvent) -> ClientProtocolStep raise ClientProtocolError
+
+pub fn client_protocol_state_new(capabilities~ : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]) -> ClientProtocolState
+
+pub fn client_protocol_state_ready(capabilities~ : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]) -> ClientProtocolState
+
+// Errors
+pub(all) suberror ClientProtocolError {
+  NotReady(method_name~ : String)
+  AlreadyReady
+  CapabilityDenied(method_name~ : String, capability~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum ClientProtocolCommand {
+  DispatchRequest(@message.ClientRequest)
+  DispatchNotification(@message.ClientNotification)
+  CancelRequest(request_id~ : @jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ClientProtocolEvent {
+  Ready
+  Request(@message.ClientRequest)
+  Notification(@message.ClientNotification)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ClientProtocolPhase {
+  AwaitingReady
+  Ready
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientProtocolState {
+  phase : ClientProtocolPhase
+  capabilities : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ClientProtocolStep {
+  state : ClientProtocolState
+  commands : Array[ClientProtocolCommand]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

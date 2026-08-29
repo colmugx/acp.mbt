@@ -1,0 +1,50 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/agent/message"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol",
+  "colmugx/acp/protocol/session",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn decode_agent_notification(String, Json?) -> AgentNotification raise AgentMessageError
+
+pub fn decode_agent_request(String, Json?) -> AgentRequest raise AgentMessageError
+
+// Errors
+pub(all) suberror AgentMessageError {
+  InvalidParams(method_name~ : String, cause~ : @protocol.ProtocolDecodeError)
+  UnknownMethod(method_name~ : String)
+  WrongDirection(method_name~ : String)
+  WrongKind(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum AgentNotification {
+  SessionCancel(@session.CancelParams)
+  CancelRequest(@jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+pub fn AgentNotification::method_name(Self) -> String
+
+pub(all) enum AgentRequest {
+  Initialize(@protocol.InitializeParams)
+  Authenticate(@protocol.AuthenticateParams)
+  Logout(@protocol.LogoutParams)
+  SessionNew(@session.NewSessionParams)
+  SessionLoad(@session.LoadSessionParams)
+  SessionResume(@session.ResumeSessionParams)
+  SessionFork(@session.ForkSessionParams)
+  SessionList(@session.ListSessionsParams)
+  SessionDelete(@session.DeleteSessionParams)
+  SessionClose(@session.CloseSessionParams)
+  SessionSetMode(@session.SetSessionModeParams)
+  SessionSetConfigOption(@session.SetSessionConfigOptionParams)
+  SessionPrompt(@session.PromptParams)
+} derive(Eq, @debug.Debug)
+pub fn AgentRequest::method_name(Self) -> String
+
+// Type aliases
+
+// Traits

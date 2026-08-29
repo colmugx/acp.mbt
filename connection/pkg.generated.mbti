@@ -1,0 +1,185 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/connection"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+  "moonbitlang/async",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub async fn connection_runtime_run(@runtime.RuntimePorts, @runtime.RuntimeOptions) -> Unit
+
+pub async fn[S, I, C, E] connection_runtime_run_owner(@runtime.RuntimePorts, @runtime.RuntimeOptions, RuntimeOwnerPort[S, I, C, E]) -> Unit
+
+pub async fn[S, I, C, E] connection_runtime_run_owner_with_outbound(@runtime.RuntimePorts, @runtime.RuntimeOptions, (RuntimeOutboundChannel[C]) -> RuntimeOwnerPort[S, I, C, E]) -> Unit
+
+pub fn[S, I, C, E] runtime_owner_admit_notification(RuntimeOwner[S, I], @jsonrpc.JsonRpcNotification, RuntimeOwnerPort[S, I, C, E]) -> (RuntimeOwner[S, I], RuntimeOwnerNotificationAction[S, I, E]) raise RuntimeOwnerError
+
+pub fn[S, I, C, E] runtime_owner_admit_request(RuntimeOwner[S, I], @jsonrpc.JsonRpcRequest, RuntimeOwnerPort[S, I, C, E]) -> (RuntimeOwner[S, I], RuntimeOwnerRequestAction[S, I, E]) raise RuntimeOwnerError
+
+pub fn[S, I, C, E] runtime_owner_cancel_request(RuntimeOwner[S, I], @jsonrpc.RequestId, RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwnerCancelResult[S, I, C]
+
+pub fn[S, I, C, E] runtime_owner_close(RuntimeOwner[S, I], RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwnerCloseResult[S, I]
+
+pub fn[S, I, C, E] runtime_owner_complete_notification(RuntimeOwner[S, I], RuntimeOwnerEvent[C], RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwnerCompletionResult[S, I, RuntimeOwnerNotificationCompletion[S, E]]
+
+pub fn[S, I, C, E] runtime_owner_complete_request(RuntimeOwner[S, I], RuntimeOwnerEvent[C], RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwnerCompletionResult[S, I, RuntimeOwnerRequestCompletion[S, E]]
+
+pub async fn[S, I, C, E] runtime_owner_execute(RuntimeOwnerTask[I], RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwnerEvent[C]
+
+pub fn[S, I, C, E] runtime_owner_new(RuntimeOwnerPort[S, I, C, E]) -> RuntimeOwner[S, I]
+
+pub fn[E] runtime_owner_plan_effects(Array[RuntimeOwnerEffect[E]], (E) -> RuntimeOwnerLocalPlan) -> Array[RuntimeOwnerCommand]
+
+pub fn[G, S, I, C, E] runtime_owner_spawn(@async.TaskGroup[G], RuntimeOwnerTask[I], RuntimeOwnerPort[S, I, C, E]) -> @async.Task[RuntimeOwnerEvent[C]]
+
+// Errors
+type ConnectionError derive(Eq, @debug.Debug)
+
+pub(all) suberror RuntimeOwnerError {
+  Closed
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+type ConnectionCancelIgnoreReason derive(Eq, @debug.Debug)
+
+type ConnectionCommand derive(Eq, @debug.Debug)
+
+type ConnectionEvent derive(Eq, @debug.Debug)
+
+type ConnectionPhase derive(Eq, @debug.Debug)
+
+type ConnectionState derive(Eq, @debug.Debug)
+
+type ConnectionStep derive(Eq, @debug.Debug)
+
+type PendingInbound derive(Eq, @debug.Debug)
+
+type PendingOutbound derive(Eq, @debug.Debug)
+
+pub struct RuntimeOutboundChannel[C] {
+  // private fields
+}
+pub async fn[C] RuntimeOutboundChannel::submit_notification(Self[C], method_name~ : String, params~ : Json) -> Unit
+pub fn[C] RuntimeOutboundChannel::submit_notification_sync(Self[C], method_name~ : String, params~ : Json) -> Result[Unit, @runtime.RuntimeError]
+pub async fn[C] RuntimeOutboundChannel::submit_request(Self[C], method_name~ : String, params~ : Json) -> @jsonrpc.JsonRpcResponse
+
+pub struct RuntimeOwner[S, I] {
+  state : S
+  tasks : Array[RuntimeOwnerTask[I]]
+  next_task_token : Int
+  closed : Bool
+}
+pub fn[S, I] RuntimeOwner::is_closed(Self[S, I]) -> Bool
+pub fn[S, I] RuntimeOwner::state(Self[S, I]) -> S
+pub fn[S, I] RuntimeOwner::task_count(Self[S, I]) -> Int
+
+pub(all) enum RuntimeOwnerCancelResult[S, I, C] {
+  RuntimeOwnerCancelRequested(owner~ : RuntimeOwner[S, I], task~ : RuntimeOwnerTask[I], event~ : RuntimeOwnerEvent[C])
+  RuntimeOwnerCancelIgnored(reason~ : RuntimeOwnerIgnore)
+}
+
+pub(all) enum RuntimeOwnerCloseResult[S, I] {
+  RuntimeOwnerClosed(owner~ : RuntimeOwner[S, I], aborted~ : Array[RuntimeOwnerTask[I]])
+  RuntimeOwnerAlreadyClosed(owner~ : RuntimeOwner[S, I])
+}
+
+pub(all) enum RuntimeOwnerCommand {
+  RuntimeOwnerWriteNotification(notification~ : @jsonrpc.JsonRpcNotification)
+  RuntimeOwnerCancelInbound(request_id~ : @jsonrpc.RequestId)
+  RuntimeOwnerTrace(method_name~ : String)
+  RuntimeOwnerClose(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuntimeOwnerCompletionResult[S, I, O] {
+  RuntimeOwnerCompletionApplied(owner~ : RuntimeOwner[S, I], completion~ : O)
+  RuntimeOwnerCompletionIgnored(reason~ : RuntimeOwnerIgnore)
+}
+
+pub(all) enum RuntimeOwnerEffect[E] {
+  WireNotification(notification~ : @jsonrpc.JsonRpcNotification)
+  Local(effect~ : E)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuntimeOwnerEvent[C] {
+  RuntimeOwnerRequestCompleted(token~ : Int, id~ : @jsonrpc.RequestId, completion~ : C)
+  RuntimeOwnerNotificationCompleted(token~ : Int, completion~ : C)
+}
+
+pub(all) enum RuntimeOwnerIgnore {
+  Closed
+  UnknownTask(token~ : Int)
+  UnknownRequest(id~ : @jsonrpc.RequestId)
+  AlreadyCancelled(id~ : @jsonrpc.RequestId)
+  RequestIdMismatch(expected~ : @jsonrpc.RequestId, actual~ : @jsonrpc.RequestId)
+  TaskKindMismatch(token~ : Int)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuntimeOwnerLocalPlan {
+  RuntimeOwnerNoCommands
+  RuntimeOwnerCommands(Array[RuntimeOwnerCommand])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuntimeOwnerNotificationAction[S, I, E] {
+  RuntimeOwnerNotificationImmediate(completion~ : RuntimeOwnerNotificationCompletion[S, E])
+  RuntimeOwnerNotificationInvoke(task~ : RuntimeOwnerTask[I])
+}
+
+pub(all) enum RuntimeOwnerNotificationAdmission[S, I, E] {
+  RuntimeOwnerNotificationImmediate(completion~ : RuntimeOwnerNotificationCompletion[S, E])
+  RuntimeOwnerNotificationInvoke(state~ : S, invocation~ : I)
+}
+
+pub(all) struct RuntimeOwnerNotificationCompletion[S, E] {
+  state : S
+  effects : Array[RuntimeOwnerEffect[E]]
+}
+
+pub(all) struct RuntimeOwnerPort[S, I, C, E] {
+  initial_state : S
+  admit_request : (S, @jsonrpc.RequestId, @jsonrpc.JsonRpcRequest) -> RuntimeOwnerRequestAdmission[S, I, E]
+  admit_notification : (S, @jsonrpc.JsonRpcNotification) -> RuntimeOwnerNotificationAdmission[S, I, E]
+  execute : async (I) -> C
+  execute_failure : (S, I) -> C
+  execute_cancel : (S, I) -> C
+  complete_request : (S, @jsonrpc.RequestId, I, C) -> RuntimeOwnerRequestCompletion[S, E]
+  complete_notification : (S, I, C) -> RuntimeOwnerNotificationCompletion[S, E]
+  plan_local_effect : (E) -> RuntimeOwnerLocalPlan
+  cancel_request : (S, @jsonrpc.RequestId, I) -> (S, C)
+  abort : (S, RuntimeOwnerTask[I]) -> S
+}
+
+pub(all) enum RuntimeOwnerRequestAction[S, I, E] {
+  RuntimeOwnerImmediate(completion~ : RuntimeOwnerRequestCompletion[S, E])
+  RuntimeOwnerInvoke(task~ : RuntimeOwnerTask[I])
+}
+
+pub(all) enum RuntimeOwnerRequestAdmission[S, I, E] {
+  RuntimeOwnerRequestImmediate(completion~ : RuntimeOwnerRequestCompletion[S, E])
+  RuntimeOwnerRequestInvoke(state~ : S, invocation~ : I)
+}
+
+pub(all) struct RuntimeOwnerRequestCompletion[S, E] {
+  state : S
+  response : @runtime.RuntimeHandlerResult
+  effects : Array[RuntimeOwnerEffect[E]]
+}
+
+pub struct RuntimeOwnerTask[I] {
+  task_token : Int
+  request_id : @jsonrpc.RequestId?
+  invocation : I
+  notification : Bool
+  cancel_requested : Bool
+}
+pub fn[I] RuntimeOwnerTask::cancel_requested(Self[I]) -> Bool
+pub fn[I] RuntimeOwnerTask::invocation(Self[I]) -> I
+pub fn[I] RuntimeOwnerTask::is_notification(Self[I]) -> Bool
+pub fn[I] RuntimeOwnerTask::request_id(Self[I]) -> @jsonrpc.RequestId?
+pub fn[I] RuntimeOwnerTask::task_token(Self[I]) -> Int
+
+// Type aliases
+
+// Traits

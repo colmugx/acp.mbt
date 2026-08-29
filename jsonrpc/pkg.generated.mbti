@@ -1,0 +1,120 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/jsonrpc"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const JSON_RPC_VERSION : String = "2.0"
+
+pub fn jsonrpc_decode(String) -> JsonRpcMessage raise JsonRpcCodecError
+
+pub fn jsonrpc_decode_int64(Double, String?, path~ : String) -> Int64 raise JsonRpcCodecError
+
+pub fn jsonrpc_decode_json(Json) -> JsonRpcMessage raise JsonRpcCodecError
+
+pub fn jsonrpc_encode(JsonRpcMessage) -> String raise JsonRpcCodecError
+
+pub fn jsonrpc_to_json(JsonRpcMessage) -> Json raise JsonRpcCodecError
+
+// Errors
+pub(all) suberror JsonRpcCodecError {
+  ParseError(message~ : String)
+  InvalidRequest(reason~ : String)
+  InvalidId(reason~ : String)
+  InvalidParams(reason~ : String)
+  InvalidError(reason~ : String)
+  UnknownField(path~ : String)
+  MissingField(path~ : String)
+  ConflictingFields(path~ : String)
+  InvalidField(path~ : String, reason~ : String)
+  InvalidInteger(path~ : String, reason~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub struct JsonRpcError {
+  code : JsonRpcErrorCode
+  message : String
+  data : Json?
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcError::auth_required(data? : Json) -> Self
+pub fn JsonRpcError::internal_error(data? : Json) -> Self
+pub fn JsonRpcError::invalid_params(data? : Json) -> Self
+pub fn JsonRpcError::invalid_request(data? : Json) -> Self
+pub fn JsonRpcError::method_not_found(data? : Json) -> Self
+pub fn JsonRpcError::new(code~ : JsonRpcErrorCode, message~ : String, data? : Json) -> Self
+pub fn JsonRpcError::parse_error(data? : Json) -> Self
+pub fn JsonRpcError::request_cancelled(data? : Json) -> Self
+pub fn JsonRpcError::resource_not_found(data? : Json) -> Self
+
+pub(all) enum JsonRpcErrorCode {
+  ParseError
+  InvalidRequest
+  MethodNotFound
+  InvalidParams
+  InternalError
+  RequestCancelled
+  AuthRequired
+  ResourceNotFound
+  Custom(Int)
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcErrorCode::default_message(Self) -> String
+pub fn JsonRpcErrorCode::from_int(Int) -> Self
+pub fn JsonRpcErrorCode::to_int(Self) -> Int
+
+pub struct JsonRpcFailure {
+  id : JsonRpcId
+  error : JsonRpcError
+} derive(Eq, @debug.Debug)
+
+#alias(ResponseId)
+pub(all) enum JsonRpcId {
+  String(String)
+  Number(Int64)
+  Null
+} derive(Eq, @debug.Debug)
+
+pub(all) enum JsonRpcMessage {
+  Request(JsonRpcRequest)
+  Notification(JsonRpcNotification)
+  Response(JsonRpcResponse)
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcMessage::notification(JsonRpcNotification) -> Self
+pub fn JsonRpcMessage::request(JsonRpcRequest) -> Self
+pub fn JsonRpcMessage::response(JsonRpcResponse) -> Self
+
+pub struct JsonRpcNotification {
+  method_name : String
+  params : Json?
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcNotification::new(method_name~ : String, params? : Json) -> Self raise JsonRpcCodecError
+
+pub struct JsonRpcRequest {
+  id : RequestId
+  method_name : String
+  params : Json?
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcRequest::new(id~ : RequestId, method_name~ : String, params? : Json) -> Self raise JsonRpcCodecError
+
+pub(all) enum JsonRpcResponse {
+  Success(JsonRpcSuccess)
+  Error(JsonRpcFailure)
+} derive(Eq, @debug.Debug)
+pub fn JsonRpcResponse::error(id~ : JsonRpcId, error~ : JsonRpcError) -> Self
+pub fn JsonRpcResponse::success(id~ : RequestId, result~ : Json) -> Self
+
+pub struct JsonRpcSuccess {
+  id : RequestId
+  result : Json
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RequestId {
+  String(String)
+  Number(Int64)
+  Null
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

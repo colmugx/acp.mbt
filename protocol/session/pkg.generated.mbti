@@ -1,0 +1,268 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/protocol/session"
+
+import {
+  "colmugx/acp/protocol",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn cancel_params_from_json(Json, path? : String) -> CancelParams raise @protocol.ProtocolDecodeError
+
+pub fn cancel_params_to_json(CancelParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn close_session_params_from_json(Json, path? : String) -> CloseSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn close_session_params_to_json(CloseSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn close_session_result_from_json(Json, path? : String) -> CloseSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn close_session_result_to_json(CloseSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn delete_session_params_from_json(Json, path? : String) -> DeleteSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn delete_session_params_to_json(DeleteSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn delete_session_result_from_json(Json, path? : String) -> DeleteSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn delete_session_result_to_json(DeleteSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn fork_session_params_from_json(Json, path? : String) -> ForkSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn fork_session_params_to_json(ForkSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn fork_session_result_from_json(Json, path? : String) -> ForkSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn fork_session_result_to_json(ForkSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn list_sessions_params_from_json(Json, path? : String) -> ListSessionsParams raise @protocol.ProtocolDecodeError
+
+pub fn list_sessions_params_to_json(ListSessionsParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn list_sessions_result_from_json(Json, path? : String) -> ListSessionsResult raise @protocol.ProtocolDecodeError
+
+pub fn list_sessions_result_to_json(ListSessionsResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn load_session_params_from_json(Json, path? : String) -> LoadSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn load_session_params_to_json(LoadSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn load_session_result_from_json(Json, path? : String) -> LoadSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn load_session_result_to_json(LoadSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn new_session_params_from_json(Json, path? : String) -> NewSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn new_session_params_to_json(NewSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn new_session_result_from_json(Json, path? : String) -> NewSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn new_session_result_to_json(NewSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn prompt_params_from_json(Json, path? : String) -> PromptParams raise @protocol.ProtocolDecodeError
+
+pub fn prompt_params_to_json(PromptParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn prompt_result_from_json(Json, path? : String) -> PromptResult raise @protocol.ProtocolDecodeError
+
+pub fn prompt_result_to_json(PromptResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn resume_session_params_from_json(Json, path? : String) -> ResumeSessionParams raise @protocol.ProtocolDecodeError
+
+pub fn resume_session_params_to_json(ResumeSessionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn resume_session_result_from_json(Json, path? : String) -> ResumeSessionResult raise @protocol.ProtocolDecodeError
+
+pub fn resume_session_result_to_json(ResumeSessionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn session_mode_from_json(Json, path? : String) -> SessionMode raise @protocol.ProtocolDecodeError
+
+pub fn session_mode_state_from_json(Json, path? : String) -> SessionModeState raise @protocol.ProtocolDecodeError
+
+pub fn session_mode_state_to_json(SessionModeState) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn session_mode_to_json(SessionMode) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn session_update_params_from_json(Json, path? : String) -> SessionUpdateParams raise @protocol.ProtocolDecodeError
+
+pub fn session_update_params_to_json(SessionUpdateParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_params_from_json(Json, path? : String) -> SetSessionConfigOptionParams raise @protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_params_to_json(SetSessionConfigOptionParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_result_from_json(Json, path? : String) -> SetSessionConfigOptionResult raise @protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_result_to_json(SetSessionConfigOptionResult) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn set_session_mode_params_from_json(Json, path? : String) -> SetSessionModeParams raise @protocol.ProtocolDecodeError
+
+pub fn set_session_mode_params_to_json(SetSessionModeParams) -> Json raise @protocol.ProtocolDecodeError
+
+pub fn set_session_mode_result_from_json(Json, path? : String) -> SetSessionModeResult raise @protocol.ProtocolDecodeError
+
+pub fn set_session_mode_result_to_json(SetSessionModeResult) -> Json raise @protocol.ProtocolDecodeError
+
+// Errors
+
+// Types and methods
+pub(all) struct CancelParams {
+  session_id : String
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CloseSessionParams {
+  session_id : String
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CloseSessionResult {
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DeleteSessionParams {
+  session_id : String
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DeleteSessionResult {
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ForkSessionParams {
+  cwd : String
+  session_id : String
+  additional_directories : @protocol.ProtocolNullable[Array[String]]
+  mcp_servers : @protocol.ProtocolNullable[Array[@protocol.McpServer]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ForkSessionResult {
+  session_id : String
+  modes : @protocol.ProtocolNullable[SessionModeState]
+  config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ListSessionsParams {
+  cwd : @protocol.ProtocolNullable[String]
+  cursor : @protocol.ProtocolNullable[String]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ListSessionsResult {
+  sessions : Array[@protocol.SessionInfo]
+  next_cursor : @protocol.ProtocolNullable[String]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LoadSessionParams {
+  mcp_servers : Array[@protocol.McpServer]
+  cwd : String
+  additional_directories : @protocol.ProtocolNullable[Array[String]]
+  session_id : String
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LoadSessionResult {
+  modes : @protocol.ProtocolNullable[SessionModeState]
+  config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct NewSessionParams {
+  cwd : String
+  additional_directories : @protocol.ProtocolNullable[Array[String]]
+  mcp_servers : Array[@protocol.McpServer]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct NewSessionResult {
+  session_id : String
+  modes : @protocol.ProtocolNullable[SessionModeState]
+  config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PromptParams {
+  session_id : String
+  prompt : Array[@protocol.ContentBlock]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PromptResult {
+  stop_reason : StopReason
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ResumeSessionParams {
+  session_id : String
+  cwd : String
+  additional_directories : @protocol.ProtocolNullable[Array[String]]
+  mcp_servers : @protocol.ProtocolNullable[Array[@protocol.McpServer]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ResumeSessionResult {
+  modes : @protocol.ProtocolNullable[SessionModeState]
+  config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionConfigValue {
+  Boolean(Bool)
+  ValueId(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionMode {
+  id : String
+  name : String
+  description : @protocol.ProtocolNullable[String]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionModeState {
+  current_mode_id : String
+  available_modes : Array[SessionMode]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SessionUpdateParams {
+  session_id : String
+  update : @protocol.SessionUpdate
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SetSessionConfigOptionParams {
+  session_id : String
+  config_id : String
+  value : SessionConfigValue
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SetSessionConfigOptionResult {
+  config_options : Array[@protocol.SessionConfigOption]
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SetSessionModeParams {
+  session_id : String
+  mode_id : String
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SetSessionModeResult {
+  meta : @protocol.ProtocolNullable[Json]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum StopReason {
+  EndTurn
+  MaxTokens
+  MaxTurnRequests
+  Refusal
+  Cancelled
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,1016 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp"
+
+import {
+  "colmugx/acp/agent",
+  "colmugx/acp/client",
+  "colmugx/acp/connection",
+  "colmugx/acp/error",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/method",
+  "colmugx/acp/protocol/session",
+  "colmugx/acp/runtime",
+  "colmugx/acp/transport",
+  "colmugx/reader",
+  "moonbitlang/async",
+}
+
+// Values
+pub const JSON_RPC_VERSION : String = "2.0"
+
+pub fn acp_v1_method_manifest() -> Array[@method.AcpV1Method]
+
+pub fn acp_v1_unstable_method_manifest() -> Array[@method.AcpV1Method]
+
+pub fn agent_adapter_state_new(protocol~ : @colmugx/acp/agent/protocol.AgentProtocolState) -> @agent.AgentAdapterState
+
+pub fn agent_auth_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.AgentAuthCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_auth_capabilities_to_json(@colmugx/acp/protocol.AgentAuthCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_auth_service(methods~ : Array[@colmugx/acp/protocol.AuthMethod], authenticate~ : async (@agent.AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult, logout? : async (@agent.AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult) -> @agent.AgentAuthService raise @error.AgentCompositionError
+
+pub fn agent_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.AgentCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_capabilities_to_json(@colmugx/acp/protocol.AgentCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_context(request_broker~ : async (@colmugx/acp/client/message.ClientRequest) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError], notification_broker~ : async (@colmugx/acp/client/message.ClientNotification) -> Result[Unit, @agent.AgentContextError]) -> @agent.AgentContext
+
+pub fn[C] agent_context_over_channel(channel~ : @connection.RuntimeOutboundChannel[C]) -> @agent.AgentContext
+
+pub fn agent_endpoint_from_spec(@agent.AgentSpec) -> @agent.AgentEndpoint
+
+pub fn agent_mcp_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.AgentMcpCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_mcp_capabilities_to_json(@colmugx/acp/protocol.AgentMcpCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn[Env] agent_program(@reader.Reader[Env, Result[@agent.AgentSpec, @error.AgentCompositionError]]) -> @reader.Reader[Env, Result[@agent.AgentEndpoint, @error.AgentCompositionError]]
+
+pub fn[Env] agent_program_from((Env) -> Result[@agent.AgentSpec, @error.AgentCompositionError]) -> @reader.Reader[Env, Result[@agent.AgentEndpoint, @error.AgentCompositionError]]
+
+pub fn agent_prompt_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.AgentPromptCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_prompt_capabilities_to_json(@colmugx/acp/protocol.AgentPromptCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_protocol_state_new(config~ : @colmugx/acp/agent/protocol.AgentProtocolConfig) -> @colmugx/acp/agent/protocol.AgentProtocolState
+
+pub fn agent_runtime_owner_port(endpoint~ : @agent.AgentEndpoint, context~ : @agent.AgentContext, initial_state~ : @agent.AgentAdapterState) -> @connection.RuntimeOwnerPort[@agent.AgentAdapterState, @agent.AgentAdapterInvocation, @agent.AgentAdapterCompletion, @agent.AgentAdapterCommand]
+
+pub async fn agent_runtime_run(endpoint~ : @agent.AgentEndpoint, context~ : @agent.AgentContext, initial_state~ : @agent.AgentAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn agent_serve_stdio(endpoint~ : @agent.AgentEndpoint, context~ : @agent.AgentContext, initial_state~ : @agent.AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub async fn agent_serve_stdio_with_outbound(endpoint~ : @agent.AgentEndpoint, context_factory~ : (@connection.RuntimeOutboundChannel[@agent.AgentAdapterCompletion]) -> @agent.AgentContext, initial_state~ : @agent.AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub fn agent_session_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.AgentSessionCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_session_capabilities_to_json(@colmugx/acp/protocol.AgentSessionCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn agent_session_service(new_session~ : async (@agent.AgentContext, @session.NewSessionParams) -> @session.NewSessionResult, prompt~ : async (@agent.AgentContext, @session.PromptParams) -> @session.PromptResult, cancel~ : async (@agent.AgentContext, @session.CancelParams) -> Unit, load? : async (@agent.AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult, resume_session? : async (@agent.AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult, fork_session? : async (@agent.AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult, list? : async (@agent.AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult, delete? : async (@agent.AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult, close? : async (@agent.AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult, set_mode? : async (@agent.AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult, set_config_option? : async (@agent.AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult) -> @agent.AgentSessionService
+
+pub fn agent_spec(info~ : @colmugx/acp/protocol.Implementation, sessions~ : @agent.AgentSessionService, support~ : @agent.AgentSupport, auth? : @agent.AgentAuthService) -> Result[@agent.AgentSpec, @error.AgentCompositionError]
+
+pub fn agent_support(prompt_image? : Bool, prompt_audio? : Bool, prompt_embedded_context? : Bool, mcp_http? : Bool, mcp_sse? : Bool, additional_directories? : Bool) -> @agent.AgentSupport
+
+pub fn annotations_from_json(Json, path? : String) -> @colmugx/acp/protocol.Annotations raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn annotations_to_json(@colmugx/acp/protocol.Annotations) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn audio_content_from_json(Json, path? : String) -> @colmugx/acp/protocol.AudioContent raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn audio_content_to_json(@colmugx/acp/protocol.AudioContent) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn auth_method_from_json(Json, path? : String) -> @colmugx/acp/protocol.AuthMethod raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn auth_method_to_json(@colmugx/acp/protocol.AuthMethod) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn authenticate_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.AuthenticateParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn authenticate_params_to_json(@colmugx/acp/protocol.AuthenticateParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn authenticate_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.AuthenticateResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn authenticate_result_to_json(@colmugx/acp/protocol.AuthenticateResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn available_command_input_from_json(Json, path? : String) -> @colmugx/acp/protocol.AvailableCommandInput raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn available_command_input_to_json(@colmugx/acp/protocol.AvailableCommandInput) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn available_commands_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.AvailableCommandsUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn available_commands_update_to_json(@colmugx/acp/protocol.AvailableCommandsUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn blob_resource_contents_from_json(Json, path? : String) -> @colmugx/acp/protocol.BlobResourceContents raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn blob_resource_contents_to_json(@colmugx/acp/protocol.BlobResourceContents) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn cancel_params_from_json(Json, path? : String) -> @session.CancelParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn cancel_params_to_json(@session.CancelParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn capability_marker_from_json(Json, path? : String) -> @colmugx/acp/protocol.CapabilityMarker raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn capability_marker_to_json(@colmugx/acp/protocol.CapabilityMarker) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_adapter_state_new(protocol~ : @colmugx/acp/client/protocol.ClientProtocolState) -> @client.ClientAdapterState
+
+pub fn client_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.ClientCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_capabilities_to_json(@colmugx/acp/protocol.ClientCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_config_option_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.ClientConfigOptionCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_config_option_capabilities_to_json(@colmugx/acp/protocol.ClientConfigOptionCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub async fn client_connect_process(endpoint_factory~ : (@connection.RuntimeOutboundChannel[@client.ClientAdapterCompletion]) -> @client.ClientEndpoint, initial_state~ : @client.ClientAdapterState, handlers~ : @runtime.RuntimeHandlerPort, command~ : String, args? : Array[String], extra_env? : Map[String, String], inherit_env? : Bool, spawned? : (@runtime.RuntimeProcessPorts) -> Unit, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub fn client_connection(request_broker~ : async (@colmugx/acp/agent/message.AgentRequest) -> Result[@client.ClientReply, @client.ClientConnectionError], notification_broker~ : (@colmugx/acp/agent/message.AgentNotification) -> Result[Unit, @client.ClientConnectionError]) -> @client.ClientConnection
+
+pub fn[C] client_connection_over_channel(channel~ : @connection.RuntimeOutboundChannel[C]) -> @client.ClientConnection
+
+pub fn client_elicitation_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.ClientElicitationCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_elicitation_capabilities_to_json(@colmugx/acp/protocol.ClientElicitationCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_elicitation_service(form? : async (@colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult, url? : async (@colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult, complete? : async (@colmugx/acp/protocol.ElicitationCompleteParams) -> Unit) -> @client.ClientElicitationService raise @error.ClientCompositionError
+
+pub fn client_file_system_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.ClientFileSystemCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_file_system_capabilities_to_json(@colmugx/acp/protocol.ClientFileSystemCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_file_system_service(read? : async (@colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult, write? : async (@colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult) -> @client.ClientFileSystemService raise @error.ClientCompositionError
+
+pub fn[Env] client_program(@reader.Reader[Env, Result[@client.ClientSpec, @error.ClientCompositionError]]) -> @reader.Reader[Env, Result[@client.ClientEndpoint, @error.ClientCompositionError]]
+
+pub fn[Env] client_program_from((Env) -> Result[@client.ClientSpec, @error.ClientCompositionError]) -> @reader.Reader[Env, Result[@client.ClientEndpoint, @error.ClientCompositionError]]
+
+pub fn client_protocol_state_new(capabilities~ : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]) -> @colmugx/acp/client/protocol.ClientProtocolState
+
+pub fn client_protocol_state_ready(capabilities~ : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]) -> @colmugx/acp/client/protocol.ClientProtocolState
+
+pub fn client_runtime_owner_port(endpoint~ : @client.ClientEndpoint, initial_state~ : @client.ClientAdapterState) -> @connection.RuntimeOwnerPort[@client.ClientAdapterState, @client.ClientAdapterInvocation, @client.ClientAdapterCompletion, @client.ClientAdapterCommand]
+
+pub async fn client_runtime_run(endpoint~ : @client.ClientEndpoint, initial_state~ : @client.ClientAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub fn client_session_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protocol.ClientSessionCapabilities raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_session_capabilities_to_json(@colmugx/acp/protocol.ClientSessionCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn client_session_service(session_update~ : async (@session.SessionUpdateParams) -> Unit, request_permission~ : async (@colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse) -> @client.ClientSessionService
+
+pub fn client_spec(info~ : @colmugx/acp/protocol.Implementation, session~ : @client.ClientSessionService, file_system? : @client.ClientFileSystemService, terminal? : @client.ClientTerminalService, elicitation? : @client.ClientElicitationService) -> Result[@client.ClientSpec, @error.ClientCompositionError]
+
+pub fn client_terminal_service(create~ : async (@colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult, output~ : async (@colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult, wait_for_exit~ : async (@colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult, kill~ : async (@colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult, release~ : async (@colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult) -> @client.ClientTerminalService
+
+pub fn close_session_params_from_json(Json, path? : String) -> @session.CloseSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn close_session_params_to_json(@session.CloseSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn close_session_result_from_json(Json, path? : String) -> @session.CloseSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn close_session_result_to_json(@session.CloseSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn config_option_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.ConfigOptionUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn config_option_update_to_json(@colmugx/acp/protocol.ConfigOptionUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub async fn[S, I, C, E] connection_runtime_run_owner(@runtime.RuntimePorts, @runtime.RuntimeOptions, @connection.RuntimeOwnerPort[S, I, C, E]) -> Unit
+
+pub async fn[S, I, C, E] connection_runtime_run_owner_with_outbound(@runtime.RuntimePorts, @runtime.RuntimeOptions, (@connection.RuntimeOutboundChannel[C]) -> @connection.RuntimeOwnerPort[S, I, C, E]) -> Unit
+
+pub fn content_block_from_json(Json, path? : String) -> @colmugx/acp/protocol.ContentBlock raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn content_block_to_json(@colmugx/acp/protocol.ContentBlock) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn content_chunk_from_json(Json, path? : String) -> @colmugx/acp/protocol.ContentChunk raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn content_chunk_to_json(@colmugx/acp/protocol.ContentChunk) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn content_from_json(Json, path? : String) -> @colmugx/acp/protocol.Content raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn content_to_json(@colmugx/acp/protocol.Content) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn cost_from_json(Json, path? : String) -> @colmugx/acp/protocol.Cost raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn cost_to_json(@colmugx/acp/protocol.Cost) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn current_mode_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.CurrentModeUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn current_mode_update_to_json(@colmugx/acp/protocol.CurrentModeUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn decode_agent_notification(String, Json?) -> @colmugx/acp/agent/message.AgentNotification raise @colmugx/acp/agent/message.AgentMessageError
+
+pub fn decode_agent_request(String, Json?) -> @colmugx/acp/agent/message.AgentRequest raise @colmugx/acp/agent/message.AgentMessageError
+
+pub fn decode_client_notification(String, Json?) -> @colmugx/acp/client/message.ClientNotification raise @colmugx/acp/client/message.ClientMessageError
+
+pub fn decode_client_request(String, Json?) -> @colmugx/acp/client/message.ClientRequest raise @colmugx/acp/client/message.ClientMessageError
+
+pub fn delete_session_params_from_json(Json, path? : String) -> @session.DeleteSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn delete_session_params_to_json(@session.DeleteSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn delete_session_result_from_json(Json, path? : String) -> @session.DeleteSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn delete_session_result_to_json(@session.DeleteSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn diff_from_json(Json, path? : String) -> @colmugx/acp/protocol.Diff raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn diff_to_json(@colmugx/acp/protocol.Diff) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_complete_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.ElicitationCompleteParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_complete_params_to_json(@colmugx/acp/protocol.ElicitationCompleteParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_create_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.ElicitationCreateParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_create_params_to_json(@colmugx/acp/protocol.ElicitationCreateParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_create_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.ElicitationCreateResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn elicitation_create_result_to_json(@colmugx/acp/protocol.ElicitationCreateResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn embedded_resource_from_json(Json, path? : String) -> @colmugx/acp/protocol.EmbeddedResource raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn embedded_resource_resource_from_json(Json, path? : String) -> @colmugx/acp/protocol.EmbeddedResourceResource raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn embedded_resource_resource_to_json(@colmugx/acp/protocol.EmbeddedResourceResource) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn embedded_resource_to_json(@colmugx/acp/protocol.EmbeddedResource) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn fork_session_params_from_json(Json, path? : String) -> @session.ForkSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn fork_session_params_to_json(@session.ForkSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn fork_session_result_from_json(Json, path? : String) -> @session.ForkSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn fork_session_result_to_json(@session.ForkSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn framing_feed(@transport.FramingState, Bytes) -> @transport.FramingStep raise @transport.FramingError
+
+pub fn framing_finish(@transport.FramingState) -> @transport.FramingStep raise @transport.FramingError
+
+pub fn framing_state(max_frame_bytes~ : Int) -> @transport.FramingState raise @transport.FramingError
+
+pub fn image_content_from_json(Json, path? : String) -> @colmugx/acp/protocol.ImageContent raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn image_content_to_json(@colmugx/acp/protocol.ImageContent) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn implementation_from_json(Json, path? : String) -> @colmugx/acp/protocol.Implementation raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn implementation_to_json(@colmugx/acp/protocol.Implementation) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn initialize_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.InitializeParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn initialize_params_to_json(@colmugx/acp/protocol.InitializeParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn initialize_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.InitializeResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn initialize_result_to_json(@colmugx/acp/protocol.InitializeResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn jsonrpc_decode(String) -> @jsonrpc.JsonRpcMessage raise @jsonrpc.JsonRpcCodecError
+
+pub fn jsonrpc_decode_int64(Double, String?, path~ : String) -> Int64 raise @jsonrpc.JsonRpcCodecError
+
+pub fn jsonrpc_decode_json(Json) -> @jsonrpc.JsonRpcMessage raise @jsonrpc.JsonRpcCodecError
+
+pub fn jsonrpc_encode(@jsonrpc.JsonRpcMessage) -> String raise @jsonrpc.JsonRpcCodecError
+
+pub fn jsonrpc_to_json(@jsonrpc.JsonRpcMessage) -> Json raise @jsonrpc.JsonRpcCodecError
+
+pub fn list_sessions_params_from_json(Json, path? : String) -> @session.ListSessionsParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn list_sessions_params_to_json(@session.ListSessionsParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn list_sessions_result_from_json(Json, path? : String) -> @session.ListSessionsResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn list_sessions_result_to_json(@session.ListSessionsResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn load_session_params_from_json(Json, path? : String) -> @session.LoadSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn load_session_params_to_json(@session.LoadSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn load_session_result_from_json(Json, path? : String) -> @session.LoadSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn load_session_result_to_json(@session.LoadSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn logout_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.LogoutParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn logout_params_to_json(@colmugx/acp/protocol.LogoutParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn logout_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.LogoutResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn logout_result_to_json(@colmugx/acp/protocol.LogoutResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn mcp_server_from_json(Json, path? : String) -> @colmugx/acp/protocol.McpServer raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn mcp_server_to_json(@colmugx/acp/protocol.McpServer) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn new_session_params_from_json(Json, path? : String) -> @session.NewSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn new_session_params_to_json(@session.NewSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn new_session_result_from_json(Json, path? : String) -> @session.NewSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn new_session_result_to_json(@session.NewSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn permission_option_from_json(Json, path? : String) -> @colmugx/acp/protocol.PermissionOption raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn permission_option_to_json(@colmugx/acp/protocol.PermissionOption) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn plan_entry_from_json(Json, path? : String) -> @colmugx/acp/protocol.PlanEntry raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn plan_entry_to_json(@colmugx/acp/protocol.PlanEntry) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn plan_from_json(Json, path? : String) -> @colmugx/acp/protocol.Plan raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn plan_to_json(@colmugx/acp/protocol.Plan) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn prompt_params_from_json(Json, path? : String) -> @session.PromptParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn prompt_params_to_json(@session.PromptParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn prompt_result_from_json(Json, path? : String) -> @session.PromptResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn prompt_result_to_json(@session.PromptResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn read_text_file_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.ReadTextFileParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn read_text_file_params_to_json(@colmugx/acp/protocol.ReadTextFileParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn read_text_file_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.ReadTextFileResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn read_text_file_result_to_json(@colmugx/acp/protocol.ReadTextFileResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_outcome_from_json(Json, path? : String) -> @colmugx/acp/protocol.RequestPermissionOutcome raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_outcome_to_json(@colmugx/acp/protocol.RequestPermissionOutcome) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_request_from_json(Json, path? : String) -> @colmugx/acp/protocol.RequestPermissionRequest raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_request_to_json(@colmugx/acp/protocol.RequestPermissionRequest) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_response_from_json(Json, path? : String) -> @colmugx/acp/protocol.RequestPermissionResponse raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn request_permission_response_to_json(@colmugx/acp/protocol.RequestPermissionResponse) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resource_link_from_json(Json, path? : String) -> @colmugx/acp/protocol.ResourceLink raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resource_link_to_json(@colmugx/acp/protocol.ResourceLink) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resume_session_params_from_json(Json, path? : String) -> @session.ResumeSessionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resume_session_params_to_json(@session.ResumeSessionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resume_session_result_from_json(Json, path? : String) -> @session.ResumeSessionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn resume_session_result_to_json(@session.ResumeSessionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn runtime_default_options() -> @runtime.RuntimeOptions
+
+pub async fn[G] runtime_process_ports(@async.TaskGroup[G], handlers~ : @runtime.RuntimeHandlerPort, command~ : String, args? : Array[String], extra_env? : Map[String, String], inherit_env? : Bool, cancel_outbound? : (async (@jsonrpc.RequestId) -> Unit)?, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> @runtime.RuntimeProcessPorts raise @runtime.RuntimeError
+
+pub fn runtime_request_id_text(@jsonrpc.RequestId) -> String
+
+pub fn runtime_stderr_trace(@runtime.RuntimeTraceEvent) -> Unit
+
+pub fn runtime_stdio_ports(trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> @runtime.RuntimePorts
+
+pub fn runtime_trace_event(String, String, String, String, String) -> @runtime.RuntimeTraceEvent
+
+pub fn runtime_validate_options(@runtime.RuntimeOptions) -> Unit raise @runtime.RuntimeError
+
+pub fn selected_permission_outcome_from_json(Json, path? : String) -> @colmugx/acp/protocol.SelectedPermissionOutcome raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn selected_permission_outcome_to_json(@colmugx/acp/protocol.SelectedPermissionOutcome) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_option_category_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionConfigOptionCategory raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_option_category_to_json(@colmugx/acp/protocol.SessionConfigOptionCategory) -> Json
+
+pub fn session_config_option_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionConfigOption raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_option_to_json(@colmugx/acp/protocol.SessionConfigOption) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_group_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionConfigSelectGroup raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_group_to_json(@colmugx/acp/protocol.SessionConfigSelectGroup) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_option_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionConfigSelectOption raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_option_to_json(@colmugx/acp/protocol.SessionConfigSelectOption) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_options_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionConfigSelectOptions raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_config_select_options_to_json(@colmugx/acp/protocol.SessionConfigSelectOptions) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_info_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionInfo raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_info_to_json(@colmugx/acp/protocol.SessionInfo) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_info_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionInfoUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_info_update_to_json(@colmugx/acp/protocol.SessionInfoUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_mode_from_json(Json, path? : String) -> @session.SessionMode raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_mode_state_from_json(Json, path? : String) -> @session.SessionModeState raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_mode_state_to_json(@session.SessionModeState) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_mode_to_json(@session.SessionMode) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_update_fold(known_modes~ : Array[String]) -> @colmugx/acp/protocol.SessionUpdateFold
+
+pub fn session_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.SessionUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_update_params_from_json(Json, path? : String) -> @session.SessionUpdateParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_update_params_to_json(@session.SessionUpdateParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn session_update_to_json(@colmugx/acp/protocol.SessionUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_params_from_json(Json, path? : String) -> @session.SetSessionConfigOptionParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_params_to_json(@session.SetSessionConfigOptionParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_result_from_json(Json, path? : String) -> @session.SetSessionConfigOptionResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_config_option_result_to_json(@session.SetSessionConfigOptionResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_mode_params_from_json(Json, path? : String) -> @session.SetSessionModeParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_mode_params_to_json(@session.SetSessionModeParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_mode_result_from_json(Json, path? : String) -> @session.SetSessionModeResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn set_session_mode_result_to_json(@session.SetSessionModeResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_create_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalCreateParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_create_params_to_json(@colmugx/acp/protocol.TerminalCreateParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_create_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalCreateResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_create_result_to_json(@colmugx/acp/protocol.TerminalCreateResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_from_json(Json, path? : String) -> @colmugx/acp/protocol.Terminal raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_kill_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalKillParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_kill_params_to_json(@colmugx/acp/protocol.TerminalKillParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_kill_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalKillResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_kill_result_to_json(@colmugx/acp/protocol.TerminalKillResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_output_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalOutputParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_output_params_to_json(@colmugx/acp/protocol.TerminalOutputParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_output_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalOutputResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_output_result_to_json(@colmugx/acp/protocol.TerminalOutputResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_release_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalReleaseParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_release_params_to_json(@colmugx/acp/protocol.TerminalReleaseParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_release_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalReleaseResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_release_result_to_json(@colmugx/acp/protocol.TerminalReleaseResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_to_json(@colmugx/acp/protocol.Terminal) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalWaitForExitParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_params_to_json(@colmugx/acp/protocol.TerminalWaitForExitParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.TerminalWaitForExitResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn terminal_wait_for_exit_result_to_json(@colmugx/acp/protocol.TerminalWaitForExitResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn text_content_from_json(Json, path? : String) -> @colmugx/acp/protocol.TextContent raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn text_content_to_json(@colmugx/acp/protocol.TextContent) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn text_resource_contents_from_json(Json, path? : String) -> @colmugx/acp/protocol.TextResourceContents raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn text_resource_contents_to_json(@colmugx/acp/protocol.TextResourceContents) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_content_from_json(Json, path? : String) -> @colmugx/acp/protocol.ToolCallContent raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_content_to_json(@colmugx/acp/protocol.ToolCallContent) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_from_json(Json, path? : String) -> @colmugx/acp/protocol.ToolCall raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_location_from_json(Json, path? : String) -> @colmugx/acp/protocol.ToolCallLocation raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_location_to_json(@colmugx/acp/protocol.ToolCallLocation) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_to_json(@colmugx/acp/protocol.ToolCall) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.ToolCallUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn tool_call_update_to_json(@colmugx/acp/protocol.ToolCallUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn unstructured_command_input_from_json(Json, path? : String) -> @colmugx/acp/protocol.UnstructuredCommandInput raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn unstructured_command_input_to_json(@colmugx/acp/protocol.UnstructuredCommandInput) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn usage_update_from_json(Json, path? : String) -> @colmugx/acp/protocol.UsageUpdate raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn usage_update_to_json(@colmugx/acp/protocol.UsageUpdate) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn write_text_file_params_from_json(Json, path? : String) -> @colmugx/acp/protocol.WriteTextFileParams raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn write_text_file_params_to_json(@colmugx/acp/protocol.WriteTextFileParams) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn write_text_file_result_from_json(Json, path? : String) -> @colmugx/acp/protocol.WriteTextFileResult raise @colmugx/acp/protocol.ProtocolDecodeError
+
+pub fn write_text_file_result_to_json(@colmugx/acp/protocol.WriteTextFileResult) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @method {type AcpV1Method}
+
+pub using @method {type AcpV1MethodDirection}
+
+pub using @method {type AcpV1MethodKind}
+
+pub using @agent {type AgentAdapterState}
+
+pub using @colmugx/acp/protocol {type AgentAuthCapabilities}
+
+pub using @agent {type AgentAuthService}
+
+pub type AgentAuthenticateHandler = async (@agent.AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult
+
+pub type AgentCancelHandler = async (@agent.AgentContext, @session.CancelParams) -> Unit
+
+pub using @colmugx/acp/protocol {type AgentCapabilities}
+
+pub type AgentCloseSessionHandler = async (@agent.AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult
+
+pub using @error {type AgentCompositionError}
+
+pub using @agent {type AgentContext}
+
+pub using @agent {type AgentContextError}
+
+pub type AgentContextNotificationBroker = async (@colmugx/acp/client/message.ClientNotification) -> Result[Unit, @agent.AgentContextError]
+
+pub type AgentContextRequestBroker = async (@colmugx/acp/client/message.ClientRequest) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError]
+
+pub type AgentDeleteSessionHandler = async (@agent.AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult
+
+pub using @agent {type AgentEndpoint}
+
+pub type AgentForkSessionHandler = async (@agent.AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult
+
+pub type AgentListSessionsHandler = async (@agent.AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult
+
+pub type AgentLoadSessionHandler = async (@agent.AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult
+
+pub type AgentLogoutHandler = async (@agent.AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult
+
+pub using @colmugx/acp/protocol {type AgentMcpCapabilities}
+
+pub using @colmugx/acp/agent/message {type AgentMessageError}
+
+pub type AgentNewSessionHandler = async (@agent.AgentContext, @session.NewSessionParams) -> @session.NewSessionResult
+
+pub using @colmugx/acp/agent/message {type AgentNotification}
+
+pub using @agent {type AgentOutboundReply}
+
+pub type AgentProgram[Env] = @reader.Reader[Env, Result[@agent.AgentEndpoint, @error.AgentCompositionError]]
+
+pub using @colmugx/acp/protocol {type AgentPromptCapabilities}
+
+pub type AgentPromptHandler = async (@agent.AgentContext, @session.PromptParams) -> @session.PromptResult
+
+pub using @colmugx/acp/agent/protocol {type AgentProtocolConfig}
+
+pub using @colmugx/acp/agent/protocol {type AgentProtocolState}
+
+pub using @colmugx/acp/agent/message {type AgentRequest}
+
+pub type AgentResumeSessionHandler = async (@agent.AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult
+
+pub using @colmugx/acp/protocol {type AgentSessionCapabilities}
+
+pub using @agent {type AgentSessionService}
+
+pub type AgentSetConfigOptionHandler = async (@agent.AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult
+
+pub type AgentSetModeHandler = async (@agent.AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult
+
+pub using @agent {type AgentSpec}
+
+pub using @agent {type AgentSupport}
+
+pub using @colmugx/acp/protocol {type Annotations}
+
+pub using @colmugx/acp/protocol {type AudioContent}
+
+pub using @colmugx/acp/protocol {type AuthMethod}
+
+pub using @colmugx/acp/protocol {type AuthenticateParams}
+
+pub using @colmugx/acp/protocol {type AuthenticateResult}
+
+pub using @colmugx/acp/protocol {type AvailableCommand}
+
+pub using @colmugx/acp/protocol {type AvailableCommandInput}
+
+pub using @colmugx/acp/protocol {type AvailableCommandsUpdate}
+
+pub using @colmugx/acp/protocol {type BlobResourceContents}
+
+pub using @session {type CancelParams}
+
+pub using @colmugx/acp/protocol {type CapabilityMarker}
+
+pub using @client {type ClientAdapterState}
+
+pub using @colmugx/acp/protocol {type ClientAuthCapabilities}
+
+pub using @colmugx/acp/protocol {type ClientCapabilities}
+
+pub using @error {type ClientCompositionError}
+
+pub using @colmugx/acp/protocol {type ClientConfigOptionCapabilities}
+
+pub using @client {type ClientConnection}
+
+pub using @client {type ClientConnectionError}
+
+pub using @colmugx/acp/protocol {type ClientElicitationCapabilities}
+
+pub type ClientElicitationCompleteHandler = async (@colmugx/acp/protocol.ElicitationCompleteParams) -> Unit
+
+pub type ClientElicitationFormHandler = async (@colmugx/acp/protocol.ElicitationFormParams) -> @colmugx/acp/protocol.ElicitationCreateResult
+
+pub using @client {type ClientElicitationService}
+
+pub type ClientElicitationUrlHandler = async (@colmugx/acp/protocol.ElicitationUrlParams) -> @colmugx/acp/protocol.ElicitationCreateResult
+
+pub using @client {type ClientEndpoint}
+
+pub using @colmugx/acp/protocol {type ClientFileSystemCapabilities}
+
+pub using @client {type ClientFileSystemService}
+
+pub using @colmugx/acp/client/message {type ClientMessageError}
+
+pub using @colmugx/acp/client/message {type ClientNotification}
+
+pub type ClientNotificationBroker = (@colmugx/acp/agent/message.AgentNotification) -> Result[Unit, @client.ClientConnectionError]
+
+pub type ClientProgram[Env] = @reader.Reader[Env, Result[@client.ClientEndpoint, @error.ClientCompositionError]]
+
+pub using @colmugx/acp/client/protocol {type ClientProtocolState}
+
+pub type ClientReadTextFileHandler = async (@colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult
+
+pub using @client {type ClientReply}
+
+pub using @colmugx/acp/client/message {type ClientRequest}
+
+pub type ClientRequestBroker = async (@colmugx/acp/agent/message.AgentRequest) -> Result[@client.ClientReply, @client.ClientConnectionError]
+
+pub type ClientRequestPermissionHandler = async (@colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse
+
+pub using @colmugx/acp/protocol {type ClientSessionCapabilities}
+
+pub using @client {type ClientSessionService}
+
+pub type ClientSessionUpdateHandler = async (@session.SessionUpdateParams) -> Unit
+
+pub using @client {type ClientSpec}
+
+pub type ClientTerminalCreateHandler = async (@colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult
+
+pub type ClientTerminalKillHandler = async (@colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult
+
+pub type ClientTerminalOutputHandler = async (@colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult
+
+pub type ClientTerminalReleaseHandler = async (@colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult
+
+pub using @client {type ClientTerminalService}
+
+pub type ClientTerminalWaitForExitHandler = async (@colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult
+
+pub type ClientWriteTextFileHandler = async (@colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult
+
+pub using @session {type CloseSessionParams}
+
+pub using @session {type CloseSessionResult}
+
+pub using @colmugx/acp/protocol {type ConfigOptionUpdate}
+
+pub using @colmugx/acp/protocol {type Content}
+
+pub using @colmugx/acp/protocol {type ContentBlock}
+
+pub using @colmugx/acp/protocol {type ContentChunk}
+
+pub using @colmugx/acp/protocol {type Cost}
+
+pub using @colmugx/acp/protocol {type CurrentModeUpdate}
+
+pub using @session {type DeleteSessionParams}
+
+pub using @session {type DeleteSessionResult}
+
+pub using @colmugx/acp/protocol {type Diff}
+
+pub using @colmugx/acp/protocol {type ElicitationAction}
+
+pub using @colmugx/acp/protocol {type ElicitationCompleteParams}
+
+pub using @colmugx/acp/protocol {type ElicitationCreateParams}
+
+pub using @colmugx/acp/protocol {type ElicitationCreateResult}
+
+pub using @colmugx/acp/protocol {type ElicitationFormParams}
+
+pub type ElicitationId = String
+
+pub using @colmugx/acp/protocol {type ElicitationScope}
+
+pub using @colmugx/acp/protocol {type ElicitationUrlParams}
+
+pub using @colmugx/acp/protocol {type EmbeddedResource}
+
+pub using @colmugx/acp/protocol {type EmbeddedResourceResource}
+
+pub using @session {type ForkSessionParams}
+
+pub using @session {type ForkSessionResult}
+
+pub using @transport {type FramingError}
+
+pub using @transport {type FramingState}
+
+pub using @transport {type FramingStep}
+
+pub using @error {type HandlerError}
+
+pub using @colmugx/acp/protocol {type ImageContent}
+
+pub using @colmugx/acp/protocol {type Implementation}
+
+pub using @colmugx/acp/protocol {type InitializeParams}
+
+pub using @colmugx/acp/protocol {type InitializeResult}
+
+pub using @jsonrpc {type JsonRpcCodecError}
+
+pub using @jsonrpc {type JsonRpcError}
+
+pub using @jsonrpc {type JsonRpcErrorCode}
+
+pub using @jsonrpc {type JsonRpcFailure}
+
+pub using @jsonrpc {type JsonRpcId}
+
+pub using @jsonrpc {type JsonRpcMessage}
+
+pub using @jsonrpc {type JsonRpcNotification}
+
+pub using @jsonrpc {type JsonRpcRequest}
+
+pub using @jsonrpc {type JsonRpcResponse}
+
+pub using @jsonrpc {type JsonRpcSuccess}
+
+pub using @session {type ListSessionsParams}
+
+pub using @session {type ListSessionsResult}
+
+pub using @session {type LoadSessionParams}
+
+pub using @session {type LoadSessionResult}
+
+pub using @colmugx/acp/protocol {type LogoutParams}
+
+pub using @colmugx/acp/protocol {type LogoutResult}
+
+pub using @colmugx/acp/protocol {type McpEnvVariable}
+
+pub using @colmugx/acp/protocol {type McpHttpHeader}
+
+pub using @colmugx/acp/protocol {type McpServer}
+
+pub using @colmugx/acp/protocol {type McpServerHttp}
+
+pub using @colmugx/acp/protocol {type McpServerSse}
+
+pub using @colmugx/acp/protocol {type McpServerStdio}
+
+pub type MessageId = String
+
+pub using @session {type NewSessionParams}
+
+pub using @session {type NewSessionResult}
+
+pub using @colmugx/acp/protocol {type PermissionOption}
+
+pub type PermissionOptionId = String
+
+pub using @colmugx/acp/protocol {type PermissionOptionKind}
+
+pub using @colmugx/acp/protocol {type Plan}
+
+pub using @colmugx/acp/protocol {type PlanEntry}
+
+pub using @colmugx/acp/protocol {type PlanEntryPriority}
+
+pub using @colmugx/acp/protocol {type PlanEntryStatus}
+
+pub using @session {type PromptParams}
+
+pub using @session {type PromptResult}
+
+pub using @colmugx/acp/protocol {type ProtocolDecodeError}
+
+pub using @colmugx/acp/protocol {type ProtocolNullable}
+
+pub using @colmugx/acp/protocol {type ReadTextFileParams}
+
+pub using @colmugx/acp/protocol {type ReadTextFileResult}
+
+pub using @jsonrpc {type RequestId}
+
+pub using @colmugx/acp/protocol {type RequestPermissionOutcome}
+
+pub using @colmugx/acp/protocol {type RequestPermissionRequest}
+
+pub using @colmugx/acp/protocol {type RequestPermissionResponse}
+
+pub using @colmugx/acp/protocol {type ResourceLink}
+
+pub using @jsonrpc {type JsonRpcId as ResponseId}
+
+pub using @session {type ResumeSessionParams}
+
+pub using @session {type ResumeSessionResult}
+
+pub using @colmugx/acp/protocol {type Role}
+
+pub using @runtime {type RuntimeError}
+
+pub using @runtime {type RuntimeHandlerPort}
+
+pub using @runtime {type RuntimeHandlerResult}
+
+pub using @runtime {type RuntimeOptions}
+
+pub using @connection {type RuntimeOutboundChannel}
+
+pub using @connection {type RuntimeOwnerCommand}
+
+pub using @connection {type RuntimeOwnerEffect}
+
+pub using @connection {type RuntimeOwnerLocalPlan}
+
+pub using @connection {type RuntimeOwnerNotificationAdmission}
+
+pub using @connection {type RuntimeOwnerNotificationCompletion}
+
+pub using @connection {type RuntimeOwnerPort}
+
+pub using @connection {type RuntimeOwnerRequestAdmission}
+
+pub using @connection {type RuntimeOwnerRequestCompletion}
+
+pub using @connection {type RuntimeOwnerTask}
+
+pub using @runtime {type RuntimePorts}
+
+pub using @runtime {type RuntimeProcessPorts}
+
+pub using @runtime {type RuntimeReaderPort}
+
+pub using @runtime {type RuntimeTraceEvent}
+
+pub using @runtime {type RuntimeWriterPort}
+
+pub using @colmugx/acp/protocol {type SelectedPermissionOutcome}
+
+pub using @colmugx/acp/protocol {type SessionConfigBoolean}
+
+pub type SessionConfigGroupId = String
+
+pub type SessionConfigId = String
+
+pub using @colmugx/acp/protocol {type SessionConfigOption}
+
+pub using @colmugx/acp/protocol {type SessionConfigOptionCategory}
+
+pub using @colmugx/acp/protocol {type SessionConfigOptionKind}
+
+pub using @colmugx/acp/protocol {type SessionConfigSelect}
+
+pub using @colmugx/acp/protocol {type SessionConfigSelectGroup}
+
+pub using @colmugx/acp/protocol {type SessionConfigSelectOption}
+
+pub using @colmugx/acp/protocol {type SessionConfigSelectOptions}
+
+pub using @session {type SessionConfigValue}
+
+pub type SessionConfigValueId = String
+
+pub type SessionId = String
+
+pub using @colmugx/acp/protocol {type SessionInfo}
+
+pub using @colmugx/acp/protocol {type SessionInfoUpdate}
+
+pub using @session {type SessionMode}
+
+pub type SessionModeId = String
+
+pub using @session {type SessionModeState}
+
+pub using @colmugx/acp/protocol {type SessionUpdate}
+
+pub using @colmugx/acp/protocol {type SessionUpdateFold}
+
+pub using @colmugx/acp/protocol {type SessionUpdateFoldError}
+
+pub using @colmugx/acp/protocol {type SessionUpdateMessage}
+
+pub using @session {type SessionUpdateParams}
+
+pub using @session {type SetSessionConfigOptionParams}
+
+pub using @session {type SetSessionConfigOptionResult}
+
+pub using @session {type SetSessionModeParams}
+
+pub using @session {type SetSessionModeResult}
+
+pub using @session {type StopReason}
+
+pub using @colmugx/acp/protocol {type Terminal}
+
+pub using @colmugx/acp/protocol {type TerminalCreateParams}
+
+pub using @colmugx/acp/protocol {type TerminalCreateResult}
+
+pub using @colmugx/acp/protocol {type TerminalEnvVariable}
+
+pub using @colmugx/acp/protocol {type TerminalExitStatus}
+
+pub type TerminalId = String
+
+pub using @colmugx/acp/protocol {type TerminalKillParams}
+
+pub using @colmugx/acp/protocol {type TerminalKillResult}
+
+pub using @colmugx/acp/protocol {type TerminalOutputParams}
+
+pub using @colmugx/acp/protocol {type TerminalOutputResult}
+
+pub using @colmugx/acp/protocol {type TerminalReleaseParams}
+
+pub using @colmugx/acp/protocol {type TerminalReleaseResult}
+
+pub using @colmugx/acp/protocol {type TerminalWaitForExitParams}
+
+pub using @colmugx/acp/protocol {type TerminalWaitForExitResult}
+
+pub using @colmugx/acp/protocol {type TextContent}
+
+pub using @colmugx/acp/protocol {type TextResourceContents}
+
+pub using @colmugx/acp/protocol {type ToolCall}
+
+pub using @colmugx/acp/protocol {type ToolCallContent}
+
+pub type ToolCallId = String
+
+pub using @colmugx/acp/protocol {type ToolCallLocation}
+
+pub using @colmugx/acp/protocol {type ToolCallStatus}
+
+pub using @colmugx/acp/protocol {type ToolCallUpdate}
+
+pub using @colmugx/acp/protocol {type ToolKind}
+
+pub using @colmugx/acp/protocol {type UnstructuredCommandInput}
+
+pub using @colmugx/acp/protocol {type UsageUpdate}
+
+pub using @colmugx/acp/protocol {type WriteTextFileParams}
+
+pub using @colmugx/acp/protocol {type WriteTextFileResult}
+
+// Traits

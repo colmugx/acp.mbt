@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/error"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub(all) suberror AgentCompositionError {
+  InvalidImplementation(reason~ : String)
+  MissingRequiredService(service_name~ : String)
+  InvalidAuthMethods(reason~ : String)
+  ConflictingSupport(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror ClientCompositionError {
+  InvalidImplementation(reason~ : String)
+  MissingRequiredService(service_name~ : String)
+  ConflictingSupport(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror HandlerError {
+  Application(message~ : String)
+  InvalidParams(message~ : String)
+  Cancelled
+  UnavailableOperation(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+
+// Type aliases
+
+// Traits

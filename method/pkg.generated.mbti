@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/method"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn acp_v1_method_manifest() -> Array[AcpV1Method]
+
+pub fn acp_v1_unstable_method_manifest() -> Array[AcpV1Method]
+
+// Errors
+
+// Types and methods
+pub(all) struct AcpV1Method {
+  method_name : String
+  direction : AcpV1MethodDirection
+  kind : AcpV1MethodKind
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AcpV1MethodDirection {
+  ClientToAgent
+  AgentToClient
+  Bidirectional
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AcpV1MethodKind {
+  Request
+  Notification
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/connection/agent"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/runtime",
+}
+
+// Values
+pub async fn agent_connection_run(@colmugx/acp/agent.AgentEndpoint, @colmugx/acp/agent.AgentContext, AgentConnectionPorts, @runtime.RuntimeOptions) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) struct AgentConnectionPorts {
+  reader : @runtime.RuntimeReaderPort
+  writer : @runtime.RuntimeWriterPort
+  response : async (@jsonrpc.JsonRpcResponse) -> Unit
+  outbound_failure : (async (@jsonrpc.RequestId, @runtime.RuntimeOutboundFailure) -> Unit)?
+  cancel_outbound : (async (@jsonrpc.RequestId) -> Unit)?
+  trace : (@runtime.RuntimeTraceEvent) -> Unit
+}
+
+// Type aliases
+
+// Traits

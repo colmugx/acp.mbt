@@ -1,0 +1,126 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/runtime"
+
+import {
+  "colmugx/acp/jsonrpc",
+  "moonbitlang/async",
+  "moonbitlang/async/process",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn runtime_default_options() -> RuntimeOptions
+
+pub fn runtime_libc_write(Int, Bytes, Int) -> Int
+
+pub async fn[G] runtime_process_ports(@async.TaskGroup[G], handlers~ : RuntimeHandlerPort, command~ : String, args? : Array[String], extra_env? : Map[String, String], inherit_env? : Bool, cancel_outbound? : (async (@jsonrpc.RequestId) -> Unit)?, trace? : (RuntimeTraceEvent) -> Unit) -> RuntimeProcessPorts raise RuntimeError
+
+pub fn runtime_request_id_text(@jsonrpc.RequestId) -> String
+
+pub fn runtime_stderr_trace(RuntimeTraceEvent) -> Unit
+
+pub fn runtime_stdio_ports(trace? : (RuntimeTraceEvent) -> Unit) -> RuntimePorts
+
+pub fn runtime_trace_event(String, String, String, String, String) -> RuntimeTraceEvent
+
+pub fn runtime_trace_stderr_line(RuntimeTraceEvent) -> String
+
+pub fn runtime_validate_options(RuntimeOptions) -> Unit raise RuntimeError
+
+// Errors
+pub(all) suberror RuntimeError {
+  InvalidOptions
+  ReaderFailed
+  ReaderEmptyChunk
+  EventQueueClosed
+  EventQueueBackpressure(limit~ : Int)
+  WriterQueueClosed
+  WriterQueueBackpressure(limit~ : Int)
+  WriterFailed
+  FramingFailed
+  JsonRpcDecodeFailed
+  JsonRpcEncodeFailed
+  ReducerFailed
+  TaskControlMissing
+  TaskRequestMismatch
+  HandlerFailed
+  NotificationFailed
+  ResponseHandlerFailed
+  OutboundCancelUnavailable
+  OutboundCancelFailed
+  OutboundCompletionFailed
+  CloseCleanupFailed(primary_kind~ : String, cleanup_phase~ : String)
+}
+
+// Types and methods
+pub(all) struct RuntimeHandlerPort {
+  request : async (@jsonrpc.JsonRpcRequest) -> RuntimeHandlerResult
+  notification : async (@jsonrpc.JsonRpcNotification) -> Unit
+  response : async (@jsonrpc.JsonRpcResponse) -> Unit
+  outbound_failure : (async (@jsonrpc.RequestId, RuntimeOutboundFailure) -> Unit)?
+}
+
+pub(all) enum RuntimeHandlerResult {
+  HandlerSuccess(Json)
+  HandlerError(@jsonrpc.JsonRpcError)
+}
+
+pub(all) struct RuntimeOptions {
+  max_frame_bytes : Int
+  queue_capacity : Int
+  read_chunk_bytes : Int
+}
+
+pub(all) struct RuntimeOutboundFailure {
+  reason : RuntimeOutboundFailureKind
+}
+
+pub(all) enum RuntimeOutboundFailureKind {
+  Protocol
+  Framing
+  Reader
+  Writer
+  Handler
+  Notification
+  EndOfInput
+  EventQueue
+  Runtime
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RuntimePorts {
+  reader : RuntimeReaderPort
+  writer : RuntimeWriterPort
+  handlers : RuntimeHandlerPort
+  cancel_outbound : (async (@jsonrpc.RequestId) -> Unit)?
+  trace : (RuntimeTraceEvent) -> Unit
+}
+
+pub(all) struct RuntimeProcessPorts {
+  ports : RuntimePorts
+  child : @process.Process
+  child_stdin : @process.WriteToProcess
+  child_stdout : @process.ReadFromProcess
+}
+
+pub(all) struct RuntimeReaderPort {
+  read : async (Int) -> Bytes?
+}
+
+pub(all) struct RuntimeTraceEvent {
+  direction : String
+  phase : String
+  request_id : String
+  method_name : String
+  error_kind : String
+}
+
+pub(all) struct RuntimeWriterPort {
+  write : async (Bytes) -> Unit
+}
+
+// Type aliases
+pub type RuntimeCancelOutboundHandler = async (@jsonrpc.RequestId) -> Unit
+
+pub type RuntimeOutboundFailureHandler = async (@jsonrpc.RequestId, RuntimeOutboundFailure) -> Unit
+
+// Traits

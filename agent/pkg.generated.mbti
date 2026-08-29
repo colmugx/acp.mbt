@@ -1,0 +1,254 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "colmugx/acp/agent"
+
+import {
+  "colmugx/acp/client/message",
+  "colmugx/acp/connection",
+  "colmugx/acp/error",
+  "colmugx/acp/jsonrpc",
+  "colmugx/acp/protocol/session",
+  "colmugx/acp/runtime",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn agent_adapter_admit(AgentAdapterState, AgentEndpoint, @jsonrpc.JsonRpcMessage) -> AgentAdapterAdmission raise AgentAdapterError
+
+pub fn agent_adapter_cancel_completion(AgentAdapterInvocation) -> AgentAdapterCompletion
+
+pub fn agent_adapter_complete(AgentAdapterState, AgentAdapterInvocation, AgentAdapterCompletion) -> AgentAdapterStep raise AgentAdapterError
+
+pub async fn agent_adapter_execute(AgentAdapterInvocation, AgentEndpoint, AgentContext) -> AgentAdapterCompletion noraise
+
+pub fn agent_adapter_failure_completion(AgentAdapterInvocation) -> AgentAdapterCompletion
+
+pub fn agent_adapter_invocation_method_name(AgentAdapterInvocation) -> String
+
+pub fn agent_adapter_state_new(protocol~ : @colmugx/acp/agent/protocol.AgentProtocolState) -> AgentAdapterState
+
+pub fn agent_auth_service(methods~ : Array[@colmugx/acp/protocol.AuthMethod], authenticate~ : async (AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult, logout? : async (AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult) -> AgentAuthService raise @error.AgentCompositionError
+
+pub fn agent_context(request_broker~ : async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError], notification_broker~ : async (@message.ClientNotification) -> Result[Unit, AgentContextError]) -> AgentContext
+
+pub fn agent_endpoint_from_spec(AgentSpec) -> AgentEndpoint
+
+pub fn agent_runtime_owner_port(endpoint~ : AgentEndpoint, context~ : AgentContext, initial_state~ : AgentAdapterState) -> @connection.RuntimeOwnerPort[AgentAdapterState, AgentAdapterInvocation, AgentAdapterCompletion, AgentAdapterCommand]
+
+pub async fn agent_runtime_run(endpoint~ : AgentEndpoint, context~ : AgentContext, initial_state~ : AgentAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn agent_runtime_run_with_outbound(endpoint~ : AgentEndpoint, context_factory~ : (@connection.RuntimeOutboundChannel[AgentAdapterCompletion]) -> AgentContext, initial_state~ : AgentAdapterState, ports~ : @runtime.RuntimePorts, options~ : @runtime.RuntimeOptions) -> Unit
+
+pub async fn agent_serve_stdio(endpoint~ : AgentEndpoint, context~ : AgentContext, initial_state~ : AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub async fn agent_serve_stdio_with_outbound(endpoint~ : AgentEndpoint, context_factory~ : (@connection.RuntimeOutboundChannel[AgentAdapterCompletion]) -> AgentContext, initial_state~ : AgentAdapterState, options? : @runtime.RuntimeOptions, trace? : (@runtime.RuntimeTraceEvent) -> Unit) -> Unit
+
+pub fn agent_session_service(new_session~ : async (AgentContext, @session.NewSessionParams) -> @session.NewSessionResult, prompt~ : async (AgentContext, @session.PromptParams) -> @session.PromptResult, cancel~ : async (AgentContext, @session.CancelParams) -> Unit, load? : async (AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult, resume_session? : async (AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult, fork_session? : async (AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult, list? : async (AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult, delete? : async (AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult, close? : async (AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult, set_mode? : async (AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult, set_config_option? : async (AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult) -> AgentSessionService
+
+pub fn agent_spec(info~ : @colmugx/acp/protocol.Implementation, sessions~ : AgentSessionService, support~ : AgentSupport, auth? : AgentAuthService) -> Result[AgentSpec, @error.AgentCompositionError]
+
+pub fn agent_support(prompt_image? : Bool, prompt_audio? : Bool, prompt_embedded_context? : Bool, mcp_http? : Bool, mcp_sse? : Bool, additional_directories? : Bool) -> AgentSupport
+
+// Errors
+pub(all) suberror AgentAdapterError {
+  EndpointMismatch(reason~ : String)
+  UnexpectedMessage(kind~ : String)
+  LateCompletion(request_id~ : @jsonrpc.RequestId)
+  CompletionMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) suberror AgentContextError {
+  AgentContextUnavailable(method_name~ : String)
+  AgentContextCancelled(method_name~ : String)
+  AgentContextBrokerFailure(method_name~ : String)
+  AgentContextReplyMismatch(method_name~ : String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum AgentAdapterAdmission {
+  Immediate(AgentAdapterStep)
+  Invoke(state~ : AgentAdapterState, invocation~ : AgentAdapterInvocation)
+}
+
+pub(all) enum AgentAdapterCommand {
+  CancelRequest(request_id~ : @jsonrpc.RequestId)
+  TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
+  CloseConnection(reason~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentAdapterCompletion {
+  AuthenticateCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.AuthenticateResult, @error.HandlerError])
+  LogoutCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.LogoutResult, @error.HandlerError])
+  SessionNewCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.NewSessionResult, @error.HandlerError])
+  SessionLoadCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.LoadSessionResult, @error.HandlerError])
+  SessionResumeCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.ResumeSessionResult, @error.HandlerError])
+  SessionForkCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.ForkSessionResult, @error.HandlerError])
+  SessionListCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.ListSessionsResult, @error.HandlerError])
+  SessionDeleteCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.DeleteSessionResult, @error.HandlerError])
+  SessionCloseCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.CloseSessionResult, @error.HandlerError])
+  SessionSetModeCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.SetSessionModeResult, @error.HandlerError])
+  SessionSetConfigOptionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.SetSessionConfigOptionResult, @error.HandlerError])
+  SessionPromptCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.PromptResult, @error.HandlerError])
+  SessionCancelCompleted(result~ : Result[Unit, @error.HandlerError])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentAdapterInvocation {
+  AuthenticateInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.AuthenticateParams)
+  LogoutInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.LogoutParams)
+  SessionNewInvocation(id~ : @jsonrpc.RequestId, params~ : @session.NewSessionParams)
+  SessionLoadInvocation(id~ : @jsonrpc.RequestId, params~ : @session.LoadSessionParams)
+  SessionResumeInvocation(id~ : @jsonrpc.RequestId, params~ : @session.ResumeSessionParams)
+  SessionForkInvocation(id~ : @jsonrpc.RequestId, params~ : @session.ForkSessionParams)
+  SessionListInvocation(id~ : @jsonrpc.RequestId, params~ : @session.ListSessionsParams)
+  SessionDeleteInvocation(id~ : @jsonrpc.RequestId, params~ : @session.DeleteSessionParams)
+  SessionCloseInvocation(id~ : @jsonrpc.RequestId, params~ : @session.CloseSessionParams)
+  SessionSetModeInvocation(id~ : @jsonrpc.RequestId, params~ : @session.SetSessionModeParams)
+  SessionSetConfigOptionInvocation(id~ : @jsonrpc.RequestId, params~ : @session.SetSessionConfigOptionParams)
+  SessionPromptInvocation(id~ : @jsonrpc.RequestId, params~ : @session.PromptParams)
+  SessionCancelInvocation(params~ : @session.CancelParams)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentAdapterOutput {
+  Response(@jsonrpc.JsonRpcResponse)
+  Notification(@jsonrpc.JsonRpcNotification)
+  Command(AgentAdapterCommand)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AgentAdapterReservation {
+  Idle
+  AuthenticatePending(@jsonrpc.RequestId)
+  LogoutPending(@jsonrpc.RequestId)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AgentAdapterState {
+  protocol : @colmugx/acp/agent/protocol.AgentProtocolState
+  reservation : AgentAdapterReservation
+} derive(Eq, @debug.Debug)
+pub fn AgentAdapterState::protocol(Self) -> @colmugx/acp/agent/protocol.AgentProtocolState
+pub fn AgentAdapterState::reservation(Self) -> AgentAdapterReservation
+
+pub(all) struct AgentAdapterStep {
+  state : AgentAdapterState
+  outputs : Array[AgentAdapterOutput]
+} derive(Eq, @debug.Debug)
+
+pub struct AgentAuthService {
+  methods : Array[@colmugx/acp/protocol.AuthMethod]
+  authenticate_handler : async (AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult
+  logout_handler : (async (AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult)?
+}
+
+pub struct AgentContext {
+  request_broker : async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError]
+  notification_broker : async (@message.ClientNotification) -> Result[Unit, AgentContextError]
+}
+pub async fn AgentContext::cancel_request(Self, @jsonrpc.RequestId) -> Unit raise AgentContextError
+pub async fn AgentContext::elicitation_complete(Self, @colmugx/acp/protocol.ElicitationCompleteParams) -> Unit raise AgentContextError
+pub async fn AgentContext::elicitation_create(Self, @colmugx/acp/protocol.ElicitationCreateParams) -> @colmugx/acp/protocol.ElicitationCreateResult raise AgentContextError
+pub async fn AgentContext::read_text_file(Self, @colmugx/acp/protocol.ReadTextFileParams) -> @colmugx/acp/protocol.ReadTextFileResult raise AgentContextError
+pub async fn AgentContext::request_permission(Self, @colmugx/acp/protocol.RequestPermissionRequest) -> @colmugx/acp/protocol.RequestPermissionResponse raise AgentContextError
+pub async fn AgentContext::session_update(Self, @session.SessionUpdateParams) -> Unit raise AgentContextError
+pub async fn AgentContext::terminal_create(Self, @colmugx/acp/protocol.TerminalCreateParams) -> @colmugx/acp/protocol.TerminalCreateResult raise AgentContextError
+pub async fn AgentContext::terminal_kill(Self, @colmugx/acp/protocol.TerminalKillParams) -> @colmugx/acp/protocol.TerminalKillResult raise AgentContextError
+pub async fn AgentContext::terminal_output(Self, @colmugx/acp/protocol.TerminalOutputParams) -> @colmugx/acp/protocol.TerminalOutputResult raise AgentContextError
+pub async fn AgentContext::terminal_release(Self, @colmugx/acp/protocol.TerminalReleaseParams) -> @colmugx/acp/protocol.TerminalReleaseResult raise AgentContextError
+pub async fn AgentContext::terminal_wait_for_exit(Self, @colmugx/acp/protocol.TerminalWaitForExitParams) -> @colmugx/acp/protocol.TerminalWaitForExitResult raise AgentContextError
+pub async fn AgentContext::write_text_file(Self, @colmugx/acp/protocol.WriteTextFileParams) -> @colmugx/acp/protocol.WriteTextFileResult raise AgentContextError
+
+pub struct AgentEndpoint {
+  info : @colmugx/acp/protocol.Implementation
+  sessions : AgentSessionService
+  auth : AgentAuthService?
+  capabilities : @colmugx/acp/protocol.AgentCapabilities
+  auth_methods : @colmugx/acp/protocol.ProtocolNullable[Array[@colmugx/acp/protocol.AuthMethod]]
+}
+pub fn AgentEndpoint::auth_methods(Self) -> @colmugx/acp/protocol.ProtocolNullable[Array[@colmugx/acp/protocol.AuthMethod]]
+pub async fn AgentEndpoint::authenticate(Self, AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult raise @error.HandlerError
+pub async fn AgentEndpoint::cancel(Self, AgentContext, @session.CancelParams) -> Unit raise @error.HandlerError
+pub fn AgentEndpoint::capabilities(Self) -> @colmugx/acp/protocol.AgentCapabilities
+pub async fn AgentEndpoint::close_session(Self, AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult raise @error.HandlerError
+pub async fn AgentEndpoint::delete_session(Self, AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult raise @error.HandlerError
+pub async fn AgentEndpoint::fork_session(Self, AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult raise @error.HandlerError
+pub fn AgentEndpoint::info(Self) -> @colmugx/acp/protocol.Implementation
+pub async fn AgentEndpoint::list_sessions(Self, AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult raise @error.HandlerError
+pub async fn AgentEndpoint::load_session(Self, AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult raise @error.HandlerError
+pub async fn AgentEndpoint::logout(Self, AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult raise @error.HandlerError
+pub async fn AgentEndpoint::new_session(Self, AgentContext, @session.NewSessionParams) -> @session.NewSessionResult raise @error.HandlerError
+pub async fn AgentEndpoint::prompt(Self, AgentContext, @session.PromptParams) -> @session.PromptResult raise @error.HandlerError
+pub async fn AgentEndpoint::resume_session(Self, AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult raise @error.HandlerError
+pub async fn AgentEndpoint::set_config_option(Self, AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult raise @error.HandlerError
+pub async fn AgentEndpoint::set_mode(Self, AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult raise @error.HandlerError
+
+pub(all) enum AgentOutboundReply {
+  AgentReplyRequestPermission(@colmugx/acp/protocol.RequestPermissionResponse)
+  AgentReplyFsReadTextFile(@colmugx/acp/protocol.ReadTextFileResult)
+  AgentReplyFsWriteTextFile(@colmugx/acp/protocol.WriteTextFileResult)
+  AgentReplyTerminalCreate(@colmugx/acp/protocol.TerminalCreateResult)
+  AgentReplyTerminalOutput(@colmugx/acp/protocol.TerminalOutputResult)
+  AgentReplyTerminalWaitForExit(@colmugx/acp/protocol.TerminalWaitForExitResult)
+  AgentReplyTerminalKill(@colmugx/acp/protocol.TerminalKillResult)
+  AgentReplyTerminalRelease(@colmugx/acp/protocol.TerminalReleaseResult)
+  AgentReplyElicitationCreate(@colmugx/acp/protocol.ElicitationCreateResult)
+} derive(Eq, @debug.Debug)
+
+pub struct AgentSessionService {
+  new_handler : async (AgentContext, @session.NewSessionParams) -> @session.NewSessionResult
+  prompt_handler : async (AgentContext, @session.PromptParams) -> @session.PromptResult
+  cancel_handler : async (AgentContext, @session.CancelParams) -> Unit
+  load_handler : (async (AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult)?
+  resume_handler : (async (AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult)?
+  fork_handler : (async (AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult)?
+  list_handler : (async (AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult)?
+  delete_handler : (async (AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult)?
+  close_handler : (async (AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult)?
+  set_mode_handler : (async (AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult)?
+  set_config_option_handler : (async (AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult)?
+}
+
+pub struct AgentSpec {
+  info : @colmugx/acp/protocol.Implementation
+  sessions : AgentSessionService
+  support : AgentSupport
+  auth : AgentAuthService?
+}
+
+pub struct AgentSupport {
+  prompt_image : Bool
+  prompt_audio : Bool
+  prompt_embedded_context : Bool
+  mcp_http : Bool
+  mcp_sse : Bool
+  additional_directories : Bool
+}
+
+// Type aliases
+pub type AgentAuthenticateHandler = async (AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult
+
+pub type AgentCancelHandler = async (AgentContext, @session.CancelParams) -> Unit
+
+pub type AgentCloseSessionHandler = async (AgentContext, @session.CloseSessionParams) -> @session.CloseSessionResult
+
+pub type AgentContextNotificationBroker = async (@message.ClientNotification) -> Result[Unit, AgentContextError]
+
+pub type AgentContextRequestBroker = async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError]
+
+pub type AgentDeleteSessionHandler = async (AgentContext, @session.DeleteSessionParams) -> @session.DeleteSessionResult
+
+pub type AgentForkSessionHandler = async (AgentContext, @session.ForkSessionParams) -> @session.ForkSessionResult
+
+pub type AgentListSessionsHandler = async (AgentContext, @session.ListSessionsParams) -> @session.ListSessionsResult
+
+pub type AgentLoadSessionHandler = async (AgentContext, @session.LoadSessionParams) -> @session.LoadSessionResult
+
+pub type AgentLogoutHandler = async (AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult
+
+pub type AgentNewSessionHandler = async (AgentContext, @session.NewSessionParams) -> @session.NewSessionResult
+
+pub type AgentPromptHandler = async (AgentContext, @session.PromptParams) -> @session.PromptResult
+
+pub type AgentResumeSessionHandler = async (AgentContext, @session.ResumeSessionParams) -> @session.ResumeSessionResult
+
+pub type AgentSetConfigOptionHandler = async (AgentContext, @session.SetSessionConfigOptionParams) -> @session.SetSessionConfigOptionResult
+
+pub type AgentSetModeHandler = async (AgentContext, @session.SetSessionModeParams) -> @session.SetSessionModeResult
+
+// Traits
