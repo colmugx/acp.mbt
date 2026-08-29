@@ -234,6 +234,15 @@ test "broker encodes every Client-to-Agent request with exact method and params"
   )
   broker_codec_test_assert_payload(
     broker_agent_request_payload(
+      broker_codec_test_agent_request(
+        "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+      ),
+    ),
+    "session/fork",
+    "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+  )
+  broker_codec_test_assert_payload(
+    broker_agent_request_payload(
       broker_codec_test_agent_request("session/list", "{}"),
     ),
     "session/list",
@@ -443,6 +452,16 @@ test "broker decodes every Client-to-Agent reply by originating request" {
   assert_true(
     broker_decode_agent_request_result(resumed, broker_codec_test_json("{}"))
     is ClientReplyResumeSession(_),
+  )
+  let forked = broker_codec_test_agent_request(
+    "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+  )
+  assert_true(
+    broker_decode_agent_request_result(
+      forked,
+      broker_codec_test_json("{\"sessionId\":\"forked\"}"),
+    )
+    is ClientReplyForkSession(_),
   )
   let list = broker_codec_test_agent_request("session/list", "{}")
   assert_true(
