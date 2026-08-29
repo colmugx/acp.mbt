@@ -22,7 +22,7 @@ async test "agent_serve_stdio validates options before binding stdio" {
         },
       ),
       initial_state=agent_adapter_test_state(endpoint),
-      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0 },
+      options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0, },
       trace=_ => (),
     )
     ()

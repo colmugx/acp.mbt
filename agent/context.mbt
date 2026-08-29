@@ -58,7 +58,7 @@ pub fn agent_context(
   request_broker~ : AgentContextRequestBroker,
   notification_broker~ : AgentContextNotificationBroker,
 ) -> AgentContext {
-  { request_broker, notification_broker }
+  { request_broker, notification_broker, }
 }
 
 ///|

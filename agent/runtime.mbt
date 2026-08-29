@@ -97,7 +97,7 @@ pub fn agent_runtime_owner_port(
     // engine has already cancelled their tasks and settled their wire ids,
     // so the adapter drops the stale reservation instead of keeping it in a
     // dead state snapshot.
-    abort: (state, _task) => { ..state, reservation: Idle },
+    abort: (state, _task) => { ..state, reservation: Idle, },
   }
 }
 
@@ -270,7 +270,7 @@ fn agent_runtime_request_completion(
     }
   }
   match response {
-    Some(response) => { state: step.state, response, effects }
+    Some(response) => { state: step.state, response, effects, }
     None => abort("agent adapter request step must carry one response")
   }
 }
@@ -291,7 +291,7 @@ fn agent_runtime_notification_completion(
       Command(command) => effects.push(Local(effect=command))
     }
   }
-  { state: step.state, effects }
+  { state: step.state, effects, }
 }
 
 ///|
@@ -308,7 +308,7 @@ fn agent_runtime_trace_completion(
   state : AgentAdapterState,
   method_name : String,
 ) -> RuntimeOwnerNotificationCompletion[AgentAdapterState, AgentAdapterCommand] {
-  { state, effects: agent_runtime_trace_effects(method_name) }
+  { state, effects: agent_runtime_trace_effects(method_name), }
 }
 
 ///|

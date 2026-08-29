@@ -38,7 +38,7 @@ pub(all) struct AgentAdapterState {
 pub fn agent_adapter_state_new(
   protocol~ : AgentProtocolState,
 ) -> AgentAdapterState {
-  { protocol, reservation: Idle }
+  { protocol, reservation: Idle, }
 }
 
 ///|
@@ -110,7 +110,7 @@ fn agent_adapter_success(
   id : RequestId,
   result : Json,
 ) -> AgentAdapterStep {
-  { state, outputs: [Response(JsonRpcResponse::success(id~, result~))] }
+  { state, outputs: [Response(JsonRpcResponse::success(id~, result~))], }
 }
 
 ///|
@@ -119,7 +119,7 @@ fn agent_adapter_trace(
   method_name : String,
   error : JsonRpcError,
 ) -> AgentAdapterStep {
-  { state, outputs: [Command(TraceError(method_name~, error~))] }
+  { state, outputs: [Command(TraceError(method_name~, error~))], }
 }
 
 ///|
@@ -386,8 +386,8 @@ fn agent_adapter_release_reservation(
 ) -> AgentAdapterState raise AgentAdapterError {
   match state.reservation {
     AuthenticatePending(reserved) if reserved == id =>
-      { ..state, reservation: Idle }
-    LogoutPending(reserved) if reserved == id => { ..state, reservation: Idle }
+      { ..state, reservation: Idle, }
+    LogoutPending(reserved) if reserved == id => { ..state, reservation: Idle, }
     _ => raise LateCompletion(request_id=id)
   }
 }
@@ -411,7 +411,7 @@ fn agent_adapter_initialize(
     Err(error) => Immediate(agent_adapter_response(state, id, error))
     Ok(step) => {
       let next_state = agent_adapter_state_with_endpoint(
-        { ..state, protocol: step.state },
+        { ..state, protocol: step.state, },
         endpoint,
       )
       let result : InitializeResult = {
@@ -458,7 +458,7 @@ fn agent_adapter_authenticate(
     Err(error) => Immediate(agent_adapter_response(state, id, error))
     Ok(step) =>
       Invoke(
-        state={ protocol: step.state, reservation: AuthenticatePending(id) },
+        state={ protocol: step.state, reservation: AuthenticatePending(id), },
         invocation=AuthenticateInvocation(id~, params~),
       )
   }
@@ -477,7 +477,7 @@ fn agent_adapter_logout(
     Err(error) => Immediate(agent_adapter_response(state, id, error))
     Ok(step) =>
       Invoke(
-        state={ protocol: step.state, reservation: LogoutPending(id) },
+        state={ protocol: step.state, reservation: LogoutPending(id), },
         invocation=LogoutInvocation(id~, params~),
       )
   }
@@ -496,7 +496,7 @@ fn agent_adapter_session_request(
   }
   match agent_adapter_reduce_request(state, request) {
     Err(error) => Immediate(agent_adapter_response(state, id, error))
-    Ok(step) => Invoke(state={ ..state, protocol: step.state }, invocation~)
+    Ok(step) => Invoke(state={ ..state, protocol: step.state, }, invocation~)
   }
 }
 
@@ -531,6 +531,13 @@ fn agent_adapter_admit_request(
         id,
         request,
         SessionResumeInvocation(id~, params~),
+      )
+    SessionFork(params) =>
+      agent_adapter_session_request(
+        state,
+        id,
+        request,
+        SessionForkInvocation(id~, params~),
       )
     SessionList(params) =>
       agent_adapter_session_request(
@@ -589,7 +596,7 @@ fn agent_adapter_admit_notification(
           Immediate(agent_adapter_trace(state, "session/cancel", error))
         Ok(step) =>
           Invoke(
-            state={ protocol: step.state, reservation: state.reservation },
+            state={ protocol: step.state, reservation: state.reservation, },
             invocation=SessionCancelInvocation(params~),
           )
       }
@@ -599,7 +606,7 @@ fn agent_adapter_admit_notification(
           Immediate(agent_adapter_trace(state, "$/cancel_request", error))
         Ok(step) =>
           Immediate({
-            state: { ..state, protocol: step.state },
+            state: { ..state, protocol: step.state, },
             outputs: [Command(CancelRequest(request_id~))],
           })
       }
@@ -690,7 +697,7 @@ fn agent_adapter_complete_authenticate(
             agent_adapter_protocol_error(error),
           )
       }
-      let next = { ..released, protocol: reduced.state }
+      let next = { ..released, protocol: reduced.state, }
       match
         agent_adapter_encode_success(
           next, id, value, authenticate_result_to_json,
@@ -721,7 +728,7 @@ fn agent_adapter_complete_logout(
             agent_adapter_protocol_error(error),
           )
       }
-      let next = { ..released, protocol: reduced.state }
+      let next = { ..released, protocol: reduced.state, }
       match
         agent_adapter_encode_success(next, id, value, logout_result_to_json) {
         Ok(step) => step
@@ -786,6 +793,16 @@ pub fn agent_adapter_complete(
         SessionResumeCompleted(id=completion_id, result=_) =>
           raise LateCompletion(request_id=completion_id)
         _ => raise CompletionMismatch(method_name="session/resume")
+      }
+    SessionForkInvocation(id~, params=_) =>
+      match completion {
+        SessionForkCompleted(id=completion_id, result~) if completion_id == id =>
+          agent_adapter_complete_result(
+            state, id, result, fork_session_result_to_json,
+          )
+        SessionForkCompleted(id=completion_id, result=_) =>
+          raise LateCompletion(request_id=completion_id)
+        _ => raise CompletionMismatch(method_name="session/fork")
       }
     SessionListInvocation(id~, params=_) =>
       match completion {
@@ -853,7 +870,7 @@ pub fn agent_adapter_complete(
       match completion {
         SessionCancelCompleted(result~) =>
           match result {
-            Ok(_) => { state, outputs: [] }
+            Ok(_) => { state, outputs: [], }
             Err(error) =>
               agent_adapter_trace(
                 state,

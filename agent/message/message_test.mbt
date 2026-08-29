@@ -41,6 +41,12 @@ test "every stable Client-to-Agent request decodes to its closed variant" {
     Some(agent_messages_test_json("{\"sessionId\":\"s\",\"cwd\":\"/\"}")),
   )
   assert_true(resumed_request is SessionResume(_))
+  let fork = decode_agent_request(
+    "session/fork",
+    Some(agent_messages_test_json("{\"sessionId\":\"s\",\"cwd\":\"/\"}")),
+  )
+  assert_true(fork is SessionFork(_))
+  assert_eq(fork.method_name(), "session/fork")
   let list = decode_agent_request(
     "session/list",
     Some(agent_messages_test_json("{}")),
@@ -127,6 +133,12 @@ test "dispatch errors distinguish malformed params unknown methods and direction
     _ => fail("expected request/notification kind error")
   } noraise {
     _ => fail("expected wrong kind to fail")
+  }
+  try decode_agent_notification("session/fork", None) catch {
+    WrongKind(method_name="session/fork") => ()
+    _ => fail("expected fork notification kind error")
+  } noraise {
+    _ => fail("expected fork notification to fail")
   }
   let null_cancel = decode_agent_notification(
     "$/cancel_request",

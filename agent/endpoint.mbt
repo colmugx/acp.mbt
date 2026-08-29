@@ -12,7 +12,7 @@ pub struct AgentEndpoint {
 ///|
 fn agent_endpoint_marker(enabled : Bool) -> ProtocolNullable[CapabilityMarker] {
   if enabled {
-    Value({ meta: Omitted })
+    Value({ meta: Omitted, })
   } else {
     Omitted
   }
@@ -79,16 +79,22 @@ fn agent_endpoint_session_capabilities(
   let list = sessions.list_handler is Some(_)
   let delete = sessions.delete_handler is Some(_)
   let resume_capable = sessions.resume_handler is Some(_)
+  let fork_capable = sessions.fork_handler is Some(_)
   let close = sessions.close_handler is Some(_)
   let additional_directories = spec.support.additional_directories
-  if list || delete || resume_capable || close || additional_directories {
+  if list ||
+    delete ||
+    resume_capable ||
+    fork_capable ||
+    close ||
+    additional_directories {
     Value({
       list: agent_endpoint_marker(list),
       delete: agent_endpoint_marker(delete),
       resume_capability: agent_endpoint_marker(resume_capable),
       close: agent_endpoint_marker(close),
       additional_directories: agent_endpoint_marker(additional_directories),
-      fork: Omitted,
+      fork: agent_endpoint_marker(fork_capable),
       meta: Omitted,
     })
   } else {
@@ -226,6 +232,19 @@ pub async fn AgentEndpoint::resume_session(
         handler(context, params)
       })
     None => raise UnavailableOperation(method_name="session/resume")
+  }
+}
+
+///|
+pub async fn AgentEndpoint::fork_session(
+  self : AgentEndpoint,
+  context : AgentContext,
+  params : ForkSessionParams,
+) -> ForkSessionResult raise HandlerError {
+  match self.sessions.fork_handler {
+    Some(handler) =>
+      agent_handler_call("session/fork", async fn() { handler(context, params) })
+    None => raise UnavailableOperation(method_name="session/fork")
   }
 }
 

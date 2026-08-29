@@ -7,6 +7,7 @@ pub(all) enum AgentRequest {
   SessionNew(@session_protocol.NewSessionParams)
   SessionLoad(@session_protocol.LoadSessionParams)
   SessionResume(@session_protocol.ResumeSessionParams)
+  SessionFork(@session_protocol.ForkSessionParams)
   SessionList(@session_protocol.ListSessionsParams)
   SessionDelete(@session_protocol.DeleteSessionParams)
   SessionClose(@session_protocol.CloseSessionParams)
@@ -41,6 +42,7 @@ pub fn AgentRequest::method_name(self : AgentRequest) -> String {
     SessionNew(_) => "session/new"
     SessionLoad(_) => "session/load"
     SessionResume(_) => "session/resume"
+    SessionFork(_) => "session/fork"
     SessionList(_) => "session/list"
     SessionDelete(_) => "session/delete"
     SessionClose(_) => "session/close"
@@ -117,6 +119,12 @@ pub fn decode_agent_request(
       SessionResume(
         agent_decode_params(method_name, params, value => {
           @session_protocol.resume_session_params_from_json(value)
+        }),
+      )
+    "session/fork" =>
+      SessionFork(
+        agent_decode_params(method_name, params, value => {
+          @session_protocol.fork_session_params_from_json(value)
         }),
       )
     "session/list" =>
@@ -229,6 +237,7 @@ pub fn decode_agent_notification(
     | "session/new"
     | "session/load"
     | "session/resume"
+    | "session/fork"
     | "session/list"
     | "session/delete"
     | "session/close"

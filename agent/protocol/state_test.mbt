@@ -23,7 +23,7 @@ fn agent_state_test_config(
   capabilities : ProtocolNullable[AgentCapabilities],
   auth_methods : ProtocolNullable[Array[AuthMethod]],
 ) -> AgentProtocolConfig {
-  { agent_capabilities: capabilities, auth_methods, agent_info: Omitted }
+  { agent_capabilities: capabilities, auth_methods, agent_info: Omitted, }
 }
 
 ///|
@@ -79,7 +79,7 @@ fn agent_state_test_notification(
 
 ///|
 fn agent_state_test_marker() -> CapabilityMarker {
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -116,14 +116,14 @@ fn agent_state_test_all_capabilities() -> AgentCapabilities {
       sse: Value(true),
       meta: Omitted,
     }),
-    auth: Value({ logout: Value(agent_state_test_marker()), meta: Omitted }),
+    auth: Value({ logout: Value(agent_state_test_marker()), meta: Omitted, }),
     session_capabilities: Value({
       list: Value(agent_state_test_marker()),
       delete: Value(agent_state_test_marker()),
       resume_capability: Value(agent_state_test_marker()),
       close: Value(agent_state_test_marker()),
       additional_directories: Value(agent_state_test_marker()),
-      fork: Omitted,
+      fork: Value(agent_state_test_marker()),
       meta: Omitted,
     }),
     meta: Omitted,
@@ -143,8 +143,13 @@ fn agent_state_test_gate_capabilities(
   {
     ..all,
     load_session,
-    prompt_capabilities: Value({ image, audio, embedded_context, meta: Omitted }),
-    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted }),
+    prompt_capabilities: Value({
+      image,
+      audio,
+      embedded_context,
+      meta: Omitted,
+    }),
+    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted, }),
   }
 }
 
@@ -161,6 +166,16 @@ fn agent_state_test_all_null_capabilities() -> AgentCapabilities {
 }
 
 ///|
+fn agent_state_test_no_fork_capabilities() -> AgentCapabilities {
+  let all = agent_state_test_all_capabilities()
+  let sessions = match all.session_capabilities {
+    Value(value) => value
+    _ => abort("fixture must include session capabilities")
+  }
+  { ..all, session_capabilities: Value({ ..sessions, fork: Omitted, }), }
+}
+
+///|
 fn agent_state_test_b09_capabilities(
   mcp_http : ProtocolNullable[Bool],
   mcp_sse : ProtocolNullable[Bool],
@@ -173,7 +188,7 @@ fn agent_state_test_b09_capabilities(
   }
   {
     ..all,
-    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted }),
+    mcp_capabilities: Value({ http: mcp_http, sse: mcp_sse, meta: Omitted, }),
     session_capabilities: Value({ ..sessions, additional_directories, }),
   }
 }
@@ -253,6 +268,12 @@ fn agent_state_test_b09_request(
       ",\"mcpServers\":" +
       servers +
       "}"
+    "session/fork" =>
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"" +
+      additional_directories +
+      ",\"mcpServers\":" +
+      servers +
+      "}"
     _ => abort("unknown B09 session method")
   }
   agent_state_test_request(method_name, source)
@@ -312,7 +333,7 @@ fn agent_state_test_gate_denied(
 
 ///|
 fn agent_state_test_auth_method() -> AuthMethod {
-  { id: "token", name: "Token", description: Omitted, meta: Omitted }
+  { id: "token", name: "Token", description: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -436,7 +457,7 @@ test "boolean config values require the negotiated client capability" {
     fs: Omitted,
     terminal: Omitted,
     elicitation: Omitted,
-    session: Value({ config_options: Omitted, meta: Omitted }),
+    session: Value({ config_options: Omitted, meta: Omitted, }),
     plan: Omitted,
     auth: Omitted,
     meta: Omitted,
@@ -446,7 +467,7 @@ test "boolean config values require the negotiated client capability" {
     terminal: Omitted,
     elicitation: Omitted,
     session: Value({
-      config_options: Value({ boolean: Null, meta: Omitted }),
+      config_options: Value({ boolean: Null, meta: Omitted, }),
       meta: Omitted,
     }),
     plan: Omitted,
@@ -581,6 +602,17 @@ test "omitted and null capabilities deny every optional gate" {
       _ => fail("expected resume gate")
     }
 
+    let fork_request = agent_state_test_request(
+      "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+    )
+    try agent_protocol_reduce(state, Request(fork_request)) catch {
+      CapabilityDenied(method_name="session/fork", capability="session.fork") =>
+        ()
+      _ => fail("expected fork gate")
+    } noraise {
+      _ => fail("expected fork gate")
+    }
+
     let new_with_roots = agent_state_test_request(
       "session/new", "{\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp\"],\"mcpServers\":[]}",
     )
@@ -602,6 +634,53 @@ test "omitted and null capabilities deny every optional gate" {
       _ => fail("expected logout gate")
     }
   }
+}
+
+///|
+test "session fork requires initialization the marker and advertised directories" {
+  let config = agent_state_test_config(
+    Value(agent_state_test_all_capabilities()),
+    Omitted,
+  )
+  let initial = agent_protocol_state_new(config~)
+  let fork_request = agent_state_test_request(
+    "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+  )
+  try agent_protocol_reduce(initial, Request(fork_request)) catch {
+    NotInitialized(method_name="session/fork") => ()
+    _ => fail("expected fork before initialize to fail")
+  } noraise {
+    _ => fail("expected fork before initialize to fail")
+  }
+  let marker_state = agent_state_test_initialize(initial, 1).state
+  let fork_step = agent_protocol_reduce(marker_state, Request(fork_request))
+  assert_true(fork_step.commands[0] is DispatchRequest(SessionFork(_)))
+  let no_fork_config = agent_state_test_config(
+    Value(agent_state_test_no_fork_capabilities()),
+    Omitted,
+  )
+  let no_fork_state = agent_state_test_initialize(
+      agent_protocol_state_new(config=no_fork_config),
+      1,
+    ).state
+  agent_state_test_gate_denied(
+    no_fork_state, fork_request, "session/fork", "session.fork",
+  )
+  let no_roots_state = agent_state_test_initialize(
+      agent_protocol_state_new(
+        config=agent_state_test_config(
+          Value(agent_state_test_b09_capabilities(Omitted, Omitted, Omitted)),
+          Omitted,
+        ),
+      ),
+      1,
+    ).state
+  let fork_with_roots = agent_state_test_request(
+    "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp\"]}",
+  )
+  agent_state_test_gate_denied(
+    no_roots_state, fork_with_roots, "session/fork", "session.additionalDirectories",
+  )
 }
 
 ///|
@@ -755,8 +834,10 @@ test "omitted and null prompt and MCP capabilities reject each optional payload"
 }
 
 ///|
-test "B09 MCP transports are independently gated for new load and resume" {
-  let methods = ["session/new", "session/load", "session/resume"]
+test "B09 MCP transports are independently gated for new load resume and fork" {
+  let methods = [
+    "session/new", "session/load", "session/resume", "session/fork",
+  ]
   for method_name in methods {
     let no_transport_state = agent_state_test_b09_state(false, false, false)
     agent_state_test_b09_dispatch(
@@ -804,7 +885,9 @@ test "B09 MCP transports are independently gated for new load and resume" {
 
 ///|
 test "B09 additional directories require a marker and omission is allowed" {
-  let methods = ["session/new", "session/load", "session/resume"]
+  let methods = [
+    "session/new", "session/load", "session/resume", "session/fork",
+  ]
   for method_name in methods {
     for has_marker in [false, true] {
       let state = agent_state_test_b09_state(false, false, has_marker)

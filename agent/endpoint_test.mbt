@@ -46,10 +46,10 @@ async test "typed async endpoint handlers and context ports are callable" {
     meta: Omitted,
   })
   assert_eq(prompt_result.stop_reason, EndTurn)
-  endpoint.cancel(context, { session_id: "s", meta: Omitted })
+  endpoint.cancel(context, { session_id: "s", meta: Omitted, })
   context.session_update({
     session_id: "s",
-    update: CurrentModeUpdate({ current_mode_id: "mode", meta: Omitted }),
+    update: CurrentModeUpdate({ current_mode_id: "mode", meta: Omitted, }),
     meta: Omitted,
   })
   let permission_result = context.request_permission({
@@ -123,6 +123,66 @@ async test "endpoint preserves real task cancellation as structured cancellation
     _ => fail("real task cancellation must remain structured cancellation")
   } noraise {
     _ => fail("real task cancellation must raise")
+  }
+}
+
+///|
+test "fork capability is advertised from handler presence only" {
+  let with_fork = agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("fork-capable"),
+      sessions=agent_session_service(
+        new_session=agent_service_test_new,
+        prompt=agent_service_test_prompt,
+        cancel=agent_service_test_cancel,
+        fork_session=agent_service_test_fork,
+      ),
+      support=agent_support(),
+    ).unwrap(),
+  )
+  match with_fork.capabilities().session_capabilities {
+    Value(session) => assert_eq(session.fork, Value({ meta: Omitted, }))
+    _ => fail("a present fork handler should advertise the marker")
+  }
+  let without_fork = agent_endpoint_from_spec(
+    agent_spec(
+      info=agent_service_test_info("fork-omitted"),
+      sessions=agent_session_service(
+        new_session=agent_service_test_new,
+        prompt=agent_service_test_prompt,
+        cancel=agent_service_test_cancel,
+        list=agent_service_test_list,
+      ),
+      support=agent_support(),
+    ).unwrap(),
+  )
+  match without_fork.capabilities().session_capabilities {
+    Value(session) => assert_eq(session.fork, Omitted)
+    _ => fail("other session services should still be advertised")
+  }
+}
+
+///|
+async test "fork session without a handler fails as unavailable" {
+  let spec = agent_spec(
+    info=agent_service_test_info("fork-unavailable"),
+    sessions=agent_service_test_sessions(false),
+    support=agent_support(),
+  ).unwrap()
+  let endpoint = agent_endpoint_from_spec(spec)
+  try
+    endpoint.fork_session(agent_service_test_context(), {
+      cwd: "/",
+      session_id: "s",
+      additional_directories: Omitted,
+      mcp_servers: Omitted,
+      meta: Omitted,
+    })
+  catch {
+    UnavailableOperation(method_name="session/fork") => ()
+    _ => fail("expected missing fork operation to fail")
+  } noraise {
+    _ => fail("expected missing fork operation to raise")
   }
 }
 

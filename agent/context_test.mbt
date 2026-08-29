@@ -54,22 +54,22 @@ fn agent_context_test_terminal_create_params() -> TerminalCreateParams {
 
 ///|
 fn agent_context_test_terminal_output_params() -> TerminalOutputParams {
-  { session_id: "session", terminal_id: "terminal", meta: Omitted }
+  { session_id: "session", terminal_id: "terminal", meta: Omitted, }
 }
 
 ///|
 fn agent_context_test_terminal_wait_params() -> TerminalWaitForExitParams {
-  { session_id: "session", terminal_id: "terminal", meta: Omitted }
+  { session_id: "session", terminal_id: "terminal", meta: Omitted, }
 }
 
 ///|
 fn agent_context_test_terminal_kill_params() -> TerminalKillParams {
-  { session_id: "session", terminal_id: "terminal", meta: Omitted }
+  { session_id: "session", terminal_id: "terminal", meta: Omitted, }
 }
 
 ///|
 fn agent_context_test_terminal_release_params() -> TerminalReleaseParams {
-  { session_id: "session", terminal_id: "terminal", meta: Omitted }
+  { session_id: "session", terminal_id: "terminal", meta: Omitted, }
 }
 
 ///|
@@ -86,14 +86,14 @@ fn agent_context_test_elicitation_params() -> ElicitationCreateParams {
 fn agent_context_test_update_params() -> SessionUpdateParams {
   {
     session_id: "session",
-    update: CurrentModeUpdate({ current_mode_id: "default", meta: Omitted }),
+    update: CurrentModeUpdate({ current_mode_id: "default", meta: Omitted, }),
     meta: Omitted,
   }
 }
 
 ///|
 fn agent_context_test_complete_params() -> ElicitationCompleteParams {
-  { elicitation_id: "elicitation", meta: Omitted }
+  { elicitation_id: "elicitation", meta: Omitted, }
 }
 
 ///|
@@ -105,19 +105,19 @@ async fn agent_context_test_all_requests(
     SessionRequestPermission(params) => {
       assert_eq(params.session_id, "session")
       assert_eq(params.tool_call.tool_call_id, "tool-call")
-      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted }))
+      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted, }))
     }
     FsReadTextFile(params) => {
       assert_eq(params.path, "/tmp/context.txt")
-      Ok(AgentReplyFsReadTextFile({ content: "contents", meta: Omitted }))
+      Ok(AgentReplyFsReadTextFile({ content: "contents", meta: Omitted, }))
     }
     FsWriteTextFile(params) => {
       assert_eq(params.content, "typed")
-      Ok(AgentReplyFsWriteTextFile({ meta: Omitted }))
+      Ok(AgentReplyFsWriteTextFile({ meta: Omitted, }))
     }
     TerminalCreate(params) => {
       assert_eq(params.command, "printf")
-      Ok(AgentReplyTerminalCreate({ terminal_id: "terminal", meta: Omitted }))
+      Ok(AgentReplyTerminalCreate({ terminal_id: "terminal", meta: Omitted, }))
     }
     TerminalOutput(params) => {
       assert_eq(params.terminal_id, "terminal")
@@ -142,11 +142,11 @@ async fn agent_context_test_all_requests(
     }
     TerminalKill(params) => {
       assert_eq(params.terminal_id, "terminal")
-      Ok(AgentReplyTerminalKill({ meta: Omitted }))
+      Ok(AgentReplyTerminalKill({ meta: Omitted, }))
     }
     TerminalRelease(params) => {
       assert_eq(params.terminal_id, "terminal")
-      Ok(AgentReplyTerminalRelease({ meta: Omitted }))
+      Ok(AgentReplyTerminalRelease({ meta: Omitted, }))
     }
     ElicitationCreate(Form(params)) => {
       assert_eq(params.message, "Please choose")
@@ -229,7 +229,7 @@ async fn agent_context_test_mismatch_request(
   _request : ClientRequest,
 ) -> Result[AgentOutboundReply, AgentContextError] {
   @async.pause()
-  Ok(AgentReplyFsReadTextFile({ content: "wrong", meta: Omitted }))
+  Ok(AgentReplyFsReadTextFile({ content: "wrong", meta: Omitted, }))
 }
 
 ///|
@@ -437,7 +437,7 @@ async fn agent_context_test_first_context_request(
   @async.pause()
   match request {
     SessionRequestPermission(_) =>
-      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted }))
+      Ok(AgentReplyRequestPermission({ outcome: Cancelled, meta: Omitted, }))
     other => Err(AgentContextUnavailable(method_name=other.method_name()))
   }
 }
@@ -451,7 +451,7 @@ async fn agent_context_test_second_context_request(
     SessionRequestPermission(_) =>
       Ok(
         AgentReplyRequestPermission({
-          outcome: Selected({ option_id: "allow", meta: Omitted }),
+          outcome: Selected({ option_id: "allow", meta: Omitted, }),
           meta: Omitted,
         }),
       )

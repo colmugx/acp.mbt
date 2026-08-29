@@ -47,7 +47,7 @@ async fn agent_matrix_test_empty_id_new(
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
-  { session_id: "", modes: Omitted, config_options: Omitted, meta: Omitted }
+  { session_id: "", modes: Omitted, config_options: Omitted, meta: Omitted, }
 }
 
 ///|
@@ -68,7 +68,7 @@ async fn agent_matrix_test_delete_ok(
   _params : DeleteSessionParams,
 ) -> DeleteSessionResult {
   @async.pause()
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -78,6 +78,22 @@ async fn agent_matrix_test_delete_unknown_session(
 ) -> DeleteSessionResult {
   @async.pause()
   raise HandlerError::UnavailableOperation(method_name="session/delete")
+}
+
+///|
+/// A fork addresses the new session id of the forked copy; history stays with
+/// the original session.
+async fn agent_matrix_test_fork(
+  _context : AgentContext,
+  _params : ForkSessionParams,
+) -> ForkSessionResult {
+  @async.pause()
+  {
+    session_id: "matrix-fork-1",
+    modes: Omitted,
+    config_options: Omitted,
+    meta: Omitted,
+  }
 }
 
 ///|
@@ -94,7 +110,7 @@ async fn agent_matrix_test_list(
     updated_at: Omitted,
     meta: Omitted,
   }
-  { sessions: [info], next_cursor: Value("next-1"), meta: Omitted }
+  { sessions: [info], next_cursor: Value("next-1"), meta: Omitted, }
 }
 
 ///|
@@ -107,7 +123,7 @@ fn agent_matrix_test_select_option() -> SessionConfigOption {
     kind: Select({
       current_value: "fast",
       options: Ungrouped([
-        { value: "fast", name: "Fast", description: Omitted, meta: Omitted },
+        { value: "fast", name: "Fast", description: Omitted, meta: Omitted, },
         {
           value: "quality",
           name: "Quality",
@@ -134,7 +150,7 @@ async fn agent_matrix_test_set_config(
         name: "Confirm actions",
         description: Omitted,
         category: Omitted,
-        kind: Boolean({ current_value: true }),
+        kind: Boolean({ current_value: true, }),
         meta: Omitted,
       },
       agent_matrix_test_select_option(),
@@ -152,7 +168,7 @@ async fn agent_matrix_test_cancelled_prompt(
 ) -> PromptResult {
   @async.pause()
   let stop_reason : StopReason = Cancelled
-  { stop_reason, meta: Omitted }
+  { stop_reason, meta: Omitted, }
 }
 
 ///|
@@ -170,6 +186,7 @@ fn agent_matrix_test_endpoint(
       cancel=agent_service_test_cancel,
       load~,
       resume_session=agent_adapter_test_resume,
+      fork_session=agent_matrix_test_fork,
       list=agent_matrix_test_list,
       delete~,
       close=agent_adapter_test_close,
@@ -460,7 +477,7 @@ async test "matrix C05 session load is gated typed and never aliases resume" {
       admission.1,
       SessionResumeCompleted(
         id=Number(7),
-        result=Ok({ modes: Omitted, config_options: Omitted, meta: Omitted }),
+        result=Ok({ modes: Omitted, config_options: Omitted, meta: Omitted, }),
       ),
     )
   catch {
@@ -526,7 +543,7 @@ async test "matrix C06 session resume is gated and completes without replay" {
       admission.1,
       SessionLoadCompleted(
         id=String("resume-cross"),
-        result=Ok({ modes: Omitted, config_options: Omitted, meta: Omitted }),
+        result=Ok({ modes: Omitted, config_options: Omitted, meta: Omitted, }),
       ),
     )
   catch {
@@ -534,6 +551,73 @@ async test "matrix C06 session resume is gated and completes without replay" {
     _ => fail("expected a resume/load completion mismatch")
   } noraise {
     _ => fail("expected a resume/load completion mismatch")
+  }
+}
+
+///|
+async test "matrix session fork wire frame mirrors the resume recipe" {
+  let minimal = agent_matrix_test_minimal_endpoint()
+  let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
+  let ungated = agent_adapter_admit(
+    minimal_initialized.state,
+    minimal,
+    agent_adapter_test_request(
+      Number(2),
+      "session/fork",
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+    ),
+  )
+  match ungated {
+    Immediate(step) => {
+      assert_eq(agent_adapter_test_error_code(step), ResourceNotFound)
+      assert_eq(step.state, minimal_initialized.state)
+    }
+    Invoke(..) => fail("session/fork without session.fork must not invoke")
+  }
+  let endpoint = agent_matrix_test_endpoint()
+  let initialized = agent_adapter_test_initialized(endpoint, Number(3))
+  let context = agent_service_test_context()
+  let admission = agent_matrix_test_invoke_admission(
+    initialized.state,
+    endpoint,
+    agent_adapter_test_request(
+      Number(4),
+      "session/fork",
+      "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
+    ),
+  )
+  match admission.1 {
+    SessionForkInvocation(id=Number(4), params=fork_params) => {
+      assert_eq(fork_params.cwd, "/")
+      assert_eq(fork_params.session_id, "s")
+    }
+    _ => fail("session/fork must admit a typed fork invocation")
+  }
+  let forked = agent_adapter_complete(
+    admission.0,
+    admission.1,
+    agent_adapter_execute(admission.1, endpoint, context),
+  )
+  // The agent-to-client response addresses the fork copy by its new session
+  // id; the original session id never appears in the result.
+  let decoded = fork_session_result_from_json(
+    agent_adapter_test_success(forked, Number(4)),
+  )
+  assert_eq(decoded.session_id, "matrix-fork-1")
+  try
+    agent_adapter_complete(
+      admission.0,
+      admission.1,
+      SessionResumeCompleted(
+        id=Number(4),
+        result=Ok({ modes: Omitted, config_options: Omitted, meta: Omitted, }),
+      ),
+    )
+  catch {
+    CompletionMismatch(method_name="session/fork") => ()
+    _ => fail("expected a fork/resume completion mismatch")
+  } noraise {
+    _ => fail("expected a fork/resume completion mismatch")
   }
 }
 
@@ -746,7 +830,7 @@ async test "matrix C11 set config option returns the complete option set" {
   )
   assert_eq(decoded.config_options.length(), 2)
   assert_true(
-    decoded.config_options[0].kind is Boolean({ current_value: true }),
+    decoded.config_options[0].kind is Boolean({ current_value: true, }),
   )
   // Boundary: configId membership in the advertised set is service-owned;
   // the SDK never applies values itself, and boolean values additionally
@@ -865,7 +949,7 @@ async test "matrix C13 turn cancellation settles cancelled without side effects"
       late_admission.1,
       SessionPromptCompleted(
         id=Number(99),
-        result=Ok({ stop_reason: Cancelled, meta: Omitted }),
+        result=Ok({ stop_reason: Cancelled, meta: Omitted, }),
       ),
     )
   catch {

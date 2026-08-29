@@ -50,6 +50,7 @@ using @session_protocol {
   close_session_result_from_json,
   delete_session_params_to_json,
   delete_session_result_from_json,
+  fork_session_params_to_json,
   list_sessions_params_to_json,
   list_sessions_result_from_json,
   load_session_params_to_json,
@@ -300,6 +301,10 @@ fn broker_agent_request_payload(
       broker_encode_params("session/resume", () => {
         resume_session_params_to_json(value)
       })
+    SessionFork(value) =>
+      broker_encode_params("session/fork", () => {
+        fork_session_params_to_json(value)
+      })
     SessionList(value) =>
       broker_encode_params("session/list", () => {
         list_sessions_params_to_json(value)
@@ -385,6 +390,17 @@ fn broker_decode_agent_request_result(
         broker_decode_result("session/resume", result, value => {
           resume_session_result_from_json(value)
         }),
+      )
+    // Stable v1 client replies have no fork variant; the owner loop surfaces
+    // this as a typed malformed-result mismatch.
+    SessionFork(_) =>
+      raise InvalidPayload(
+        phase=Result,
+        method_name="session/fork",
+        cause=ProtocolDecodeError::InvalidField(
+          path="session/fork",
+          reason="session/fork replies are outside the stable v1 client surface",
+        ),
       )
     SessionList(_) =>
       ClientReplyListSessions(

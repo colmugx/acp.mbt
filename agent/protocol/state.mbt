@@ -306,6 +306,22 @@ fn agent_resume_supported(state : AgentProtocolState) -> Bool {
 }
 
 ///|
+fn agent_fork_supported(state : AgentProtocolState) -> Bool {
+  match agent_capabilities(state) {
+    Value(capabilities) =>
+      match capabilities.session_capabilities {
+        Value(session) =>
+          match session.fork {
+            Value(_) => true
+            Omitted | Null => false
+          }
+        Omitted | Null => false
+      }
+    Omitted | Null => false
+  }
+}
+
+///|
 fn agent_close_supported(state : AgentProtocolState) -> Bool {
   match agent_capabilities(state) {
     Value(capabilities) =>
@@ -509,7 +525,7 @@ fn agent_reduce_initialize(
         // The peer receives the latest supported version and decides whether
         // to disconnect.  The Agent remains pre-initialized until a v1
         // initialize request is received.
-        { state, commands: [SendInitialize(result~, accepted=false)] }
+        { state, commands: [SendInitialize(result~, accepted=false)], }
       }
     }
   }
@@ -527,7 +543,7 @@ fn agent_reduce_authenticate(
       if !agent_auth_method_advertised(state, params.method_id) {
         raise AuthenticationMethodNotAdvertised(method_id=params.method_id)
       }
-      { state, commands: [Authenticate(method_id=params.method_id)] }
+      { state, commands: [Authenticate(method_id=params.method_id)], }
     }
   }
 }
@@ -542,7 +558,7 @@ fn agent_reduce_logout(
     "auth.logout",
   )
   agent_require_authenticated(state, "logout")
-  { state, commands: [Logout] }
+  { state, commands: [Logout], }
 }
 
 ///|
@@ -562,7 +578,7 @@ fn agent_reduce_request_initialized(
         params.additional_directories,
       )
       agent_check_mcp_servers(state, "session/new", params.mcp_servers)
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionLoad(params) => {
       agent_require_authenticated(state, "session/load")
@@ -577,7 +593,7 @@ fn agent_reduce_request_initialized(
         params.additional_directories,
       )
       agent_check_mcp_servers(state, "session/load", params.mcp_servers)
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionResume(params) => {
       agent_require_authenticated(state, "session/resume")
@@ -596,7 +612,26 @@ fn agent_reduce_request_initialized(
           agent_check_mcp_servers(state, "session/resume", servers)
         Omitted | Null => ()
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
+    }
+    SessionFork(params) => {
+      agent_require_authenticated(state, "session/fork")
+      agent_require_capability(
+        agent_fork_supported(state),
+        "session/fork",
+        "session.fork",
+      )
+      agent_check_additional_directories(
+        state,
+        "session/fork",
+        params.additional_directories,
+      )
+      match params.mcp_servers {
+        Value(servers) =>
+          agent_check_mcp_servers(state, "session/fork", servers)
+        Omitted | Null => ()
+      }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionList(_) => {
       agent_require_authenticated(state, "session/list")
@@ -605,7 +640,7 @@ fn agent_reduce_request_initialized(
         "session/list",
         "session.list",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionDelete(_) => {
       agent_require_authenticated(state, "session/delete")
@@ -614,7 +649,7 @@ fn agent_reduce_request_initialized(
         "session/delete",
         "session.delete",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionClose(_) => {
       agent_require_authenticated(state, "session/close")
@@ -623,11 +658,11 @@ fn agent_reduce_request_initialized(
         "session/close",
         "session.close",
       )
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionSetMode(_) => {
       agent_require_authenticated(state, "session/set_mode")
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionSetConfigOption(params) => {
       agent_require_authenticated(state, "session/set_config_option")
@@ -640,12 +675,12 @@ fn agent_reduce_request_initialized(
           )
         ValueId(_) => ()
       }
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
     SessionPrompt(params) => {
       agent_require_authenticated(state, "session/prompt")
       agent_check_prompt_blocks(state, "session/prompt", params.prompt)
-      { state, commands: [DispatchRequest(request)] }
+      { state, commands: [DispatchRequest(request)], }
     }
   }
 }
@@ -675,10 +710,10 @@ fn agent_reduce_notification(
   match notification {
     SessionCancel(params) => {
       agent_require_authenticated(state, method_name)
-      { state, commands: [CancelSession(session_id=params.session_id)] }
+      { state, commands: [CancelSession(session_id=params.session_id)], }
     }
     CancelRequest(request_id) =>
-      { state, commands: [CancelRequest(request_id~)] }
+      { state, commands: [CancelRequest(request_id~)], }
   }
 }
 
@@ -695,7 +730,7 @@ fn agent_reduce_authentication_succeeded(
     NotRequired => raise AuthenticationNotRequired
     Authenticated => raise AlreadyAuthenticated
     AwaitingAuthentication =>
-      { state: { ..state, authentication: Authenticated }, commands: [] }
+      { state: { ..state, authentication: Authenticated, }, commands: [], }
   }
 }
 
