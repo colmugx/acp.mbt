@@ -9,6 +9,7 @@ pub(all) enum ClientReply {
   ClientReplyNewSession(NewSessionResult)
   ClientReplyLoadSession(LoadSessionResult)
   ClientReplyResumeSession(ResumeSessionResult)
+  ClientReplyForkSession(ForkSessionResult)
   ClientReplyListSessions(ListSessionsResult)
   ClientReplyDeleteSession(DeleteSessionResult)
   ClientReplyCloseSession(CloseSessionResult)
@@ -27,6 +28,7 @@ pub fn ClientReply::method_name(self : ClientReply) -> String {
     ClientReplyNewSession(_) => "session/new"
     ClientReplyLoadSession(_) => "session/load"
     ClientReplyResumeSession(_) => "session/resume"
+    ClientReplyForkSession(_) => "session/fork"
     ClientReplyListSessions(_) => "session/list"
     ClientReplyDeleteSession(_) => "session/delete"
     ClientReplyCloseSession(_) => "session/close"
@@ -100,7 +102,7 @@ pub fn client_connection(
   request_broker~ : ClientRequestBroker,
   notification_broker~ : ClientNotificationBroker,
 ) -> ClientConnection {
-  { request_broker, notification_broker }
+  { request_broker, notification_broker, }
 }
 
 ///|
@@ -232,6 +234,25 @@ pub async fn ClientConnection::resume_session(
       raise ClientConnectionReplyMismatch(
         method_name="session/resume",
         expected="session/resume",
+        actual=reply.method_name(),
+      )
+  }
+}
+
+///|
+/// Send `session/fork` and settle the forked session id.  Upstream unstable
+/// (RFD session-fork, Draft); callers must first observe the `session.fork`
+/// capability marker in the agent's initialize result.
+pub async fn ClientConnection::fork_session(
+  self : ClientConnection,
+  params : ForkSessionParams,
+) -> ForkSessionResult raise ClientConnectionError {
+  match client_connection_request(self, SessionFork(params), "session/fork") {
+    ClientReplyForkSession(result) => result
+    reply =>
+      raise ClientConnectionReplyMismatch(
+        method_name="session/fork",
+        expected="session/fork",
         actual=reply.method_name(),
       )
   }

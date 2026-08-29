@@ -20,12 +20,12 @@ fn client_connection_test_initialize_v2_request() -> InitializeParams {
 
 ///|
 fn client_connection_test_authenticate() -> AuthenticateParams {
-  { method_id: "token", meta: Omitted }
+  { method_id: "token", meta: Omitted, }
 }
 
 ///|
 fn client_connection_test_logout() -> LogoutParams {
-  { meta: Omitted }
+  { meta: Omitted, }
 }
 
 ///|
@@ -61,23 +61,34 @@ fn client_connection_test_resume_session() -> ResumeSessionParams {
 }
 
 ///|
+fn client_connection_test_fork_session() -> ForkSessionParams {
+  {
+    cwd: "/tmp",
+    session_id: "session",
+    additional_directories: Omitted,
+    mcp_servers: Omitted,
+    meta: Omitted,
+  }
+}
+
+///|
 fn client_connection_test_list_sessions() -> ListSessionsParams {
-  { cwd: Omitted, cursor: Omitted, meta: Omitted }
+  { cwd: Omitted, cursor: Omitted, meta: Omitted, }
 }
 
 ///|
 fn client_connection_test_delete_session() -> DeleteSessionParams {
-  { session_id: "session", meta: Omitted }
+  { session_id: "session", meta: Omitted, }
 }
 
 ///|
 fn client_connection_test_close_session() -> CloseSessionParams {
-  { session_id: "session", meta: Omitted }
+  { session_id: "session", meta: Omitted, }
 }
 
 ///|
 fn client_connection_test_set_mode() -> SetSessionModeParams {
-  { session_id: "session", mode_id: "default", meta: Omitted }
+  { session_id: "session", mode_id: "default", meta: Omitted, }
 }
 
 ///|
@@ -92,7 +103,7 @@ fn client_connection_test_set_config_option() -> SetSessionConfigOptionParams {
 
 ///|
 fn client_connection_test_prompt() -> PromptParams {
-  { session_id: "session", prompt: [], meta: Omitted }
+  { session_id: "session", prompt: [], meta: Omitted, }
 }
 
 ///|
@@ -124,13 +135,13 @@ async fn client_connection_test_request_broker(
       }
     Authenticate(params) =>
       if params == client_connection_test_authenticate() {
-        Ok(ClientReplyAuthenticate({ meta: Omitted }))
+        Ok(ClientReplyAuthenticate({ meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("authenticate"))
       }
     Logout(params) =>
       if params == client_connection_test_logout() {
-        Ok(ClientReplyLogout({ meta: Omitted }))
+        Ok(ClientReplyLogout({ meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("logout"))
       }
@@ -171,7 +182,19 @@ async fn client_connection_test_request_broker(
       } else {
         Err(client_connection_test_broker_failure("session/resume"))
       }
-    SessionFork(_) => Err(client_connection_test_broker_failure("session/fork"))
+    SessionFork(params) =>
+      if params == client_connection_test_fork_session() {
+        Ok(
+          ClientReplyForkSession({
+            session_id: "forked-session",
+            modes: Omitted,
+            config_options: Omitted,
+            meta: Omitted,
+          }),
+        )
+      } else {
+        Err(client_connection_test_broker_failure("session/fork"))
+      }
     SessionList(params) =>
       if params == client_connection_test_list_sessions() {
         Ok(
@@ -186,31 +209,31 @@ async fn client_connection_test_request_broker(
       }
     SessionDelete(params) =>
       if params == client_connection_test_delete_session() {
-        Ok(ClientReplyDeleteSession({ meta: Omitted }))
+        Ok(ClientReplyDeleteSession({ meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("session/delete"))
       }
     SessionClose(params) =>
       if params == client_connection_test_close_session() {
-        Ok(ClientReplyCloseSession({ meta: Omitted }))
+        Ok(ClientReplyCloseSession({ meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("session/close"))
       }
     SessionSetMode(params) =>
       if params == client_connection_test_set_mode() {
-        Ok(ClientReplySetMode({ meta: Omitted }))
+        Ok(ClientReplySetMode({ meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("session/set_mode"))
       }
     SessionSetConfigOption(params) =>
       if params == client_connection_test_set_config_option() {
-        Ok(ClientReplySetConfigOption({ config_options: [], meta: Omitted }))
+        Ok(ClientReplySetConfigOption({ config_options: [], meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("session/set_config_option"))
       }
     SessionPrompt(params) =>
       if params == client_connection_test_prompt() {
-        Ok(ClientReplyPrompt({ stop_reason: EndTurn, meta: Omitted }))
+        Ok(ClientReplyPrompt({ stop_reason: EndTurn, meta: Omitted, }))
       } else {
         Err(client_connection_test_broker_failure("session/prompt"))
       }
@@ -223,7 +246,7 @@ fn client_connection_test_notification_broker(
 ) -> Result[Unit, ClientConnectionError] {
   match notification {
     SessionCancel(params) =>
-      if params == { session_id: "session", meta: Omitted } {
+      if params == { session_id: "session", meta: Omitted, } {
         Ok(())
       } else {
         Err(client_connection_test_broker_failure("session/cancel"))
@@ -261,6 +284,10 @@ async test "ClientConnection maps every stable request to typed reply" {
   ignore(connection.load_session(client_connection_test_load_session()))
   ignore(connection.resume_session(client_connection_test_resume_session()))
   assert_eq(
+    connection.fork_session(client_connection_test_fork_session()).session_id,
+    "forked-session",
+  )
+  assert_eq(
     connection.list_sessions(client_connection_test_list_sessions()).sessions,
     [],
   )
@@ -279,7 +306,7 @@ async test "ClientConnection maps every stable request to typed reply" {
 ///|
 test "ClientConnection emits typed cancellation notifications" {
   let connection = client_connection_test_connection()
-  connection.cancel({ session_id: "session", meta: Omitted })
+  connection.cancel({ session_id: "session", meta: Omitted, })
   connection.cancel_request(String("cancel"))
   connection.cancel_request(Number(7))
 }
@@ -289,7 +316,7 @@ async fn client_connection_test_mismatch_broker(
   _request : AgentRequest,
 ) -> Result[ClientReply, ClientConnectionError] {
   @async.pause()
-  Ok(ClientReplyLogout({ meta: Omitted }))
+  Ok(ClientReplyLogout({ meta: Omitted, }))
 }
 
 ///|
@@ -312,6 +339,37 @@ async test "ClientConnection rejects mismatched replies" {
       assert_eq(actual, "logout")
     }
     _ => fail("wrong error for reply mismatch")
+  }
+}
+
+///|
+async fn client_connection_test_fork_mismatch_broker(
+  _request : AgentRequest,
+) -> Result[ClientReply, ClientConnectionError] {
+  @async.pause()
+  Ok(ClientReplyDeleteSession({ meta: Omitted, }))
+}
+
+///|
+async test "ClientConnection rejects a fork reply carrying another method" {
+  let connection = client_connection(
+    request_broker=client_connection_test_fork_mismatch_broker,
+    notification_broker=client_connection_test_notification_broker,
+  )
+  let error = try
+    connection.fork_session(client_connection_test_fork_session())
+  catch {
+    error => error
+  } noraise {
+    _ => fail("fork reply mismatch must be an explicit error")
+  }
+  match error {
+    ClientConnectionReplyMismatch(method_name~, expected~, actual~) => {
+      assert_eq(method_name, "session/fork")
+      assert_eq(expected, "session/fork")
+      assert_eq(actual, "session/delete")
+    }
+    _ => fail("wrong error for fork reply mismatch")
   }
 }
 
