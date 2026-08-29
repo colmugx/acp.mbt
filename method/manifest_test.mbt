@@ -35,6 +35,7 @@ fn manifest_test_params(method_name : String) -> Json {
     "session/new" => "{\"cwd\":\"/\",\"mcpServers\":[]}"
     "session/load" => "{\"mcpServers\":[],\"cwd\":\"/\",\"sessionId\":\"s\"}"
     "session/resume" => "{\"sessionId\":\"s\",\"cwd\":\"/\"}"
+    "session/fork" => "{\"sessionId\":\"s\",\"cwd\":\"/\"}"
     "session/list" => "{}"
     "session/delete" => "{\"sessionId\":\"s\"}"
     "session/close" => "{\"sessionId\":\"s\"}"
@@ -466,6 +467,49 @@ async test "stable v1 manifest is the exact method set of the pinned v1 schema a
     manifest_drift_sort_rows(expected),
     manifest_drift_sort_rows(actual),
   )
+}
+
+///|
+/// Membership gate for the unstable overlay: the pinned v1
+/// `meta.unstable.json` bytes (vendored, same four-key shape as the stable
+/// `meta.json`) must list `session/fork` among the Agent-handled methods, the
+/// unstable manifest must be exactly `[session/fork]` with the
+/// ClientToAgent/Request direction and kind, and the stable manifest must keep
+/// excluding it.  Any shape deviation aborts instead of guessing, reusing the
+/// stable pinned-meta parser's defensive rules.
+async test "unstable v1 manifest is a session/fork subset of the vendored unstable meta" {
+  let meta = @fs.read_file("spec/schema/v1/meta.unstable.json").json()
+  let unstable_agent_names : Array[String] = []
+  for row in pinned_v1_meta_rows(meta) {
+    // The meta groups name the handler side, so `agentMethods` rows are the
+    // Client->Agent entries.
+    if row.1 is ClientToAgent {
+      unstable_agent_names.push(row.0)
+    }
+  }
+  if unstable_agent_names.is_empty() {
+    abort("pinned v1 meta.unstable.json lists no agent methods")
+  }
+  if !manifest_drift_contains(unstable_agent_names, "session/fork") {
+    abort(
+      "pinned v1 meta.unstable.json does not list session/fork among its agent methods",
+    )
+  }
+  let unstable_methods = acp_v1_unstable_method_manifest()
+  assert_eq(manifest_method_names(unstable_methods), ["session/fork"])
+  for entry in unstable_methods {
+    match (entry.direction, entry.kind) {
+      (ClientToAgent, Request) => {
+        let value = decode_agent_request(
+          entry.method_name,
+          Some(manifest_test_params(entry.method_name)),
+        )
+        assert_eq(value.method_name(), entry.method_name)
+      }
+      _ => fail("unstable manifest direction/kind combination is not supported")
+    }
+  }
+  assert_false(manifest_has_name(acp_v1_method_manifest(), "session/fork"))
 }
 
 ///|
