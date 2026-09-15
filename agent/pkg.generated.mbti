@@ -28,7 +28,7 @@ pub fn agent_adapter_state_new(protocol~ : @colmugx/acp/agent/protocol.AgentProt
 
 pub fn agent_auth_service(methods~ : Array[@colmugx/acp/protocol.AuthMethod], authenticate~ : async (AgentContext, @colmugx/acp/protocol.AuthenticateParams) -> @colmugx/acp/protocol.AuthenticateResult, logout? : async (AgentContext, @colmugx/acp/protocol.LogoutParams) -> @colmugx/acp/protocol.LogoutResult) -> AgentAuthService raise @error.AgentCompositionError
 
-pub fn agent_context(request_broker~ : async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError], notification_broker~ : async (@message.ClientNotification) -> Result[Unit, AgentContextError]) -> AgentContext
+pub fn agent_context(request_broker~ : async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError], notification_broker~ : async (@message.ClientNotification) -> Result[Unit, AgentContextError], client_info? : () -> @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]) -> AgentContext
 
 pub fn agent_endpoint_from_spec(AgentSpec) -> AgentEndpoint
 
@@ -140,6 +140,7 @@ pub struct AgentAuthService {
 pub struct AgentContext {
   request_broker : async (@message.ClientRequest) -> Result[AgentOutboundReply, AgentContextError]
   notification_broker : async (@message.ClientNotification) -> Result[Unit, AgentContextError]
+  client_info : () -> @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]
 }
 pub async fn AgentContext::cancel_request(Self, @jsonrpc.RequestId) -> Unit raise AgentContextError
 pub async fn AgentContext::elicitation_complete(Self, @colmugx/acp/protocol.ElicitationCompleteParams) -> Unit raise AgentContextError

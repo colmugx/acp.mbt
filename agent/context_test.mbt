@@ -478,3 +478,12 @@ async test "two AgentContext values keep caller transports isolated" {
   assert_true(first_result.outcome is Cancelled)
   assert_true(second_result.outcome is Selected(_))
 }
+
+///|
+async test "AgentContext defaults the clientInfo accessor to Omitted" {
+  let context = agent_context(
+    request_broker=agent_context_test_all_requests,
+    notification_broker=agent_context_test_notifications,
+  )
+  assert_true((context.client_info)() is Omitted)
+}

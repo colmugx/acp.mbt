@@ -44,21 +44,26 @@ pub type AgentContextNotificationBroker = async (ClientNotification) -> Result[
 
 ///|
 /// Opaque typed outbound context supplied to one Agent invocation.  It owns
-/// only the two immutable broker closures; it contains no connection state,
-/// queue, task, global registry, or raw protocol value.
+/// the two immutable broker closures plus one read-only `client_info`
+/// accessor naming the connecting Client implementation; it contains no
+/// connection state, queue, task, global registry, or raw protocol value.
 pub struct AgentContext {
   request_broker : AgentContextRequestBroker
   notification_broker : AgentContextNotificationBroker
+  client_info : () -> ProtocolNullable[Implementation]
 }
 
 ///|
 /// Construct one immutable context around caller-owned typed transport ports.
 /// This is intentionally a one-shot constructor rather than a builder.
+/// `client_info` defaults to a constant-`Omitted` accessor; the runtime
+/// runner injects the accessor backed by the peer's `initialize` params.
 pub fn agent_context(
   request_broker~ : AgentContextRequestBroker,
   notification_broker~ : AgentContextNotificationBroker,
+  client_info? : () -> ProtocolNullable[Implementation] = fn() { Omitted },
 ) -> AgentContext {
-  { request_broker, notification_broker, }
+  { request_broker, notification_broker, client_info, }
 }
 
 ///|

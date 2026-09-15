@@ -468,6 +468,108 @@ async test "agent runtime bridge fails visibly when the context broker fails" {
 }
 
 ///|
+async test "agent runtime bridge publishes initialize clientInfo to session handlers" {
+  let observed : Array[@protocol_data.ProtocolNullable[Implementation]] = []
+  let endpoint = agent_adapter_test_endpoint(new_session=fn(context, _params) {
+    observed.push((context.client_info)())
+    {
+      session_id: "created",
+      modes: Omitted,
+      config_options: Omitted,
+      meta: Omitted,
+    }
+  })
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[@runtime.RuntimeTraceEvent] = []
+  let ports = agent_runtime_test_ports(input, output, written, traces)
+  input.put(
+    agent_runtime_test_chunk(
+      "{\"jsonrpc\":\"2.0\",\"id\":\"init\",\"method\":\"initialize\",\"params\":{\"protocolVersion\":1,\"clientInfo\":{\"name\":\"lody\",\"version\":\"1.0\"}}}\n",
+    ),
+  )
+  input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("created")))
+  @async.with_task_group(group => {
+    let runtime = group.spawn(() => {
+      agent_runtime_run(
+        endpoint~,
+        context=agent_service_test_context(),
+        initial_state=agent_adapter_test_state(endpoint),
+        ports~,
+        options=@runtime.runtime_default_options(),
+      )
+    })
+    let feeder = group.spawn(() => {
+      ignore(written.get())
+      ignore(written.get())
+      input.put(None)
+    })
+    runtime.wait()
+    feeder.wait()
+  })
+  assert_eq(output.length(), 2)
+  assert_eq(agent_runtime_test_success_id(output[0]), String("init"))
+  assert_eq(agent_runtime_test_success_id(output[1]), String("created"))
+  assert_eq(observed.length(), 1)
+  match observed[0] {
+    Value(implementation) => {
+      assert_eq(implementation.name, "lody")
+      assert_eq(implementation.version, "1.0")
+    }
+    Omitted | Null => fail("expected the initialize clientInfo at the handler")
+  }
+}
+
+///|
+async test "agent runtime bridge publishes Omitted clientInfo when initialize omits it" {
+  let observed : Array[@protocol_data.ProtocolNullable[Implementation]] = []
+  let endpoint = agent_adapter_test_endpoint(new_session=fn(context, _params) {
+    observed.push((context.client_info)())
+    {
+      session_id: "created",
+      modes: Omitted,
+      config_options: Omitted,
+      meta: Omitted,
+    }
+  })
+  let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
+  let output : Array[Bytes] = []
+  let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
+  let traces : Array[@runtime.RuntimeTraceEvent] = []
+  let ports = agent_runtime_test_ports(input, output, written, traces)
+  input.put(agent_runtime_test_chunk(agent_runtime_test_initialize("init")))
+  input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("created")))
+  @async.with_task_group(group => {
+    let runtime = group.spawn(() => {
+      agent_runtime_run(
+        endpoint~,
+        context=agent_service_test_context(),
+        initial_state=agent_adapter_test_state(endpoint),
+        ports~,
+        options=@runtime.runtime_default_options(),
+      )
+    })
+    let feeder = group.spawn(() => {
+      ignore(written.get())
+      ignore(written.get())
+      input.put(None)
+    })
+    runtime.wait()
+    feeder.wait()
+  })
+  assert_eq(output.length(), 2)
+  assert_eq(agent_runtime_test_success_id(output[0]), String("init"))
+  assert_eq(agent_runtime_test_success_id(output[1]), String("created"))
+  assert_eq(observed.length(), 1)
+  match observed[0] {
+    Omitted => ()
+    Value(_) | Null =>
+      fail("expected Omitted clientInfo when initialize omits it")
+  }
+}
+
+///|
 /// Outbound-observing ports for the engine-channel bridge tests: the response
 /// callback records each settled reply id as text, and the outbound-failure
 /// callback records each typed failure, so exactly-once settle is observable

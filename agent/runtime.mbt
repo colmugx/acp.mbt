@@ -1,9 +1,13 @@
 ///|
 /// Bind one Agent endpoint and its outbound context onto the single
-/// connection owner-loop engine.  The returned port captures only the
-/// immutable `endpoint` and `context` values; every protocol transition stays
-/// inside the engine-owned `AgentAdapterState`.  There is no second owner
-/// loop, shadow pending map, `Ref`, `Mutex`, or builder surface here.
+/// connection owner-loop engine.  The returned port captures the immutable
+/// `endpoint` and `context` values plus one owner-write publication cell;
+/// every protocol transition stays inside the engine-owned
+/// `AgentAdapterState`.  There is no second owner loop, shadow pending map,
+/// `Mutex`, or builder surface here: the only `Ref` is the write-once
+/// clientInfo cell that the owner-loop admit path publishes so session
+/// handlers read the connecting client's identity through the read-only
+/// `AgentContext::client_info` accessor.  Handler tasks never write it.
 ///
 /// Residual `AgentAdapterError` values (`EndpointMismatch`,
 /// `UnexpectedMessage`) indicate composition or protocol bugs, but the owner
@@ -23,14 +27,26 @@ pub fn agent_runtime_owner_port(
   AgentAdapterCompletion,
   AgentAdapterCommand,
 ] {
+  let client_info : Ref[ProtocolNullable[Implementation]] = { val: Omitted, }
   {
     initial_state,
     admit_request: (state, _id, request) => {
-      agent_runtime_request_admission(
+      let admission = agent_runtime_request_admission(
         agent_adapter_admit(state, endpoint, JsonRpcMessage::request(request)),
       ) catch {
         _ => agent_runtime_request_admission_failure(state, request.method_name)
       }
+      // Publication stays on the single owner loop: the initialize reducer
+      // records the peer identity inside `AgentProtocolState`, and every
+      // admission republishes the (unchanged) value from its result state
+      // before any handler task can observe the accessor.
+      match admission {
+        RuntimeOwnerRequestImmediate(completion~) =>
+          client_info.val = completion.state.protocol.client_info
+        RuntimeOwnerRequestInvoke(state~, ..) =>
+          client_info.val = state.protocol.client_info
+      }
+      admission
     },
     admit_notification: (state, notification) => {
       agent_runtime_notification_admission(
@@ -49,7 +65,12 @@ pub fn agent_runtime_owner_port(
           )
       }
     },
-    execute: invocation => agent_adapter_execute(invocation, endpoint, context),
+    execute: invocation => {
+      agent_adapter_execute(invocation, endpoint, {
+        ..context,
+        client_info: fn() { client_info.val },
+      })
+    },
     execute_failure: (_state, invocation) => {
       agent_adapter_failure_completion(invocation)
     },

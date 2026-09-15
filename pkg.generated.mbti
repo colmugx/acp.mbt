@@ -34,7 +34,7 @@ pub fn agent_capabilities_from_json(Json, path? : String) -> @colmugx/acp/protoc
 
 pub fn agent_capabilities_to_json(@colmugx/acp/protocol.AgentCapabilities) -> Json raise @colmugx/acp/protocol.ProtocolDecodeError
 
-pub fn agent_context(request_broker~ : async (@colmugx/acp/client/message.ClientRequest) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError], notification_broker~ : async (@colmugx/acp/client/message.ClientNotification) -> Result[Unit, @agent.AgentContextError]) -> @agent.AgentContext
+pub fn agent_context(request_broker~ : async (@colmugx/acp/client/message.ClientRequest) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError], notification_broker~ : async (@colmugx/acp/client/message.ClientNotification) -> Result[Unit, @agent.AgentContextError], client_info? : () -> @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]) -> @agent.AgentContext
 
 pub fn[C] agent_context_over_channel(channel~ : @connection.RuntimeOutboundChannel[C]) -> @agent.AgentContext
 
