@@ -1,48 +1,50 @@
 ///|
-fn init_test_omitted_meta() -> ProtocolNullable[Json] {
+fn init_test_omitted_meta() -> @protocol.ProtocolNullable[Json] {
   Omitted
 }
 
 ///|
-fn init_test_null_meta() -> ProtocolNullable[Json] {
+fn init_test_null_meta() -> @protocol.ProtocolNullable[Json] {
   Null
 }
 
 ///|
-fn init_test_marker() -> CapabilityMarker {
+fn init_test_marker() -> @protocol.CapabilityMarker {
   { meta: init_test_omitted_meta(), }
 }
 
 ///|
 test "implementation info preserves title and metadata tri-state" {
-  let implementation : Implementation = {
+  let implementation : @protocol.Implementation = {
     name: "client",
     title: Null,
     version: "1.2.3",
     meta: Value({ "source": Json::string("test") }),
   }
   assert_eq(
-    implementation_from_json(implementation_to_json(implementation)),
+    @protocol.implementation_from_json(
+      @protocol.implementation_to_json(implementation),
+    ),
     implementation,
   )
-  let omitted : Implementation = {
+  let omitted : @protocol.Implementation = {
     name: "agent",
     title: Omitted,
     version: "0.1.0",
     meta: init_test_omitted_meta(),
   }
   assert_eq(
-    implementation_to_json(omitted),
-    protocol_parse_json("{\"name\":\"agent\",\"version\":\"0.1.0\"}"),
+    @protocol.implementation_to_json(omitted),
+    @protocol.protocol_parse_json("{\"name\":\"agent\",\"version\":\"0.1.0\"}"),
   )
 }
 
 ///|
 test "client capabilities keep independent gates and empty elicitation outer object" {
-  let json = protocol_parse_json(
+  let json = @protocol.protocol_parse_json(
     "{\"_meta\":{\"trace\":true},\"fs\":{\"readTextFile\":true,\"writeTextFile\":false},\"terminal\":true,\"elicitation\":{\"form\":{},\"url\":null},\"session\":{\"configOptions\":{\"boolean\":{}}}}",
   )
-  let capabilities = client_capabilities_from_json(json)
+  let capabilities = @protocol.client_capabilities_from_json(json)
   match capabilities.fs {
     Value(fs) => {
       assert_eq(fs.read_text_file, Value(true))
@@ -68,20 +70,24 @@ test "client capabilities keep independent gates and empty elicitation outer obj
     _ => fail("expected session capability")
   }
   assert_eq(
-    client_capabilities_from_json(client_capabilities_to_json(capabilities)),
+    @protocol.client_capabilities_from_json(
+      @protocol.client_capabilities_to_json(capabilities),
+    ),
     capabilities,
   )
 }
 
 ///|
 test "omitted and null capabilities are unsupported without fallback" {
-  let omitted = client_capabilities_from_json(protocol_parse_json("{}"))
+  let omitted = @protocol.client_capabilities_from_json(
+    @protocol.protocol_parse_json("{}"),
+  )
   assert_eq(omitted.fs, Omitted)
   assert_eq(omitted.terminal, Omitted)
   assert_eq(omitted.elicitation, Omitted)
   assert_eq(omitted.session, Omitted)
-  let nulls = client_capabilities_from_json(
-    protocol_parse_json(
+  let nulls = @protocol.client_capabilities_from_json(
+    @protocol.protocol_parse_json(
       "{\"fs\":null,\"terminal\":null,\"elicitation\":null,\"session\":null}",
     ),
   )
@@ -89,8 +95,8 @@ test "omitted and null capabilities are unsupported without fallback" {
   assert_eq(nulls.terminal, Null)
   assert_eq(nulls.elicitation, Null)
   assert_eq(nulls.session, Null)
-  let empty_elicitation = client_elicitation_capabilities_from_json(
-    protocol_parse_json("{}"),
+  let empty_elicitation = @protocol.client_elicitation_capabilities_from_json(
+    @protocol.protocol_parse_json("{}"),
   )
   assert_eq(empty_elicitation.form, Omitted)
   assert_eq(empty_elicitation.url, Omitted)
@@ -98,10 +104,10 @@ test "omitted and null capabilities are unsupported without fallback" {
 
 ///|
 test "agent capability gates preserve booleans and support markers" {
-  let json = protocol_parse_json(
+  let json = @protocol.protocol_parse_json(
     "{\"loadSession\":true,\"promptCapabilities\":{\"image\":true,\"audio\":null,\"embeddedContext\":false},\"mcpCapabilities\":{\"http\":true,\"sse\":false},\"auth\":{\"logout\":{}},\"sessionCapabilities\":{\"list\":{},\"delete\":null,\"resume\":{},\"close\":{},\"additionalDirectories\":{}}}",
   )
-  let capabilities = agent_capabilities_from_json(json)
+  let capabilities = @protocol.agent_capabilities_from_json(json)
   assert_eq(capabilities.load_session, Value(true))
   match capabilities.prompt_capabilities {
     Value(prompt) => {
@@ -133,14 +139,16 @@ test "agent capability gates preserve booleans and support markers" {
     _ => fail("expected session capability")
   }
   assert_eq(
-    agent_capabilities_from_json(agent_capabilities_to_json(capabilities)),
+    @protocol.agent_capabilities_from_json(
+      @protocol.agent_capabilities_to_json(capabilities),
+    ),
     capabilities,
   )
 }
 
 ///|
 test "initialize params and result round trip version negotiation data" {
-  let params : InitializeParams = {
+  let params : @protocol.InitializeParams = {
     protocol_version: 1,
     client_capabilities: Value({
       fs: Value({
@@ -164,10 +172,12 @@ test "initialize params and result round trip version negotiation data" {
     meta: Omitted,
   }
   assert_eq(
-    initialize_params_from_json(initialize_params_to_json(params)),
+    @protocol.initialize_params_from_json(
+      @protocol.initialize_params_to_json(params),
+    ),
     params,
   )
-  let result : InitializeResult = {
+  let result : @protocol.InitializeResult = {
     protocol_version: 1,
     agent_capabilities: Null,
     auth_methods: Value([
@@ -177,7 +187,9 @@ test "initialize params and result round trip version negotiation data" {
     meta: Omitted,
   }
   assert_eq(
-    initialize_result_from_json(initialize_result_to_json(result)),
+    @protocol.initialize_result_from_json(
+      @protocol.initialize_result_to_json(result),
+    ),
     result,
   )
 }
@@ -185,8 +197,8 @@ test "initialize params and result round trip version negotiation data" {
 ///|
 test "initialize versions and required fields fail explicitly" {
   try
-    initialize_params_from_json(
-      protocol_parse_json("{\"protocolVersion\":65536}"),
+    @protocol.initialize_params_from_json(
+      @protocol.protocol_parse_json("{\"protocolVersion\":65536}"),
     )
   catch {
     InvalidField(path="initialize.protocolVersion", reason=_) => ()
@@ -194,15 +206,19 @@ test "initialize versions and required fields fail explicitly" {
   } noraise {
     _ => fail("expected protocol version range error")
   }
-  try initialize_params_from_json(protocol_parse_json("{}")) catch {
+  try
+    @protocol.initialize_params_from_json(@protocol.protocol_parse_json("{}"))
+  catch {
     MissingField(path="initialize.protocolVersion") => ()
     _ => fail("expected missing protocol version error")
   } noraise {
     _ => fail("expected missing protocol version error")
   }
   try
-    implementation_from_json(
-      protocol_parse_json("{\"name\":\"x\",\"version\":\"1\",\"extra\":true}"),
+    @protocol.implementation_from_json(
+      @protocol.protocol_parse_json(
+        "{\"name\":\"x\",\"version\":\"1\",\"extra\":true}",
+      ),
     )
   catch {
     UnknownField(path="implementation.extra") => ()
@@ -214,30 +230,42 @@ test "initialize versions and required fields fail explicitly" {
 
 ///|
 test "auth methods and authenticate/logout data preserve optional fields" {
-  let auth_method : AuthMethod = {
+  let auth_method : @protocol.AuthMethod = {
     id: "token",
     name: "Token",
     description: Omitted,
     meta: init_test_null_meta(),
   }
   assert_eq(
-    auth_method_from_json(auth_method_to_json(auth_method)),
+    @protocol.auth_method_from_json(@protocol.auth_method_to_json(auth_method)),
     auth_method,
   )
-  let params : AuthenticateParams = { method_id: "token", meta: Omitted, }
+  let params : @protocol.AuthenticateParams = {
+    method_id: "token",
+    meta: Omitted,
+  }
   assert_eq(
-    authenticate_params_from_json(authenticate_params_to_json(params)),
+    @protocol.authenticate_params_from_json(
+      @protocol.authenticate_params_to_json(params),
+    ),
     params,
   )
-  let result : AuthenticateResult = { meta: Omitted, }
+  let result : @protocol.AuthenticateResult = { meta: Omitted, }
   assert_eq(
-    authenticate_result_from_json(authenticate_result_to_json(result)),
+    @protocol.authenticate_result_from_json(
+      @protocol.authenticate_result_to_json(result),
+    ),
     result,
   )
-  let logout : LogoutResult = { meta: Null, }
-  assert_eq(logout_result_from_json(logout_result_to_json(logout)), logout)
+  let logout : @protocol.LogoutResult = { meta: Null, }
+  assert_eq(
+    @protocol.logout_result_from_json(@protocol.logout_result_to_json(logout)),
+    logout,
+  )
   try
-    authenticate_params_from_json(protocol_parse_json("{\"methodId\":\"\"}"))
+    @protocol.authenticate_params_from_json(
+      @protocol.protocol_parse_json("{\"methodId\":\"\"}"),
+    )
   catch {
     InvalidField(path="authenticate.methodId", reason=_) => ()
     _ => fail("expected empty method id error")
@@ -249,8 +277,10 @@ test "auth methods and authenticate/logout data preserve optional fields" {
 ///|
 test "capability and initialize unknown fields report precise paths" {
   try
-    client_capabilities_from_json(
-      protocol_parse_json("{\"fs\":{\"readTextFile\":true,\"wat\":false}}"),
+    @protocol.client_capabilities_from_json(
+      @protocol.protocol_parse_json(
+        "{\"fs\":{\"readTextFile\":true,\"wat\":false}}",
+      ),
     )
   catch {
     UnknownField(path="clientCapabilities.fs.wat") => ()
@@ -259,8 +289,10 @@ test "capability and initialize unknown fields report precise paths" {
     _ => fail("expected nested unknown capability field")
   }
   try
-    agent_capabilities_from_json(
-      protocol_parse_json("{\"promptCapabilities\":{\"image\":\"yes\"}}"),
+    @protocol.agent_capabilities_from_json(
+      @protocol.protocol_parse_json(
+        "{\"promptCapabilities\":{\"image\":\"yes\"}}",
+      ),
     )
   catch {
     ExpectedBoolean(path="agentCapabilities.promptCapabilities.image") => ()
@@ -272,8 +304,8 @@ test "capability and initialize unknown fields report precise paths" {
 
 ///|
 test "client capabilities accept upstream unstable plan and auth fields" {
-  let params = initialize_params_from_json(
-    protocol_parse_json(
+  let params = @protocol.initialize_params_from_json(
+    @protocol.protocol_parse_json(
       "{\"protocolVersion\":1,\"clientCapabilities\":{\"fs\":{\"readTextFile\":true,\"writeTextFile\":true},\"terminal\":true,\"plan\":{},\"auth\":{\"terminal\":true}}}",
     ),
   )
@@ -288,43 +320,49 @@ test "client capabilities accept upstream unstable plan and auth fields" {
     fail("expected plan marker and auth terminal capability")
   }
   // Null, omitted, and round-trip stay valid for both fields.
-  let nulls = client_capabilities_from_json(
-    protocol_parse_json("{\"plan\":null,\"auth\":null}"),
+  let nulls = @protocol.client_capabilities_from_json(
+    @protocol.protocol_parse_json("{\"plan\":null,\"auth\":null}"),
   )
   guard nulls is { plan: Null, auth: Null, .. } else {
     fail("expected null plan and auth")
   }
-  let decoded = client_capabilities_from_json(
-    protocol_parse_json("{\"plan\":{\"_meta\":{\"k\":1}}}"),
+  let decoded = @protocol.client_capabilities_from_json(
+    @protocol.protocol_parse_json("{\"plan\":{\"_meta\":{\"k\":1}}}"),
   )
   assert_eq(
-    client_capabilities_from_json(client_capabilities_to_json(decoded)),
+    @protocol.client_capabilities_from_json(
+      @protocol.client_capabilities_to_json(decoded),
+    ),
     decoded,
   )
 }
 
 ///|
 test "agent session capabilities accept upstream unstable fork marker" {
-  let capabilities = agent_capabilities_from_json(
-    protocol_parse_json("{\"sessionCapabilities\":{\"fork\":{},\"list\":{}}}"),
+  let capabilities = @protocol.agent_capabilities_from_json(
+    @protocol.protocol_parse_json(
+      "{\"sessionCapabilities\":{\"fork\":{},\"list\":{}}}",
+    ),
   )
   guard capabilities.session_capabilities
     is Value({ fork: Value({ meta: Omitted, }), .. }) else {
     fail("expected fork capability marker")
   }
   // Omitted and null markers stay unsupported without fallback.
-  let omitted = agent_session_capabilities_from_json(protocol_parse_json("{}"))
+  let omitted = @protocol.agent_session_capabilities_from_json(
+    @protocol.protocol_parse_json("{}"),
+  )
   assert_eq(omitted.fork, Omitted)
-  let nulls = agent_session_capabilities_from_json(
-    protocol_parse_json("{\"fork\":null}"),
+  let nulls = @protocol.agent_session_capabilities_from_json(
+    @protocol.protocol_parse_json("{\"fork\":null}"),
   )
   assert_eq(nulls.fork, Null)
-  let decoded = agent_session_capabilities_from_json(
-    protocol_parse_json("{\"fork\":{\"_meta\":{\"k\":1}}}"),
+  let decoded = @protocol.agent_session_capabilities_from_json(
+    @protocol.protocol_parse_json("{\"fork\":{\"_meta\":{\"k\":1}}}"),
   )
   assert_eq(
-    agent_session_capabilities_from_json(
-      agent_session_capabilities_to_json(decoded),
+    @protocol.agent_session_capabilities_from_json(
+      @protocol.agent_session_capabilities_to_json(decoded),
     ),
     decoded,
   )

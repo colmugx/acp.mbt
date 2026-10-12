@@ -73,7 +73,7 @@ fn experimental_v2_runtime_test_session_prompt(id : String) -> String {
 fn experimental_v2_runtime_test_decode(
   frame : Bytes,
 ) -> @jsonrpc.JsonRpcResponse raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Response(response) => response
     _ => fail("expected one JSON-RPC response frame")
   }
@@ -92,8 +92,8 @@ fn experimental_v2_runtime_test_success_id(
 ///|
 fn experimental_v2_runtime_test_update(
   update : String,
-) -> ExperimentalV2UpdateSessionNotification raise {
-  experimental_v2_decode_update_session_notification(
+) -> @experimental.ExperimentalV2UpdateSessionNotification raise {
+  @experimental.experimental_v2_decode_update_session_notification(
     experimental_v2_broker_test_notification_params(
       experimental_v2_broker_test_notification(
         @utf8.encode(
@@ -113,12 +113,12 @@ fn experimental_v2_runtime_test_update(
 /// observed permission outcome and every streamed notification are recorded
 /// for assertion.
 async fn experimental_v2_runtime_test_streaming_prompt(
-  context : ExperimentalV2AgentContext,
-  streamed : Array[ExperimentalV2UpdateSessionNotification],
-  replies : Array[ExperimentalV2RequestPermissionResponse],
-  _params : ExperimentalV2PromptParams,
-) -> ExperimentalV2PromptResult {
-  let user_message : ExperimentalV2UpdateSessionNotification = {
+  context : @experimental.ExperimentalV2AgentContext,
+  streamed : Array[@experimental.ExperimentalV2UpdateSessionNotification],
+  replies : Array[@experimental.ExperimentalV2RequestPermissionResponse],
+  _params : @experimental.ExperimentalV2PromptParams,
+) -> @experimental.ExperimentalV2PromptResult {
+  let user_message : @experimental.ExperimentalV2UpdateSessionNotification = {
     session_id: "created",
     update: Known(
       UpdateUserMessage({
@@ -131,12 +131,12 @@ async fn experimental_v2_runtime_test_streaming_prompt(
     ),
     meta: None,
   }
-  let running : ExperimentalV2UpdateSessionNotification = {
+  let running : @experimental.ExperimentalV2UpdateSessionNotification = {
     session_id: "created",
     update: Known(UpdateState(Known(StateRunning({ meta: None, })))),
     meta: None,
   }
-  let idle : ExperimentalV2UpdateSessionNotification = {
+  let idle : @experimental.ExperimentalV2UpdateSessionNotification = {
     session_id: "created",
     update: Known(
       UpdateState(
@@ -172,8 +172,8 @@ async fn experimental_v2_runtime_test_streaming_prompt(
 
 ///|
 async test "v2 agent runtime run with outbound streams a full turn with permission" {
-  let streamed : Array[ExperimentalV2UpdateSessionNotification] = []
-  let replies : Array[ExperimentalV2RequestPermissionResponse] = []
+  let streamed : Array[@experimental.ExperimentalV2UpdateSessionNotification] = []
+  let replies : Array[@experimental.ExperimentalV2RequestPermissionResponse] = []
   let endpoint = experimental_v2_agent_test_endpoint(prompt=async fn(
     context,
     params,
@@ -200,10 +200,10 @@ async test "v2 agent runtime run with outbound streams a full turn with permissi
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      experimental_v2_agent_runtime_run_with_outbound(
+      @experimental.experimental_v2_agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => {
-          experimental_v2_agent_context_over_channel(channel~)
+          @experimental.experimental_v2_agent_context_over_channel(channel~)
         },
         initial_state=experimental_v2_agent_test_adapter_state(endpoint),
         ports~,
@@ -256,8 +256,8 @@ async test "v2 agent runtime run with outbound streams a full turn with permissi
   )
   assert_eq(streamed, [first, second, third])
   let fold_one = match
-    experimental_v2_session_fold_apply(
-      experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_apply(
+      @experimental.experimental_v2_session_fold_new(),
       first.update,
     ) {
     Ok(state) => state
@@ -265,13 +265,13 @@ async test "v2 agent runtime run with outbound streams a full turn with permissi
   }
   assert_eq(fold_one.user_messages.length(), 1)
   let fold_two = match
-    experimental_v2_session_fold_apply(fold_one, second.update) {
+    @experimental.experimental_v2_session_fold_apply(fold_one, second.update) {
     Ok(state) => state
     Err(error) => fail("expected the running state to fold: \{Repr(error)}")
   }
   assert_eq(fold_two.phase, TurnRunning)
   let fold_three = match
-    experimental_v2_session_fold_apply(fold_two, third.update) {
+    @experimental.experimental_v2_session_fold_apply(fold_two, third.update) {
     Ok(state) => state
     Err(error) => fail("expected the idle state to fold: \{Repr(error)}")
   }
@@ -282,7 +282,7 @@ async test "v2 agent runtime run with outbound streams a full turn with permissi
   let permission_frame = experimental_v2_broker_test_request(output[4])
   assert_eq(permission_frame.method_name, "session/request_permission")
   assert_eq(permission_frame.id, Number(1))
-  let decoded_permission = try! experimental_v2_decode_request_permission_request(
+  let decoded_permission = try! @experimental.experimental_v2_decode_request_permission_request(
     experimental_v2_broker_test_request_params(permission_frame),
   )
   assert_eq(decoded_permission.session_id, "created")
@@ -301,7 +301,7 @@ async test "v2 agent runtime run with outbound streams a full turn with permissi
 
 ///|
 async test "v2 agent runtime outbound settles a parked submitter once on close" {
-  let observed : Array[ExperimentalV2AgentContextError] = []
+  let observed : Array[@experimental.ExperimentalV2AgentContextError] = []
   let endpoint = experimental_v2_agent_test_endpoint(prompt=async fn(
     context,
     _params,
@@ -351,10 +351,10 @@ async test "v2 agent runtime outbound settles a parked submitter once on close" 
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      experimental_v2_agent_runtime_run_with_outbound(
+      @experimental.experimental_v2_agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => {
-          experimental_v2_agent_context_over_channel(channel~)
+          @experimental.experimental_v2_agent_context_over_channel(channel~)
         },
         initial_state=experimental_v2_agent_test_adapter_state(endpoint),
         ports~,
@@ -394,7 +394,7 @@ async test "v2 agent runtime outbound settles a parked submitter once on close" 
 
 ///|
 async test "v2 agent runtime outbound maps the cancelled error code to a typed cancel" {
-  let observed : Array[ExperimentalV2AgentContextError] = []
+  let observed : Array[@experimental.ExperimentalV2AgentContextError] = []
   let endpoint = experimental_v2_agent_test_endpoint(prompt=async fn(
     context,
     _params,
@@ -444,10 +444,10 @@ async test "v2 agent runtime outbound maps the cancelled error code to a typed c
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      experimental_v2_agent_runtime_run_with_outbound(
+      @experimental.experimental_v2_agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => {
-          experimental_v2_agent_context_over_channel(channel~)
+          @experimental.experimental_v2_agent_context_over_channel(channel~)
         },
         initial_state=experimental_v2_agent_test_adapter_state(endpoint),
         ports~,
@@ -483,8 +483,8 @@ async test "v2 agent runtime outbound maps the cancelled error code to a typed c
 
 ///|
 async test "v2 client runtime run answers a reverse permission turn" {
-  let updates : Array[ExperimentalV2UpdateSessionNotification] = []
-  let permissions : Array[ExperimentalV2RequestPermissionRequest] = []
+  let updates : Array[@experimental.ExperimentalV2UpdateSessionNotification] = []
+  let permissions : Array[@experimental.ExperimentalV2RequestPermissionRequest] = []
   let endpoint = experimental_v2_client_test_endpoint(updates, permissions, [])
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
@@ -516,7 +516,7 @@ async test "v2 client runtime run answers a reverse permission turn" {
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      experimental_v2_client_runtime_run(
+      @experimental.experimental_v2_client_runtime_run(
         endpoint~,
         initial_state=experimental_v2_client_test_adapter_state(endpoint),
         ports~,
@@ -557,9 +557,11 @@ async test "v2 agent serve stdio validates options before binding stdio" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let raised : Array[Unit] = []
   try {
-    experimental_v2_agent_serve_stdio_with_outbound(
+    @experimental.experimental_v2_agent_serve_stdio_with_outbound(
       endpoint~,
-      context_factory=_channel => experimental_v2_agent_fail_fast_context(),
+      context_factory=_channel => {
+        @experimental.experimental_v2_agent_fail_fast_context()
+      },
       initial_state=experimental_v2_agent_test_adapter_state(endpoint),
       options={ ..@runtime.runtime_default_options(), max_frame_bytes: 0, },
       trace=_ => (),

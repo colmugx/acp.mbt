@@ -1,7 +1,7 @@
 ///|
 fn experimental_v2_agent_test_info(
   name : String,
-) -> ExperimentalV2Implementation {
+) -> @experimental.ExperimentalV2Implementation {
   { name, title: None, version: "test", meta: None, }
 }
 
@@ -9,7 +9,7 @@ fn experimental_v2_agent_test_info(
 fn experimental_v2_agent_test_capabilities(
   delete~ : Bool = false,
   fork~ : Bool = false,
-) -> ExperimentalV2AgentCapabilities {
+) -> @experimental.ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
       prompt: MarkerUnsupported,
@@ -33,96 +33,96 @@ fn experimental_v2_agent_test_capabilities(
 }
 
 ///|
-fn experimental_v2_agent_test_token_method() -> ExperimentalV2AuthMethod {
+fn experimental_v2_agent_test_token_method() -> @experimental.ExperimentalV2AuthMethod {
   Known({ method_id: "token", name: "Token", description: None, meta: None, })
 }
 
 ///|
 async fn experimental_v2_agent_test_new(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2NewSessionParams,
-) -> ExperimentalV2NewSessionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2NewSessionParams,
+) -> @experimental.ExperimentalV2NewSessionResult {
   @async.pause()
   { session_id: "created", config_options: None, meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_list(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2ListSessionsParams,
-) -> ExperimentalV2ListSessionsResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2ListSessionsParams,
+) -> @experimental.ExperimentalV2ListSessionsResult {
   @async.pause()
   { sessions: [], next_cursor: None, meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_resume(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2ResumeSessionParams,
-) -> ExperimentalV2ResumeSessionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2ResumeSessionParams,
+) -> @experimental.ExperimentalV2ResumeSessionResult {
   @async.pause()
   { config_options: None, meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_close(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2CloseSessionParams,
-) -> ExperimentalV2CloseSessionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2CloseSessionParams,
+) -> @experimental.ExperimentalV2CloseSessionResult {
   @async.pause()
   { meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_prompt(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2PromptParams,
-) -> ExperimentalV2PromptResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2PromptParams,
+) -> @experimental.ExperimentalV2PromptResult {
   @async.pause()
   { meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_set_config(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2SetConfigOptionParams,
-) -> ExperimentalV2SetConfigOptionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2SetConfigOptionParams,
+) -> @experimental.ExperimentalV2SetConfigOptionResult {
   @async.pause()
   { config_options: [], meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_delete(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2DeleteSessionParams,
-) -> ExperimentalV2DeleteSessionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2DeleteSessionParams,
+) -> @experimental.ExperimentalV2DeleteSessionResult {
   @async.pause()
   { meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_fork(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2ForkSessionParams,
-) -> ExperimentalV2ForkSessionResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2ForkSessionParams,
+) -> @experimental.ExperimentalV2ForkSessionResult {
   @async.pause()
   { session_id: "forked", config_options: None, meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_login(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2LoginParams,
-) -> ExperimentalV2LoginResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2LoginParams,
+) -> @experimental.ExperimentalV2LoginResult {
   @async.pause()
   { meta: None, }
 }
 
 ///|
 async fn experimental_v2_agent_test_logout(
-  _context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2LogoutParams,
-) -> ExperimentalV2LogoutResult {
+  _context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2LogoutParams,
+) -> @experimental.ExperimentalV2LogoutResult {
   @async.pause()
   { meta: None, }
 }
@@ -130,11 +130,11 @@ async fn experimental_v2_agent_test_logout(
 ///|
 fn experimental_v2_agent_test_sessions(
   with_delete : Bool,
-  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
-  fork_session~ : ExperimentalV2AgentForkSessionHandler? = None,
-) -> ExperimentalV2AgentSessionService {
-  experimental_v2_agent_session_service(
+  prompt~ : @experimental.ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : @experimental.ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  fork_session~ : @experimental.ExperimentalV2AgentForkSessionHandler? = None,
+) -> @experimental.ExperimentalV2AgentSessionService {
+  @experimental.experimental_v2_agent_session_service(
     new_session~,
     list=experimental_v2_agent_test_list,
     resume_session=experimental_v2_agent_test_resume,
@@ -154,11 +154,11 @@ fn experimental_v2_agent_test_sessions(
 fn experimental_v2_agent_test_spec(
   with_delete~ : Bool = false,
   with_auth~ : Bool = false,
-  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  prompt~ : @experimental.ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : @experimental.ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
   with_fork~ : Bool = false,
-) -> ExperimentalV2AgentSpec {
-  try! experimental_v2_agent_spec(
+) -> @experimental.ExperimentalV2AgentSpec {
+  try! @experimental.experimental_v2_agent_spec(
     info=experimental_v2_agent_test_info("agent"),
     capabilities=experimental_v2_agent_test_capabilities(
       delete=with_delete,
@@ -181,7 +181,7 @@ fn experimental_v2_agent_test_spec(
     },
     auth=if with_auth {
       Some(
-        experimental_v2_agent_auth_service(
+        @experimental.experimental_v2_agent_auth_service(
           login=experimental_v2_agent_test_login,
           logout=experimental_v2_agent_test_logout,
         ),
@@ -196,11 +196,11 @@ fn experimental_v2_agent_test_spec(
 fn experimental_v2_agent_test_endpoint(
   with_delete~ : Bool = false,
   with_auth~ : Bool = false,
-  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  prompt~ : @experimental.ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : @experimental.ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
   with_fork~ : Bool = false,
-) -> ExperimentalV2AgentEndpoint {
-  experimental_v2_agent_endpoint_from_spec(
+) -> @experimental.ExperimentalV2AgentEndpoint {
+  @experimental.experimental_v2_agent_endpoint_from_spec(
     experimental_v2_agent_test_spec(
       with_delete~,
       with_auth~,
@@ -213,17 +213,19 @@ fn experimental_v2_agent_test_endpoint(
 
 ///|
 fn experimental_v2_agent_test_adapter_state(
-  endpoint : ExperimentalV2AgentEndpoint,
-) -> ExperimentalV2AgentAdapterState {
-  experimental_v2_agent_adapter_state_new(
-    protocol=try! experimental_v2_agent_state_new(config=endpoint.config()),
+  endpoint : @experimental.ExperimentalV2AgentEndpoint,
+) -> @experimental.ExperimentalV2AgentAdapterState {
+  @experimental.experimental_v2_agent_adapter_state_new(
+    protocol=try! @experimental.experimental_v2_agent_state_new(
+      config=endpoint.config(),
+    ),
   )
 }
 
 ///|
 test "v2 agent spec rejects an empty implementation identity" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info={ name: "", title: None, version: "1", meta: None, },
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -236,7 +238,7 @@ test "v2 agent spec rejects an empty implementation identity" {
     _ => fail("expected InvalidImplementation")
   }
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info={ name: "agent", title: None, version: "", meta: None, },
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -253,7 +255,7 @@ test "v2 agent spec rejects an empty implementation identity" {
 ///|
 test "v2 agent spec requires the session capability marker" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities={
         session: MarkerUnsupported,
@@ -273,13 +275,13 @@ test "v2 agent spec requires the session capability marker" {
 ///|
 test "v2 agent spec rejects an ambiguous or duplicated auth method list" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
       auth_methods=Some([]),
       auth=Some(
-        experimental_v2_agent_auth_service(
+        @experimental.experimental_v2_agent_auth_service(
           login=experimental_v2_agent_test_login,
           logout=experimental_v2_agent_test_logout,
         ),
@@ -292,7 +294,7 @@ test "v2 agent spec rejects an ambiguous or duplicated auth method list" {
     _ => fail("expected EmptyAuthMethods")
   }
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -301,7 +303,7 @@ test "v2 agent spec rejects an ambiguous or duplicated auth method list" {
         experimental_v2_agent_test_token_method(),
       ]),
       auth=Some(
-        experimental_v2_agent_auth_service(
+        @experimental.experimental_v2_agent_auth_service(
           login=experimental_v2_agent_test_login,
           logout=experimental_v2_agent_test_logout,
         ),
@@ -318,7 +320,7 @@ test "v2 agent spec rejects an ambiguous or duplicated auth method list" {
 ///|
 test "v2 agent spec couples authMethods and the auth service both directions" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -332,12 +334,12 @@ test "v2 agent spec couples authMethods and the auth service both directions" {
     _ => fail("expected AuthServiceMismatch")
   }
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
       auth=Some(
-        experimental_v2_agent_auth_service(
+        @experimental.experimental_v2_agent_auth_service(
           login=experimental_v2_agent_test_login,
           logout=experimental_v2_agent_test_logout,
         ),
@@ -358,7 +360,7 @@ test "v2 agent spec couples authMethods and the auth service both directions" {
 ///|
 test "v2 agent spec couples the session.delete marker and delete service" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(delete=true),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -374,7 +376,7 @@ test "v2 agent spec couples the session.delete marker and delete service" {
     _ => fail("expected DeleteServiceMismatch")
   }
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(true),
@@ -396,7 +398,7 @@ test "v2 agent spec couples the session.delete marker and delete service" {
 /// service couple both directions exactly like delete.
 test "v2 agent spec couples the session.fork marker and fork service" {
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(fork=true),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -412,7 +414,7 @@ test "v2 agent spec couples the session.fork marker and fork service" {
     _ => fail("expected ForkServiceMismatch")
   }
   try
-    experimental_v2_agent_spec(
+    @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(
@@ -440,7 +442,7 @@ async test "v2 agent endpoint derives the fork marker and dispatches typed" {
     MarkerUnsupported => fail("session marker must stay supported")
   }
   let forked = endpoint.fork_session(
-    experimental_v2_agent_fail_fast_context(),
+    @experimental.experimental_v2_agent_fail_fast_context(),
     {
       session_id: "created",
       cwd: "/",
@@ -459,7 +461,7 @@ async test "v2 agent endpoint derives the fork marker and dispatches typed" {
   }
   try
     experimental_v2_agent_test_endpoint().fork_session(
-      experimental_v2_agent_fail_fast_context(),
+      @experimental.experimental_v2_agent_fail_fast_context(),
       {
         session_id: "created",
         cwd: "/",
@@ -503,7 +505,7 @@ test "v2 agent endpoint derives capabilities and authMethods from services" {
   }
   // The derived advertisement is exactly what the reducer state constructor
   // accepts, so endpoint config and endpoint state cannot drift.
-  let state = try! experimental_v2_agent_state_new(
+  let state = try! @experimental.experimental_v2_agent_state_new(
     config=authenticated.config(),
   )
   assert_true(state.authentication is AuthNotAdvertised)
@@ -512,7 +514,7 @@ test "v2 agent endpoint derives capabilities and authMethods from services" {
 ///|
 async test "v2 agent endpoint dispatches required handlers typed" {
   let endpoint = experimental_v2_agent_test_endpoint()
-  let context = experimental_v2_agent_fail_fast_context()
+  let context = @experimental.experimental_v2_agent_fail_fast_context()
   let created = endpoint.new_session(context, {
     cwd: "/",
     additional_directories: None,
@@ -562,10 +564,10 @@ async test "v2 agent endpoint dispatches required handlers typed" {
 async test "v2 agent endpoint answers an absent optional service typed" {
   let endpoint = experimental_v2_agent_test_endpoint()
   try
-    endpoint.delete_session(experimental_v2_agent_fail_fast_context(), {
-      session_id: "created",
-      meta: None,
-    })
+    endpoint.delete_session(
+      @experimental.experimental_v2_agent_fail_fast_context(),
+      { session_id: "created", meta: None, },
+    )
   catch {
     UnavailableOperation(method_name~) =>
       inspect(method_name, content="session/delete")
@@ -577,10 +579,15 @@ async test "v2 agent endpoint answers an absent optional service typed" {
 
 ///|
 async test "v2 agent handler normalization prefixes and names defects" {
-  let context = experimental_v2_agent_fail_fast_context()
-  let failing : ExperimentalV2AgentPromptHandler = async fn(_context, _params) {
+  let context = @experimental.experimental_v2_agent_fail_fast_context()
+  let failing : @experimental.ExperimentalV2AgentPromptHandler = async fn(
+    _context,
+    _params,
+  ) {
     @async.pause()
-    raise ExperimentalV2AgentHandlerError::Application(message="boom")
+    raise @experimental.ExperimentalV2AgentHandlerError::Application(
+      message="boom",
+    )
   }
   try
     experimental_v2_agent_test_endpoint(prompt=failing).prompt(context, {
@@ -594,9 +601,12 @@ async test "v2 agent handler normalization prefixes and names defects" {
   } noraise {
     _ => fail("expected Application")
   }
-  let defect : ExperimentalV2AgentPromptHandler = async fn(_context, _params) {
+  let defect : @experimental.ExperimentalV2AgentPromptHandler = async fn(
+    _context,
+    _params,
+  ) {
     @async.pause()
-    raise ExperimentalV2DecodeError::MissingField(path="prompt")
+    raise @experimental.ExperimentalV2DecodeError::MissingField(path="prompt")
   }
   try
     experimental_v2_agent_test_endpoint(prompt=defect).prompt(context, {
@@ -615,10 +625,10 @@ async test "v2 agent handler normalization prefixes and names defects" {
 
 ///|
 test "v2 prompt result codec round-trips" {
-  let value : ExperimentalV2PromptResult = { meta: None, }
-  let encoded = try! experimental_v2_encode_prompt_result(value)
+  let value : @experimental.ExperimentalV2PromptResult = { meta: None, }
+  let encoded = try! @experimental.experimental_v2_encode_prompt_result(value)
   inspect(encoded.stringify(), content="{}")
-  let decoded = try! experimental_v2_decode_prompt_result(
+  let decoded = try! @experimental.experimental_v2_decode_prompt_result(
     encoded,
     path="session/prompt",
   )

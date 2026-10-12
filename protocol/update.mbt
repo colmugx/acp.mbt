@@ -399,8 +399,8 @@ pub fn usage_update_to_json(
   value : UsageUpdate,
 ) -> Json raise ProtocolDecodeError {
   let fields : Map[String, Json] = Map([])
-  fields["used"] = value.used.to_json()
-  fields["size"] = value.size.to_json()
+  fields["used"] = Json(value.used)
+  fields["size"] = Json(value.size)
   put_nullable_cost(fields, value.cost)
   protocol_put_meta(fields, value.meta)
   Json::object(fields)

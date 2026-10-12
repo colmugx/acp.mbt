@@ -14,41 +14,45 @@
 /// additionalDirectories without the advertised marker).
 test "matrix G01 additional directories keep exact wire order per method" {
   let ordered = ["/workspace", "/vault/cache", "/logs"]
-  let new_params : NewSessionParams = {
+  let new_params : @session.NewSessionParams = {
     cwd: "/workspace",
     additional_directories: Value(ordered),
     mcp_servers: [],
     meta: Omitted,
   }
   assert_eq(
-    new_session_params_from_json(new_session_params_to_json(new_params)).additional_directories,
-    Value(ordered),
-  )
-  let load_params : LoadSessionParams = {
-    mcp_servers: [],
-    cwd: "/workspace",
-    additional_directories: Value(ordered),
-    session_id: "s",
-    meta: Omitted,
-  }
-  assert_eq(
-    load_session_params_from_json(load_session_params_to_json(load_params)).additional_directories,
-    Value(ordered),
-  )
-  let resume_params : ResumeSessionParams = {
-    session_id: "s",
-    cwd: "/workspace",
-    additional_directories: Value(ordered),
-    mcp_servers: Omitted,
-    meta: Omitted,
-  }
-  assert_eq(
-    resume_session_params_from_json(
-      resume_session_params_to_json(resume_params),
+    @session.new_session_params_from_json(
+      @session.new_session_params_to_json(new_params),
     ).additional_directories,
     Value(ordered),
   )
-  let fork_params : ForkSessionParams = {
+  let load_params : @session.LoadSessionParams = {
+    mcp_servers: [],
+    cwd: "/workspace",
+    additional_directories: Value(ordered),
+    session_id: "s",
+    meta: Omitted,
+  }
+  assert_eq(
+    @session.load_session_params_from_json(
+      @session.load_session_params_to_json(load_params),
+    ).additional_directories,
+    Value(ordered),
+  )
+  let resume_params : @session.ResumeSessionParams = {
+    session_id: "s",
+    cwd: "/workspace",
+    additional_directories: Value(ordered),
+    mcp_servers: Omitted,
+    meta: Omitted,
+  }
+  assert_eq(
+    @session.resume_session_params_from_json(
+      @session.resume_session_params_to_json(resume_params),
+    ).additional_directories,
+    Value(ordered),
+  )
+  let fork_params : @session.ForkSessionParams = {
     cwd: "/workspace",
     session_id: "s",
     additional_directories: Value(ordered),
@@ -56,11 +60,13 @@ test "matrix G01 additional directories keep exact wire order per method" {
     meta: Omitted,
   }
   assert_eq(
-    fork_session_params_from_json(fork_session_params_to_json(fork_params)).additional_directories,
+    @session.fork_session_params_from_json(
+      @session.fork_session_params_to_json(fork_params),
+    ).additional_directories,
     Value(ordered),
   )
   try
-    new_session_params_from_json(
+    @session.new_session_params_from_json(
       protocol_parse_json(
         "{\"cwd\":\"/workspace\",\"additionalDirectories\":[\"/ok\",\"relative\"],\"mcpServers\":[]}",
       ),

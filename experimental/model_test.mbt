@@ -4,10 +4,10 @@
 /// mask a field loss.  Returns the first decode for further assertions.
 fn[T : Eq + Debug] model_test_round_trip(
   source : String,
-  decode : (Json) -> T raise ExperimentalV2DecodeError,
-  encode : (T) -> Json raise ExperimentalV2DecodeError,
+  decode : (Json) -> T raise @experimental.ExperimentalV2DecodeError,
+  encode : (T) -> Json raise @experimental.ExperimentalV2DecodeError,
 ) -> T raise {
-  let first = decode(experimental_v2_parse_json(source))
+  let first = decode(@experimental.experimental_v2_parse_json(source))
   let second = decode(encode(first))
   assert_eq(first, second)
   first
@@ -17,9 +17,9 @@ fn[T : Eq + Debug] model_test_round_trip(
 /// Parse one JSON object fixture into its fields.
 fn model_test_fields(
   source : String,
-) -> Map[String, Json] raise ExperimentalV2DecodeError {
-  experimental_v2_require_object(
-    experimental_v2_parse_json(source),
+) -> Map[String, Json] raise @experimental.ExperimentalV2DecodeError {
+  @experimental.experimental_v2_require_object(
+    @experimental.experimental_v2_parse_json(source),
     path="fixture",
   )
 }

@@ -1,6 +1,6 @@
 ///|
 async fn agent_adapter_test_resume(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ResumeSessionParams,
 ) -> ResumeSessionResult {
   @async.pause()
@@ -9,7 +9,7 @@ async fn agent_adapter_test_resume(
 
 ///|
 async fn agent_adapter_test_fork(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ForkSessionParams,
 ) -> ForkSessionResult {
   @async.pause()
@@ -23,7 +23,7 @@ async fn agent_adapter_test_fork(
 
 ///|
 async fn agent_adapter_test_failing_fork(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ForkSessionParams,
 ) -> ForkSessionResult {
   @async.pause()
@@ -32,7 +32,7 @@ async fn agent_adapter_test_failing_fork(
 
 ///|
 async fn agent_adapter_test_delete(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : DeleteSessionParams,
 ) -> DeleteSessionResult {
   @async.pause()
@@ -41,7 +41,7 @@ async fn agent_adapter_test_delete(
 
 ///|
 async fn agent_adapter_test_close(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : CloseSessionParams,
 ) -> CloseSessionResult {
   @async.pause()
@@ -50,7 +50,7 @@ async fn agent_adapter_test_close(
 
 ///|
 async fn agent_adapter_test_set_mode(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : SetSessionModeParams,
 ) -> SetSessionModeResult {
   @async.pause()
@@ -59,7 +59,7 @@ async fn agent_adapter_test_set_mode(
 
 ///|
 async fn agent_adapter_test_set_config(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : SetSessionConfigOptionParams,
 ) -> SetSessionConfigOptionResult {
   @async.pause()
@@ -68,7 +68,7 @@ async fn agent_adapter_test_set_config(
 
 ///|
 async fn agent_adapter_test_failing_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -77,7 +77,7 @@ async fn agent_adapter_test_failing_new(
 
 ///|
 async fn agent_adapter_test_cancelled_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -86,7 +86,7 @@ async fn agent_adapter_test_cancelled_new(
 
 ///|
 async fn agent_adapter_test_thrown_cancel_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.with_task_group(group => {
@@ -103,7 +103,7 @@ async fn agent_adapter_test_thrown_cancel_new(
 
 ///|
 async fn agent_adapter_test_failing_auth(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : AuthenticateParams,
 ) -> AuthenticateResult {
   @async.pause()
@@ -112,7 +112,7 @@ async fn agent_adapter_test_failing_auth(
 
 ///|
 async fn agent_adapter_test_cancelled_auth(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : AuthenticateParams,
 ) -> AuthenticateResult {
   @async.pause()
@@ -121,7 +121,7 @@ async fn agent_adapter_test_cancelled_auth(
 
 ///|
 async fn agent_adapter_test_thrown_cancel_auth(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : AuthenticateParams,
 ) -> AuthenticateResult {
   @async.with_task_group(group => {
@@ -138,7 +138,7 @@ async fn agent_adapter_test_thrown_cancel_auth(
 
 ///|
 async fn agent_adapter_test_thrown_cancel_logout(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : LogoutParams,
 ) -> LogoutResult {
   @async.with_task_group(group => {
@@ -155,7 +155,7 @@ async fn agent_adapter_test_thrown_cancel_logout(
 
 ///|
 async fn agent_adapter_test_failing_cancel(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : CancelParams,
 ) -> Unit {
   @async.pause()
@@ -164,21 +164,21 @@ async fn agent_adapter_test_failing_cancel(
 
 ///|
 async fn agent_adapter_test_unknown_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
-  raise AgentContextError::AgentContextBrokerFailure(
+  raise @agent.AgentContextError::AgentContextBrokerFailure(
     method_name="secret-handler-detail",
   )
 }
 
 ///|
 fn agent_adapter_test_sessions(
-  new_session~ : AgentNewSessionHandler = agent_service_test_new,
-  cancel~ : AgentCancelHandler = agent_service_test_cancel,
-) -> AgentSessionService {
-  agent_session_service(
+  new_session~ : @agent.AgentNewSessionHandler = agent_service_test_new,
+  cancel~ : @agent.AgentCancelHandler = agent_service_test_cancel,
+) -> @agent.AgentSessionService {
+  @agent.agent_session_service(
     new_session~,
     prompt=agent_service_test_prompt,
     cancel~,
@@ -195,21 +195,23 @@ fn agent_adapter_test_sessions(
 
 ///|
 fn agent_adapter_test_endpoint(
-  new_session~ : AgentNewSessionHandler = agent_service_test_new,
-  cancel~ : AgentCancelHandler = agent_service_test_cancel,
-) -> AgentEndpoint {
-  let spec = agent_spec(
+  new_session~ : @agent.AgentNewSessionHandler = agent_service_test_new,
+  cancel~ : @agent.AgentCancelHandler = agent_service_test_cancel,
+) -> @agent.AgentEndpoint {
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("adapter"),
     sessions=agent_adapter_test_sessions(new_session~, cancel~),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  agent_endpoint_from_spec(spec)
+  @agent.agent_endpoint_from_spec(spec)
 }
 
 ///|
-fn agent_adapter_test_b09_endpoint(support : AgentSupport) -> AgentEndpoint {
-  agent_endpoint_from_spec(
-    agent_spec(
+fn agent_adapter_test_b09_endpoint(
+  support : @agent.AgentSupport,
+) -> @agent.AgentEndpoint {
+  @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("adapter-b09"),
       sessions=agent_adapter_test_sessions(),
       support~,
@@ -219,9 +221,9 @@ fn agent_adapter_test_b09_endpoint(support : AgentSupport) -> AgentEndpoint {
 
 ///|
 fn agent_adapter_test_auth_endpoint_with(
-  authenticate : AgentAuthenticateHandler,
-  logout~ : AgentLogoutHandler = agent_service_test_logout,
-) -> AgentEndpoint {
+  authenticate : @agent.AgentAuthenticateHandler,
+  logout~ : @agent.AgentLogoutHandler = agent_service_test_logout,
+) -> @agent.AgentEndpoint {
   let auth_method : AuthMethod = {
     id: "token",
     name: "Token",
@@ -229,34 +231,36 @@ fn agent_adapter_test_auth_endpoint_with(
     meta: Omitted,
   }
   let auth = try
-    agent_auth_service(methods=[auth_method], authenticate~, logout~)
+    @agent.agent_auth_service(methods=[auth_method], authenticate~, logout~)
   catch {
     _ => abort("adapter auth fixture must be valid")
   } noraise {
     value => value
   }
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("adapter-auth"),
     sessions=agent_adapter_test_sessions(),
-    support=agent_support(),
+    support=@agent.agent_support(),
     auth~,
   ).unwrap()
-  agent_endpoint_from_spec(spec)
+  @agent.agent_endpoint_from_spec(spec)
 }
 
 ///|
-fn agent_adapter_test_auth_endpoint() -> AgentEndpoint {
+fn agent_adapter_test_auth_endpoint() -> @agent.AgentEndpoint {
   agent_adapter_test_auth_endpoint_with(agent_service_test_authenticate)
 }
 
 ///|
-fn agent_adapter_test_state(endpoint : AgentEndpoint) -> AgentAdapterState {
+fn agent_adapter_test_state(
+  endpoint : @agent.AgentEndpoint,
+) -> @agent.AgentAdapterState {
   let config : AgentProtocolConfig = {
     agent_capabilities: Value(endpoint.capabilities()),
     auth_methods: endpoint.auth_methods(),
     agent_info: Omitted,
   }
-  agent_adapter_state_new(protocol=agent_protocol_state_new(config~))
+  @agent.agent_adapter_state_new(protocol=agent_protocol_state_new(config~))
 }
 
 ///|
@@ -298,7 +302,7 @@ fn agent_adapter_test_notification(
 
 ///|
 fn agent_adapter_test_response(
-  step : AgentAdapterStep,
+  step : @agent.AgentAdapterStep,
 ) -> JsonRpcResponse raise {
   match step.outputs[0] {
     Response(response) => response
@@ -308,7 +312,7 @@ fn agent_adapter_test_response(
 
 ///|
 fn agent_adapter_test_success(
-  step : AgentAdapterStep,
+  step : @agent.AgentAdapterStep,
   id : RequestId,
 ) -> Json raise {
   match agent_adapter_test_response(step) {
@@ -322,7 +326,7 @@ fn agent_adapter_test_success(
 
 ///|
 fn agent_adapter_test_error_code(
-  step : AgentAdapterStep,
+  step : @agent.AgentAdapterStep,
 ) -> JsonRpcErrorCode raise {
   match agent_adapter_test_response(step) {
     Error(failure) => failure.error.code
@@ -332,11 +336,11 @@ fn agent_adapter_test_error_code(
 
 ///|
 fn agent_adapter_test_initialized(
-  endpoint : AgentEndpoint,
+  endpoint : @agent.AgentEndpoint,
   id : RequestId,
-) -> AgentAdapterStep {
+) -> @agent.AgentAdapterStep {
   let admission = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       agent_adapter_test_state(endpoint),
       endpoint,
       agent_adapter_test_request(
@@ -356,12 +360,14 @@ fn agent_adapter_test_initialized(
 
 ///|
 async fn agent_adapter_test_invoke(
-  state : AgentAdapterState,
-  endpoint : AgentEndpoint,
-  context : AgentContext,
+  state : @agent.AgentAdapterState,
+  endpoint : @agent.AgentEndpoint,
+  context : @agent.AgentContext,
   message : JsonRpcMessage,
-) -> AgentAdapterStep {
-  let admission = try agent_adapter_admit(state, endpoint, message) catch {
+) -> @agent.AgentAdapterStep {
+  let admission = try
+    @agent.agent_adapter_admit(state, endpoint, message)
+  catch {
     _ => abort("request admission must not fail")
   } noraise {
     value => value
@@ -369,9 +375,11 @@ async fn agent_adapter_test_invoke(
   match admission {
     Immediate(_) => abort("expected an admitted async invocation")
     Invoke(state=invocation_state, invocation~) => {
-      let completion = agent_adapter_execute(invocation, endpoint, context)
+      let completion = @agent.agent_adapter_execute(
+        invocation, endpoint, context,
+      )
       try
-        agent_adapter_complete(invocation_state, invocation, completion)
+        @agent.agent_adapter_complete(invocation_state, invocation, completion)
       catch {
         _ => abort("typed invocation completion must match admission")
       } noraise {
@@ -390,7 +398,7 @@ async test "adapter initializes immediately and rejects a second initialize" {
   assert_eq(first.state.protocol().phase, Initialized)
   ignore(agent_adapter_test_success(first, Number(1)))
   let second_admission = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       first.state,
       endpoint,
       agent_adapter_test_request(
@@ -420,7 +428,7 @@ test "adapter rejects boolean config without client capability" {
   let endpoint = agent_adapter_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
   let initialized = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_request(
@@ -432,7 +440,7 @@ test "adapter rejects boolean config without client capability" {
     Immediate(step) => step
     Invoke(..) => fail("initialize must complete synchronously")
   }
-  let admission = agent_adapter_admit(
+  let admission = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -450,12 +458,14 @@ test "adapter rejects boolean config without client capability" {
 
 ///|
 test "adapter gates B09 MCP and workspace capabilities before invocation" {
-  let unsupported_endpoint = agent_adapter_test_b09_endpoint(agent_support())
+  let unsupported_endpoint = agent_adapter_test_b09_endpoint(
+    @agent.agent_support(),
+  )
   let unsupported_initialized = agent_adapter_test_initialized(
     unsupported_endpoint,
     Number(1),
   )
-  let transport_denied = agent_adapter_admit(
+  let transport_denied = @agent.agent_adapter_admit(
     unsupported_initialized.state,
     unsupported_endpoint,
     agent_adapter_test_request(
@@ -472,7 +482,7 @@ test "adapter gates B09 MCP and workspace capabilities before invocation" {
     Invoke(..) => fail("denied MCP transport must not invoke a handler")
   }
 
-  let roots_denied = agent_adapter_admit(
+  let roots_denied = @agent.agent_adapter_admit(
     unsupported_initialized.state,
     unsupported_endpoint,
     agent_adapter_test_request(
@@ -491,13 +501,13 @@ test "adapter gates B09 MCP and workspace capabilities before invocation" {
   }
 
   let enabled_endpoint = agent_adapter_test_b09_endpoint(
-    agent_support(mcp_http=true, additional_directories=true),
+    @agent.agent_support(mcp_http=true, additional_directories=true),
   )
   let enabled_initialized = agent_adapter_test_initialized(
     enabled_endpoint,
     Number(4),
   )
-  let enabled = agent_adapter_admit(
+  let enabled = @agent.agent_adapter_admit(
     enabled_initialized.state,
     enabled_endpoint,
     agent_adapter_test_request(
@@ -637,16 +647,16 @@ async test "adapter completes session fork with a typed frame for success and fa
     agent_adapter_test_success(forked, Number(2)),
   )
   assert_eq(decoded.session_id, "forked")
-  let failing_endpoint = agent_endpoint_from_spec(
-    agent_spec(
+  let failing_endpoint = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("adapter-fork-failing"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt=agent_service_test_prompt,
         cancel=agent_service_test_cancel,
         fork_session=agent_adapter_test_failing_fork,
       ),
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   )
   let failing_initialized = agent_adapter_test_initialized(
@@ -682,7 +692,7 @@ async test "adapter reserves authentication and releases it on success" {
     "{\"methodId\":\"token\"}",
   )
   let auth_admission = try
-    agent_adapter_admit(initialized.state, endpoint, auth_message)
+    @agent.agent_adapter_admit(initialized.state, endpoint, auth_message)
   catch {
     _ => abort("authentication admission must not fail")
   } noraise {
@@ -698,7 +708,7 @@ async test "adapter reserves authentication and releases it on success" {
   let pending_state = pending_state_and_invocation.0
   let invocation = pending_state_and_invocation.1
   let second_auth = try
-    agent_adapter_admit(pending_state, endpoint, auth_message)
+    @agent.agent_adapter_admit(pending_state, endpoint, auth_message)
   catch {
     _ => abort("pending authentication should be rejected immediately")
   } noraise {
@@ -710,7 +720,7 @@ async test "adapter reserves authentication and releases it on success" {
     Invoke(..) => fail("pending authentication must not admit another handler")
   }
   let pending_session = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       pending_state,
       endpoint,
       agent_adapter_test_request(Number(23), "session/list", "{}"),
@@ -725,12 +735,16 @@ async test "adapter reserves authentication and releases it on success" {
       assert_eq(agent_adapter_test_error_code(step), AuthRequired)
     Invoke(..) => fail("pending authentication must gate session handlers")
   }
-  let completion = agent_adapter_execute(invocation, endpoint, context)
-  let completed = agent_adapter_complete(pending_state, invocation, completion)
+  let completion = @agent.agent_adapter_execute(invocation, endpoint, context)
+  let completed = @agent.agent_adapter_complete(
+    pending_state, invocation, completion,
+  )
   ignore(agent_adapter_test_success(completed, Number(22)))
   assert_eq(completed.state.protocol().authentication, Authenticated)
   assert_true(completed.state.reservation() is Idle)
-  try agent_adapter_complete(completed.state, invocation, completion) catch {
+  try
+    @agent.agent_adapter_complete(completed.state, invocation, completion)
+  catch {
     LateCompletion(request_id=Number(22)) => ()
     _ => fail("duplicate authentication completion must be late")
   } noraise {
@@ -745,7 +759,7 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
   let context = agent_service_test_context()
   let auth_state_and_invocation = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         initialized.state,
         endpoint,
         agent_adapter_test_request(
@@ -762,13 +776,13 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("authentication must be pending")
   }
-  let authenticated = agent_adapter_complete(
+  let authenticated = @agent.agent_adapter_complete(
     auth_state_and_invocation.0,
     auth_state_and_invocation.1,
-    agent_adapter_execute(auth_state_and_invocation.1, endpoint, context),
+    @agent.agent_adapter_execute(auth_state_and_invocation.1, endpoint, context),
   )
   let logout_admission = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       authenticated.state,
       endpoint,
       agent_adapter_test_request(String("logout"), "logout", "{}"),
@@ -785,7 +799,7 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
   let logout_state = logout_state_and_invocation.0
   let logout_invocation = logout_state_and_invocation.1
   let duplicate_logout = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       logout_state,
       endpoint,
       agent_adapter_test_request(Number(4), "logout", "{}"),
@@ -801,7 +815,7 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
     Invoke(..) => fail("pending logout must not admit another handler")
   }
   let logout_session = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       logout_state,
       endpoint,
       agent_adapter_test_request(Number(3), "session/list", "{}"),
@@ -816,10 +830,10 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
       assert_eq(agent_adapter_test_error_code(step), InvalidRequest)
     Invoke(..) => fail("pending logout must gate session handlers")
   }
-  let logout_completion = agent_adapter_execute(
+  let logout_completion = @agent.agent_adapter_execute(
     logout_invocation, endpoint, context,
   )
-  let logged_out = agent_adapter_complete(
+  let logged_out = @agent.agent_adapter_complete(
     logout_state, logout_invocation, logout_completion,
   )
   assert_eq(logged_out.state.protocol().authentication, AwaitingAuthentication)
@@ -834,7 +848,7 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
   )
   let failing_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         failing_initialized.state,
         failing_endpoint,
         agent_adapter_test_request(
@@ -851,10 +865,10 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("failing authentication must be pending")
   }
-  let failed = agent_adapter_complete(
+  let failed = @agent.agent_adapter_complete(
     failing_admission.0,
     failing_admission.1,
-    agent_adapter_execute(failing_admission.1, failing_endpoint, context),
+    @agent.agent_adapter_execute(failing_admission.1, failing_endpoint, context),
   )
   assert_eq(agent_adapter_test_error_code(failed), InternalError)
   assert_true(failed.state.reservation() is Idle)
@@ -868,7 +882,7 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
   )
   let cancelled_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         cancelled_initialized.state,
         cancelled_endpoint,
         agent_adapter_test_request(
@@ -885,10 +899,14 @@ async test "adapter rejects pending logout and clears failed or cancelled auth" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("cancelled authentication must be pending")
   }
-  let cancelled = agent_adapter_complete(
+  let cancelled = @agent.agent_adapter_complete(
     cancelled_admission.0,
     cancelled_admission.1,
-    agent_adapter_execute(cancelled_admission.1, cancelled_endpoint, context),
+    @agent.agent_adapter_execute(
+      cancelled_admission.1,
+      cancelled_endpoint,
+      context,
+    ),
   )
   assert_eq(agent_adapter_test_error_code(cancelled), RequestCancelled)
   assert_eq(cancelled.outputs.length(), 1)
@@ -927,7 +945,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
   )
   let cancelled_auth_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         cancelled_auth_initialized.state,
         cancelled_auth_endpoint,
         agent_adapter_test_request(
@@ -944,7 +962,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("task-cancelled authentication must be pending")
   }
-  let cancelled_auth_completion = agent_adapter_execute(
+  let cancelled_auth_completion = @agent.agent_adapter_execute(
     cancelled_auth_admission.1,
     cancelled_auth_endpoint,
     context,
@@ -953,7 +971,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
     AuthenticateCompleted(id=Number(11), result=Err(Cancelled)) => ()
     _ => fail("real task cancellation must become a typed cancelled completion")
   }
-  let cancelled_auth = agent_adapter_complete(
+  let cancelled_auth = @agent.agent_adapter_complete(
     cancelled_auth_admission.0,
     cancelled_auth_admission.1,
     cancelled_auth_completion,
@@ -975,7 +993,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
   )
   let auth_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         cancelled_logout_initialized.state,
         cancelled_logout_endpoint,
         agent_adapter_test_request(
@@ -992,16 +1010,20 @@ async test "adapter maps real task cancellation and releases auth reservations" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("authentication before logout must be pending")
   }
-  let authenticated = agent_adapter_complete(
+  let authenticated = @agent.agent_adapter_complete(
     auth_admission.0,
     auth_admission.1,
-    agent_adapter_execute(auth_admission.1, cancelled_logout_endpoint, context),
+    @agent.agent_adapter_execute(
+      auth_admission.1,
+      cancelled_logout_endpoint,
+      context,
+    ),
   )
   ignore(agent_adapter_test_success(authenticated, Number(21)))
   assert_true(authenticated.state.protocol().authentication is Authenticated)
   let logout_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         authenticated.state,
         cancelled_logout_endpoint,
         agent_adapter_test_request(String("logout-cancel"), "logout", "{}"),
@@ -1014,7 +1036,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("task-cancelled logout must be pending")
   }
-  let cancelled_logout_completion = agent_adapter_execute(
+  let cancelled_logout_completion = @agent.agent_adapter_execute(
     logout_admission.1,
     cancelled_logout_endpoint,
     context,
@@ -1023,7 +1045,7 @@ async test "adapter maps real task cancellation and releases auth reservations" 
     LogoutCompleted(id=String("logout-cancel"), result=Err(Cancelled)) => ()
     _ => fail("real task cancellation must cancel logout completion")
   }
-  let cancelled_logout = agent_adapter_complete(
+  let cancelled_logout = @agent.agent_adapter_complete(
     logout_admission.0,
     logout_admission.1,
     cancelled_logout_completion,
@@ -1041,7 +1063,7 @@ async test "adapter completes concurrent prompts in reverse order with typed ids
   let context = agent_service_test_context()
   let first_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         initialized.state,
         endpoint,
         agent_adapter_test_request(
@@ -1060,7 +1082,7 @@ async test "adapter completes concurrent prompts in reverse order with typed ids
   }
   let second_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         first_admission.0,
         endpoint,
         agent_adapter_test_request(
@@ -1077,23 +1099,23 @@ async test "adapter completes concurrent prompts in reverse order with typed ids
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("second prompt must be async")
   }
-  let second_completion = agent_adapter_execute(
+  let second_completion = @agent.agent_adapter_execute(
     second_admission.1,
     endpoint,
     context,
   )
-  let second_completed = agent_adapter_complete(
+  let second_completed = @agent.agent_adapter_complete(
     second_admission.0,
     second_admission.1,
     second_completion,
   )
   ignore(agent_adapter_test_success(second_completed, String("prompt-2")))
-  let first_completion = agent_adapter_execute(
+  let first_completion = @agent.agent_adapter_execute(
     first_admission.1,
     endpoint,
     context,
   )
-  let first_completed = agent_adapter_complete(
+  let first_completed = @agent.agent_adapter_complete(
     second_completed.state,
     first_admission.1,
     first_completion,
@@ -1107,7 +1129,7 @@ async test "adapter notifications emit no response and preserve cancellation ids
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))
   let context = agent_service_test_context()
   let session_cancel = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       endpoint,
       agent_adapter_test_notification("session/cancel", "{\"sessionId\":\"s\"}"),
@@ -1119,10 +1141,10 @@ async test "adapter notifications emit no response and preserve cancellation ids
   }
   match session_cancel {
     Invoke(state~, invocation~) => {
-      let completed = agent_adapter_complete(
+      let completed = @agent.agent_adapter_complete(
         state,
         invocation,
-        agent_adapter_execute(invocation, endpoint, context),
+        @agent.agent_adapter_execute(invocation, endpoint, context),
       )
       assert_eq(completed.state, initialized.state)
       assert_eq(completed.outputs.length(), 0)
@@ -1130,7 +1152,7 @@ async test "adapter notifications emit no response and preserve cancellation ids
     Immediate(_) => fail("session cancellation must invoke a typed handler")
   }
   let string_cancel = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       endpoint,
       agent_adapter_test_notification(
@@ -1152,7 +1174,7 @@ async test "adapter notifications emit no response and preserve cancellation ids
     Invoke(..) => fail("$/cancel_request must not invoke an agent handler")
   }
   let integer_cancel = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       endpoint,
       agent_adapter_test_notification("$/cancel_request", "{\"requestId\":42}"),
@@ -1177,7 +1199,7 @@ test "adapter accepts unknown notifications as trace intents without responses" 
   let endpoint = agent_adapter_test_endpoint()
   let state = agent_adapter_test_state(endpoint)
   let admission = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       state,
       endpoint,
       agent_adapter_test_notification("vendor/unknown", "{}"),
@@ -1215,7 +1237,7 @@ async test "adapter maps unknown malformed and handler failures without success 
   let endpoint = agent_adapter_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
   let unknown = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_request(Number(1), "vendor/unknown", "{}"),
@@ -1231,7 +1253,7 @@ async test "adapter maps unknown malformed and handler failures without success 
     Invoke(..) => fail("unknown method must not invoke a handler")
   }
   let malformed = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_request(
@@ -1251,7 +1273,7 @@ async test "adapter maps unknown malformed and handler failures without success 
     Invoke(..) => fail("malformed params must not invoke a handler")
   }
   let not_initialized = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_request(
@@ -1317,7 +1339,7 @@ async test "adapter maps unknown malformed and handler failures without success 
   )
   let unknown_admission = match
     (try
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         unknown_initialized.state,
         unknown_endpoint,
         agent_adapter_test_request(
@@ -1334,7 +1356,7 @@ async test "adapter maps unknown malformed and handler failures without success 
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => abort("unknown handler must produce an invocation")
   }
-  let unknown_completion = agent_adapter_execute(
+  let unknown_completion = @agent.agent_adapter_execute(
     unknown_admission.1,
     unknown_endpoint,
     agent_service_test_context(),
@@ -1348,7 +1370,7 @@ async test "adapter maps unknown malformed and handler failures without success 
     }
     _ => fail("unknown handler must become a detailed application failure")
   }
-  let unknown = agent_adapter_complete(
+  let unknown = @agent.agent_adapter_complete(
     unknown_admission.0,
     unknown_admission.1,
     unknown_completion,
@@ -1371,7 +1393,7 @@ async test "adapter traces failed session cancellation without a response" {
   )
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))
   let admission = try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       endpoint,
       agent_adapter_test_notification("session/cancel", "{\"sessionId\":\"s\"}"),
@@ -1383,10 +1405,10 @@ async test "adapter traces failed session cancellation without a response" {
   }
   match admission {
     Invoke(state~, invocation~) => {
-      let step = agent_adapter_complete(
+      let step = @agent.agent_adapter_complete(
         state,
         invocation,
-        agent_adapter_execute(
+        @agent.agent_adapter_execute(
           invocation,
           endpoint,
           agent_service_test_context(),
@@ -1412,11 +1434,11 @@ test "adapter fails fast when state and endpoint capabilities disagree" {
     auth_methods: Omitted,
     agent_info: Omitted,
   }
-  let mismatched = agent_adapter_state_new(
+  let mismatched = @agent.agent_adapter_state_new(
     protocol=agent_protocol_state_new(config=mismatched_config),
   )
   try
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       mismatched,
       endpoint,
       agent_adapter_test_request(

@@ -12,7 +12,7 @@
 
 ///|
 test "matrix B06 explicit null mode markers deny their elicitation mode" {
-  let both_null = client_protocol_state_ready(
+  let both_null = @protocol.client_protocol_state_ready(
     capabilities=Value(
       client_state_test_capabilities(Omitted, Omitted, Omitted, Null, Null),
     ),
@@ -20,7 +20,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
   let form = client_state_test_form_request()
   let url = client_state_test_url_request()
   let complete = client_state_test_complete_notification()
-  try client_protocol_reduce(both_null, Request(form)) catch {
+  try @protocol.client_protocol_reduce(both_null, Request(form)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.form"
@@ -29,7 +29,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
   } noraise {
     _ => fail("expected form elicitation to be denied")
   }
-  try client_protocol_reduce(both_null, Request(url)) catch {
+  try @protocol.client_protocol_reduce(both_null, Request(url)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.url"
@@ -38,7 +38,9 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
   } noraise {
     _ => fail("expected URL elicitation to be denied")
   }
-  try client_protocol_reduce(both_null, Notification(complete)) catch {
+  try
+    @protocol.client_protocol_reduce(both_null, Notification(complete))
+  catch {
     CapabilityDenied(
       method_name="elicitation/complete",
       capability="elicitation.url"
@@ -50,7 +52,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
 
   // A null marker only denies its own mode: the sibling marker keeps
   // dispatching, so the two gates stay independently negotiable.
-  let null_form_only = client_protocol_state_ready(
+  let null_form_only = @protocol.client_protocol_state_ready(
     capabilities=Value(
       client_state_test_capabilities(
         Omitted,
@@ -61,7 +63,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
       ),
     ),
   )
-  try client_protocol_reduce(null_form_only, Request(form)) catch {
+  try @protocol.client_protocol_reduce(null_form_only, Request(form)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.form"
@@ -71,15 +73,15 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
     _ => fail("expected form elicitation to be denied")
   }
   assert_true(
-    client_protocol_reduce(null_form_only, Request(url)).commands[0]
+    @protocol.client_protocol_reduce(null_form_only, Request(url)).commands[0]
     is DispatchRequest(ElicitationCreate(Url(_))),
   )
   assert_true(
-    client_protocol_reduce(null_form_only, Notification(complete)).commands[0]
+    @protocol.client_protocol_reduce(null_form_only, Notification(complete)).commands[0]
     is DispatchNotification(ElicitationComplete(_)),
   )
 
-  let null_url_only = client_protocol_state_ready(
+  let null_url_only = @protocol.client_protocol_state_ready(
     capabilities=Value(
       client_state_test_capabilities(
         Omitted,
@@ -91,10 +93,10 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
     ),
   )
   assert_true(
-    client_protocol_reduce(null_url_only, Request(form)).commands[0]
+    @protocol.client_protocol_reduce(null_url_only, Request(form)).commands[0]
     is DispatchRequest(ElicitationCreate(Form(_))),
   )
-  try client_protocol_reduce(null_url_only, Request(url)) catch {
+  try @protocol.client_protocol_reduce(null_url_only, Request(url)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.url"
@@ -103,7 +105,9 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
   } noraise {
     _ => fail("expected URL elicitation to be denied")
   }
-  try client_protocol_reduce(null_url_only, Notification(complete)) catch {
+  try
+    @protocol.client_protocol_reduce(null_url_only, Notification(complete))
+  catch {
     CapabilityDenied(
       method_name="elicitation/complete",
       capability="elicitation.url"
@@ -114,7 +118,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
   }
 
   // A null elicitation outer object denies both modes as well.
-  let null_outer = client_protocol_state_ready(
+  let null_outer = @protocol.client_protocol_state_ready(
     capabilities=Value({
       fs: Omitted,
       terminal: Omitted,
@@ -125,7 +129,7 @@ test "matrix B06 explicit null mode markers deny their elicitation mode" {
       meta: Omitted,
     }),
   )
-  try client_protocol_reduce(null_outer, Request(url)) catch {
+  try @protocol.client_protocol_reduce(null_outer, Request(url)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.url"

@@ -127,7 +127,7 @@ async test "client_connect_process validates options before spawning" {
   let endpoint = client_endpoint_test_endpoint("process-options", true)
   let raised : Array[Unit] = []
   try {
-    client_connect_process(
+    @client.client_connect_process(
       endpoint_factory=_channel => endpoint,
       initial_state=client_adapter_test_state(endpoint),
       handlers=client_process_test_handlers([]),
@@ -150,7 +150,7 @@ async test "client_connect_process rejects an empty command fail-fast" {
   let traces : Array[@runtime.RuntimeTraceEvent] = []
   let raised : Array[Unit] = []
   try {
-    client_connect_process(
+    @client.client_connect_process(
       endpoint_factory=_channel => endpoint,
       initial_state=client_adapter_test_state(endpoint),
       handlers=client_process_test_handlers([]),
@@ -176,7 +176,7 @@ async test "client_connect_process surfaces a spawn rejection as a typed error" 
   let traces : Array[@runtime.RuntimeTraceEvent] = []
   let raised : Array[Unit] = []
   try {
-    client_connect_process(
+    @client.client_connect_process(
       endpoint_factory=_channel => endpoint,
       initial_state=client_adapter_test_state(endpoint),
       handlers=client_process_test_handlers([]),
@@ -198,7 +198,7 @@ async test "client_connect_process surfaces a spawn rejection as a typed error" 
 /// child reap inside the call — without any frame exchanged.
 async test "client_connect_process ends cleanly on immediate child EOF" {
   let endpoint = client_endpoint_test_endpoint("process-true", true)
-  client_connect_process(
+  @client.client_connect_process(
     endpoint_factory=_channel => endpoint,
     initial_state=client_adapter_test_state(endpoint),
     handlers=client_process_test_handlers([]),

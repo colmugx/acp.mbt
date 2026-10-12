@@ -3,8 +3,8 @@ test "v2 message upsert arms round-trip tri-state content" {
   for tag in ["user_message", "agent_message", "agent_thought"] {
     let omitted = model_test_round_trip(
       "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\"}",
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_true(
       omitted
@@ -16,8 +16,8 @@ test "v2 message upsert arms round-trip tri-state content" {
     )
     let nulled = model_test_round_trip(
       "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":null}",
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_true(
       nulled
@@ -29,8 +29,8 @@ test "v2 message upsert arms round-trip tri-state content" {
     )
     let emptied = model_test_round_trip(
       "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":[]}",
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_true(
       emptied
@@ -42,8 +42,8 @@ test "v2 message upsert arms round-trip tri-state content" {
     )
     let replaced = model_test_round_trip(
       "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":[{\"type\":\"text\",\"text\":\"hi\"}],\"_meta\":{\"k\":1}}",
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_true(
       replaced
@@ -73,32 +73,34 @@ test "v2 message upsert arms round-trip tri-state content" {
     )
     // The spec clears content for both null and []; the wire keeps the exact
     // spelling so a proxy can replay the author's choice byte-faithfully.
-    let null_encoded = experimental_v2_encode_session_update(
-      experimental_v2_decode_session_update(
-        experimental_v2_parse_json(
+    let null_encoded = @experimental.experimental_v2_encode_session_update(
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(
           "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":null}",
         ),
       ),
     )
     assert_eq(
-      experimental_v2_stringify_json(null_encoded),
+      @experimental.experimental_v2_stringify_json(null_encoded),
       "{\"messageId\":\"m1\",\"content\":null,\"sessionUpdate\":\"\{tag}\"}",
     )
-    let empty_encoded = experimental_v2_encode_session_update(
-      experimental_v2_decode_session_update(
-        experimental_v2_parse_json(
+    let empty_encoded = @experimental.experimental_v2_encode_session_update(
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(
           "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":[]}",
         ),
       ),
     )
     assert_eq(
-      experimental_v2_stringify_json(empty_encoded),
+      @experimental.experimental_v2_stringify_json(empty_encoded),
       "{\"messageId\":\"m1\",\"content\":[],\"sessionUpdate\":\"\{tag}\"}",
     )
   }
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json("{\"sessionUpdate\":\"user_message\"}"),
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json(
+        "{\"sessionUpdate\":\"user_message\"}",
+      ),
     )
   catch {
     MissingField(path="update.messageId") => ()
@@ -107,8 +109,8 @@ test "v2 message upsert arms round-trip tri-state content" {
     _ => fail("expected MissingField for an absent messageId")
   }
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json(
         "{\"sessionUpdate\":\"agent_thought\",\"messageId\":\"m1\",\"extra\":1}",
       ),
     )
@@ -126,8 +128,8 @@ test "v2 content chunks require messageId and content" {
     tag in ["user_message_chunk", "agent_message_chunk", "agent_thought_chunk"] {
     let chunk = model_test_round_trip(
       "{\"sessionUpdate\":\"\{tag}\",\"messageId\":\"m1\",\"content\":{\"type\":\"text\",\"text\":\"par\"},\"_meta\":{\"c\":1}}",
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_true(
       chunk
@@ -158,7 +160,7 @@ test "v2 content chunks require messageId and content" {
   }
   // v2 tightened chunks over v1: the message id and a content item are both
   // required, never defaulted.
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"sessionUpdate\":\"user_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"x\"}}",
       MissingField(path="update.messageId"),
@@ -171,7 +173,9 @@ test "v2 content chunks require messageId and content" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_session_update(experimental_v2_parse_json(source))
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(source),
+      )
     catch {
       error => assert_eq(error, expected)
     } noraise {
@@ -184,8 +188,8 @@ test "v2 content chunks require messageId and content" {
 test "v2 state update matrix per schema optionality" {
   let running = model_test_round_trip(
     "{\"state\":\"running\",\"_meta\":{\"k\":1}}",
-    value => experimental_v2_decode_state_update(value),
-    experimental_v2_encode_state_update,
+    value => @experimental.experimental_v2_decode_state_update(value),
+    @experimental.experimental_v2_encode_state_update,
   )
   assert_true(
     running
@@ -193,11 +197,11 @@ test "v2 state update matrix per schema optionality" {
   )
   let requires_action = model_test_round_trip(
     "{\"state\":\"requires_action\"}",
-    value => experimental_v2_decode_state_update(value),
-    experimental_v2_encode_state_update,
+    value => @experimental.experimental_v2_decode_state_update(value),
+    @experimental.experimental_v2_encode_state_update,
   )
   assert_true(requires_action is Known(StateRequiresAction({ meta: None, })))
-  let reasons : Array[(String, ExperimentalV2StopReason)] = [
+  let reasons : Array[(String, @experimental.ExperimentalV2StopReason)] = [
     ("end_turn", StopReasonEndTurn),
     ("max_tokens", StopReasonMaxTokens),
     ("max_turn_requests", StopReasonMaxTurnRequests),
@@ -210,8 +214,8 @@ test "v2 state update matrix per schema optionality" {
     let (wire, expected) = reason
     let idle = model_test_round_trip(
       "{\"state\":\"idle\",\"stopReason\":\"\{wire}\"}",
-      value => experimental_v2_decode_state_update(value),
-      experimental_v2_encode_state_update,
+      value => @experimental.experimental_v2_decode_state_update(value),
+      @experimental.experimental_v2_encode_state_update,
     )
     guard idle is Known(StateIdle({ stop_reason: Some(idle_reason), .. })) else {
       fail("expected a decoded idle state with a stop reason")
@@ -224,14 +228,14 @@ test "v2 state update matrix per schema optionality" {
       ] {
       let idle = model_test_round_trip(
         source,
-        value => experimental_v2_decode_state_update(value),
-        experimental_v2_encode_state_update,
+        value => @experimental.experimental_v2_decode_state_update(value),
+        @experimental.experimental_v2_encode_state_update,
       )
       assert_true(idle is Known(StateIdle({ stop_reason: None, .. })))
     }
   }
   // stopReason exists only on idle; the other known states reject it.
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"state\":\"running\",\"stopReason\":\"end_turn\"}",
       UnknownField(path="state_update.stopReason"),
@@ -248,7 +252,9 @@ test "v2 state update matrix per schema optionality" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_state_update(experimental_v2_parse_json(source))
+      @experimental.experimental_v2_decode_state_update(
+        @experimental.experimental_v2_parse_json(source),
+      )
     catch {
       error => assert_eq(error, expected)
     } noraise {
@@ -265,20 +271,22 @@ test "v2 state update keeps unknown states as raw payloads" {
     ] {
     let state = model_test_round_trip(
       source,
-      value => experimental_v2_decode_state_update(value),
-      experimental_v2_encode_state_update,
+      value => @experimental.experimental_v2_decode_state_update(value),
+      @experimental.experimental_v2_encode_state_update,
     )
     assert_eq(
-      experimental_v2_encode_state_update(state),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_state_update(state),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
-  let extension = experimental_v2_decode_state_update(
-    experimental_v2_parse_json("{\"state\":\"_thinking\",\"x\":1}"),
+  let extension = @experimental.experimental_v2_decode_state_update(
+    @experimental.experimental_v2_parse_json(
+      "{\"state\":\"_thinking\",\"x\":1}",
+    ),
   )
   assert_true(extension is Extension(tag="_thinking", ..))
-  let future = experimental_v2_decode_state_update(
-    experimental_v2_parse_json("{\"state\":\"deferred\",\"x\":1}"),
+  let future = @experimental.experimental_v2_decode_state_update(
+    @experimental.experimental_v2_parse_json("{\"state\":\"deferred\",\"x\":1}"),
   )
   assert_true(future is Future(tag="deferred", ..))
 }
@@ -287,8 +295,8 @@ test "v2 state update keeps unknown states as raw payloads" {
 test "v2 plan update replaces entries wholesale incl cancelled" {
   let plan = model_test_round_trip(
     "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"items\",\"planId\":\"p1\",\"entries\":[{\"content\":\"a\",\"priority\":\"high\",\"status\":\"cancelled\"},{\"content\":\"b\",\"priority\":\"_prio\",\"status\":\"_hold\"},{\"content\":\"c\",\"priority\":\"low\",\"status\":\"later\"}],\"_meta\":{\"k\":1}}}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   guard plan
     is Known(
@@ -331,8 +339,8 @@ test "v2 plan update replaces entries wholesale incl cancelled" {
   // An empty entries list is a legal whole-plan replacement.
   let emptied = model_test_round_trip(
     "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"items\",\"planId\":\"p1\",\"entries\":[]}}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     emptied
@@ -348,15 +356,15 @@ test "v2 plan update replaces entries wholesale incl cancelled" {
     ] {
     let update = model_test_round_trip(
       source,
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_eq(
-      experimental_v2_encode_session_update(update),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_session_update(update),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     ("{\"sessionUpdate\":\"plan_update\"}", MissingField(path="update.plan")),
     (
       "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"items\",\"planId\":\"p1\"}}",
@@ -374,7 +382,9 @@ test "v2 plan update replaces entries wholesale incl cancelled" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_session_update(experimental_v2_parse_json(source))
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(source),
+      )
     catch {
       error => assert_eq(error, expected)
     } noraise {
@@ -387,8 +397,8 @@ test "v2 plan update replaces entries wholesale incl cancelled" {
 test "v2 tool call and terminal arms round-trip through session update" {
   let tool_call = model_test_round_trip(
     "{\"sessionUpdate\":\"tool_call_update\",\"toolCallId\":\"tc1\",\"title\":\"Run tests\",\"kind\":\"execute\",\"status\":\"in_progress\"}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     tool_call
@@ -406,8 +416,8 @@ test "v2 tool call and terminal arms round-trip through session update" {
   )
   let tool_chunk = model_test_round_trip(
     "{\"sessionUpdate\":\"tool_call_content_chunk\",\"toolCallId\":\"tc1\",\"content\":{\"type\":\"terminal\",\"terminalId\":\"t1\"}}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     tool_chunk
@@ -422,8 +432,8 @@ test "v2 tool call and terminal arms round-trip through session update" {
   )
   let terminal = model_test_round_trip(
     "{\"sessionUpdate\":\"terminal_update\",\"terminalId\":\"t1\",\"command\":\"cargo test\",\"exitStatus\":{\"exitCode\":0}}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     terminal
@@ -439,8 +449,8 @@ test "v2 tool call and terminal arms round-trip through session update" {
   )
   let output_chunk = model_test_round_trip(
     "{\"sessionUpdate\":\"terminal_output_chunk\",\"terminalId\":\"t1\",\"data\":\"aGVsbG8=\"}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     output_chunk is Known(UpdateTerminalOutputChunk({ data: "aGVsbG8=", .. })),
@@ -451,8 +461,8 @@ test "v2 tool call and terminal arms round-trip through session update" {
 test "v2 available commands update round-trips the input union" {
   let commands = model_test_round_trip(
     "{\"sessionUpdate\":\"available_commands_update\",\"availableCommands\":[{\"name\":\"create_plan\",\"description\":\"Plan work\",\"input\":{\"type\":\"text\",\"hint\":\"What to plan?\"}},{\"name\":\"status\",\"description\":\"Report status\",\"input\":null}]}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   guard commands
     is Known(
@@ -477,8 +487,8 @@ test "v2 available commands update round-trips the input union" {
   // Unknown input kinds stay as raw payloads inside the command.
   let update = model_test_round_trip(
     "{\"sessionUpdate\":\"available_commands_update\",\"availableCommands\":[{\"name\":\"draw\",\"description\":\"Draw\",\"input\":{\"type\":\"_ink\",\"strokes\":3}}]}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     update
@@ -491,8 +501,8 @@ test "v2 available commands update round-trips the input union" {
       )
     ),
   )
-  let future = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let future = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"available_commands_update\",\"availableCommands\":[{\"name\":\"speak\",\"description\":\"Speak\",\"input\":{\"type\":\"voice\",\"seconds\":5}}]}",
     ),
   )
@@ -511,8 +521,8 @@ test "v2 available commands update round-trips the input union" {
   // decodable instead of being treated as an identifier.
   let empty_name = model_test_round_trip(
     "{\"sessionUpdate\":\"available_commands_update\",\"availableCommands\":[{\"name\":\"\",\"description\":\"anonymous\"}]}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     empty_name
@@ -521,8 +531,8 @@ test "v2 available commands update round-trips the input union" {
     ),
   )
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json(
         "{\"sessionUpdate\":\"available_commands_update\"}",
       ),
     )
@@ -538,8 +548,8 @@ test "v2 available commands update round-trips the input union" {
 test "v2 config option update round-trips the full option set" {
   let config = model_test_round_trip(
     "{\"sessionUpdate\":\"config_option_update\",\"configOptions\":[{\"type\":\"boolean\",\"configId\":\"verbose\",\"name\":\"Verbose\",\"currentValue\":true},{\"type\":\"select\",\"configId\":\"model\",\"name\":\"Model\",\"currentValue\":\"m1\",\"options\":[{\"value\":\"m1\",\"name\":\"M1\"}]}]}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     config
@@ -559,13 +569,15 @@ test "v2 config option update round-trips the full option set" {
   // is a legal update.
   let emptied = model_test_round_trip(
     "{\"sessionUpdate\":\"config_option_update\",\"configOptions\":[]}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(emptied is Known(UpdateConfigOptions({ config_options: [], .. })))
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json("{\"sessionUpdate\":\"config_option_update\"}"),
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json(
+        "{\"sessionUpdate\":\"config_option_update\"}",
+      ),
     )
   catch {
     MissingField(path="update.configOptions") => ()
@@ -579,8 +591,8 @@ test "v2 config option update round-trips the full option set" {
 test "v2 session info update applies field-level tri-state" {
   let partial = model_test_round_trip(
     "{\"sessionUpdate\":\"session_info_update\",\"title\":\"New title\"}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     partial
@@ -596,8 +608,8 @@ test "v2 session info update applies field-level tri-state" {
   )
   let cleared = model_test_round_trip(
     "{\"sessionUpdate\":\"session_info_update\",\"title\":null,\"updatedAt\":null,\"_meta\":null}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(
     cleared
@@ -608,8 +620,8 @@ test "v2 session info update applies field-level tri-state" {
     ),
   )
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json(
         "{\"sessionUpdate\":\"session_info_update\",\"title\":5}",
       ),
     )
@@ -625,8 +637,8 @@ test "v2 session info update applies field-level tri-state" {
 test "v2 usage update round-trips uint64 bounds and cost" {
   let usage = model_test_round_trip(
     "{\"sessionUpdate\":\"usage_update\",\"used\":18446744073709551615,\"size\":0,\"cost\":{\"amount\":1.5,\"currency\":\"USD\"}}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   guard usage is Known(UpdateUsage(update_value)) else {
     fail("expected a decoded usage update")
@@ -638,18 +650,18 @@ test "v2 usage update round-trips uint64 bounds and cost" {
   assert_eq(cost.amount, 1.5)
   assert_eq(cost.currency, "USD")
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_usage_update(update_value),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_usage_update(update_value),
     ),
     "{\"used\":18446744073709551615,\"size\":0,\"cost\":{\"amount\":1.5,\"currency\":\"USD\"}}",
   )
   let bare = model_test_round_trip(
     "{\"sessionUpdate\":\"usage_update\",\"used\":12,\"size\":34}",
-    value => experimental_v2_decode_session_update(value),
-    experimental_v2_encode_session_update,
+    value => @experimental.experimental_v2_decode_session_update(value),
+    @experimental.experimental_v2_encode_session_update,
   )
   assert_true(bare is Known(UpdateUsage({ cost: None, .. })))
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"sessionUpdate\":\"usage_update\",\"used\":-1,\"size\":3}",
       InvalidField(
@@ -686,7 +698,9 @@ test "v2 usage update round-trips uint64 bounds and cost" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_session_update(experimental_v2_parse_json(source))
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(source),
+      )
     catch {
       error => assert_eq(error, expected)
     } noraise {
@@ -703,29 +717,29 @@ test "v2 unknown session update discriminator preserved raw" {
     ] {
     let update = model_test_round_trip(
       source,
-      value => experimental_v2_decode_session_update(value),
-      experimental_v2_encode_session_update,
+      value => @experimental.experimental_v2_decode_session_update(value),
+      @experimental.experimental_v2_encode_session_update,
     )
     assert_eq(
-      experimental_v2_encode_session_update(update),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_session_update(update),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
-  let extension = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let extension = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"_agent_mood\",\"mood\":\"great\"}",
     ),
   )
   assert_true(extension is Extension(tag="_agent_mood", ..))
-  let future = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let future = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"telemetry\",\"samples\":[]}",
     ),
   )
   assert_true(future is Future(tag="telemetry", ..))
   try
-    experimental_v2_decode_session_update(
-      experimental_v2_parse_json("{\"x\":1}"),
+    @experimental.experimental_v2_decode_session_update(
+      @experimental.experimental_v2_parse_json("{\"x\":1}"),
     )
   catch {
     MissingField(path="update.sessionUpdate") => ()
@@ -739,8 +753,10 @@ test "v2 unknown session update discriminator preserved raw" {
 test "v2 session update envelope requires sessionId and rejects unknowns" {
   let notification = model_test_round_trip(
     "{\"sessionId\":\"s1\",\"update\":{\"sessionUpdate\":\"state_update\",\"state\":\"idle\",\"stopReason\":\"end_turn\"},\"_meta\":{\"n\":1}}",
-    value => experimental_v2_decode_update_session_notification(value),
-    experimental_v2_encode_update_session_notification,
+    value => {
+      @experimental.experimental_v2_decode_update_session_notification(value)
+    },
+    @experimental.experimental_v2_encode_update_session_notification,
   )
   assert_true(
     notification
@@ -754,7 +770,7 @@ test "v2 session update envelope requires sessionId and rejects unknowns" {
       meta: Some(Object(_)),
     },
   )
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"update\":{\"sessionUpdate\":\"state_update\",\"state\":\"idle\"}}",
       MissingField(path="session/update.sessionId"),
@@ -786,8 +802,8 @@ test "v2 session update envelope requires sessionId and rejects unknowns" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_update_session_notification(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_update_session_notification(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -804,8 +820,10 @@ test "v2 session update envelope requires sessionId and rejects unknowns" {
     ] {
     let notification = model_test_round_trip(
       source,
-      value => experimental_v2_decode_update_session_notification(value),
-      experimental_v2_encode_update_session_notification,
+      value => {
+        @experimental.experimental_v2_decode_update_session_notification(value)
+      },
+      @experimental.experimental_v2_encode_update_session_notification,
     )
     assert_true(notification.meta is None)
   }

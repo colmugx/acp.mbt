@@ -2,19 +2,19 @@
 test "v2 terminal content block and output chunk round-trip base64" {
   let terminal = model_test_round_trip(
     "{\"type\":\"terminal\",\"terminalId\":\"t1\",\"_meta\":{\"k\":1}}",
-    value => experimental_v2_decode_tool_call_content(value),
-    experimental_v2_encode_tool_call_content,
+    value => @experimental.experimental_v2_decode_tool_call_content(value),
+    @experimental.experimental_v2_encode_tool_call_content,
   )
   assert_true(
     terminal is Known(ToolCallContentTerminal({ terminal_id: "t1", .. })),
   )
   let chunk = model_test_round_trip(
     "{\"terminalId\":\"t1\",\"data\":\"aGVsbG8=\",\"_meta\":{\"c\":2}}",
-    value => experimental_v2_decode_terminal_output_chunk(value),
-    experimental_v2_encode_terminal_output_chunk,
+    value => @experimental.experimental_v2_decode_terminal_output_chunk(value),
+    @experimental.experimental_v2_encode_terminal_output_chunk,
   )
   assert_eq(chunk.data, "aGVsbG8=")
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"terminalId\":\"t1\",\"data\":\"%%%\"}",
       InvalidBase64(path="terminalOutputChunk.data"),
@@ -31,8 +31,8 @@ test "v2 terminal content block and output chunk round-trip base64" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_terminal_output_chunk(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_terminal_output_chunk(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -46,8 +46,8 @@ test "v2 terminal content block and output chunk round-trip base64" {
 test "v2 terminal update applies patch tri-state beyond the id" {
   let bare = model_test_round_trip(
     "{\"terminalId\":\"t1\"}",
-    value => experimental_v2_decode_terminal_update(value),
-    experimental_v2_encode_terminal_update,
+    value => @experimental.experimental_v2_decode_terminal_update(value),
+    @experimental.experimental_v2_encode_terminal_update,
   )
   assert_eq(bare, {
     terminal_id: "t1",
@@ -59,8 +59,8 @@ test "v2 terminal update applies patch tri-state beyond the id" {
   })
   let full = model_test_round_trip(
     "{\"terminalId\":\"t1\",\"command\":\"cargo test\",\"cwd\":\"/repo\",\"output\":{\"data\":\"aGVsbG8=\"},\"exitStatus\":{\"exitCode\":0,\"signal\":null,\"_meta\":{\"e\":1}},\"_meta\":{\"u\":2}}",
-    value => experimental_v2_decode_terminal_update(value),
-    experimental_v2_encode_terminal_update,
+    value => @experimental.experimental_v2_decode_terminal_update(value),
+    @experimental.experimental_v2_encode_terminal_update,
   )
   guard full.command is PatchValue(command) else {
     fail("expected a replaced command")
@@ -75,8 +75,8 @@ test "v2 terminal update applies patch tri-state beyond the id" {
   assert_eq(exit_status.signal, None)
   let cleared = model_test_round_trip(
     "{\"terminalId\":\"t1\",\"command\":null,\"cwd\":null,\"output\":null,\"exitStatus\":null,\"_meta\":null}",
-    value => experimental_v2_decode_terminal_update(value),
-    experimental_v2_encode_terminal_update,
+    value => @experimental.experimental_v2_decode_terminal_update(value),
+    @experimental.experimental_v2_encode_terminal_update,
   )
   assert_true(
     cleared.command is PatchNull &&
@@ -89,7 +89,7 @@ test "v2 terminal update applies patch tri-state beyond the id" {
 
 ///|
 test "v2 terminal update enforces absolute cwd and base64 output" {
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"terminalId\":\"t1\",\"cwd\":\"repo\"}",
       InvalidPath(path="terminal.cwd", value="repo"),
@@ -121,7 +121,9 @@ test "v2 terminal update enforces absolute cwd and base64 output" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_terminal_update(experimental_v2_parse_json(source))
+      @experimental.experimental_v2_decode_terminal_update(
+        @experimental.experimental_v2_parse_json(source),
+      )
     catch {
       error => assert_eq(error, expected)
     } noraise {
@@ -129,7 +131,7 @@ test "v2 terminal update enforces absolute cwd and base64 output" {
     }
   }
   try
-    experimental_v2_encode_terminal_update({
+    @experimental.experimental_v2_encode_terminal_update({
       terminal_id: "t1",
       command: PatchOmitted,
       cwd: PatchValue("relative"),
@@ -147,8 +149,8 @@ test "v2 terminal update enforces absolute cwd and base64 output" {
 ///|
 test "v2 terminal exit status boundaries and nullable equivalence" {
   for exit_code in [0U, 4294967295U] {
-    let decoded = experimental_v2_decode_terminal_update(
-      experimental_v2_parse_json(
+    let decoded = @experimental.experimental_v2_decode_terminal_update(
+      @experimental.experimental_v2_parse_json(
         "{\"terminalId\":\"t1\",\"exitStatus\":{\"exitCode\":\{exit_code}}}",
       ),
     )
@@ -156,8 +158,8 @@ test "v2 terminal exit status boundaries and nullable equivalence" {
   }
   let null_fields = model_test_round_trip(
     "{\"terminalId\":\"t1\",\"exitStatus\":{\"exitCode\":null,\"signal\":null,\"_meta\":null}}",
-    value => experimental_v2_decode_terminal_update(value),
-    experimental_v2_encode_terminal_update,
+    value => @experimental.experimental_v2_decode_terminal_update(value),
+    @experimental.experimental_v2_encode_terminal_update,
   )
   assert_true(
     null_fields.exit_status

@@ -16,8 +16,10 @@
 /// string fields, and the wire keeps camelCase field names only.
 test "matrix F02 A08 resource link requires uri and name with camelCase fields" {
   try
-    content_block_from_json(
-      protocol_parse_json("{\"type\":\"resource_link\",\"name\":\"notes\"}"),
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
+        "{\"type\":\"resource_link\",\"name\":\"notes\"}",
+      ),
     )
   catch {
     MissingField(path="content.uri") => ()
@@ -26,8 +28,8 @@ test "matrix F02 A08 resource link requires uri and name with camelCase fields" 
     _ => fail("expected resource link decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json(
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"resource_link\",\"uri\":\"file:///tmp\"}",
       ),
     )
@@ -38,8 +40,8 @@ test "matrix F02 A08 resource link requires uri and name with camelCase fields" 
     _ => fail("expected resource link decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json(
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"resource_link\",\"name\":\"notes\",\"uri\":\"file:///tmp\",\"mime_type\":\"text/plain\"}",
       ),
     )
@@ -50,7 +52,9 @@ test "matrix F02 A08 resource link requires uri and name with camelCase fields" 
     _ => fail("expected resource link decoding to fail")
   }
   try
-    resource_link_from_json(protocol_parse_json("{\"name\":\"notes\"}"))
+    @protocol.resource_link_from_json(
+      @protocol.protocol_parse_json("{\"name\":\"notes\"}"),
+    )
   catch {
     MissingField(path="resource_link.uri") => ()
     _ => fail("expected bare codec missing uri rejection")
@@ -65,8 +69,10 @@ test "matrix F02 A08 resource link requires uri and name with camelCase fields" 
 /// are proven in content_test.mbt.
 test "matrix F03 F04 image and audio require data and mimeType" {
   try
-    content_block_from_json(
-      protocol_parse_json("{\"type\":\"image\",\"mimeType\":\"image/png\"}"),
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
+        "{\"type\":\"image\",\"mimeType\":\"image/png\"}",
+      ),
     )
   catch {
     MissingField(path="content.data") => ()
@@ -75,8 +81,8 @@ test "matrix F03 F04 image and audio require data and mimeType" {
     _ => fail("expected image decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json(
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"image\",\"data\":\"aA==\",\"mimeType\":7}",
       ),
     )
@@ -87,8 +93,8 @@ test "matrix F03 F04 image and audio require data and mimeType" {
     _ => fail("expected image decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json("{\"type\":\"audio\",\"data\":\"aA==\"}"),
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json("{\"type\":\"audio\",\"data\":\"aA==\"}"),
     )
   catch {
     MissingField(path="content.mimeType") => ()
@@ -97,7 +103,9 @@ test "matrix F03 F04 image and audio require data and mimeType" {
     _ => fail("expected audio decoding to fail")
   }
   try
-    audio_content_from_json(protocol_parse_json("{\"mimeType\":\"a/w\"}"))
+    @protocol.audio_content_from_json(
+      @protocol.protocol_parse_json("{\"mimeType\":\"a/w\"}"),
+    )
   catch {
     MissingField(path="audio.data") => ()
     _ => fail("expected bare codec missing audio data rejection")
@@ -113,8 +121,8 @@ test "matrix F03 F04 image and audio require data and mimeType" {
 /// so no transport can be silently reinterpreted as another one.
 test "matrix A08 G03 MCP transports stay discriminated without fallback" {
   try
-    mcp_server_from_json(
-      protocol_parse_json(
+    @protocol.mcp_server_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"HTTP\",\"name\":\"x\",\"url\":\"https://e.test\",\"headers\":[]}",
       ),
     )
@@ -125,8 +133,10 @@ test "matrix A08 G03 MCP transports stay discriminated without fallback" {
     _ => fail("expected MCP decoding to fail")
   }
   try
-    mcp_server_from_json(
-      protocol_parse_json("{\"type\":\"http\",\"name\":\"x\",\"headers\":[]}"),
+    @protocol.mcp_server_from_json(
+      @protocol.protocol_parse_json(
+        "{\"type\":\"http\",\"name\":\"x\",\"headers\":[]}",
+      ),
     )
   catch {
     MissingField(path="mcpServer.url") => ()
@@ -135,8 +145,8 @@ test "matrix A08 G03 MCP transports stay discriminated without fallback" {
     _ => fail("expected MCP decoding to fail")
   }
   try
-    mcp_server_from_json(
-      protocol_parse_json(
+    @protocol.mcp_server_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"sse\",\"name\":\"x\",\"url\":\"https://e.test\"}",
       ),
     )
@@ -146,15 +156,15 @@ test "matrix A08 G03 MCP transports stay discriminated without fallback" {
   } noraise {
     _ => fail("expected MCP decoding to fail")
   }
-  let http = mcp_server_from_json(
-    protocol_parse_json(
+  let http = @protocol.mcp_server_from_json(
+    @protocol.protocol_parse_json(
       "{\"type\":\"http\",\"name\":\"x\",\"url\":\"https://e.test\",\"headers\":[]}",
     ),
   )
   assert_true(http is Http(_))
   try
-    mcp_server_from_json(
-      protocol_parse_json(
+    @protocol.mcp_server_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"stdio\",\"name\":\"x\",\"command\":\"/bin/tool\",\"args\":[],\"env\":[],\"url\":\"https://e.test\"}",
       ),
     )
@@ -165,8 +175,8 @@ test "matrix A08 G03 MCP transports stay discriminated without fallback" {
     _ => fail("expected stdio entry with url to fail")
   }
   try
-    mcp_server_from_json(
-      protocol_parse_json(
+    @protocol.mcp_server_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"http\",\"name\":\"x\",\"url\":\"https://e.test\",\"headers\":[],\"command\":\"/bin/tool\"}",
       ),
     )
@@ -184,8 +194,8 @@ test "matrix A08 G03 MCP transports stay discriminated without fallback" {
 /// indexed wire path, never a default severity.
 test "matrix A08 plan entries reject unknown priority and status values" {
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"plan\",\"entries\":[{\"content\":\"x\",\"priority\":\"urgent\",\"status\":\"pending\"}]}",
       ),
     )
@@ -199,8 +209,8 @@ test "matrix A08 plan entries reject unknown priority and status values" {
     _ => fail("expected plan decoding to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"plan\",\"entries\":[{\"content\":\"x\",\"priority\":\"high\",\"status\":\"cancelled\"}]}",
       ),
     )
@@ -214,8 +224,8 @@ test "matrix A08 plan entries reject unknown priority and status values" {
     _ => fail("expected plan decoding to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"plan\",\"entries\":[{\"priority\":\"high\",\"status\":\"pending\"}]}",
       ),
     )
@@ -232,8 +242,10 @@ test "matrix A08 plan entries reject unknown priority and status values" {
 /// updates too, not only for the initial tool call fixtures in tool_test.mbt.
 test "matrix F07 tool update kinds and statuses reject unknown discriminators" {
   try
-    tool_call_update_from_json(
-      protocol_parse_json("{\"toolCallId\":\"call\",\"kind\":\"switchMode\"}"),
+    @protocol.tool_call_update_from_json(
+      @protocol.protocol_parse_json(
+        "{\"toolCallId\":\"call\",\"kind\":\"switchMode\"}",
+      ),
     )
   catch {
     InvalidDiscriminator(path="toolCallUpdate.kind", value="switchMode") => ()
@@ -242,8 +254,10 @@ test "matrix F07 tool update kinds and statuses reject unknown discriminators" {
     _ => fail("expected tool update decoding to fail")
   }
   try
-    tool_call_update_from_json(
-      protocol_parse_json("{\"toolCallId\":\"call\",\"status\":\"done\"}"),
+    @protocol.tool_call_update_from_json(
+      @protocol.protocol_parse_json(
+        "{\"toolCallId\":\"call\",\"status\":\"done\"}",
+      ),
     )
   catch {
     InvalidDiscriminator(path="toolCallUpdate.status", value="done") => ()
@@ -251,8 +265,8 @@ test "matrix F07 tool update kinds and statuses reject unknown discriminators" {
   } noraise {
     _ => fail("expected tool update decoding to fail")
   }
-  let switch_mode = tool_call_update_from_json(
-    protocol_parse_json(
+  let switch_mode = @protocol.tool_call_update_from_json(
+    @protocol.protocol_parse_json(
       "{\"toolCallId\":\"call\",\"kind\":\"switch_mode\",\"status\":\"in_progress\"}",
     ),
   )
@@ -269,7 +283,9 @@ test "matrix F07 tool update kinds and statuses reject unknown discriminators" {
 /// terminal reference that could not address any terminal.
 test "matrix F11 terminal tool content requires a usable terminal id" {
   try
-    tool_call_content_from_json(protocol_parse_json("{\"type\":\"terminal\"}"))
+    @protocol.tool_call_content_from_json(
+      @protocol.protocol_parse_json("{\"type\":\"terminal\"}"),
+    )
   catch {
     MissingField(path="toolContent.terminalId") => ()
     _ => fail("expected missing terminalId rejection")
@@ -277,8 +293,10 @@ test "matrix F11 terminal tool content requires a usable terminal id" {
     _ => fail("expected terminal content decoding to fail")
   }
   try
-    tool_call_content_from_json(
-      protocol_parse_json("{\"type\":\"terminal\",\"terminalId\":\"\"}"),
+    @protocol.tool_call_content_from_json(
+      @protocol.protocol_parse_json(
+        "{\"type\":\"terminal\",\"terminalId\":\"\"}",
+      ),
     )
   catch {
     InvalidField(path="toolContent.terminalId", reason=_) => ()
@@ -286,15 +304,15 @@ test "matrix F11 terminal tool content requires a usable terminal id" {
   } noraise {
     _ => fail("expected terminal content decoding to fail")
   }
-  let degenerate : Terminal = { terminal_id: "", meta: Omitted, }
-  try terminal_to_json(degenerate) catch {
+  let degenerate : @protocol.Terminal = { terminal_id: "", meta: Omitted, }
+  try @protocol.terminal_to_json(degenerate) catch {
     InvalidField(path="terminalId", reason=_) => ()
     _ => fail("expected empty terminalId encode rejection")
   } noraise {
     _ => fail("expected terminal encode to fail")
   }
-  let referenced = tool_call_content_from_json(
-    protocol_parse_json(
+  let referenced = @protocol.tool_call_content_from_json(
+    @protocol.protocol_parse_json(
       "{\"type\":\"terminal\",\"terminalId\":\"matrix-terminal\"}",
     ),
   )
@@ -310,8 +328,8 @@ test "matrix F11 terminal tool content requires a usable terminal id" {
 /// decodes into a default allow.
 test "matrix F12 permission outcomes reject unknown discriminators" {
   try
-    request_permission_outcome_from_json(
-      protocol_parse_json("{\"outcome\":\"deferred\"}"),
+    @protocol.request_permission_outcome_from_json(
+      @protocol.protocol_parse_json("{\"outcome\":\"deferred\"}"),
     )
   catch {
     InvalidDiscriminator(path="outcome.outcome", value="deferred") => ()
@@ -320,8 +338,8 @@ test "matrix F12 permission outcomes reject unknown discriminators" {
     _ => fail("expected permission outcome decoding to fail")
   }
   try
-    request_permission_outcome_from_json(
-      protocol_parse_json("{\"outcome\":\"selected\"}"),
+    @protocol.request_permission_outcome_from_json(
+      @protocol.protocol_parse_json("{\"outcome\":\"selected\"}"),
     )
   catch {
     MissingField(path="outcome.optionId") => ()
@@ -329,15 +347,21 @@ test "matrix F12 permission outcomes reject unknown discriminators" {
   } noraise {
     _ => fail("expected selected outcome decoding to fail")
   }
-  try request_permission_response_from_json(protocol_parse_json("{}")) catch {
+  try
+    @protocol.request_permission_response_from_json(
+      @protocol.protocol_parse_json("{}"),
+    )
+  catch {
     MissingField(path="requestPermission.outcome") => ()
     _ => fail("expected missing permission outcome rejection")
   } noraise {
     _ => fail("expected permission response decoding to fail")
   }
   try
-    request_permission_outcome_from_json(
-      protocol_parse_json("{\"outcome\":\"cancelled\",\"extra\":true}"),
+    @protocol.request_permission_outcome_from_json(
+      @protocol.protocol_parse_json(
+        "{\"outcome\":\"cancelled\",\"extra\":true}",
+      ),
     )
   catch {
     UnknownField(path="outcome.extra") => ()
@@ -356,7 +380,7 @@ test "matrix F12 permission outcomes reject unknown discriminators" {
 /// contract (exact uint64 limit parameter, lossless output string, honest
 /// truncated flag) proven here in both directions.
 test "matrix G06 terminal output and truncated flags round trip both ways" {
-  let truncated_result : TerminalOutputResult = {
+  let truncated_result : @protocol.TerminalOutputResult = {
     output: "边界テスト🚀",
     truncated: true,
     exit_status: Value({
@@ -367,26 +391,26 @@ test "matrix G06 terminal output and truncated flags round trip both ways" {
     meta: Omitted,
   }
   assert_eq(
-    terminal_output_result_from_json(
-      terminal_output_result_to_json(truncated_result),
+    @protocol.terminal_output_result_from_json(
+      @protocol.terminal_output_result_to_json(truncated_result),
     ),
     truncated_result,
   )
-  let complete_result : TerminalOutputResult = {
+  let complete_result : @protocol.TerminalOutputResult = {
     output: "",
     truncated: false,
     exit_status: Omitted,
     meta: Omitted,
   }
   assert_eq(
-    terminal_output_result_from_json(
-      terminal_output_result_to_json(complete_result),
+    @protocol.terminal_output_result_from_json(
+      @protocol.terminal_output_result_to_json(complete_result),
     ),
     complete_result,
   )
   try
-    terminal_output_result_from_json(
-      protocol_parse_json("{\"output\":\"x\",\"exitStatus\":null}"),
+    @protocol.terminal_output_result_from_json(
+      @protocol.protocol_parse_json("{\"output\":\"x\",\"exitStatus\":null}"),
     )
   catch {
     MissingField(path="terminal/output.truncated") => ()

@@ -2,8 +2,8 @@
 test "v2 mcp stdio server round-trips args and env" {
   let decoded = model_test_round_trip(
     "{\"type\":\"stdio\",\"name\":\"fs\",\"command\":\"/usr/bin/fs-mcp\",\"args\":[\"--flag\",\"x\"],\"env\":[{\"name\":\"K\",\"value\":\"V\"}],\"_meta\":{}}",
-    value => experimental_v2_decode_mcp_server(value),
-    experimental_v2_encode_mcp_server,
+    value => @experimental.experimental_v2_decode_mcp_server(value),
+    @experimental.experimental_v2_encode_mcp_server,
   )
   assert_true(
     decoded
@@ -13,8 +13,8 @@ test "v2 mcp stdio server round-trips args and env" {
   )
   let bare = model_test_round_trip(
     "{\"type\":\"stdio\",\"name\":\"fs\",\"command\":\"/usr/bin/fs-mcp\"}",
-    value => experimental_v2_decode_mcp_server(value),
-    experimental_v2_encode_mcp_server,
+    value => @experimental.experimental_v2_decode_mcp_server(value),
+    @experimental.experimental_v2_encode_mcp_server,
   )
   assert_true(bare is Known(TransportStdio({ args: None, env: None, .. })))
 }
@@ -22,8 +22,8 @@ test "v2 mcp stdio server round-trips args and env" {
 ///|
 test "v2 mcp stdio server requires an absolute command" {
   try
-    experimental_v2_decode_mcp_server(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_mcp_server(
+      @experimental.experimental_v2_parse_json(
         "{\"type\":\"stdio\",\"name\":\"n\",\"command\":\"bin/tool\"}",
       ),
     )
@@ -39,8 +39,8 @@ test "v2 mcp stdio server requires an absolute command" {
 test "v2 mcp http server round-trips headers" {
   let decoded = model_test_round_trip(
     "{\"type\":\"http\",\"name\":\"db\",\"url\":\"https://example.test/mcp\",\"headers\":[{\"name\":\"Authorization\",\"value\":\"Bearer t\"}]}",
-    value => experimental_v2_decode_mcp_server(value),
-    experimental_v2_encode_mcp_server,
+    value => @experimental.experimental_v2_decode_mcp_server(value),
+    @experimental.experimental_v2_encode_mcp_server,
   )
   assert_true(
     decoded
@@ -53,7 +53,9 @@ test "v2 mcp http server round-trips headers" {
 ///|
 test "v2 mcp known payloads reject foreign and missing fields" {
   let decode = source => {
-    experimental_v2_decode_mcp_server(experimental_v2_parse_json(source))
+    @experimental.experimental_v2_decode_mcp_server(
+      @experimental.experimental_v2_parse_json(source),
+    )
   }
   try
     decode(
@@ -88,21 +90,25 @@ test "v2 mcp server unknown discriminator sse stays future raw" {
   // The v2 schema has an open fallback, so the removed v1 "sse" transport is
   // not decodable as a known transport but must round-trip as Future.
   let source = "{\"type\":\"sse\",\"name\":\"n\",\"url\":\"https://x\"}"
-  let decoded = experimental_v2_decode_mcp_server(
-    experimental_v2_parse_json(source),
+  let decoded = @experimental.experimental_v2_decode_mcp_server(
+    @experimental.experimental_v2_parse_json(source),
   )
   assert_true(decoded is Future(tag="sse", ..))
   assert_eq(
-    experimental_v2_stringify_json(experimental_v2_encode_mcp_server(decoded)),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_mcp_server(decoded),
+    ),
     source,
   )
   let extension_source = "{\"type\":\"_ipc\",\"name\":\"n\",\"fd\":3}"
-  let extension = experimental_v2_decode_mcp_server(
-    experimental_v2_parse_json(extension_source),
+  let extension = @experimental.experimental_v2_decode_mcp_server(
+    @experimental.experimental_v2_parse_json(extension_source),
   )
   assert_true(extension is Extension(tag="_ipc", ..))
   assert_eq(
-    experimental_v2_stringify_json(experimental_v2_encode_mcp_server(extension)),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_mcp_server(extension),
+    ),
     extension_source,
   )
 }
@@ -110,7 +116,9 @@ test "v2 mcp server unknown discriminator sse stays future raw" {
 ///|
 test "v2 mcp server rejects malformed discriminators" {
   let decode = source => {
-    experimental_v2_decode_mcp_server(experimental_v2_parse_json(source))
+    @experimental.experimental_v2_decode_mcp_server(
+      @experimental.experimental_v2_parse_json(source),
+    )
   }
   try decode("{\"name\":\"n\"}") catch {
     MissingField(path="mcpServer.type") => ()
@@ -124,7 +132,9 @@ test "v2 mcp server rejects malformed discriminators" {
   } noraise {
     _ => fail("expected ExpectedString for a non-string discriminator")
   }
-  try experimental_v2_decode_mcp_server(Json::string("stdio")) catch {
+  try
+    @experimental.experimental_v2_decode_mcp_server(Json::string("stdio"))
+  catch {
     ExpectedObject(path="mcpServer") => ()
     _ => fail("expected ExpectedObject for a non-object server")
   } noraise {
@@ -135,8 +145,8 @@ test "v2 mcp server rejects malformed discriminators" {
 ///|
 test "v2 mcp env and header entries are strict" {
   try
-    experimental_v2_decode_mcp_server(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_mcp_server(
+      @experimental.experimental_v2_parse_json(
         "{\"type\":\"stdio\",\"name\":\"n\",\"command\":\"/bin/n\",\"env\":[{\"name\":\"K\"}]}",
       ),
     )
@@ -147,8 +157,10 @@ test "v2 mcp env and header entries are strict" {
     _ => fail("expected MissingField for an env value")
   }
   try
-    experimental_v2_decode_http_header(
-      experimental_v2_parse_json("{\"name\":\"H\",\"value\":\"V\",\"extra\":1}"),
+    @experimental.experimental_v2_decode_http_header(
+      @experimental.experimental_v2_parse_json(
+        "{\"name\":\"H\",\"value\":\"V\",\"extra\":1}",
+      ),
     )
   catch {
     UnknownField(path="httpHeader.extra") => ()

@@ -108,21 +108,23 @@ test "unready client rejects business traffic and Ready is one-shot" {
     Omitted,
     Omitted,
   )
-  let state = client_protocol_state_new(capabilities=Value(capabilities))
+  let state = @protocol.client_protocol_state_new(
+    capabilities=Value(capabilities),
+  )
   let read = client_state_test_request(
     "fs/read_text_file", "{\"sessionId\":\"s\",\"path\":\"/tmp/a\"}",
   )
-  try client_protocol_reduce(state, Request(read)) catch {
+  try @protocol.client_protocol_reduce(state, Request(read)) catch {
     NotReady(method_name="fs/read_text_file") => ()
     _ => fail("expected unready request rejection")
   } noraise {
     _ => fail("expected unready request rejection")
   }
 
-  let ready = client_protocol_reduce(state, Ready)
+  let ready = @protocol.client_protocol_reduce(state, Ready)
   assert_eq(ready.state.phase, Ready)
   assert_eq(ready.commands.length(), 0)
-  try client_protocol_reduce(ready.state, Ready) catch {
+  try @protocol.client_protocol_reduce(ready.state, Ready) catch {
     AlreadyReady => ()
     _ => fail("expected repeated Ready rejection")
   } noraise {
@@ -139,14 +141,22 @@ test "permission and session updates are baseline traffic" {
     Omitted,
     Omitted,
   )
-  let state = client_protocol_state_ready(capabilities=Value(capabilities))
+  let state = @protocol.client_protocol_state_ready(
+    capabilities=Value(capabilities),
+  )
   let permission = client_state_test_permission_request()
-  let permission_step = client_protocol_reduce(state, Request(permission))
+  let permission_step = @protocol.client_protocol_reduce(
+    state,
+    Request(permission),
+  )
   assert_true(
     permission_step.commands[0] is DispatchRequest(SessionRequestPermission(_)),
   )
   let update = client_state_test_update_notification()
-  let update_step = client_protocol_reduce(state, Notification(update))
+  let update_step = @protocol.client_protocol_reduce(
+    state,
+    Notification(update),
+  )
   assert_true(update_step.commands[0] is DispatchNotification(SessionUpdate(_)))
 }
 
@@ -159,7 +169,7 @@ test "filesystem read and write capabilities are independent" {
     Omitted,
     Omitted,
   )
-  let read_only = client_protocol_state_ready(
+  let read_only = @protocol.client_protocol_state_ready(
     capabilities=Value(read_only_capabilities),
   )
   let read_only_before = read_only
@@ -167,13 +177,13 @@ test "filesystem read and write capabilities are independent" {
     "fs/read_text_file", "{\"sessionId\":\"s\",\"path\":\"/tmp/a\"}",
   )
   assert_true(
-    client_protocol_reduce(read_only, Request(read)).commands[0]
+    @protocol.client_protocol_reduce(read_only, Request(read)).commands[0]
     is DispatchRequest(FsReadTextFile(_)),
   )
   let write = client_state_test_request(
     "fs/write_text_file", "{\"sessionId\":\"s\",\"path\":\"/tmp/a\",\"content\":\"body\"}",
   )
-  try client_protocol_reduce(read_only, Request(write)) catch {
+  try @protocol.client_protocol_reduce(read_only, Request(write)) catch {
     CapabilityDenied(
       method_name="fs/write_text_file",
       capability="fs.writeTextFile"
@@ -191,15 +201,15 @@ test "filesystem read and write capabilities are independent" {
     Omitted,
     Omitted,
   )
-  let write_only = client_protocol_state_ready(
+  let write_only = @protocol.client_protocol_state_ready(
     capabilities=Value(write_only_capabilities),
   )
   let write_only_before = write_only
   assert_true(
-    client_protocol_reduce(write_only, Request(write)).commands[0]
+    @protocol.client_protocol_reduce(write_only, Request(write)).commands[0]
     is DispatchRequest(FsWriteTextFile(_)),
   )
-  try client_protocol_reduce(write_only, Request(read)) catch {
+  try @protocol.client_protocol_reduce(write_only, Request(read)) catch {
     CapabilityDenied(
       method_name="fs/read_text_file",
       capability="fs.readTextFile"
@@ -220,7 +230,9 @@ test "one terminal capability gates all terminal requests" {
     Omitted,
     Omitted,
   )
-  let state = client_protocol_state_ready(capabilities=Value(capabilities))
+  let state = @protocol.client_protocol_state_ready(
+    capabilities=Value(capabilities),
+  )
   let state_before = state
   let requests : Array[ClientRequest] = [
     client_state_test_request(
@@ -240,7 +252,7 @@ test "one terminal capability gates all terminal requests" {
     ),
   ]
   for request in requests {
-    try client_protocol_reduce(state, Request(request)) catch {
+    try @protocol.client_protocol_reduce(state, Request(request)) catch {
       CapabilityDenied(method_name=_, capability="terminal") => ()
       _ => fail("expected terminal capability gate")
     } noraise {
@@ -256,12 +268,12 @@ test "one terminal capability gates all terminal requests" {
     Omitted,
     Omitted,
   )
-  let enabled = client_protocol_state_ready(
+  let enabled = @protocol.client_protocol_state_ready(
     capabilities=Value(enabled_capabilities),
   )
   for request in requests {
     assert_true(
-      client_protocol_reduce(enabled, Request(request)).commands[0]
+      @protocol.client_protocol_reduce(enabled, Request(request)).commands[0]
       is DispatchRequest(_),
     )
   }
@@ -276,17 +288,17 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     Value(client_state_test_marker()),
     Omitted,
   )
-  let form_only = client_protocol_state_ready(
+  let form_only = @protocol.client_protocol_state_ready(
     capabilities=Value(form_only_capabilities),
   )
   let form = client_state_test_form_request()
   let url = client_state_test_url_request()
   let complete = client_state_test_complete_notification()
   assert_true(
-    client_protocol_reduce(form_only, Request(form)).commands[0]
+    @protocol.client_protocol_reduce(form_only, Request(form)).commands[0]
     is DispatchRequest(ElicitationCreate(Form(_))),
   )
-  try client_protocol_reduce(form_only, Request(url)) catch {
+  try @protocol.client_protocol_reduce(form_only, Request(url)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.url"
@@ -295,7 +307,9 @@ test "elicitation form and URL gates are payload-specific and empty outer object
   } noraise {
     _ => fail("expected URL-specific gate")
   }
-  try client_protocol_reduce(form_only, Notification(complete)) catch {
+  try
+    @protocol.client_protocol_reduce(form_only, Notification(complete))
+  catch {
     CapabilityDenied(
       method_name="elicitation/complete",
       capability="elicitation.url"
@@ -312,18 +326,18 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     Omitted,
     Value(client_state_test_marker()),
   )
-  let url_only = client_protocol_state_ready(
+  let url_only = @protocol.client_protocol_state_ready(
     capabilities=Value(url_only_capabilities),
   )
   assert_true(
-    client_protocol_reduce(url_only, Request(url)).commands[0]
+    @protocol.client_protocol_reduce(url_only, Request(url)).commands[0]
     is DispatchRequest(ElicitationCreate(Url(_))),
   )
   assert_true(
-    client_protocol_reduce(url_only, Notification(complete)).commands[0]
+    @protocol.client_protocol_reduce(url_only, Notification(complete)).commands[0]
     is DispatchNotification(ElicitationComplete(_)),
   )
-  try client_protocol_reduce(url_only, Request(form)) catch {
+  try @protocol.client_protocol_reduce(url_only, Request(form)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.form"
@@ -340,10 +354,10 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     Omitted,
     Omitted,
   )
-  let empty_outer = client_protocol_state_ready(
+  let empty_outer = @protocol.client_protocol_state_ready(
     capabilities=Value(empty_outer_capabilities),
   )
-  try client_protocol_reduce(empty_outer, Request(form)) catch {
+  try @protocol.client_protocol_reduce(empty_outer, Request(form)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.form"
@@ -352,7 +366,7 @@ test "elicitation form and URL gates are payload-specific and empty outer object
   } noraise {
     _ => fail("expected empty elicitation object to deny form")
   }
-  try client_protocol_reduce(empty_outer, Request(url)) catch {
+  try @protocol.client_protocol_reduce(empty_outer, Request(url)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.url"
@@ -362,8 +376,12 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     _ => fail("expected empty elicitation object to deny URL")
   }
 
-  let omitted_state = client_protocol_state_ready(capabilities=Omitted)
-  try client_protocol_reduce(omitted_state, Notification(complete)) catch {
+  let omitted_state = @protocol.client_protocol_state_ready(
+    capabilities=Omitted,
+  )
+  try
+    @protocol.client_protocol_reduce(omitted_state, Notification(complete))
+  catch {
     CapabilityDenied(
       method_name="elicitation/complete",
       capability="elicitation.url"
@@ -373,8 +391,8 @@ test "elicitation form and URL gates are payload-specific and empty outer object
     _ => fail("expected omitted capabilities to deny completion")
   }
 
-  let null_state = client_protocol_state_ready(capabilities=Null)
-  try client_protocol_reduce(null_state, Request(form)) catch {
+  let null_state = @protocol.client_protocol_state_ready(capabilities=Null)
+  try @protocol.client_protocol_reduce(null_state, Request(form)) catch {
     CapabilityDenied(
       method_name="elicitation/create",
       capability="elicitation.form"
@@ -383,7 +401,9 @@ test "elicitation form and URL gates are payload-specific and empty outer object
   } noraise {
     _ => fail("expected null capabilities to deny form")
   }
-  try client_protocol_reduce(null_state, Notification(complete)) catch {
+  try
+    @protocol.client_protocol_reduce(null_state, Notification(complete))
+  catch {
     CapabilityDenied(
       method_name="elicitation/complete",
       capability="elicitation.url"
@@ -396,19 +416,22 @@ test "elicitation form and URL gates are payload-specific and empty outer object
 
 ///|
 test "cancellation notifications become pure commands for string and integer ids" {
-  let state = client_protocol_state_ready(capabilities=Omitted)
-  let unready = client_protocol_state_new(capabilities=Omitted)
+  let state = @protocol.client_protocol_state_ready(capabilities=Omitted)
+  let unready = @protocol.client_protocol_state_new(capabilities=Omitted)
   let string_cancel = client_state_test_notification(
     "$/cancel_request", "{\"requestId\":\"request-1\"}",
   )
-  let unready_step = client_protocol_reduce(
+  let unready_step = @protocol.client_protocol_reduce(
     unready,
     Notification(string_cancel),
   )
   assert_true(
     unready_step.commands[0] is CancelRequest(request_id=String("request-1")),
   )
-  let string_step = client_protocol_reduce(state, Notification(string_cancel))
+  let string_step = @protocol.client_protocol_reduce(
+    state,
+    Notification(string_cancel),
+  )
   assert_true(
     string_step.commands[0] is CancelRequest(request_id=String("request-1")),
   )
@@ -416,6 +439,9 @@ test "cancellation notifications become pure commands for string and integer ids
   let integer_cancel = client_state_test_notification(
     "$/cancel_request", "{\"requestId\":42}",
   )
-  let integer_step = client_protocol_reduce(state, Notification(integer_cancel))
+  let integer_step = @protocol.client_protocol_reduce(
+    state,
+    Notification(integer_cancel),
+  )
   assert_true(integer_step.commands[0] is CancelRequest(request_id=Number(42)))
 }

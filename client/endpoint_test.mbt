@@ -2,11 +2,11 @@
 fn client_endpoint_test_spec(
   name : String,
   full : Bool,
-) -> Result[ClientSpec, ClientCompositionError] {
+) -> Result[@client.ClientSpec, ClientCompositionError] {
   let info = client_service_test_info(name)
   let session = client_service_test_session()
   if full {
-    client_spec(
+    @client.client_spec(
       info~,
       session~,
       file_system=client_service_test_files(),
@@ -14,7 +14,7 @@ fn client_endpoint_test_spec(
       elicitation=client_service_test_elicitation(),
     )
   } else {
-    client_spec(info~, session~)
+    @client.client_spec(info~, session~)
   }
 }
 
@@ -97,9 +97,14 @@ fn client_endpoint_test_complete() -> ElicitationCompleteParams {
 }
 
 ///|
-fn client_endpoint_test_endpoint(name : String, full : Bool) -> ClientEndpoint {
+fn client_endpoint_test_endpoint(
+  name : String,
+  full : Bool,
+) -> @client.ClientEndpoint {
   let result = @reader.Reader::run(
-    client_program(@reader.Reader::pure(client_endpoint_test_spec(name, full))),
+    @client.client_program(
+      @reader.Reader::pure(client_endpoint_test_spec(name, full)),
+    ),
     (),
   )
   result.unwrap()
@@ -109,13 +114,13 @@ fn client_endpoint_test_endpoint(name : String, full : Bool) -> ClientEndpoint {
 test "client Reader programs isolate capabilities per environment" {
   let projected : @reader.Reader[
     String,
-    Result[ClientSpec, ClientCompositionError],
+    Result[@client.ClientSpec, ClientCompositionError],
   ] = @reader.Reader::bind(@reader.asks(fn(env : String) { env }), fn(
     env : String,
   ) {
     @reader.Reader::pure(client_endpoint_test_spec(env, env == "full"))
   })
-  let program = client_program(projected)
+  let program = @client.client_program(projected)
   let full = @reader.Reader::run(program, "full").unwrap()
   let minimal = @reader.Reader::run(program, "minimal").unwrap()
   let full_capabilities = full.capabilities()
@@ -144,13 +149,13 @@ test "client Reader programs isolate capabilities per environment" {
 
 ///|
 test "filesystem capability derivation remains independent" {
-  let result = client_spec(
+  let result = @client.client_spec(
     info=client_service_test_info("read-only"),
     session=client_service_test_session(),
     file_system=client_service_test_read_only_files(),
   )
   let endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(result)),
+    @client.client_program(@reader.Reader::pure(result)),
     (),
   ).unwrap()
   match endpoint.capabilities().fs {
@@ -234,16 +239,16 @@ async test "missing optional endpoint operation is structured" {
 
 ///|
 async test "ordinary handler errors map at the endpoint boundary" {
-  let file_system = try! client_file_system_service(
+  let file_system = try! @client.client_file_system_service(
     read=client_service_test_failing_read,
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("failure"),
     session=client_service_test_session(),
     file_system~,
   )
   let endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(spec)),
+    @client.client_program(@reader.Reader::pure(spec)),
     (),
   ).unwrap()
   try endpoint.read_text_file(client_endpoint_test_read_params()) catch {

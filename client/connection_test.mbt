@@ -109,14 +109,14 @@ fn client_connection_test_prompt() -> PromptParams {
 ///|
 fn client_connection_test_broker_failure(
   method_name : String,
-) -> ClientConnectionError {
+) -> @client.ClientConnectionError {
   ClientConnectionBrokerFailure(method_name~)
 }
 
 ///|
 async fn client_connection_test_request_broker(
   request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   match request {
     Initialize(params) =>
@@ -243,7 +243,7 @@ async fn client_connection_test_request_broker(
 ///|
 fn client_connection_test_notification_broker(
   notification : AgentNotification,
-) -> Result[Unit, ClientConnectionError] {
+) -> Result[Unit, @client.ClientConnectionError] {
   match notification {
     SessionCancel(params) =>
       if params == { session_id: "session", meta: Omitted, } {
@@ -261,8 +261,8 @@ fn client_connection_test_notification_broker(
 }
 
 ///|
-fn client_connection_test_connection() -> ClientConnection {
-  client_connection(
+fn client_connection_test_connection() -> @client.ClientConnection {
+  @client.client_connection(
     request_broker=client_connection_test_request_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -314,14 +314,14 @@ test "ClientConnection emits typed cancellation notifications" {
 ///|
 async fn client_connection_test_mismatch_broker(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Ok(ClientReplyLogout({ meta: Omitted, }))
 }
 
 ///|
 async test "ClientConnection rejects mismatched replies" {
-  let connection = client_connection(
+  let connection = @client.client_connection(
     request_broker=client_connection_test_mismatch_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -345,14 +345,14 @@ async test "ClientConnection rejects mismatched replies" {
 ///|
 async fn client_connection_test_fork_mismatch_broker(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Ok(ClientReplyDeleteSession({ meta: Omitted, }))
 }
 
 ///|
 async test "ClientConnection rejects a fork reply carrying another method" {
-  let connection = client_connection(
+  let connection = @client.client_connection(
     request_broker=client_connection_test_fork_mismatch_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -376,7 +376,7 @@ async test "ClientConnection rejects a fork reply carrying another method" {
 ///|
 async fn client_connection_test_unavailable_broker(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Err(ClientConnectionUnavailable(method_name="session/new"))
 }
@@ -384,7 +384,7 @@ async fn client_connection_test_unavailable_broker(
 ///|
 async fn client_connection_test_cancelled_broker(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Err(ClientConnectionCancelled(method_name="initialize"))
 }
@@ -392,7 +392,7 @@ async fn client_connection_test_cancelled_broker(
 ///|
 async fn client_connection_test_failed_broker(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Err(ClientConnectionBrokerFailure(method_name="initialize"))
 }
@@ -400,7 +400,7 @@ async fn client_connection_test_failed_broker(
 ///|
 async fn client_connection_test_thrown_cancel(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.with_task_group(group => {
     let task = group.spawn(() => {
       @async.sleep(1000)
@@ -416,14 +416,14 @@ async fn client_connection_test_thrown_cancel(
 ///|
 async fn client_connection_test_thrown_failure(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   raise Failure("transport detail must not cross the facade")
 }
 
 ///|
 async test "ClientConnection preserves explicit broker failures" {
-  let unavailable = client_connection(
+  let unavailable = @client.client_connection(
     request_broker=client_connection_test_unavailable_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -438,7 +438,7 @@ async test "ClientConnection preserves explicit broker failures" {
     unavailable_error is ClientConnectionUnavailable(method_name="session/new"),
   )
 
-  let cancelled = client_connection(
+  let cancelled = @client.client_connection(
     request_broker=client_connection_test_cancelled_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -453,7 +453,7 @@ async test "ClientConnection preserves explicit broker failures" {
     cancelled_error is ClientConnectionCancelled(method_name="initialize"),
   )
 
-  let failed = client_connection(
+  let failed = @client.client_connection(
     request_broker=client_connection_test_failed_broker,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -471,7 +471,7 @@ async test "ClientConnection preserves explicit broker failures" {
 
 ///|
 async test "ClientConnection maps thrown cancellation and failure explicitly" {
-  let cancelled = client_connection(
+  let cancelled = @client.client_connection(
     request_broker=client_connection_test_thrown_cancel,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -486,7 +486,7 @@ async test "ClientConnection maps thrown cancellation and failure explicitly" {
     cancelled_error is ClientConnectionCancelled(method_name="initialize"),
   )
 
-  let failed = client_connection(
+  let failed = @client.client_connection(
     request_broker=client_connection_test_thrown_failure,
     notification_broker=client_connection_test_notification_broker,
   )
@@ -505,7 +505,7 @@ async test "ClientConnection maps thrown cancellation and failure explicitly" {
 ///|
 async fn client_connection_test_initialize_v1(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Ok(
     ClientReplyInitialize({
@@ -521,7 +521,7 @@ async fn client_connection_test_initialize_v1(
 ///|
 async fn client_connection_test_initialize_invalid_result(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Ok(
     ClientReplyInitialize({
@@ -537,7 +537,7 @@ async fn client_connection_test_initialize_invalid_result(
 ///|
 async fn client_connection_test_initialize_v1_other_info(
   _request : AgentRequest,
-) -> Result[ClientReply, ClientConnectionError] {
+) -> Result[@client.ClientReply, @client.ClientConnectionError] {
   @async.pause()
   Ok(
     ClientReplyInitialize({
@@ -558,17 +558,17 @@ async fn client_connection_test_initialize_v1_other_info(
 ///|
 fn client_connection_test_noop_notification(
   _notification : AgentNotification,
-) -> Result[Unit, ClientConnectionError] {
+) -> Result[Unit, @client.ClientConnectionError] {
   Ok(())
 }
 
 ///|
 async test "ClientConnection instances isolate their injected brokers" {
-  let first = client_connection(
+  let first = @client.client_connection(
     request_broker=client_connection_test_initialize_v1,
     notification_broker=client_connection_test_noop_notification,
   )
-  let second = client_connection(
+  let second = @client.client_connection(
     request_broker=client_connection_test_initialize_v1_other_info,
     notification_broker=client_connection_test_noop_notification,
   )
@@ -584,7 +584,7 @@ async test "ClientConnection instances isolate their injected brokers" {
 
 ///|
 async test "ClientConnection rejects non-v1 initialize request and result" {
-  let request_version = client_connection(
+  let request_version = @client.client_connection(
     request_broker=client_connection_test_initialize_v1,
     notification_broker=client_connection_test_noop_notification,
   )
@@ -601,7 +601,7 @@ async test "ClientConnection rejects non-v1 initialize request and result" {
     _ => fail("wrong error for non-v1 initialize request")
   }
 
-  let result_version = client_connection(
+  let result_version = @client.client_connection(
     request_broker=client_connection_test_initialize_invalid_result,
     notification_broker=client_connection_test_noop_notification,
   )

@@ -8,7 +8,7 @@ using @agent_message {decode_agent_request, decode_agent_notification}
 using @client_message {decode_client_request, decode_client_notification}
 
 ///|
-fn manifest_method_names(methods : Array[AcpV1Method]) -> Array[String] {
+fn manifest_method_names(methods : Array[@method.AcpV1Method]) -> Array[String] {
   let names : Array[String] = []
   for entry in methods {
     names.push(entry.method_name)
@@ -17,7 +17,10 @@ fn manifest_method_names(methods : Array[AcpV1Method]) -> Array[String] {
 }
 
 ///|
-fn manifest_has_name(methods : Array[AcpV1Method], wanted : String) -> Bool {
+fn manifest_has_name(
+  methods : Array[@method.AcpV1Method],
+  wanted : String,
+) -> Bool {
   for entry in methods {
     if entry.method_name == wanted {
       return true
@@ -69,7 +72,7 @@ fn manifest_test_params(method_name : String) -> Json {
 
 ///|
 test "stable v1 manifest has the exact fixed method names" {
-  let methods = acp_v1_method_manifest()
+  let methods = @method.acp_v1_method_manifest()
   assert_eq(manifest_method_names(methods), [
     "initialize", "authenticate", "logout", "session/new", "session/load", "session/resume",
     "session/list", "session/delete", "session/close", "session/set_mode", "session/set_config_option",
@@ -82,7 +85,7 @@ test "stable v1 manifest has the exact fixed method names" {
 
 ///|
 test "stable v1 manifest records request and notification directions" {
-  let methods = acp_v1_method_manifest()
+  let methods = @method.acp_v1_method_manifest()
   let mut client_requests = 0
   let mut client_notifications = 0
   let mut agent_requests = 0
@@ -108,7 +111,7 @@ test "stable v1 manifest records request and notification directions" {
 
 ///|
 test "unstable and v2 overlay names are outside the stable manifest" {
-  let methods = acp_v1_method_manifest()
+  let methods = @method.acp_v1_method_manifest()
   // Exact-set equality above is the exclusion proof for every name absent from
   // the pinned v1 stable table.  Keep the named v2-only overlay checks here as
   // readable regression guards for the most likely version mix-ups.
@@ -118,8 +121,8 @@ test "unstable and v2 overlay names are outside the stable manifest" {
 
 ///|
 test "manifest calls return independent arrays" {
-  let first = acp_v1_method_manifest()
-  let second = acp_v1_method_manifest()
+  let first = @method.acp_v1_method_manifest()
+  let second = @method.acp_v1_method_manifest()
   first.push({
     method_name: "test-only",
     direction: ClientToAgent,
@@ -131,7 +134,7 @@ test "manifest calls return independent arrays" {
 
 ///|
 test "stable manifest cross-checks every direction and kind with closed unions" {
-  let methods = acp_v1_method_manifest()
+  let methods = @method.acp_v1_method_manifest()
   let mut agent_requests = 0
   let mut agent_notifications = 0
   let mut client_requests = 0
@@ -182,8 +185,8 @@ test "stable manifest cross-checks every direction and kind with closed unions" 
 /// drift comparison deterministic regardless of JSON object iteration order.
 fn manifest_drift_row(
   method_name : String,
-  direction : AcpV1MethodDirection,
-  kind : AcpV1MethodKind,
+  direction : @method.AcpV1MethodDirection,
+  kind : @method.AcpV1MethodKind,
 ) -> String {
   let direction_text = match direction {
     ClientToAgent => "client->agent"
@@ -230,7 +233,9 @@ fn manifest_drift_contains(rows : Array[String], wanted : String) -> Bool {
 /// meta groups name the handler side, so `agentMethods` are Client->Agent,
 /// `clientMethods` are Agent->Client, and `protocolMethods` are bidirectional.
 /// Any deviation from the pinned v1 shape aborts instead of guessing.
-fn pinned_v1_meta_rows(meta : Json) -> Array[(String, AcpV1MethodDirection)] {
+fn pinned_v1_meta_rows(
+  meta : Json,
+) -> Array[(String, @method.AcpV1MethodDirection)] {
   let fields = match meta {
     Object(fields) => fields
     _ => abort("pinned v1 meta.json is not a JSON object")
@@ -242,8 +247,8 @@ fn pinned_v1_meta_rows(meta : Json) -> Array[(String, AcpV1MethodDirection)] {
       }
     _ => abort("pinned v1 meta.json is missing the numeric version field")
   }
-  let rows : Array[(String, AcpV1MethodDirection)] = []
-  let groups : Array[(String, AcpV1MethodDirection)] = [
+  let rows : Array[(String, @method.AcpV1MethodDirection)] = []
+  let groups : Array[(String, @method.AcpV1MethodDirection)] = [
     ("agentMethods", ClientToAgent),
     ("clientMethods", AgentToClient),
     ("protocolMethods", Bidirectional),
@@ -378,7 +383,7 @@ fn pinned_v1_schema_def_count(
 fn pinned_v1_direction_from_side(
   name : String,
   side : String,
-) -> AcpV1MethodDirection {
+) -> @method.AcpV1MethodDirection {
   match side {
     "agent" => ClientToAgent
     "client" => AgentToClient
@@ -395,7 +400,10 @@ fn pinned_v1_direction_from_side(
 /// annotated request payload def plus one response payload def, while a
 /// notification carries exactly one annotated payload def.  Any other count
 /// aborts so annotation drift cannot be silently absorbed.
-fn pinned_v1_kind_from_count(name : String, count : Int32) -> AcpV1MethodKind {
+fn pinned_v1_kind_from_count(
+  name : String,
+  count : Int32,
+) -> @method.AcpV1MethodKind {
   match count {
     1 => Notification
     2 => Request
@@ -458,7 +466,7 @@ async test "stable v1 manifest is the exact method set of the pinned v1 schema a
     expected.push(manifest_drift_row(name, side_direction, kind))
   }
   let actual : Array[String] = []
-  for entry in acp_v1_method_manifest() {
+  for entry in @method.acp_v1_method_manifest() {
     actual.push(
       manifest_drift_row(entry.method_name, entry.direction, entry.kind),
     )
@@ -495,7 +503,7 @@ async test "unstable v1 manifest is a session/fork subset of the vendored unstab
       "pinned v1 meta.unstable.json does not list session/fork among its agent methods",
     )
   }
-  let unstable_methods = acp_v1_unstable_method_manifest()
+  let unstable_methods = @method.acp_v1_unstable_method_manifest()
   assert_eq(manifest_method_names(unstable_methods), ["session/fork"])
   for entry in unstable_methods {
     match (entry.direction, entry.kind) {
@@ -509,7 +517,9 @@ async test "unstable v1 manifest is a session/fork subset of the vendored unstab
       _ => fail("unstable manifest direction/kind combination is not supported")
     }
   }
-  assert_false(manifest_has_name(acp_v1_method_manifest(), "session/fork"))
+  assert_false(
+    manifest_has_name(@method.acp_v1_method_manifest(), "session/fork"),
+  )
 }
 
 ///|

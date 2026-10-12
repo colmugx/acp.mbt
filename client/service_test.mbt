@@ -107,29 +107,29 @@ async fn client_service_test_complete(
 }
 
 ///|
-fn client_service_test_session() -> ClientSessionService {
-  client_session_service(
+fn client_service_test_session() -> @client.ClientSessionService {
+  @client.client_session_service(
     session_update=client_service_test_update,
     request_permission=client_service_test_permission,
   )
 }
 
 ///|
-fn client_service_test_files() -> ClientFileSystemService {
-  try! client_file_system_service(
+fn client_service_test_files() -> @client.ClientFileSystemService {
+  try! @client.client_file_system_service(
     read=client_service_test_read,
     write=client_service_test_write,
   )
 }
 
 ///|
-fn client_service_test_read_only_files() -> ClientFileSystemService {
-  try! client_file_system_service(read=client_service_test_read)
+fn client_service_test_read_only_files() -> @client.ClientFileSystemService {
+  try! @client.client_file_system_service(read=client_service_test_read)
 }
 
 ///|
-fn client_service_test_terminal() -> ClientTerminalService {
-  client_terminal_service(
+fn client_service_test_terminal() -> @client.ClientTerminalService {
+  @client.client_terminal_service(
     create=client_service_test_create,
     output=client_service_test_output,
     wait_for_exit=client_service_test_wait,
@@ -139,8 +139,8 @@ fn client_service_test_terminal() -> ClientTerminalService {
 }
 
 ///|
-fn client_service_test_elicitation() -> ClientElicitationService {
-  try! client_elicitation_service(
+fn client_service_test_elicitation() -> @client.ClientElicitationService {
+  try! @client.client_elicitation_service(
     form=client_service_test_form,
     url=client_service_test_url,
     complete=client_service_test_complete,
@@ -149,7 +149,7 @@ fn client_service_test_elicitation() -> ClientElicitationService {
 
 ///|
 test "client services reject contradictory optional combinations" {
-  try client_file_system_service() catch {
+  try @client.client_file_system_service() catch {
     MissingRequiredService(
       service_name="fs/read_text_file or fs/write_text_file"
     ) => ()
@@ -158,7 +158,7 @@ test "client services reject contradictory optional combinations" {
     _ => fail("expected empty filesystem service to fail")
   }
 
-  try client_elicitation_service(url=client_service_test_url) catch {
+  try @client.client_elicitation_service(url=client_service_test_url) catch {
     ConflictingSupport(reason="elicitation/url requires elicitation/complete") =>
       ()
     _ => fail("expected URL elicitation to require completion")
@@ -166,7 +166,7 @@ test "client services reject contradictory optional combinations" {
     _ => fail("expected URL elicitation to require completion")
   }
 
-  try client_elicitation_service() catch {
+  try @client.client_elicitation_service() catch {
     MissingRequiredService(service_name="elicitation handler") => ()
     _ => fail("expected empty elicitation service to fail")
   } noraise {
@@ -176,7 +176,7 @@ test "client services reject contradictory optional combinations" {
 
 ///|
 test "client spec validates implementation and required baseline service" {
-  let invalid = client_spec(
+  let invalid = @client.client_spec(
     info={ name: "", title: Omitted, version: "test", meta: Omitted, },
     session=client_service_test_session(),
   )

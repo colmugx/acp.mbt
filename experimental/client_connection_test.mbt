@@ -4,14 +4,14 @@
 /// submission shape stays observable without real I/O.
 #warnings("-unused_async")
 fn experimental_v2_client_connection_test_broker(
-  submitted : Array[ExperimentalV2ClientForwardRequest],
+  submitted : Array[@experimental.ExperimentalV2ClientForwardRequest],
   replies : Array[
     Result[
-      ExperimentalV2ClientForwardReply,
-      ExperimentalV2ClientConnectionError,
+      @experimental.ExperimentalV2ClientForwardReply,
+      @experimental.ExperimentalV2ClientConnectionError,
     ],
   ],
-) -> ExperimentalV2ClientForwardRequestBroker {
+) -> @experimental.ExperimentalV2ClientForwardRequestBroker {
   let cursor : Ref[Int32] = { val: 0, }
   async fn(request) {
     submitted.push(request)
@@ -26,9 +26,9 @@ fn experimental_v2_client_connection_test_broker(
 
 ///|
 async test "v2 client connection forwards initialize and pins version 2" {
-  let submitted : Array[ExperimentalV2ClientForwardRequest] = []
+  let submitted : Array[@experimental.ExperimentalV2ClientForwardRequest] = []
   let agent_info = experimental_v2_client_test_info("agent")
-  let connection = experimental_v2_client_connection(
+  let connection = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Ok(
         ReplyInitialize({
@@ -64,7 +64,7 @@ async test "v2 client connection forwards initialize and pins version 2" {
   assert_eq(submitted.length(), 1)
   assert_true(submitted[0] is Initialize(_))
   // A non-pinned result is the state machine's terminal typed failure.
-  let rejected = experimental_v2_client_connection(
+  let rejected = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Ok(
         ReplyInitialize({
@@ -120,8 +120,8 @@ async test "v2 client connection forwards initialize and pins version 2" {
 
 ///|
 async test "v2 client connection reports mismatched replies typed" {
-  let submitted : Array[ExperimentalV2ClientForwardRequest] = []
-  let connection = experimental_v2_client_connection(
+  let submitted : Array[@experimental.ExperimentalV2ClientForwardRequest] = []
+  let connection = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Ok(ReplyCloseSession({ meta: None, })),
     ]),
@@ -141,8 +141,8 @@ async test "v2 client connection reports mismatched replies typed" {
 
 ///|
 async test "v2 client connection classifies broker failures and cancels" {
-  let submitted : Array[ExperimentalV2ClientForwardRequest] = []
-  let cancelled = experimental_v2_client_connection(
+  let submitted : Array[@experimental.ExperimentalV2ClientForwardRequest] = []
+  let cancelled = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Err(Cancelled(method_name="session/new")),
     ]),
@@ -163,11 +163,13 @@ async test "v2 client connection classifies broker failures and cancels" {
   }
   // A broker that raises a foreign exception is classified as a broker
   // failure, never a success.
-  let defect = experimental_v2_client_connection(
+  let defect = @experimental.experimental_v2_client_connection(
     request_broker=async fn(request) {
       ignore(request)
       @async.pause()
-      raise ExperimentalV2ClientHandlerError::Application(message="defect")
+      raise @experimental.ExperimentalV2ClientHandlerError::Application(
+        message="defect",
+      )
     },
     notification_broker=_notification => Ok(()),
   )
@@ -181,8 +183,10 @@ async test "v2 client connection classifies broker failures and cancels" {
 
 ///|
 async test "v2 client connection submits notifications synchronously" {
-  let notifications : Array[ExperimentalV2ClientForwardNotification] = []
-  let connection = experimental_v2_client_connection(
+  let notifications : Array[
+    @experimental.ExperimentalV2ClientForwardNotification,
+  ] = []
+  let connection = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker([], []),
     notification_broker=notification => {
       notifications.push(notification)
@@ -201,8 +205,8 @@ async test "v2 client connection submits notifications synchronously" {
 /// Upstream unstable (RFD session-fork, Draft): the client send path forwards
 /// the typed fork request and settles its reply (or typed mismatch).
 async test "v2 client connection forwards session fork typed" {
-  let submitted : Array[ExperimentalV2ClientForwardRequest] = []
-  let connection = experimental_v2_client_connection(
+  let submitted : Array[@experimental.ExperimentalV2ClientForwardRequest] = []
+  let connection = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Ok(
         ReplyForkSession({
@@ -224,7 +228,7 @@ async test "v2 client connection forwards session fork typed" {
   assert_eq(forked.session_id, "fork-1")
   assert_eq(submitted.length(), 1)
   assert_true(submitted[0] is SessionFork(_))
-  let mismatch = experimental_v2_client_connection(
+  let mismatch = @experimental.experimental_v2_client_connection(
     request_broker=experimental_v2_client_connection_test_broker(submitted, [
       Ok(ReplyDeleteSession({ meta: None, })),
     ]),

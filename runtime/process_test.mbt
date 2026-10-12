@@ -1,7 +1,7 @@
 ///|
 /// Inert handler seams for direct port-level tests: no engine runs here, so
 /// the request/notification/response seams are never invoked.
-fn runtime_process_test_handlers() -> RuntimeHandlerPort {
+fn runtime_process_test_handlers() -> @runtime.RuntimeHandlerPort {
   {
     request: _ => HandlerSuccess(Json::null()),
     notification: _ => (),
@@ -11,7 +11,7 @@ fn runtime_process_test_handlers() -> RuntimeHandlerPort {
 }
 
 ///|
-fn runtime_process_test_traces() -> Array[RuntimeTraceEvent] {
+fn runtime_process_test_traces() -> Array[@runtime.RuntimeTraceEvent] {
   []
 }
 
@@ -21,7 +21,7 @@ fn runtime_process_test_traces() -> Array[RuntimeTraceEvent] {
 /// data is available, so a frame may legally arrive in several chunks; EOF
 /// before completion, or excess bytes, fail the test instead of guessing.
 async fn runtime_process_test_read_exact(
-  reader : RuntimeReaderPort,
+  reader : @runtime.RuntimeReaderPort,
   want : Int32,
   expected : Bytes,
 ) -> Unit {
@@ -54,7 +54,7 @@ async fn runtime_process_test_read_exact(
 /// reaped with exit status 0 before the scope ends.
 async test "process ports round-trip one frame through /bin/cat and reap the child" {
   @async.with_task_group(group => {
-    let spawned = runtime_process_ports(
+    let spawned = @runtime.runtime_process_ports(
       group,
       handlers=runtime_process_test_handlers(),
       command="/bin/cat",
@@ -84,7 +84,7 @@ async test "process ports reject an empty command before any spawn" {
   let unexpected : Array[Unit] = []
   @async.with_task_group(group => {
     try {
-      let _ : RuntimeProcessPorts = runtime_process_ports(
+      let _ : @runtime.RuntimeProcessPorts = @runtime.runtime_process_ports(
         group,
         handlers=runtime_process_test_handlers(),
         command="",
@@ -116,7 +116,7 @@ async test "process ports surface an OS spawn rejection as a typed error" {
   let unexpected : Array[Unit] = []
   @async.with_task_group(group => {
     try {
-      let _ : RuntimeProcessPorts = runtime_process_ports(
+      let _ : @runtime.RuntimeProcessPorts = @runtime.runtime_process_ports(
         group,
         handlers=runtime_process_test_handlers(),
         command="/nonexistent/acp-spawn-probe",
@@ -147,7 +147,7 @@ async test "process ports surface an OS spawn rejection as a typed error" {
 async test "process ports kill and reap a live child when the scope ends" {
   let children : Array[@process.Process] = []
   @async.with_task_group(group => {
-    let spawned = runtime_process_ports(
+    let spawned = @runtime.runtime_process_ports(
       group,
       handlers=runtime_process_test_handlers(),
       command="/bin/sleep",

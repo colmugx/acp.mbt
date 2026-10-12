@@ -67,7 +67,7 @@ pub fn framing_feed(
       if line_length > state.max_frame_bytes {
         raise FrameTooLarge(limit=state.max_frame_bytes, actual=line_length)
       }
-      let line = combined.view(start=line_start, end=line_end)
+      let line = combined.exact_view(start=line_start, end=line_end)
       let text = @utf8.decode(line) catch { _ => raise InvalidUtf8 }
       frames.push(text)
       line_start = index + 1
@@ -78,7 +78,7 @@ pub fn framing_feed(
     raise FrameTooLarge(limit=state.max_frame_bytes, actual=pending_length)
   }
   let pending = combined
-    .view(start=line_start, end=combined.length())
+    .exact_view(start=line_start, end=combined.length())
     .to_owned()
   { state: { ..state, pending, }, frames, }
 }

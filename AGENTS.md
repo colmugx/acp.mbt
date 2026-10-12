@@ -33,7 +33,7 @@
   manually inspect, compare, or edit their contents. Public API behavior is
   established by source, `moon ide` queries, and black-box consumer tests.
 
-- In the last step, run `rtk moon info --target native` and then `rtk moon fmt`.
+- In the last step, run `moon info --target native` and then `moon fmt`.
   Treat any `moon info` failure as a blocking error; successful generation is
   the interface gate, and no manual `.mbti` content/diff review is required.
 

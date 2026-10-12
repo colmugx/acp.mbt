@@ -17,11 +17,11 @@ test "framing handles UTF-8 code points split across chunks" {
   let encoded = @utf8.encode("中\n")
   let first = framing_feed(
     framing_state(max_frame_bytes=16),
-    encoded.view(start=0, end=1).to_owned(),
+    encoded.exact_view(start=0, end=1).to_owned(),
   )
   let second = framing_feed(
     first.state,
-    encoded.view(start=1, end=encoded.length()).to_owned(),
+    encoded.exact_view(start=1, end=encoded.length()).to_owned(),
   )
   assert_eq(second.frames, ["中"])
 }

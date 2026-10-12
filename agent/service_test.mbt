@@ -5,7 +5,7 @@ fn agent_service_test_info(name : String) -> Implementation {
 
 ///|
 async fn agent_service_test_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -19,7 +19,7 @@ async fn agent_service_test_new(
 
 ///|
 async fn agent_service_test_prompt(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : PromptParams,
 ) -> PromptResult {
   @async.pause()
@@ -28,7 +28,7 @@ async fn agent_service_test_prompt(
 
 ///|
 async fn agent_service_test_cancel(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : CancelParams,
 ) -> Unit {
   @async.pause()
@@ -36,7 +36,7 @@ async fn agent_service_test_cancel(
 
 ///|
 async fn agent_service_test_load(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : LoadSessionParams,
 ) -> LoadSessionResult {
   @async.pause()
@@ -45,7 +45,7 @@ async fn agent_service_test_load(
 
 ///|
 async fn agent_service_test_fork(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ForkSessionParams,
 ) -> ForkSessionResult {
   @async.pause()
@@ -59,7 +59,7 @@ async fn agent_service_test_fork(
 
 ///|
 async fn agent_service_test_list(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ListSessionsParams,
 ) -> ListSessionsResult {
   @async.pause()
@@ -68,7 +68,7 @@ async fn agent_service_test_list(
 
 ///|
 async fn agent_service_test_authenticate(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : AuthenticateParams,
 ) -> AuthenticateResult {
   @async.pause()
@@ -77,7 +77,7 @@ async fn agent_service_test_authenticate(
 
 ///|
 async fn agent_service_test_logout(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : LogoutParams,
 ) -> LogoutResult {
   @async.pause()
@@ -87,7 +87,7 @@ async fn agent_service_test_logout(
 ///|
 async fn agent_service_test_request_broker(
   request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   match request {
     SessionRequestPermission(_) =>
@@ -99,23 +99,25 @@ async fn agent_service_test_request_broker(
 ///|
 async fn agent_service_test_notification_broker(
   _notification : ClientNotification,
-) -> Result[Unit, AgentContextError] {
+) -> Result[Unit, @agent.AgentContextError] {
   @async.pause()
   Ok(())
 }
 
 ///|
-fn agent_service_test_context() -> AgentContext {
-  agent_context(
+fn agent_service_test_context() -> @agent.AgentContext {
+  @agent.agent_context(
     request_broker=agent_service_test_request_broker,
     notification_broker=agent_service_test_notification_broker,
   )
 }
 
 ///|
-fn agent_service_test_sessions(with_optional : Bool) -> AgentSessionService {
+fn agent_service_test_sessions(
+  with_optional : Bool,
+) -> @agent.AgentSessionService {
   if with_optional {
-    agent_session_service(
+    @agent.agent_session_service(
       new_session=agent_service_test_new,
       prompt=agent_service_test_prompt,
       cancel=agent_service_test_cancel,
@@ -123,7 +125,7 @@ fn agent_service_test_sessions(with_optional : Bool) -> AgentSessionService {
       list=agent_service_test_list,
     )
   } else {
-    agent_session_service(
+    @agent.agent_session_service(
       new_session=agent_service_test_new,
       prompt=agent_service_test_prompt,
       cancel=agent_service_test_cancel,
@@ -136,38 +138,38 @@ fn agent_service_test_spec(
   name : String,
   image : Bool,
   with_optional : Bool,
-) -> Result[AgentSpec, AgentCompositionError] {
-  agent_spec(
+) -> Result[@agent.AgentSpec, AgentCompositionError] {
+  @agent.agent_spec(
     info=agent_service_test_info(name),
     sessions=agent_service_test_sessions(with_optional),
-    support=agent_support(prompt_image=image),
+    support=@agent.agent_support(prompt_image=image),
   )
 }
 
 ///|
 test "agent service constructor keeps required callbacks typed" {
   let service = agent_service_test_sessions(false)
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("required"),
     sessions=service,
-    support=agent_support(),
+    support=@agent.agent_support(),
   )
   assert_true(spec is Ok(_))
 }
 
 ///|
 test "agent service constructor accepts an optional typed fork handler" {
-  let with_fork = agent_session_service(
+  let with_fork = @agent.agent_session_service(
     new_session=agent_service_test_new,
     prompt=agent_service_test_prompt,
     cancel=agent_service_test_cancel,
     fork_session=agent_service_test_fork,
   )
-  let with_fork_capabilities = agent_endpoint_from_spec(
-    agent_spec(
+  let with_fork_capabilities = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("with-fork"),
       sessions=with_fork,
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   ).capabilities()
   match with_fork_capabilities.session_capabilities {
@@ -175,11 +177,11 @@ test "agent service constructor accepts an optional typed fork handler" {
     _ => fail("a present fork handler should be advertised")
   }
   let without_fork = agent_service_test_sessions(true)
-  let without_fork_capabilities = agent_endpoint_from_spec(
-    agent_spec(
+  let without_fork_capabilities = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("without-fork"),
       sessions=without_fork,
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   ).capabilities()
   match without_fork_capabilities.session_capabilities {
@@ -191,7 +193,10 @@ test "agent service constructor accepts an optional typed fork handler" {
 ///|
 test "auth construction fails for missing or duplicate methods" {
   try
-    agent_auth_service(methods=[], authenticate=agent_service_test_authenticate)
+    @agent.agent_auth_service(
+      methods=[],
+      authenticate=agent_service_test_authenticate,
+    )
   catch {
     InvalidAuthMethods(reason=_) => ()
     _ => fail("expected empty auth methods to fail")
@@ -205,7 +210,7 @@ test "auth construction fails for missing or duplicate methods" {
     meta: Omitted,
   }
   try
-    agent_auth_service(
+    @agent.agent_auth_service(
       methods=[auth_method, auth_method],
       authenticate=agent_service_test_authenticate,
     )
@@ -230,8 +235,8 @@ test "agent spec rejects incomplete implementation before endpoint exists" {
 test "two caller environments produce isolated endpoint programs" {
   let first_spec = agent_service_test_spec("first", true, false).unwrap()
   let second_spec = agent_service_test_spec("second", false, false).unwrap()
-  let first_endpoint = agent_endpoint_from_spec(first_spec)
-  let second_endpoint = agent_endpoint_from_spec(second_spec)
+  let first_endpoint = @agent.agent_endpoint_from_spec(first_spec)
+  let second_endpoint = @agent.agent_endpoint_from_spec(second_spec)
   assert_eq(first_endpoint.info().name, "first")
   assert_eq(second_endpoint.info().name, "second")
   match first_endpoint.capabilities().prompt_capabilities {
@@ -252,18 +257,18 @@ test "capabilities derive from optional services and support values" {
     description: Omitted,
     meta: Omitted,
   }
-  let auth = agent_auth_service(
+  let auth = @agent.agent_auth_service(
     methods=[auth_method],
     authenticate=agent_service_test_authenticate,
     logout=agent_service_test_logout,
   )
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("capabilities"),
     sessions=agent_service_test_sessions(true),
-    support=agent_support(prompt_image=true, mcp_http=true),
+    support=@agent.agent_support(prompt_image=true, mcp_http=true),
     auth~,
   )
-  let endpoint = agent_endpoint_from_spec(spec.unwrap())
+  let endpoint = @agent.agent_endpoint_from_spec(spec.unwrap())
   let capabilities = endpoint.capabilities()
   assert_eq(capabilities.load_session, Value(true))
   match capabilities.session_capabilities {

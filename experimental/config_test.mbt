@@ -1,30 +1,36 @@
 ///|
 test "v2 config category decodes known extension and future values" {
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("mode")),
+    @experimental.experimental_v2_decode_config_category(Json::string("mode")),
     CategoryMode,
   )
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("model")),
+    @experimental.experimental_v2_decode_config_category(Json::string("model")),
     CategoryModel,
   )
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("model_config")),
+    @experimental.experimental_v2_decode_config_category(
+      Json::string("model_config"),
+    ),
     CategoryModelConfig,
   )
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("thought_level")),
+    @experimental.experimental_v2_decode_config_category(
+      Json::string("thought_level"),
+    ),
     CategoryThoughtLevel,
   )
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("_custom")),
+    @experimental.experimental_v2_decode_config_category(
+      Json::string("_custom"),
+    ),
     CategoryExtension(tag="_custom"),
   )
   assert_eq(
-    experimental_v2_decode_config_category(Json::string("weird")),
+    @experimental.experimental_v2_decode_config_category(Json::string("weird")),
     CategoryFuture(raw="weird"),
   )
-  let categories : Array[ExperimentalV2ConfigCategory] = [
+  let categories : Array[@experimental.ExperimentalV2ConfigCategory] = [
     CategoryMode,
     CategoryModel,
     CategoryModelConfig,
@@ -34,13 +40,15 @@ test "v2 config category decodes known extension and future values" {
   ]
   for category in categories {
     assert_eq(
-      experimental_v2_decode_config_category(
-        experimental_v2_encode_config_category(category),
+      @experimental.experimental_v2_decode_config_category(
+        @experimental.experimental_v2_encode_config_category(category),
       ),
       category,
     )
   }
-  try experimental_v2_decode_config_category(Json::number(1.0)) catch {
+  try
+    @experimental.experimental_v2_decode_config_category(Json::number(1.0))
+  catch {
     ExpectedString(path="category") => ()
     _ => fail("expected ExpectedString for a non-string category")
   } noraise {
@@ -52,22 +60,24 @@ test "v2 config category decodes known extension and future values" {
 test "v2 config select option round-trips optional fields" {
   let decoded = model_test_round_trip(
     "{\"value\":\"opus\",\"name\":\"Opus\",\"description\":\"Fast\",\"_meta\":{\"k\":1}}",
-    value => experimental_v2_decode_config_select_option(value),
-    experimental_v2_encode_config_select_option,
+    value => @experimental.experimental_v2_decode_config_select_option(value),
+    @experimental.experimental_v2_encode_config_select_option,
   )
   assert_eq(decoded.value, "opus")
   assert_eq(decoded.description, Some("Fast"))
   assert_true(
-    experimental_v2_decode_config_select_option(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_config_select_option(
+      @experimental.experimental_v2_parse_json(
         "{\"value\":\"v\",\"name\":\"V\",\"description\":null}",
       ),
     ).description
     is None,
   )
   try
-    experimental_v2_decode_config_select_option(
-      experimental_v2_parse_json("{\"value\":\"\",\"name\":\"V\"}"),
+    @experimental.experimental_v2_decode_config_select_option(
+      @experimental.experimental_v2_parse_json(
+        "{\"value\":\"\",\"name\":\"V\"}",
+      ),
     )
   catch {
     InvalidField(path="selectOption.value", reason="id must not be empty") => ()
@@ -80,8 +90,8 @@ test "v2 config select option round-trips optional fields" {
 ///|
 test "v2 config select options split ungrouped grouped and empty" {
   let decode = source => {
-    experimental_v2_decode_config_select_options(
-      experimental_v2_parse_json(source),
+    @experimental.experimental_v2_decode_config_select_options(
+      @experimental.experimental_v2_parse_json(source),
     )
   }
   assert_true(decode("[]") is OptionsUngrouped([]))
@@ -119,8 +129,8 @@ test "v2 config select options split ungrouped grouped and empty" {
   }
   let grouped = model_test_round_trip(
     "[{\"groupId\":\"g\",\"name\":\"G\",\"options\":[{\"value\":\"m1\",\"name\":\"M1\"}]}]",
-    value => experimental_v2_decode_config_select_options(value),
-    experimental_v2_encode_config_select_options,
+    value => @experimental.experimental_v2_decode_config_select_options(value),
+    @experimental.experimental_v2_encode_config_select_options,
   )
   assert_true(grouped is OptionsGrouped([{ options: [_], .. }]))
 }
@@ -129,8 +139,8 @@ test "v2 config select options split ungrouped grouped and empty" {
 test "v2 config option boolean payload round-trips" {
   let decoded = model_test_round_trip(
     "{\"type\":\"boolean\",\"configId\":\"verbose\",\"name\":\"Verbose\",\"description\":null,\"category\":\"mode\",\"currentValue\":true,\"_meta\":{}}",
-    value => experimental_v2_decode_config_option(value),
-    experimental_v2_encode_config_option,
+    value => @experimental.experimental_v2_decode_config_option(value),
+    @experimental.experimental_v2_encode_config_option,
   )
   assert_true(
     decoded
@@ -149,8 +159,8 @@ test "v2 config option boolean payload round-trips" {
 test "v2 config option select payload round-trips grouped options" {
   let decoded = model_test_round_trip(
     "{\"type\":\"select\",\"configId\":\"model\",\"name\":\"Model\",\"category\":\"model\",\"currentValue\":\"m1\",\"options\":[{\"groupId\":\"g\",\"name\":\"G\",\"options\":[{\"value\":\"m1\",\"name\":\"M1\",\"description\":\"d\"},{\"value\":\"m2\",\"name\":\"M2\"}]}]}",
-    value => experimental_v2_decode_config_option(value),
-    experimental_v2_encode_config_option,
+    value => @experimental.experimental_v2_decode_config_option(value),
+    @experimental.experimental_v2_encode_config_option,
   )
   assert_true(
     decoded
@@ -171,7 +181,9 @@ test "v2 config option select payload round-trips grouped options" {
 ///|
 test "v2 config option requires selector and payload fields" {
   let decode = source => {
-    experimental_v2_decode_config_option(experimental_v2_parse_json(source))
+    @experimental.experimental_v2_decode_config_option(
+      @experimental.experimental_v2_parse_json(source),
+    )
   }
   try
     decode("{\"type\":\"boolean\",\"name\":\"N\",\"currentValue\":true}")
@@ -227,13 +239,13 @@ test "v2 config option requires selector and payload fields" {
 ///|
 test "v2 config option unknown type stays raw" {
   let source = "{\"type\":\"slider\",\"configId\":\"c\",\"name\":\"N\",\"currentValue\":5}"
-  let decoded = experimental_v2_decode_config_option(
-    experimental_v2_parse_json(source),
+  let decoded = @experimental.experimental_v2_decode_config_option(
+    @experimental.experimental_v2_parse_json(source),
   )
   assert_true(decoded is Future(tag="slider", ..))
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_config_option(decoded),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_config_option(decoded),
     ),
     source,
   )
@@ -243,8 +255,8 @@ test "v2 config option unknown type stays raw" {
 test "v2 set config option id and boolean payloads round-trip" {
   let by_id = model_test_round_trip(
     "{\"sessionId\":\"s1\",\"configId\":\"model\",\"type\":\"id\",\"value\":\"m1\",\"_meta\":{\"k\":1}}",
-    value => experimental_v2_decode_set_config_option(value),
-    experimental_v2_encode_set_config_option,
+    value => @experimental.experimental_v2_decode_set_config_option(value),
+    @experimental.experimental_v2_encode_set_config_option,
   )
   assert_true(
     by_id
@@ -254,8 +266,8 @@ test "v2 set config option id and boolean payloads round-trip" {
   )
   let by_bool = model_test_round_trip(
     "{\"sessionId\":\"s1\",\"configId\":\"verbose\",\"type\":\"boolean\",\"value\":false}",
-    value => experimental_v2_decode_set_config_option(value),
-    experimental_v2_encode_set_config_option,
+    value => @experimental.experimental_v2_decode_set_config_option(value),
+    @experimental.experimental_v2_encode_set_config_option,
   )
   assert_true(by_bool is Known({ value: ConfigValueBoolean(false), .. }))
 }
@@ -263,7 +275,9 @@ test "v2 set config option id and boolean payloads round-trip" {
 ///|
 test "v2 set config option rejects malformed known payloads" {
   let decode = source => {
-    experimental_v2_decode_set_config_option(experimental_v2_parse_json(source))
+    @experimental.experimental_v2_decode_set_config_option(
+      @experimental.experimental_v2_parse_json(source),
+    )
   }
   try
     decode("{\"sessionId\":\"s1\",\"configId\":\"c\",\"value\":\"v\"}")
@@ -312,13 +326,13 @@ test "v2 set config option rejects malformed known payloads" {
 ///|
 test "v2 set config option unknown value type stays raw" {
   let source = "{\"sessionId\":\"s1\",\"configId\":\"c\",\"type\":\"slider\",\"value\":{\"min\":0}}"
-  let decoded = experimental_v2_decode_set_config_option(
-    experimental_v2_parse_json(source),
+  let decoded = @experimental.experimental_v2_decode_set_config_option(
+    @experimental.experimental_v2_parse_json(source),
   )
   assert_true(decoded is Future(tag="slider", ..))
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_set_config_option(decoded),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_set_config_option(decoded),
     ),
     source,
   )
@@ -328,13 +342,15 @@ test "v2 set config option unknown value type stays raw" {
 test "v2 set config result requires the complete configOptions array" {
   let decoded = model_test_round_trip(
     "{\"configOptions\":[{\"type\":\"boolean\",\"configId\":\"verbose\",\"name\":\"Verbose\",\"currentValue\":false},{\"type\":\"select\",\"configId\":\"model\",\"name\":\"Model\",\"currentValue\":\"m1\",\"options\":[{\"value\":\"m1\",\"name\":\"M1\"}]}],\"_meta\":{}}",
-    value => experimental_v2_decode_set_config_option_result(value),
-    experimental_v2_encode_set_config_option_result,
+    value => {
+      @experimental.experimental_v2_decode_set_config_option_result(value)
+    },
+    @experimental.experimental_v2_encode_set_config_option_result,
   )
   assert_true(decoded.config_options is [Known(_), Known(_)])
   try
-    experimental_v2_decode_set_config_option_result(
-      experimental_v2_parse_json("{}"),
+    @experimental.experimental_v2_decode_set_config_option_result(
+      @experimental.experimental_v2_parse_json("{}"),
     )
   catch {
     MissingField(path="set_config_option.configOptions") => ()
@@ -343,8 +359,10 @@ test "v2 set config result requires the complete configOptions array" {
     _ => fail("expected MissingField for absent configOptions")
   }
   try
-    experimental_v2_decode_set_config_option_result(
-      experimental_v2_parse_json("{\"configOptions\":[],\"currentValues\":{}}"),
+    @experimental.experimental_v2_decode_set_config_option_result(
+      @experimental.experimental_v2_parse_json(
+        "{\"configOptions\":[],\"currentValues\":{}}",
+      ),
     )
   catch {
     UnknownField(path="set_config_option.currentValues") => ()

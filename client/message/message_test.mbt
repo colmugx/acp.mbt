@@ -33,9 +33,9 @@ fn client_messages_test_protocol_error_detail(
 fn client_messages_test_request(
   method_name : String,
   source : String,
-) -> ClientRequest {
+) -> @message.ClientRequest {
   let params = Some(client_messages_test_json(source))
-  decode_client_request(method_name, params) catch {
+  @message.decode_client_request(method_name, params) catch {
     InvalidParams(method_name~, cause~) =>
       abort(
         "invalid params for " +
@@ -104,7 +104,7 @@ test "every stable Agent-to-Client request decodes to its closed variant" {
 
 ///|
 test "notifications and cancellation decode with strict kinds" {
-  let update = decode_client_notification(
+  let update = @message.decode_client_notification(
     "session/update",
     Some(
       client_messages_test_json(
@@ -114,13 +114,13 @@ test "notifications and cancellation decode with strict kinds" {
   )
   assert_true(update is SessionUpdate(_))
 
-  let complete = decode_client_notification(
+  let complete = @message.decode_client_notification(
     "elicitation/complete",
     Some(client_messages_test_json("{\"elicitationId\":\"e\"}")),
   )
   assert_true(complete is ElicitationComplete(_))
 
-  let string_cancel = decode_client_notification(
+  let string_cancel = @message.decode_client_notification(
     "$/cancel_request",
     Some(client_messages_test_json("{\"requestId\":\"r-1\"}")),
   )
@@ -129,7 +129,7 @@ test "notifications and cancellation decode with strict kinds" {
     _ => fail("expected string cancellation id")
   }
 
-  let integer_cancel = decode_client_notification(
+  let integer_cancel = @message.decode_client_notification(
     "$/cancel_request",
     Some(client_messages_test_json("{\"requestId\":7}")),
   )
@@ -141,7 +141,7 @@ test "notifications and cancellation decode with strict kinds" {
 
 ///|
 test "client dispatch errors are structured and direction-aware" {
-  try decode_client_request("fs/read_text_file", None) catch {
+  try @message.decode_client_request("fs/read_text_file", None) catch {
     InvalidParams(method_name="fs/read_text_file", cause=MissingField(path=_)) =>
       ()
     _ => fail("expected structured invalid params")
@@ -150,7 +150,7 @@ test "client dispatch errors are structured and direction-aware" {
   }
 
   try
-    decode_client_request(
+    @message.decode_client_request(
       "fs/read_text_file",
       Some(
         client_messages_test_json("{\"sessionId\":\"s\",\"path\":\"relative\"}"),
@@ -166,42 +166,42 @@ test "client dispatch errors are structured and direction-aware" {
     _ => fail("expected invalid path failure")
   }
 
-  try decode_client_request("initialize", None) catch {
+  try @message.decode_client_request("initialize", None) catch {
     WrongDirection(method_name="initialize") => ()
     _ => fail("expected wrong request direction")
   } noraise {
     _ => fail("expected wrong request direction failure")
   }
 
-  try decode_client_request("session/update", None) catch {
+  try @message.decode_client_request("session/update", None) catch {
     WrongDirection(method_name="session/update") => ()
     _ => fail("expected notification direction failure")
   } noraise {
     _ => fail("expected notification direction failure")
   }
 
-  try decode_client_notification("session/cancel", None) catch {
+  try @message.decode_client_notification("session/cancel", None) catch {
     WrongDirection(method_name="session/cancel") => ()
     _ => fail("expected Client-to-Agent notification rejection")
   } noraise {
     _ => fail("expected Client-to-Agent notification rejection")
   }
 
-  try decode_client_request("$/cancel_request", None) catch {
+  try @message.decode_client_request("$/cancel_request", None) catch {
     WrongKind(method_name="$/cancel_request") => ()
     _ => fail("expected cancellation kind rejection")
   } noraise {
     _ => fail("expected cancellation kind rejection")
   }
 
-  try decode_client_request("vendor/unknown", None) catch {
+  try @message.decode_client_request("vendor/unknown", None) catch {
     UnknownMethod(method_name="vendor/unknown") => ()
     _ => fail("expected unknown method rejection")
   } noraise {
     _ => fail("expected unknown method rejection")
   }
 
-  let null_cancel = decode_client_notification(
+  let null_cancel = @message.decode_client_notification(
     "$/cancel_request",
     Some(client_messages_test_json("{\"requestId\":null}")),
   )
@@ -213,14 +213,14 @@ test "client dispatch errors are structured and direction-aware" {
 
 ///|
 test "client unions report their exact wire method" {
-  let request = decode_client_request(
+  let request = @message.decode_client_request(
     "terminal/kill",
     Some(
       client_messages_test_json("{\"sessionId\":\"s\",\"terminalId\":\"t\"}"),
     ),
   )
   assert_eq(request.method_name(), "terminal/kill")
-  let notification = decode_client_notification(
+  let notification = @message.decode_client_notification(
     "$/cancel_request",
     Some(client_messages_test_json("{\"requestId\":1}")),
   )
@@ -230,13 +230,13 @@ test "client unions report their exact wire method" {
 ///|
 test "known v2 overlay methods are rejected by both Client v1 decoders" {
   for method_name in ["auth/login", "auth/logout"] {
-    try decode_client_request(method_name, None) catch {
+    try @message.decode_client_request(method_name, None) catch {
       UnknownMethod(method_name=actual) => assert_eq(actual, method_name)
       _ => fail("v2 overlay request must be rejected as unknown")
     } noraise {
       _ => fail("v2 overlay request must be rejected")
     }
-    try decode_client_notification(method_name, None) catch {
+    try @message.decode_client_notification(method_name, None) catch {
       UnknownMethod(method_name=actual) => assert_eq(actual, method_name)
       _ => fail("v2 overlay notification must be rejected as unknown")
     } noraise {

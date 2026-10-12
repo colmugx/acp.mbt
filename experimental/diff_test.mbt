@@ -2,8 +2,8 @@
 test "v2 diff round-trips mixed known operations with file types" {
   let decoded = model_test_round_trip(
     "{\"changes\":[{\"operation\":\"add\",\"path\":\"/tmp/new.txt\",\"fileType\":\"text\",\"mimeType\":\"text/plain\"},{\"operation\":\"delete\",\"path\":\"/tmp/old.bin\",\"fileType\":\"binary\"},{\"operation\":\"modify\",\"path\":\"/tmp/mod\"},{\"operation\":\"move\",\"oldPath\":\"/tmp/a\",\"path\":\"/tmp/b\",\"fileType\":\"_virtual\"},{\"operation\":\"copy\",\"oldPath\":\"/tmp/c\",\"path\":\"/tmp/d\",\"fileType\":\"weird\"}],\"patch\":{\"format\":\"git_patch\",\"text\":\"diff --git a/x b/x\"},\"_meta\":{\"d\":1}}",
-    value => experimental_v2_decode_diff(value),
-    experimental_v2_encode_diff,
+    value => @experimental.experimental_v2_decode_diff(value),
+    @experimental.experimental_v2_encode_diff,
   )
   guard decoded.changes[0] is Known(ChangeAdd(change)) else {
     fail("expected a known add change")
@@ -25,7 +25,7 @@ test "v2 diff round-trips mixed known operations with file types" {
 
 ///|
 test "v2 diff op required-field matrix rejects missing and extra fields" {
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"changes\":[{\"operation\":\"modify\"}]}",
       MissingField(path="diff.changes[0].path"),
@@ -66,7 +66,11 @@ test "v2 diff op required-field matrix rejects missing and extra fields" {
   ]
   for entry in cases {
     let (source, expected) = entry
-    try experimental_v2_decode_diff(experimental_v2_parse_json(source)) catch {
+    try
+      @experimental.experimental_v2_decode_diff(
+        @experimental.experimental_v2_parse_json(source),
+      )
+    catch {
       error => assert_eq(error, expected)
     } noraise {
       _ => fail("expected a typed failure for a malformed diff")
@@ -77,19 +81,23 @@ test "v2 diff op required-field matrix rejects missing and extra fields" {
 ///|
 test "v2 diff patch is optional null equals omitted and formats stay open" {
   assert_true(
-    experimental_v2_decode_diff(experimental_v2_parse_json("{\"changes\":[]}")).patch
+    @experimental.experimental_v2_decode_diff(
+      @experimental.experimental_v2_parse_json("{\"changes\":[]}"),
+    ).patch
     is None,
   )
   assert_true(
-    experimental_v2_decode_diff(
-      experimental_v2_parse_json("{\"changes\":[],\"patch\":null}"),
+    @experimental.experimental_v2_decode_diff(
+      @experimental.experimental_v2_parse_json(
+        "{\"changes\":[],\"patch\":null}",
+      ),
     ).patch
     is None,
   )
   let extension = model_test_round_trip(
     "{\"changes\":[],\"patch\":{\"format\":\"_vendor\",\"text\":\"x\"}}",
-    value => experimental_v2_decode_diff(value),
-    experimental_v2_encode_diff,
+    value => @experimental.experimental_v2_decode_diff(value),
+    @experimental.experimental_v2_encode_diff,
   )
   assert_true(
     extension.patch
@@ -97,15 +105,15 @@ test "v2 diff patch is optional null equals omitted and formats stay open" {
   )
   let future = model_test_round_trip(
     "{\"changes\":[],\"patch\":{\"format\":\"ndiff\",\"text\":\"y\"}}",
-    value => experimental_v2_decode_diff(value),
-    experimental_v2_encode_diff,
+    value => @experimental.experimental_v2_decode_diff(value),
+    @experimental.experimental_v2_encode_diff,
   )
   assert_true(
     future.patch is Some({ format: DiffPatchFormatFuture(raw="ndiff"), .. }),
   )
   try
-    experimental_v2_decode_diff(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_diff(
+      @experimental.experimental_v2_parse_json(
         "{\"changes\":[],\"patch\":{\"format\":\"git_patch\"}}",
       ),
     )
@@ -120,14 +128,14 @@ test "v2 diff patch is optional null equals omitted and formats stay open" {
 test "v2 diff change open fallback preserves unknown operations raw" {
   let extension = model_test_round_trip(
     "{\"changes\":[{\"operation\":\"_link\",\"path\":\"/tmp/a\",\"target\":\"/tmp/b\"}]}",
-    value => experimental_v2_decode_diff(value),
-    experimental_v2_encode_diff,
+    value => @experimental.experimental_v2_decode_diff(value),
+    @experimental.experimental_v2_encode_diff,
   )
   assert_true(extension.changes[0] is Extension(tag="_link", ..))
   let future = model_test_round_trip(
     "{\"changes\":[{\"operation\":\"chmod\",\"mode\":493}]}",
-    value => experimental_v2_decode_diff(value),
-    experimental_v2_encode_diff,
+    value => @experimental.experimental_v2_decode_diff(value),
+    @experimental.experimental_v2_encode_diff,
   )
   assert_true(future.changes[0] is Future(tag="chmod", ..))
 }

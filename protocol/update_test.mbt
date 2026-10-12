@@ -1,10 +1,10 @@
 ///|
-fn update_test_omitted_json() -> ProtocolNullable[Json] {
+fn update_test_omitted_json() -> @protocol.ProtocolNullable[Json] {
   Omitted
 }
 
 ///|
-fn update_test_content_chunk() -> ContentChunk {
+fn update_test_content_chunk() -> @protocol.ContentChunk {
   {
     content: Text({
       annotations: Omitted,
@@ -17,7 +17,7 @@ fn update_test_content_chunk() -> ContentChunk {
 }
 
 ///|
-fn update_test_tool_call() -> ToolCall {
+fn update_test_tool_call() -> @protocol.ToolCall {
   {
     tool_call_id: "call-1",
     title: "Run command",
@@ -32,7 +32,7 @@ fn update_test_tool_call() -> ToolCall {
 }
 
 ///|
-fn update_test_tool_call_update() -> ToolCallUpdate {
+fn update_test_tool_call_update() -> @protocol.ToolCallUpdate {
   {
     tool_call_id: "call-1",
     kind: Omitted,
@@ -47,7 +47,7 @@ fn update_test_tool_call_update() -> ToolCallUpdate {
 }
 
 ///|
-fn update_test_plan() -> Plan {
+fn update_test_plan() -> @protocol.Plan {
   {
     entries: [
       {
@@ -74,7 +74,7 @@ fn update_test_plan() -> Plan {
 }
 
 ///|
-fn update_test_commands() -> AvailableCommandsUpdate {
+fn update_test_commands() -> @protocol.AvailableCommandsUpdate {
   {
     available_commands: [
       {
@@ -94,7 +94,7 @@ fn update_test_commands() -> AvailableCommandsUpdate {
 }
 
 ///|
-fn update_test_config() -> ConfigOptionUpdate {
+fn update_test_config() -> @protocol.ConfigOptionUpdate {
   {
     config_options: [
       {
@@ -156,7 +156,7 @@ fn update_test_config() -> ConfigOptionUpdate {
 ///|
 test "all stable session update variants round trip" {
   let chunk = update_test_content_chunk()
-  let updates : Array[SessionUpdate] = [
+  let updates : Array[@protocol.SessionUpdate] = [
     UserMessageChunk(chunk),
     AgentMessageChunk(chunk),
     AgentThoughtChunk(chunk),
@@ -186,13 +186,18 @@ test "all stable session update variants round trip" {
     }),
   ]
   for update in updates {
-    assert_eq(session_update_from_json(session_update_to_json(update)), update)
+    assert_eq(
+      @protocol.session_update_from_json(
+        @protocol.session_update_to_json(update),
+      ),
+      update,
+    )
   }
 }
 
 ///|
 test "session update patch omission and null remain distinct" {
-  let omitted : SessionUpdate = ToolCallUpdate({
+  let omitted : @protocol.SessionUpdate = ToolCallUpdate({
     tool_call_id: "call-1",
     kind: Omitted,
     status: Omitted,
@@ -203,7 +208,7 @@ test "session update patch omission and null remain distinct" {
     raw_output: Omitted,
     meta: Omitted,
   })
-  let cleared : SessionUpdate = ToolCallUpdate({
+  let cleared : @protocol.SessionUpdate = ToolCallUpdate({
     tool_call_id: "call-1",
     kind: Null,
     status: Null,
@@ -214,13 +219,23 @@ test "session update patch omission and null remain distinct" {
     raw_output: Null,
     meta: Null,
   })
-  assert_eq(session_update_from_json(session_update_to_json(omitted)), omitted)
-  assert_eq(session_update_from_json(session_update_to_json(cleared)), cleared)
+  assert_eq(
+    @protocol.session_update_from_json(
+      @protocol.session_update_to_json(omitted),
+    ),
+    omitted,
+  )
+  assert_eq(
+    @protocol.session_update_from_json(
+      @protocol.session_update_to_json(cleared),
+    ),
+    cleared,
+  )
 }
 
 ///|
 test "session info validates and round trips absolute directories" {
-  let info : SessionInfo = {
+  let info : @protocol.SessionInfo = {
     session_id: "session-1",
     cwd: "/tmp/acp",
     additional_directories: Value(["/tmp/acp/src"]),
@@ -228,20 +243,25 @@ test "session info validates and round trips absolute directories" {
     updated_at: Null,
     meta: update_test_omitted_json(),
   }
-  assert_eq(session_info_from_json(session_info_to_json(info)), info)
+  assert_eq(
+    @protocol.session_info_from_json(@protocol.session_info_to_json(info)),
+    info,
+  )
 }
 
 ///|
 test "session update discriminator and required fields fail explicitly" {
-  try session_update_from_json(protocol_parse_json("{}")) catch {
+  try
+    @protocol.session_update_from_json(@protocol.protocol_parse_json("{}"))
+  catch {
     MissingField(path="sessionUpdate.sessionUpdate") => ()
     _ => fail("expected missing session update discriminator")
   } noraise {
     _ => fail("expected missing discriminator to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json("{\"sessionUpdate\":\"unknown\"}"),
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json("{\"sessionUpdate\":\"unknown\"}"),
     )
   catch {
     InvalidDiscriminator(path="sessionUpdate.sessionUpdate", value="unknown") =>
@@ -251,7 +271,9 @@ test "session update discriminator and required fields fail explicitly" {
     _ => fail("expected unknown discriminator to fail")
   }
   try
-    session_update_from_json(protocol_parse_json("{\"sessionUpdate\":7}"))
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json("{\"sessionUpdate\":7}"),
+    )
   catch {
     ExpectedString(path="sessionUpdate.sessionUpdate") => ()
     _ => fail("expected non-string discriminator error")
@@ -259,8 +281,8 @@ test "session update discriminator and required fields fail explicitly" {
     _ => fail("expected non-string discriminator to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"plan\",\"entries\":[{\"content\":\"x\",\"priority\":\"high\",\"status\":\"pending\",\"extra\":true}]}",
       ),
     )
@@ -275,8 +297,8 @@ test "session update discriminator and required fields fail explicitly" {
 ///|
 test "session update nested values validate types and paths" {
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"usage_update\",\"used\":-1,\"size\":1}",
       ),
     )
@@ -287,8 +309,8 @@ test "session update nested values validate types and paths" {
     _ => fail("expected negative usage to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"config_option_update\",\"configOptions\":[{\"id\":\"x\",\"name\":\"X\",\"type\":\"unknown\"}]}",
       ),
     )
@@ -302,8 +324,10 @@ test "session update nested values validate types and paths" {
     _ => fail("expected unknown config option type to fail")
   }
   try
-    session_info_from_json(
-      protocol_parse_json("{\"sessionId\":\"s\",\"cwd\":\"relative\"}"),
+    @protocol.session_info_from_json(
+      @protocol.protocol_parse_json(
+        "{\"sessionId\":\"s\",\"cwd\":\"relative\"}",
+      ),
     )
   catch {
     InvalidPath(path="sessionInfo.cwd", value="relative") => ()
@@ -316,13 +340,17 @@ test "session update nested values validate types and paths" {
 ///|
 test "usage update preserves exact uint64 numbers and round trips" {
   let source = "{\"sessionUpdate\":\"usage_update\",\"used\":9007199254740993,\"size\":18446744073709551615}"
-  let update = session_update_from_json(protocol_parse_json(source))
+  let update = @protocol.session_update_from_json(
+    @protocol.protocol_parse_json(source),
+  )
   match update {
     UsageUpdate(value) => {
       assert_eq(value.used, 9007199254740993UL)
       assert_eq(value.size, 18446744073709551615UL)
       assert_eq(
-        session_update_from_json(session_update_to_json(update)),
+        @protocol.session_update_from_json(
+          @protocol.session_update_to_json(update),
+        ),
         update,
       )
     }
@@ -332,10 +360,10 @@ test "usage update preserves exact uint64 numbers and round trips" {
 
 ///|
 test "uint64 numbers accept exact integral exponents and reject invalid values" {
-  let exponent = protocol_parse_json(
+  let exponent = @protocol.protocol_parse_json(
     "{\"sessionUpdate\":\"usage_update\",\"used\":1e+3,\"size\":1000e-3}",
   )
-  let decoded = session_update_from_json(exponent)
+  let decoded = @protocol.session_update_from_json(exponent)
   match decoded {
     UsageUpdate(value) => {
       assert_eq(value.used, 1000UL)
@@ -349,7 +377,9 @@ test "uint64 numbers accept exact integral exponents and reject invalid values" 
       "{\"sessionUpdate\":\"usage_update\",\"used\":-1,\"size\":1}", "{\"sessionUpdate\":\"usage_update\",\"used\":1.5,\"size\":1}",
       "{\"sessionUpdate\":\"usage_update\",\"used\":1e-3,\"size\":1}",
     ] {
-    try session_update_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.session_update_from_json(@protocol.protocol_parse_json(source))
+    catch {
       InvalidField(path="sessionUpdate.used", reason=_) => ()
       _ => fail("expected invalid uint64 usage value")
     } noraise {
@@ -361,8 +391,10 @@ test "uint64 numbers accept exact integral exponents and reject invalid values" 
 ///|
 fn update_test_chunk(
   text : String,
-  message_id~ : ProtocolNullable[MessageId] = Value("message-1"),
-) -> ContentChunk {
+  message_id~ : @protocol.ProtocolNullable[@protocol.MessageId] = Value(
+    "message-1",
+  ),
+) -> @protocol.ContentChunk {
   {
     content: Text({
       annotations: Omitted,
@@ -375,13 +407,13 @@ fn update_test_chunk(
 }
 
 ///|
-fn update_test_fold() -> SessionUpdateFold {
-  session_update_fold(known_modes=["default", "extended"])
+fn update_test_fold() -> @protocol.SessionUpdateFold {
+  @protocol.session_update_fold(known_modes=["default", "extended"])
 }
 
 ///|
 fn update_test_chunk_text(
-  blocks : Array[ContentBlock],
+  blocks : Array[@protocol.ContentBlock],
   index : Int32,
 ) -> String raise Failure {
   match blocks[index] {
@@ -392,7 +424,7 @@ fn update_test_chunk_text(
 
 ///|
 test "e01 fold user message chunks aggregate by message id" {
-  let first = session_update_apply(
+  let first = @protocol.session_update_apply(
     update_test_fold(),
     UserMessageChunk(update_test_chunk("Hello")),
   )
@@ -400,7 +432,7 @@ test "e01 fold user message chunks aggregate by message id" {
     Ok(state) => state
     Err(_) => fail("expected user message chunk to apply")
   }
-  let second = session_update_apply(
+  let second = @protocol.session_update_apply(
     state,
     UserMessageChunk(update_test_chunk(" world")),
   )
@@ -408,7 +440,7 @@ test "e01 fold user message chunks aggregate by message id" {
     Ok(state) => state
     Err(_) => fail("expected second user message chunk to apply")
   }
-  let third = session_update_apply(
+  let third = @protocol.session_update_apply(
     state,
     UserMessageChunk(update_test_chunk("!", message_id=Omitted)),
   )
@@ -431,8 +463,8 @@ test "e01 fold user message chunks aggregate by message id" {
 ///|
 test "e01 user message chunk missing content and wrong block rejected" {
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"user_message_chunk\",\"messageId\":\"m1\"}",
       ),
     )
@@ -443,8 +475,8 @@ test "e01 user message chunk missing content and wrong block rejected" {
     _ => fail("expected missing chunk content to fail")
   }
   try
-    session_update_from_json(
-      protocol_parse_json(
+    @protocol.session_update_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionUpdate\":\"user_message_chunk\",\"content\":{\"type\":\"text\",\"text\":7}}",
       ),
     )
@@ -458,7 +490,7 @@ test "e01 user message chunk missing content and wrong block rejected" {
 
 ///|
 test "e02 fold agent message id change starts a new message" {
-  let first = session_update_apply(
+  let first = @protocol.session_update_apply(
     update_test_fold(),
     AgentMessageChunk(update_test_chunk("first", message_id=Value("a"))),
   )
@@ -466,7 +498,7 @@ test "e02 fold agent message id change starts a new message" {
     Ok(state) => state
     Err(_) => fail("expected agent message chunk to apply")
   }
-  let second = session_update_apply(
+  let second = @protocol.session_update_apply(
     state,
     AgentMessageChunk(update_test_chunk(" more", message_id=Value("a"))),
   )
@@ -474,7 +506,7 @@ test "e02 fold agent message id change starts a new message" {
     Ok(state) => state
     Err(_) => fail("expected second agent message chunk to apply")
   }
-  let third = session_update_apply(
+  let third = @protocol.session_update_apply(
     state,
     AgentMessageChunk(update_test_chunk("second", message_id=Value("b"))),
   )
@@ -495,7 +527,7 @@ test "e02 fold agent message id change starts a new message" {
 
 ///|
 test "e03 fold agent thought chunks never merge into agent messages" {
-  let first = session_update_apply(
+  let first = @protocol.session_update_apply(
     update_test_fold(),
     AgentMessageChunk(update_test_chunk("answer", message_id=Value("shared"))),
   )
@@ -503,7 +535,7 @@ test "e03 fold agent thought chunks never merge into agent messages" {
     Ok(state) => state
     Err(_) => fail("expected agent message chunk to apply")
   }
-  let second = session_update_apply(
+  let second = @protocol.session_update_apply(
     state,
     AgentThoughtChunk(
       update_test_chunk("reasoning", message_id=Value("shared")),
@@ -527,7 +559,7 @@ test "e03 fold agent thought chunks never merge into agent messages" {
 
 ///|
 test "e04 fold tool call creates once and rejects duplicate id" {
-  let created = session_update_apply(
+  let created = @protocol.session_update_apply(
     update_test_fold(),
     ToolCall(update_test_tool_call()),
   )
@@ -538,11 +570,11 @@ test "e04 fold tool call creates once and rejects duplicate id" {
   assert_eq(state.tool_calls.length(), 1)
   assert_eq(state.tool_calls[0].tool_call_id, "call-1")
   assert_eq(state.tool_calls[0].title, "Run command")
-  let duplicate : ToolCall = {
+  let duplicate : @protocol.ToolCall = {
     ..update_test_tool_call(),
     title: "Run command again",
   }
-  match session_update_apply(state, ToolCall(duplicate)) {
+  match @protocol.session_update_apply(state, ToolCall(duplicate)) {
     Err(DuplicateToolCall(tool_call_id="call-1")) => ()
     _ => fail("expected duplicate tool call id to be rejected")
   }
@@ -552,7 +584,7 @@ test "e04 fold tool call creates once and rejects duplicate id" {
 
 ///|
 test "e05 fold tool call update patches known call and rejects unknown id" {
-  let existing : ToolCall = {
+  let existing : @protocol.ToolCall = {
     ..update_test_tool_call(),
     content: Value([
       Content({
@@ -565,12 +597,15 @@ test "e05 fold tool call update patches known call and rejects unknown id" {
       }),
     ]),
   }
-  let created = session_update_apply(update_test_fold(), ToolCall(existing))
+  let created = @protocol.session_update_apply(
+    update_test_fold(),
+    ToolCall(existing),
+  )
   let state = match created {
     Ok(state) => state
     Err(_) => fail("expected initial tool call to apply")
   }
-  let patch : ToolCallUpdate = {
+  let patch : @protocol.ToolCallUpdate = {
     tool_call_id: "call-1",
     kind: Null,
     status: Value(Completed),
@@ -587,7 +622,7 @@ test "e05 fold tool call update patches known call and rejects unknown id" {
     raw_output: Value(Json::string("ok")),
     meta: update_test_omitted_json(),
   }
-  let updated = session_update_apply(state, ToolCallUpdate(patch))
+  let updated = @protocol.session_update_apply(state, ToolCallUpdate(patch))
   let state = match updated {
     Ok(state) => state
     Err(_) => fail("expected tool call update to apply")
@@ -608,11 +643,11 @@ test "e05 fold tool call update patches known call and rejects unknown id" {
   }
   assert_eq(call.raw_input, existing.raw_input)
   assert_eq(call.raw_output, Value(Json::string("ok")))
-  let unknown : ToolCallUpdate = {
+  let unknown : @protocol.ToolCallUpdate = {
     ..update_test_tool_call_update(),
     tool_call_id: "call-missing",
   }
-  match session_update_apply(state, ToolCallUpdate(unknown)) {
+  match @protocol.session_update_apply(state, ToolCallUpdate(unknown)) {
     Err(UnknownToolCall(tool_call_id="call-missing")) => ()
     _ => fail("expected unknown tool call id to be rejected")
   }
@@ -621,7 +656,7 @@ test "e05 fold tool call update patches known call and rejects unknown id" {
 
 ///|
 test "e06 fold plan update replaces the entire plan" {
-  let initial = session_update_apply(
+  let initial = @protocol.session_update_apply(
     update_test_fold(),
     Plan(update_test_plan()),
   )
@@ -633,7 +668,7 @@ test "e06 fold plan update replaces the entire plan" {
     Some(plan) => assert_eq(plan, update_test_plan())
     None => fail("expected plan to be recorded")
   }
-  let replacement : Plan = {
+  let replacement : @protocol.Plan = {
     entries: [
       {
         content: "Only remaining task",
@@ -644,7 +679,7 @@ test "e06 fold plan update replaces the entire plan" {
     ],
     meta: update_test_omitted_json(),
   }
-  let replaced = session_update_apply(state, Plan(replacement))
+  let replaced = @protocol.session_update_apply(state, Plan(replacement))
   let state = match replaced {
     Ok(state) => state
     Err(_) => fail("expected replacement plan to apply")
@@ -660,7 +695,7 @@ test "e06 fold plan update replaces the entire plan" {
 
 ///|
 test "e07 fold available commands update replaces the whole list" {
-  let stale : AvailableCommandsUpdate = {
+  let stale : @protocol.AvailableCommandsUpdate = {
     available_commands: [
       {
         name: "help",
@@ -677,7 +712,7 @@ test "e07 fold available commands update replaces the whole list" {
     ],
     meta: update_test_omitted_json(),
   }
-  let initial = session_update_apply(
+  let initial = @protocol.session_update_apply(
     update_test_fold(),
     AvailableCommandsUpdate(stale),
   )
@@ -687,7 +722,7 @@ test "e07 fold available commands update replaces the whole list" {
   }
   assert_eq(state.available_commands.length(), 2)
   let replacement = update_test_commands()
-  let replaced = session_update_apply(
+  let replaced = @protocol.session_update_apply(
     state,
     AvailableCommandsUpdate(replacement),
   )
@@ -707,7 +742,7 @@ test "e07 fold available commands update replaces the whole list" {
 
 ///|
 test "e08 fold current mode update validates against known modes" {
-  let switched = session_update_apply(
+  let switched = @protocol.session_update_apply(
     update_test_fold(),
     CurrentModeUpdate({
       current_mode_id: "extended",
@@ -722,7 +757,7 @@ test "e08 fold current mode update validates against known modes" {
     Some(mode_id) => assert_eq(mode_id, "extended")
     None => fail("expected current mode id to be recorded")
   }
-  let bogus = session_update_apply(
+  let bogus = @protocol.session_update_apply(
     state,
     CurrentModeUpdate({
       current_mode_id: "bogus",
@@ -737,8 +772,8 @@ test "e08 fold current mode update validates against known modes" {
     Some(mode_id) => assert_eq(mode_id, "extended")
     None => fail("expected rejected mode update to leave state unchanged")
   }
-  let unaware = session_update_fold(known_modes=[])
-  let defaulted = session_update_apply(
+  let unaware = @protocol.session_update_fold(known_modes=[])
+  let defaulted = @protocol.session_update_apply(
     unaware,
     CurrentModeUpdate({
       current_mode_id: "default",
@@ -753,7 +788,7 @@ test "e08 fold current mode update validates against known modes" {
 
 ///|
 test "e09 fold config option update replaces the complete set" {
-  let initial = session_update_apply(
+  let initial = @protocol.session_update_apply(
     update_test_fold(),
     ConfigOptionUpdate(update_test_config()),
   )
@@ -762,7 +797,7 @@ test "e09 fold config option update replaces the complete set" {
     Err(_) => fail("expected initial config update to apply")
   }
   assert_eq(state.config_options.length(), 3)
-  let replacement : ConfigOptionUpdate = {
+  let replacement : @protocol.ConfigOptionUpdate = {
     config_options: [
       {
         id: "thinking",
@@ -775,7 +810,10 @@ test "e09 fold config option update replaces the complete set" {
     ],
     meta: update_test_omitted_json(),
   }
-  let replaced = session_update_apply(state, ConfigOptionUpdate(replacement))
+  let replaced = @protocol.session_update_apply(
+    state,
+    ConfigOptionUpdate(replacement),
+  )
   let state = match replaced {
     Ok(state) => state
     Err(_) => fail("expected replacement config update to apply")
@@ -791,7 +829,7 @@ test "e09 fold config option update replaces the complete set" {
 
 ///|
 test "e10 fold session info update tri-state and timestamp validation" {
-  let titled = session_update_apply(
+  let titled = @protocol.session_update_apply(
     update_test_fold(),
     SessionInfoUpdate({
       title: Value("ACP session"),
@@ -805,7 +843,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
   }
   assert_eq(state.session_title, Value("ACP session"))
   assert_eq(state.session_updated_at, Value("2026-08-11T00:00:00Z"))
-  let cleared = session_update_apply(
+  let cleared = @protocol.session_update_apply(
     state,
     SessionInfoUpdate({
       title: Null,
@@ -819,7 +857,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
   }
   assert_eq(state.session_title, Null)
   assert_eq(state.session_updated_at, Value("2026-08-11T00:00:00Z"))
-  let reset = session_update_apply(
+  let reset = @protocol.session_update_apply(
     state,
     SessionInfoUpdate({
       title: Value("Renamed"),
@@ -838,7 +876,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
       "not-a-timestamp", "2026-13-01T00:00:00Z", "2026-02-30T00:00:00Z", "2026-08-11 00:00:00Z",
       "2026-08-11T00:00:00", "2026-8-11T00:00:00Z", "2026-08-11T24:00:00Z", "2026-08-11T00:00:00.",
     ] {
-    let rejected = session_update_apply(
+    let rejected = @protocol.session_update_apply(
       state,
       SessionInfoUpdate({
         title: Omitted,
@@ -854,7 +892,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
   }
   assert_eq(state.session_title, Value("Renamed"))
   assert_eq(state.session_updated_at, Value("2026-08-11t12:34:56.789+05:30"))
-  let leap = session_update_apply(
+  let leap = @protocol.session_update_apply(
     state,
     SessionInfoUpdate({
       title: Omitted,
@@ -868,7 +906,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
     Err(_) => fail("expected leap-day leap-second timestamp to apply")
   }
   let other = update_test_fold()
-  let isolated = session_update_apply(
+  let isolated = @protocol.session_update_apply(
     other,
     SessionInfoUpdate({
       title: Value("Other session"),
@@ -887,7 +925,7 @@ test "e10 fold session info update tri-state and timestamp validation" {
 
 ///|
 test "e11 fold usage update replaces prior usage" {
-  let first = session_update_apply(
+  let first = @protocol.session_update_apply(
     update_test_fold(),
     UsageUpdate({
       used: 128,
@@ -912,13 +950,13 @@ test "e11 fold usage update replaces prior usage" {
     }
     None => fail("expected usage to be recorded")
   }
-  let replacement : UsageUpdate = {
+  let replacement : @protocol.UsageUpdate = {
     used: 256,
     size: 8192,
     cost: Omitted,
     meta: update_test_omitted_json(),
   }
-  let replaced = session_update_apply(state, UsageUpdate(replacement))
+  let replaced = @protocol.session_update_apply(state, UsageUpdate(replacement))
   match replaced {
     Ok(state) =>
       match state.usage {
@@ -932,7 +970,7 @@ test "e11 fold usage update replaces prior usage" {
 ///|
 test "fold session update apply is pure and deterministic" {
   let initial = update_test_fold()
-  let first = session_update_apply(
+  let first = @protocol.session_update_apply(
     initial,
     UserMessageChunk(update_test_chunk("Hello")),
   )
@@ -940,11 +978,11 @@ test "fold session update apply is pure and deterministic" {
     Ok(state) => state
     Err(_) => fail("expected user message chunk to apply")
   }
-  let again_a = session_update_apply(
+  let again_a = @protocol.session_update_apply(
     state,
     UserMessageChunk(update_test_chunk(" again")),
   )
-  let again_b = session_update_apply(
+  let again_b = @protocol.session_update_apply(
     state,
     UserMessageChunk(update_test_chunk(" again")),
   )
@@ -958,7 +996,7 @@ test "fold session update apply is pure and deterministic" {
     }
     _ => fail("expected deterministic chunk application")
   }
-  let mode = session_update_apply(
+  let mode = @protocol.session_update_apply(
     state,
     CurrentModeUpdate({
       current_mode_id: "default",

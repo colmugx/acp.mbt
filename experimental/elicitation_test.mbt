@@ -2,8 +2,10 @@
 test "v2 elicitation create form round-trips the property DSL" {
   let request = model_test_round_trip(
     "{\"mode\":\"form\",\"message\":\"Configure the run\",\"requestedSchema\":{\"type\":\"object\",\"title\":\"Run config\",\"description\":\"Pick settings\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"Name\",\"minLength\":1,\"maxLength\":64,\"pattern\":\"^[a-z]+$\",\"format\":\"email\",\"default\":\"a@b.c\"},\"framework\":{\"type\":\"string\",\"oneOf\":[{\"const\":\"jest\",\"title\":\"Jest\"},{\"const\":\"mocha\",\"title\":\"Mocha\",\"description\":\"Classic\"}]},\"ratio\":{\"type\":\"number\",\"minimum\":0.5,\"maximum\":2.5,\"default\":1.5},\"count\":{\"type\":\"integer\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807,\"default\":42},\"verbose\":{\"type\":\"boolean\",\"title\":\"Verbose\",\"default\":true},\"tags\":{\"type\":\"array\",\"minItems\":1,\"maxItems\":5,\"items\":{\"type\":\"string\",\"enum\":[\"fast\",\"slow\"]},\"default\":[\"fast\"]},\"stack\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"const\":\"node\",\"title\":\"Node\"}]}}},\"required\":[\"name\",\"framework\"]},\"sessionId\":\"s1\",\"toolCallId\":\"tc1\",\"_meta\":{\"r\":1}}",
-    value => experimental_v2_decode_elicitation_create_request(value),
-    experimental_v2_encode_elicitation_create_request,
+    value => {
+      @experimental.experimental_v2_decode_elicitation_create_request(value)
+    },
+    @experimental.experimental_v2_encode_elicitation_create_request,
   )
   guard request
     is Known(
@@ -90,8 +92,10 @@ test "v2 elicitation create form round-trips the property DSL" {
   // A request scope with a numeric JSON-RPC id round-trips too.
   let request_scoped = model_test_round_trip(
     "{\"mode\":\"form\",\"message\":\"Auth\",\"requestedSchema\":{\"properties\":{}},\"requestId\":7}",
-    value => experimental_v2_decode_elicitation_create_request(value),
-    experimental_v2_encode_elicitation_create_request,
+    value => {
+      @experimental.experimental_v2_decode_elicitation_create_request(value)
+    },
+    @experimental.experimental_v2_encode_elicitation_create_request,
   )
   assert_true(
     request_scoped
@@ -110,8 +114,10 @@ test "v2 elicitation create form round-trips the property DSL" {
 test "v2 elicitation create url round-trips" {
   let request = model_test_round_trip(
     "{\"mode\":\"url\",\"message\":\"Log in\",\"elicitationId\":\"e1\",\"url\":\"https://example.test/login\",\"sessionId\":\"s1\"}",
-    value => experimental_v2_decode_elicitation_create_request(value),
-    experimental_v2_encode_elicitation_create_request,
+    value => {
+      @experimental.experimental_v2_decode_elicitation_create_request(value)
+    },
+    @experimental.experimental_v2_encode_elicitation_create_request,
   )
   assert_true(
     request
@@ -129,7 +135,7 @@ test "v2 elicitation create url round-trips" {
       }
     ),
   )
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"mode\":\"url\",\"elicitationId\":\"e1\",\"url\":\"https://x\",\"sessionId\":\"s1\"}",
       MissingField(path="elicitation/create.message"),
@@ -161,8 +167,8 @@ test "v2 elicitation create url round-trips" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_elicitation_create_request(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_elicitation_create_request(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -180,8 +186,8 @@ test "v2 elicitation create scope disambiguation and request ids" {
       "{\"mode\":\"url\",\"message\":\"m\",\"elicitationId\":\"e1\",\"url\":\"https://x\",\"sessionId\":\"s1\",\"requestId\":3}",
     ] {
     try
-      experimental_v2_decode_elicitation_create_request(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_elicitation_create_request(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       InvalidField(
@@ -194,8 +200,8 @@ test "v2 elicitation create scope disambiguation and request ids" {
     }
   }
   try
-    experimental_v2_decode_elicitation_create_request(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_elicitation_create_request(
+      @experimental.experimental_v2_parse_json(
         "{\"mode\":\"url\",\"message\":\"m\",\"elicitationId\":\"e1\",\"url\":\"https://x\"}",
       ),
     )
@@ -211,8 +217,10 @@ test "v2 elicitation create scope disambiguation and request ids" {
   for wire_id in ["\"abc\"", "null", "9223372036854775807"] {
     let request = model_test_round_trip(
       "{\"mode\":\"url\",\"message\":\"m\",\"elicitationId\":\"e1\",\"url\":\"https://x\",\"requestId\":\{wire_id}}",
-      value => experimental_v2_decode_elicitation_create_request(value),
-      experimental_v2_encode_elicitation_create_request,
+      value => {
+        @experimental.experimental_v2_decode_elicitation_create_request(value)
+      },
+      @experimental.experimental_v2_encode_elicitation_create_request,
     )
     assert_true(
       request
@@ -220,8 +228,8 @@ test "v2 elicitation create scope disambiguation and request ids" {
     )
   }
   try
-    experimental_v2_decode_elicitation_create_request(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_elicitation_create_request(
+      @experimental.experimental_v2_parse_json(
         "{\"mode\":\"url\",\"message\":\"m\",\"elicitationId\":\"e1\",\"url\":\"https://x\",\"requestId\":1.5}",
       ),
     )
@@ -238,7 +246,7 @@ test "v2 elicitation create scope disambiguation and request ids" {
 
 ///|
 test "v2 elicitation property DSL rejects illegal field definitions" {
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     ("{\"type\":\"array\"}", MissingField(path="property.items")),
     (
       "{\"type\":\"string\",\"enum\":[]}",
@@ -294,8 +302,8 @@ test "v2 elicitation property DSL rejects illegal field definitions" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_elicitation_property(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_elicitation_property(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -305,7 +313,7 @@ test "v2 elicitation property DSL rejects illegal field definitions" {
   }
   // minItems holds on encode too, so an illegible schema cannot be sent.
   try
-    experimental_v2_encode_elicitation_property(
+    @experimental.experimental_v2_encode_elicitation_property(
       Known(
         PropertyString({
           title: None,
@@ -331,8 +339,8 @@ test "v2 elicitation property DSL rejects illegal field definitions" {
     _ => fail("expected InvalidField for an empty enum on encode")
   }
   try
-    experimental_v2_decode_elicitation_schema(
-      experimental_v2_parse_json("{\"type\":\"string\"}"),
+    @experimental.experimental_v2_decode_elicitation_schema(
+      @experimental.experimental_v2_parse_json("{\"type\":\"string\"}"),
     )
   catch {
     InvalidField(
@@ -344,8 +352,8 @@ test "v2 elicitation property DSL rejects illegal field definitions" {
     _ => fail("expected InvalidField for a non-object schema type")
   }
   try
-    experimental_v2_decode_elicitation_schema(
-      experimental_v2_parse_json("{\"properties\":null}"),
+    @experimental.experimental_v2_decode_elicitation_schema(
+      @experimental.experimental_v2_parse_json("{\"properties\":null}"),
     )
   catch {
     ExpectedObject(path="requestedSchema.properties") => ()
@@ -363,12 +371,12 @@ test "v2 elicitation keeps unknown property and item kinds raw" {
     ] {
     let property = model_test_round_trip(
       source,
-      value => experimental_v2_decode_elicitation_property(value),
-      experimental_v2_encode_elicitation_property,
+      value => @experimental.experimental_v2_decode_elicitation_property(value),
+      @experimental.experimental_v2_encode_elicitation_property,
     )
     assert_eq(
-      experimental_v2_encode_elicitation_property(property),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_elicitation_property(property),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
   for
@@ -377,19 +385,19 @@ test "v2 elicitation keeps unknown property and item kinds raw" {
     ] {
     let items = model_test_round_trip(
       source,
-      value => experimental_v2_decode_multi_select_items(value),
-      experimental_v2_encode_multi_select_items,
+      value => @experimental.experimental_v2_decode_multi_select_items(value),
+      @experimental.experimental_v2_encode_multi_select_items,
     )
     assert_eq(
-      experimental_v2_encode_multi_select_items(items),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_multi_select_items(items),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
   // Unknown string formats are annotations, never failures.
   let formatted = model_test_round_trip(
     "{\"type\":\"string\",\"format\":\"phone\"}",
-    value => experimental_v2_decode_elicitation_property(value),
-    experimental_v2_encode_elicitation_property,
+    value => @experimental.experimental_v2_decode_elicitation_property(value),
+    @experimental.experimental_v2_encode_elicitation_property,
   )
   assert_true(
     formatted
@@ -398,8 +406,8 @@ test "v2 elicitation keeps unknown property and item kinds raw" {
   // Titled items carry no type discriminator at all.
   let titled = model_test_round_trip(
     "{\"anyOf\":[{\"const\":\"a\",\"title\":\"A\"}]}",
-    value => experimental_v2_decode_multi_select_items(value),
-    experimental_v2_encode_multi_select_items,
+    value => @experimental.experimental_v2_decode_multi_select_items(value),
+    @experimental.experimental_v2_encode_multi_select_items,
   )
   assert_true(titled is MultiSelectItemsTitled(_))
 }
@@ -408,8 +416,10 @@ test "v2 elicitation keeps unknown property and item kinds raw" {
 test "v2 elicitation create response action shapes" {
   let accepted = model_test_round_trip(
     "{\"action\":\"accept\",\"content\":{\"name\":\"Ada\",\"count\":42,\"big\":9223372036854775807,\"ratio\":2.5,\"flag\":true,\"tags\":[\"a\",\"b\"]},\"_meta\":{\"a\":1}}",
-    value => experimental_v2_decode_elicitation_create_response(value),
-    experimental_v2_encode_elicitation_create_response,
+    value => {
+      @experimental.experimental_v2_decode_elicitation_create_response(value)
+    },
+    @experimental.experimental_v2_encode_elicitation_create_response,
   )
   guard accepted
     is Known(
@@ -428,8 +438,10 @@ test "v2 elicitation create response action shapes" {
   assert_eq(content.get("tags"), Some(ContentStringArray(["a", "b"])))
   let bare_accept = model_test_round_trip(
     "{\"action\":\"accept\"}",
-    value => experimental_v2_decode_elicitation_create_response(value),
-    experimental_v2_encode_elicitation_create_response,
+    value => {
+      @experimental.experimental_v2_decode_elicitation_create_response(value)
+    },
+    @experimental.experimental_v2_encode_elicitation_create_response,
   )
   assert_true(
     bare_accept is Known({ action: ActionAccept({ content: None, }), .. }),
@@ -437,8 +449,10 @@ test "v2 elicitation create response action shapes" {
   for action in ["decline", "cancel"] {
     let response = model_test_round_trip(
       "{\"action\":\"\{action}\"}",
-      value => experimental_v2_decode_elicitation_create_response(value),
-      experimental_v2_encode_elicitation_create_response,
+      value => {
+        @experimental.experimental_v2_decode_elicitation_create_response(value)
+      },
+      @experimental.experimental_v2_encode_elicitation_create_response,
     )
     assert_true(
       response is Known({ action: ActionDecline | ActionCancel, meta: None, }),
@@ -451,15 +465,17 @@ test "v2 elicitation create response action shapes" {
     ] {
     let response = model_test_round_trip(
       source,
-      value => experimental_v2_decode_elicitation_create_response(value),
-      experimental_v2_encode_elicitation_create_response,
+      value => {
+        @experimental.experimental_v2_decode_elicitation_create_response(value)
+      },
+      @experimental.experimental_v2_encode_elicitation_create_response,
     )
     assert_eq(
-      experimental_v2_encode_elicitation_create_response(response),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_elicitation_create_response(response),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     (
       "{\"action\":\"accept\",\"content\":{\"nested\":{\"x\":1}}}",
       InvalidField(
@@ -480,8 +496,8 @@ test "v2 elicitation create response action shapes" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_elicitation_create_response(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_elicitation_create_response(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -495,11 +511,15 @@ test "v2 elicitation create response action shapes" {
 test "v2 elicitation complete notification round-trips" {
   let notification = model_test_round_trip(
     "{\"elicitationId\":\"e1\",\"_meta\":{\"c\":1}}",
-    value => experimental_v2_decode_complete_elicitation_notification(value),
-    experimental_v2_encode_complete_elicitation_notification,
+    value => {
+      @experimental.experimental_v2_decode_complete_elicitation_notification(
+        value,
+      )
+    },
+    @experimental.experimental_v2_encode_complete_elicitation_notification,
   )
   assert_true(notification is { elicitation_id: "e1", meta: Some(Object(_)), })
-  let cases : Array[(String, ExperimentalV2DecodeError)] = [
+  let cases : Array[(String, @experimental.ExperimentalV2DecodeError)] = [
     ("{}", MissingField(path="elicitation/complete.elicitationId")),
     (
       "{\"elicitationId\":\"\"}",
@@ -516,8 +536,8 @@ test "v2 elicitation complete notification round-trips" {
   for entry in cases {
     let (source, expected) = entry
     try
-      experimental_v2_decode_complete_elicitation_notification(
-        experimental_v2_parse_json(source),
+      @experimental.experimental_v2_decode_complete_elicitation_notification(
+        @experimental.experimental_v2_parse_json(source),
       )
     catch {
       error => assert_eq(error, expected)
@@ -537,22 +557,24 @@ test "v2 elicitation create keeps unknown modes raw" {
     ] {
     let request = model_test_round_trip(
       source,
-      value => experimental_v2_decode_elicitation_create_request(value),
-      experimental_v2_encode_elicitation_create_request,
+      value => {
+        @experimental.experimental_v2_decode_elicitation_create_request(value)
+      },
+      @experimental.experimental_v2_encode_elicitation_create_request,
     )
     assert_eq(
-      experimental_v2_encode_elicitation_create_request(request),
-      experimental_v2_parse_json(source),
+      @experimental.experimental_v2_encode_elicitation_create_request(request),
+      @experimental.experimental_v2_parse_json(source),
     )
   }
-  let extension = experimental_v2_decode_elicitation_create_request(
-    experimental_v2_parse_json(
+  let extension = @experimental.experimental_v2_decode_elicitation_create_request(
+    @experimental.experimental_v2_parse_json(
       "{\"mode\":\"_oauth\",\"message\":\"Connect\",\"sessionId\":\"s1\"}",
     ),
   )
   assert_true(extension is Extension(tag="_oauth", ..))
-  let future = experimental_v2_decode_elicitation_create_request(
-    experimental_v2_parse_json(
+  let future = @experimental.experimental_v2_decode_elicitation_create_request(
+    @experimental.experimental_v2_parse_json(
       "{\"mode\":\"qr\",\"message\":\"Scan\",\"requestId\":9}",
     ),
   )

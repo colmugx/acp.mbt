@@ -22,37 +22,37 @@ using @protocol_data {
 fn agent_state_test_config(
   capabilities : ProtocolNullable[AgentCapabilities],
   auth_methods : ProtocolNullable[Array[AuthMethod]],
-) -> AgentProtocolConfig {
+) -> @protocol.AgentProtocolConfig {
   { agent_capabilities: capabilities, auth_methods, agent_info: Omitted, }
 }
 
 ///|
 fn agent_state_test_initialize(
-  state : AgentProtocolState,
+  state : @protocol.AgentProtocolState,
   protocol_version : Int32,
-) -> AgentProtocolStep raise AgentProtocolError {
+) -> @protocol.AgentProtocolStep raise @protocol.AgentProtocolError {
   let params : InitializeParams = {
     protocol_version,
     client_capabilities: Omitted,
     client_info: Omitted,
     meta: Omitted,
   }
-  agent_protocol_reduce(state, Request(Initialize(params)))
+  @protocol.agent_protocol_reduce(state, Request(Initialize(params)))
 }
 
 ///|
 fn agent_state_test_initialize_with_client_capabilities(
-  state : AgentProtocolState,
+  state : @protocol.AgentProtocolState,
   protocol_version : Int32,
   client_capabilities : ProtocolNullable[ClientCapabilities],
-) -> AgentProtocolStep raise AgentProtocolError {
+) -> @protocol.AgentProtocolStep raise @protocol.AgentProtocolError {
   let params : InitializeParams = {
     protocol_version,
     client_capabilities,
     client_info: Omitted,
     meta: Omitted,
   }
-  agent_protocol_reduce(state, Request(Initialize(params)))
+  @protocol.agent_protocol_reduce(state, Request(Initialize(params)))
 }
 
 ///|
@@ -198,7 +198,7 @@ fn agent_state_test_b09_state(
   mcp_http : Bool,
   mcp_sse : Bool,
   additional_directories : Bool,
-) -> AgentProtocolState raise AgentProtocolError {
+) -> @protocol.AgentProtocolState raise @protocol.AgentProtocolError {
   let http : ProtocolNullable[Bool] = if mcp_http {
     Value(true)
   } else {
@@ -211,7 +211,7 @@ fn agent_state_test_b09_state(
     Omitted
   }
   agent_state_test_initialize(
-    agent_protocol_state_new(
+    @protocol.agent_protocol_state_new(
       config=agent_state_test_config(
         Value(agent_state_test_b09_capabilities(http, sse, roots)),
         Omitted,
@@ -281,11 +281,11 @@ fn agent_state_test_b09_request(
 
 ///|
 fn agent_state_test_b09_dispatch(
-  state : AgentProtocolState,
+  state : @protocol.AgentProtocolState,
   request : AgentRequest,
   method_name : String,
 ) -> Unit raise {
-  let step = agent_protocol_reduce(state, Request(request))
+  let step = @protocol.agent_protocol_reduce(state, Request(request))
   assert_eq(step.commands.length(), 1)
   match step.commands[0] {
     DispatchRequest(_) => ()
@@ -295,12 +295,12 @@ fn agent_state_test_b09_dispatch(
 
 ///|
 fn agent_state_test_b09_denied(
-  state : AgentProtocolState,
+  state : @protocol.AgentProtocolState,
   request : AgentRequest,
   method_name : String,
   capability : String,
 ) -> Unit raise {
-  try agent_protocol_reduce(state, Request(request)) catch {
+  try @protocol.agent_protocol_reduce(state, Request(request)) catch {
     CapabilityDenied(method_name=actual_method, capability=actual_capability) => {
       assert_eq(actual_method, method_name)
       assert_eq(actual_capability, capability)
@@ -313,13 +313,13 @@ fn agent_state_test_b09_denied(
 
 ///|
 fn agent_state_test_gate_denied(
-  state : AgentProtocolState,
+  state : @protocol.AgentProtocolState,
   request : AgentRequest,
   method_name : String,
   capability : String,
 ) -> Unit raise {
   let before = state
-  try agent_protocol_reduce(state, Request(request)) catch {
+  try @protocol.agent_protocol_reduce(state, Request(request)) catch {
     CapabilityDenied(method_name=actual_method, capability=actual_capability) => {
       assert_eq(actual_method, method_name)
       assert_eq(actual_capability, capability)
@@ -339,9 +339,11 @@ fn agent_state_test_auth_method() -> AuthMethod {
 ///|
 test "v1 handshake accepts only version one and rejects repetition" {
   let config = agent_state_test_config(Omitted, Omitted)
-  let state = agent_protocol_state_new(config~)
+  let state = @protocol.agent_protocol_state_new(config~)
   let preinitialize_request = agent_state_test_request("session/list", "{}")
-  try agent_protocol_reduce(state, Request(preinitialize_request)) catch {
+  try
+    @protocol.agent_protocol_reduce(state, Request(preinitialize_request))
+  catch {
     NotInitialized(method_name="session/list") => ()
     _ => fail("expected business request before initialize to fail")
   } noraise {
@@ -379,13 +381,15 @@ test "authentication is advertised, sequenced, and completed by an event" {
     Value(agent_state_test_all_capabilities()),
     Value([agent_state_test_auth_method()]),
   )
-  let initial = agent_protocol_state_new(config~)
+  let initial = @protocol.agent_protocol_state_new(config~)
   let initialized = agent_state_test_initialize(initial, 1).state
   let unauthenticated_new = agent_state_test_request(
     "session/new", "{\"cwd\":\"/\",\"mcpServers\":[]}",
   )
 
-  try agent_protocol_reduce(initialized, Request(unauthenticated_new)) catch {
+  try
+    @protocol.agent_protocol_reduce(initialized, Request(unauthenticated_new))
+  catch {
     AuthenticationRequired(method_name="session/new") => ()
     _ => fail("expected authentication gate")
   } noraise {
@@ -395,7 +399,9 @@ test "authentication is advertised, sequenced, and completed by an event" {
   let unknown_auth = agent_state_test_request(
     "authenticate", "{\"methodId\":\"unknown\"}",
   )
-  try agent_protocol_reduce(initialized, Request(unknown_auth)) catch {
+  try
+    @protocol.agent_protocol_reduce(initialized, Request(unknown_auth))
+  catch {
     AuthenticationMethodNotAdvertised(method_id="unknown") => ()
     _ => fail("expected unknown authentication method rejection")
   } noraise {
@@ -405,18 +411,20 @@ test "authentication is advertised, sequenced, and completed by an event" {
   let auth = agent_state_test_request(
     "authenticate", "{\"methodId\":\"token\"}",
   )
-  let auth_step = agent_protocol_reduce(initialized, Request(auth))
+  let auth_step = @protocol.agent_protocol_reduce(initialized, Request(auth))
   match auth_step.commands[0] {
     Authenticate(method_id="token") => ()
     _ => fail("expected authentication command")
   }
-  let authenticated = agent_protocol_reduce(
+  let authenticated = @protocol.agent_protocol_reduce(
     auth_step.state,
     AuthenticationSucceeded(method_id="token"),
   )
   assert_eq(authenticated.state.authentication, Authenticated)
 
-  try agent_protocol_reduce(authenticated.state, Request(auth)) catch {
+  try
+    @protocol.agent_protocol_reduce(authenticated.state, Request(auth))
+  catch {
     AlreadyAuthenticated => ()
     _ => fail("expected duplicate authentication rejection")
   } noraise {
@@ -424,12 +432,18 @@ test "authentication is advertised, sequenced, and completed by an event" {
   }
 
   let logout = agent_state_test_request("logout", "{}")
-  let logout_step = agent_protocol_reduce(authenticated.state, Request(logout))
+  let logout_step = @protocol.agent_protocol_reduce(
+    authenticated.state,
+    Request(logout),
+  )
   assert_true(logout_step.commands[0] is Logout)
-  let logged_out = agent_protocol_reduce(logout_step.state, LoggedOut)
+  let logged_out = @protocol.agent_protocol_reduce(logout_step.state, LoggedOut)
   assert_eq(logged_out.state.authentication, AwaitingAuthentication)
   try
-    agent_protocol_reduce(logged_out.state, Request(unauthenticated_new))
+    @protocol.agent_protocol_reduce(
+      logged_out.state,
+      Request(unauthenticated_new),
+    )
   catch {
     AuthenticationRequired(method_name="session/new") => ()
     _ => fail("expected session/new to require authentication after logout")
@@ -483,11 +497,11 @@ test "boolean config values require the negotiated client capability" {
   ]
   for client_capabilities in denied_capabilities {
     let state = agent_state_test_initialize_with_client_capabilities(
-        agent_protocol_state_new(config~),
+        @protocol.agent_protocol_state_new(config~),
         1,
         client_capabilities,
       ).state
-    try agent_protocol_reduce(state, Request(request)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(request)) catch {
       CapabilityDenied(
         method_name="session/set_config_option",
         capability="session.configOptions.boolean"
@@ -499,18 +513,24 @@ test "boolean config values require the negotiated client capability" {
   }
 
   let enabled_state = agent_state_test_initialize_with_client_capabilities(
-      agent_protocol_state_new(config~),
+      @protocol.agent_protocol_state_new(config~),
       1,
       Value(agent_state_test_boolean_client_capabilities()),
     ).state
-  let true_step = agent_protocol_reduce(enabled_state, Request(request))
+  let true_step = @protocol.agent_protocol_reduce(
+    enabled_state,
+    Request(request),
+  )
   assert_true(
     true_step.commands[0] is DispatchRequest(SessionSetConfigOption(_)),
   )
   let false_request = agent_state_test_request(
     "session/set_config_option", "{\"sessionId\":\"s\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":false}",
   )
-  let false_step = agent_protocol_reduce(enabled_state, Request(false_request))
+  let false_step = @protocol.agent_protocol_reduce(
+    enabled_state,
+    Request(false_request),
+  )
   assert_true(
     false_step.commands[0] is DispatchRequest(SessionSetConfigOption(_)),
   )
@@ -519,10 +539,10 @@ test "boolean config values require the negotiated client capability" {
     "session/set_config_option", "{\"sessionId\":\"s\",\"configId\":\"mode\",\"value\":\"fast\"}",
   )
   let no_boolean_state = agent_state_test_initialize(
-      agent_protocol_state_new(config~),
+      @protocol.agent_protocol_state_new(config~),
       1,
     ).state
-  let value_id_step = agent_protocol_reduce(
+  let value_id_step = @protocol.agent_protocol_reduce(
     no_boolean_state,
     Request(value_id_request),
   )
@@ -534,12 +554,12 @@ test "boolean config values require the negotiated client capability" {
 ///|
 test "omitted and null capabilities deny every optional gate" {
   let omitted_config = agent_state_test_config(Omitted, Omitted)
-  let omitted = agent_protocol_state_new(config=omitted_config)
+  let omitted = @protocol.agent_protocol_state_new(config=omitted_config)
   let null_caps_config = agent_state_test_config(
     Value(agent_state_test_all_null_capabilities()),
     Omitted,
   )
-  let null_caps = agent_protocol_state_new(config=null_caps_config)
+  let null_caps = @protocol.agent_protocol_state_new(config=null_caps_config)
   let states = [
     agent_state_test_initialize(omitted, 1).state,
     agent_state_test_initialize(null_caps, 1).state,
@@ -548,7 +568,7 @@ test "omitted and null capabilities deny every optional gate" {
     let load = agent_state_test_request(
       "session/load", "{\"mcpServers\":[],\"cwd\":\"/\",\"sessionId\":\"s\"}",
     )
-    try agent_protocol_reduce(state, Request(load)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(load)) catch {
       CapabilityDenied(method_name="session/load", capability="loadSession") =>
         ()
       _ => fail("expected loadSession gate")
@@ -557,7 +577,7 @@ test "omitted and null capabilities deny every optional gate" {
     }
 
     let list = agent_state_test_request("session/list", "{}")
-    try agent_protocol_reduce(state, Request(list)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(list)) catch {
       CapabilityDenied(method_name="session/list", capability="session.list") =>
         ()
       _ => fail("expected list gate")
@@ -568,7 +588,7 @@ test "omitted and null capabilities deny every optional gate" {
     let delete = agent_state_test_request(
       "session/delete", "{\"sessionId\":\"s\"}",
     )
-    try agent_protocol_reduce(state, Request(delete)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(delete)) catch {
       CapabilityDenied(
         method_name="session/delete",
         capability="session.delete"
@@ -581,7 +601,7 @@ test "omitted and null capabilities deny every optional gate" {
     let close = agent_state_test_request(
       "session/close", "{\"sessionId\":\"s\"}",
     )
-    try agent_protocol_reduce(state, Request(close)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(close)) catch {
       CapabilityDenied(method_name="session/close", capability="session.close") =>
         ()
       _ => fail("expected close gate")
@@ -592,7 +612,7 @@ test "omitted and null capabilities deny every optional gate" {
     let resumed_request = agent_state_test_request(
       "session/resume", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
     )
-    try agent_protocol_reduce(state, Request(resumed_request)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(resumed_request)) catch {
       CapabilityDenied(
         method_name="session/resume",
         capability="session.resume"
@@ -605,7 +625,7 @@ test "omitted and null capabilities deny every optional gate" {
     let fork_request = agent_state_test_request(
       "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
     )
-    try agent_protocol_reduce(state, Request(fork_request)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(fork_request)) catch {
       CapabilityDenied(method_name="session/fork", capability="session.fork") =>
         ()
       _ => fail("expected fork gate")
@@ -616,7 +636,7 @@ test "omitted and null capabilities deny every optional gate" {
     let new_with_roots = agent_state_test_request(
       "session/new", "{\"cwd\":\"/\",\"additionalDirectories\":[\"/tmp\"],\"mcpServers\":[]}",
     )
-    try agent_protocol_reduce(state, Request(new_with_roots)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(new_with_roots)) catch {
       CapabilityDenied(
         method_name="session/new",
         capability="session.additionalDirectories"
@@ -627,7 +647,7 @@ test "omitted and null capabilities deny every optional gate" {
     }
 
     let logout = agent_state_test_request("logout", "{}")
-    try agent_protocol_reduce(state, Request(logout)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(logout)) catch {
       CapabilityDenied(method_name="logout", capability="auth.logout") => ()
       _ => fail("expected logout gate")
     } noraise {
@@ -642,32 +662,35 @@ test "session fork requires initialization the marker and advertised directories
     Value(agent_state_test_all_capabilities()),
     Omitted,
   )
-  let initial = agent_protocol_state_new(config~)
+  let initial = @protocol.agent_protocol_state_new(config~)
   let fork_request = agent_state_test_request(
     "session/fork", "{\"sessionId\":\"s\",\"cwd\":\"/\"}",
   )
-  try agent_protocol_reduce(initial, Request(fork_request)) catch {
+  try @protocol.agent_protocol_reduce(initial, Request(fork_request)) catch {
     NotInitialized(method_name="session/fork") => ()
     _ => fail("expected fork before initialize to fail")
   } noraise {
     _ => fail("expected fork before initialize to fail")
   }
   let marker_state = agent_state_test_initialize(initial, 1).state
-  let fork_step = agent_protocol_reduce(marker_state, Request(fork_request))
+  let fork_step = @protocol.agent_protocol_reduce(
+    marker_state,
+    Request(fork_request),
+  )
   assert_true(fork_step.commands[0] is DispatchRequest(SessionFork(_)))
   let no_fork_config = agent_state_test_config(
     Value(agent_state_test_no_fork_capabilities()),
     Omitted,
   )
   let no_fork_state = agent_state_test_initialize(
-      agent_protocol_state_new(config=no_fork_config),
+      @protocol.agent_protocol_state_new(config=no_fork_config),
       1,
     ).state
   agent_state_test_gate_denied(
     no_fork_state, fork_request, "session/fork", "session.fork",
   )
   let no_roots_state = agent_state_test_initialize(
-      agent_protocol_state_new(
+      @protocol.agent_protocol_state_new(
         config=agent_state_test_config(
           Value(agent_state_test_b09_capabilities(Omitted, Omitted, Omitted)),
           Omitted,
@@ -689,26 +712,29 @@ test "transport and prompt capability gates accept only explicitly enabled value
     Value(agent_state_test_all_capabilities()),
     Omitted,
   )
-  let state = agent_state_test_initialize(agent_protocol_state_new(config~), 1).state
+  let state = agent_state_test_initialize(
+      @protocol.agent_protocol_state_new(config~),
+      1,
+    ).state
 
   let load = agent_state_test_request(
     "session/load", "{\"mcpServers\":[],\"cwd\":\"/\",\"sessionId\":\"s\"}",
   )
   assert_true(
-    agent_protocol_reduce(state, Request(load)).commands[0]
+    @protocol.agent_protocol_reduce(state, Request(load)).commands[0]
     is DispatchRequest(SessionLoad(_)),
   )
   let http = agent_state_test_request(
     "session/new", "{\"cwd\":\"/\",\"mcpServers\":[{\"type\":\"http\",\"name\":\"remote\",\"url\":\"https://example.test\",\"headers\":[]}]}",
   )
-  let http_step = agent_protocol_reduce(state, Request(http))
+  let http_step = @protocol.agent_protocol_reduce(state, Request(http))
   assert_true(http_step.commands[0] is DispatchRequest(SessionNew(_)))
 
   let sse = agent_state_test_request(
     "session/new", "{\"cwd\":\"/\",\"mcpServers\":[{\"type\":\"sse\",\"name\":\"events\",\"url\":\"https://example.test/events\",\"headers\":[]}]}",
   )
   assert_true(
-    agent_protocol_reduce(state, Request(sse)).commands[0]
+    @protocol.agent_protocol_reduce(state, Request(sse)).commands[0]
     is DispatchRequest(SessionNew(_)),
   )
 
@@ -716,21 +742,21 @@ test "transport and prompt capability gates accept only explicitly enabled value
     "session/prompt", "{\"sessionId\":\"s\",\"prompt\":[{\"type\":\"image\",\"data\":\"aA==\",\"mimeType\":\"image/png\"}]}",
   )
   assert_true(
-    agent_protocol_reduce(state, Request(image)).commands[0]
+    @protocol.agent_protocol_reduce(state, Request(image)).commands[0]
     is DispatchRequest(SessionPrompt(_)),
   )
   let audio = agent_state_test_request(
     "session/prompt", "{\"sessionId\":\"s\",\"prompt\":[{\"type\":\"audio\",\"data\":\"aA==\",\"mimeType\":\"audio/wav\"}]}",
   )
   assert_true(
-    agent_protocol_reduce(state, Request(audio)).commands[0]
+    @protocol.agent_protocol_reduce(state, Request(audio)).commands[0]
     is DispatchRequest(SessionPrompt(_)),
   )
   let embedded = agent_state_test_request(
     "session/prompt", "{\"sessionId\":\"s\",\"prompt\":[{\"type\":\"resource\",\"resource\":{\"uri\":\"file:///tmp/a\",\"text\":\"body\"}}]}",
   )
   assert_true(
-    agent_protocol_reduce(state, Request(embedded)).commands[0]
+    @protocol.agent_protocol_reduce(state, Request(embedded)).commands[0]
     is DispatchRequest(SessionPrompt(_)),
   )
 
@@ -743,7 +769,7 @@ test "transport and prompt capability gates accept only explicitly enabled value
     Value(false),
   )
   let false_state = agent_state_test_initialize(
-      agent_protocol_state_new(
+      @protocol.agent_protocol_state_new(
         config=agent_state_test_config(Value(false_capabilities), Omitted),
       ),
       1,
@@ -771,11 +797,11 @@ test "omitted and null prompt and MCP capabilities reject each optional payload"
   )
   let states = [
     agent_state_test_initialize(
-      agent_protocol_state_new(config=omitted_config),
+      @protocol.agent_protocol_state_new(config=omitted_config),
       1,
     ).state,
     agent_state_test_initialize(
-      agent_protocol_state_new(config=null_caps_config),
+      @protocol.agent_protocol_state_new(config=null_caps_config),
       1,
     ).state,
   ]
@@ -795,21 +821,21 @@ test "omitted and null prompt and MCP capabilities reject each optional payload"
     "session/new", "{\"cwd\":\"/\",\"mcpServers\":[{\"type\":\"sse\",\"name\":\"events\",\"url\":\"https://example.test/events\",\"headers\":[]}]}",
   )
   for state in states {
-    try agent_protocol_reduce(state, Request(image)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(image)) catch {
       CapabilityDenied(method_name="session/prompt", capability="prompt.image") =>
         ()
       _ => fail("expected omitted/null image capability denial")
     } noraise {
       _ => fail("expected omitted/null image capability denial")
     }
-    try agent_protocol_reduce(state, Request(audio)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(audio)) catch {
       CapabilityDenied(method_name="session/prompt", capability="prompt.audio") =>
         ()
       _ => fail("expected omitted/null audio capability denial")
     } noraise {
       _ => fail("expected omitted/null audio capability denial")
     }
-    try agent_protocol_reduce(state, Request(embedded)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(embedded)) catch {
       CapabilityDenied(
         method_name="session/prompt",
         capability="prompt.embeddedContext"
@@ -818,13 +844,13 @@ test "omitted and null prompt and MCP capabilities reject each optional payload"
     } noraise {
       _ => fail("expected omitted/null embedded context capability denial")
     }
-    try agent_protocol_reduce(state, Request(http)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(http)) catch {
       CapabilityDenied(method_name="session/new", capability="mcp.http") => ()
       _ => fail("expected omitted/null HTTP MCP capability denial")
     } noraise {
       _ => fail("expected omitted/null HTTP MCP capability denial")
     }
-    try agent_protocol_reduce(state, Request(sse)) catch {
+    try @protocol.agent_protocol_reduce(state, Request(sse)) catch {
       CapabilityDenied(method_name="session/new", capability="mcp.sse") => ()
       _ => fail("expected omitted/null SSE MCP capability denial")
     } noraise {
@@ -917,11 +943,11 @@ test "B09 additional directories require a marker and omission is allowed" {
 ///|
 test "notifications become cancellation commands and require initialization" {
   let config = agent_state_test_config(Omitted, Omitted)
-  let initial = agent_protocol_state_new(config~)
+  let initial = @protocol.agent_protocol_state_new(config~)
   let cancel = agent_state_test_notification(
     "session/cancel", "{\"sessionId\":\"s\"}",
   )
-  try agent_protocol_reduce(initial, Notification(cancel)) catch {
+  try @protocol.agent_protocol_reduce(initial, Notification(cancel)) catch {
     NotInitialized(method_name="session/cancel") => ()
     _ => fail("expected pre-initialize notification rejection")
   } noraise {
@@ -929,11 +955,17 @@ test "notifications become cancellation commands and require initialization" {
   }
 
   let state = agent_state_test_initialize(initial, 1).state
-  let session_step = agent_protocol_reduce(state, Notification(cancel))
+  let session_step = @protocol.agent_protocol_reduce(
+    state,
+    Notification(cancel),
+  )
   assert_true(session_step.commands[0] is CancelSession(session_id="s"))
   let request_cancel = agent_state_test_notification(
     "$/cancel_request", "{\"requestId\":7}",
   )
-  let request_step = agent_protocol_reduce(state, Notification(request_cancel))
+  let request_step = @protocol.agent_protocol_reduce(
+    state,
+    Notification(request_cancel),
+  )
   assert_true(request_step.commands[0] is CancelRequest(request_id=Number(7)))
 }

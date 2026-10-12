@@ -11,7 +11,7 @@ async fn batch_expand_test_drain(reader : @runtime.RuntimeReaderPort) -> String 
   for ;; {
     match (reader.read)(3) {
       None => return collected.to_string()
-      Some(chunk) => collected.write_string(@utf8.decode(chunk.view()))
+      Some(chunk) => collected.write_string(@utf8.decode(chunk.exact_view()))
     }
   }
 }
@@ -28,7 +28,7 @@ async test "v2 batch expanding reader rewrites intact batches and passes lone fr
     ),
   )
   input.put(None)
-  let reader = experimental_v2_batch_expanding_reader(
+  let reader = @experimental.experimental_v2_batch_expanding_reader(
     reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
@@ -47,7 +47,7 @@ async test "v2 batch expanding reader passes fault batches byte-exact" {
     ),
   )
   input.put(None)
-  let reader = experimental_v2_batch_expanding_reader(
+  let reader = @experimental.experimental_v2_batch_expanding_reader(
     reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
@@ -64,7 +64,7 @@ async test "v2 batch expanding reader raises on a partial final line" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   input.put(batch_expand_test_chunk("{\"jsonrpc\":\"2.0\",\"id\":1"))
   input.put(None)
-  let reader = experimental_v2_batch_expanding_reader(
+  let reader = @experimental.experimental_v2_batch_expanding_reader(
     reader={ read: _ => input.get(), },
     max_frame_bytes=1024 * 1024,
   )
@@ -94,7 +94,7 @@ async test "v2 agent runner over batch expanding ports processes batched entries
   let failures : Array[
     (@jsonrpc.RequestId, @runtime.RuntimeOutboundFailureKind),
   ] = []
-  let ports = experimental_v2_batch_expanding_ports(
+  let ports = @experimental.experimental_v2_batch_expanding_ports(
     ports=experimental_v2_runtime_test_ports(
       input, output, written, traces, responses, failures,
     ),
@@ -109,9 +109,9 @@ async test "v2 agent runner over batch expanding ports processes batched entries
   @async.with_task_group(group => {
     group
     .spawn(() => {
-      experimental_v2_agent_runtime_run(
+      @experimental.experimental_v2_agent_runtime_run(
         endpoint~,
-        context=experimental_v2_agent_fail_fast_context(),
+        context=@experimental.experimental_v2_agent_fail_fast_context(),
         initial_state=experimental_v2_agent_test_adapter_state(endpoint),
         ports~,
         options=@runtime.runtime_default_options(),

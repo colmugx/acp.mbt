@@ -1,10 +1,12 @@
 ///|
-fn client_state_test_info(name : String) -> ExperimentalV2Implementation {
+fn client_state_test_info(
+  name : String,
+) -> @experimental.ExperimentalV2Implementation {
   { name, title: None, version: "1.0.0", meta: None, }
 }
 
 ///|
-fn client_state_test_marker() -> ExperimentalV2MarkerPayload {
+fn client_state_test_marker() -> @experimental.ExperimentalV2MarkerPayload {
   { meta: None, }
 }
 
@@ -12,7 +14,7 @@ fn client_state_test_marker() -> ExperimentalV2MarkerPayload {
 fn client_state_test_capabilities(
   form : Bool,
   url : Bool,
-) -> ExperimentalV2ClientCapabilities {
+) -> @experimental.ExperimentalV2ClientCapabilities {
   {
     elicitation: if form || url {
       MarkerSupported({
@@ -38,9 +40,9 @@ fn client_state_test_capabilities(
 ///|
 fn client_state_test_initialize_result(
   protocol_version : Int32,
-) -> ExperimentalV2InitializeResult raise {
-  experimental_v2_decode_initialize_result(
-    experimental_v2_parse_json(
+) -> @experimental.ExperimentalV2InitializeResult raise {
+  @experimental.experimental_v2_decode_initialize_result(
+    @experimental.experimental_v2_parse_json(
       "{\"protocolVersion\":\{protocol_version},\"info\":{\"name\":\"agent\",\"version\":\"1\"},\"capabilities\":{}}",
     ),
   )
@@ -48,20 +50,20 @@ fn client_state_test_initialize_result(
 
 ///|
 fn client_state_test_ready(
-  capabilities : ExperimentalV2ClientCapabilities,
-) -> ExperimentalV2ClientState raise {
-  let state = experimental_v2_client_state_new(capabilities~)
-  experimental_v2_client_reduce(
+  capabilities : @experimental.ExperimentalV2ClientCapabilities,
+) -> @experimental.ExperimentalV2ClientState raise {
+  let state = @experimental.experimental_v2_client_state_new(capabilities~)
+  @experimental.experimental_v2_client_reduce(
     state,
     InitializeResult(client_state_test_initialize_result(2)),
   ).state
 }
 
 ///|
-fn client_state_test_permission_request() -> ExperimentalV2ClientRequest raise {
+fn client_state_test_permission_request() -> @experimental.ExperimentalV2ClientRequest raise {
   SessionRequestPermission(
-    experimental_v2_decode_request_permission_request(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_request_permission_request(
+      @experimental.experimental_v2_parse_json(
         "{\"sessionId\":\"s\",\"title\":\"Run\",\"options\":[{\"optionId\":\"allow\",\"name\":\"Allow\",\"kind\":\"allow_once\"}]}",
       ),
     ),
@@ -71,19 +73,19 @@ fn client_state_test_permission_request() -> ExperimentalV2ClientRequest raise {
 ///|
 fn client_state_test_elicitation_request(
   source : String,
-) -> ExperimentalV2ClientRequest raise {
+) -> @experimental.ExperimentalV2ClientRequest raise {
   ElicitationCreate(
-    experimental_v2_decode_elicitation_create_request(
-      experimental_v2_parse_json(source),
+    @experimental.experimental_v2_decode_elicitation_create_request(
+      @experimental.experimental_v2_parse_json(source),
     ),
   )
 }
 
 ///|
-fn client_state_test_update_notification() -> ExperimentalV2ClientNotification raise {
+fn client_state_test_update_notification() -> @experimental.ExperimentalV2ClientNotification raise {
   SessionUpdate(
-    experimental_v2_decode_update_session_notification(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_update_session_notification(
+      @experimental.experimental_v2_parse_json(
         "{\"sessionId\":\"s\",\"update\":{\"sessionUpdate\":\"state_update\",\"state\":\"running\"}}",
       ),
     ),
@@ -91,22 +93,22 @@ fn client_state_test_update_notification() -> ExperimentalV2ClientNotification r
 }
 
 ///|
-fn client_state_test_complete_notification() -> ExperimentalV2ClientNotification raise {
+fn client_state_test_complete_notification() -> @experimental.ExperimentalV2ClientNotification raise {
   ElicitationComplete(
-    experimental_v2_decode_complete_elicitation_notification(
-      experimental_v2_parse_json("{\"elicitationId\":\"e\"}"),
+    @experimental.experimental_v2_decode_complete_elicitation_notification(
+      @experimental.experimental_v2_parse_json("{\"elicitationId\":\"e\"}"),
     ),
   )
 }
 
 ///|
 fn client_state_test_error(
-  state : ExperimentalV2ClientState,
-  event : ExperimentalV2ClientEvent,
-  expected : ExperimentalV2ClientProtocolError,
+  state : @experimental.ExperimentalV2ClientState,
+  event : @experimental.ExperimentalV2ClientEvent,
+  expected : @experimental.ExperimentalV2ClientProtocolError,
 ) -> Unit raise {
   let before = state
-  try experimental_v2_client_reduce(state, event) catch {
+  try @experimental.experimental_v2_client_reduce(state, event) catch {
     error => assert_eq(error, expected)
   } noraise {
     _ => fail("expected a typed rejection")
@@ -116,10 +118,13 @@ fn client_state_test_error(
 
 ///|
 fn client_state_test_dispatched_request(
-  state : ExperimentalV2ClientState,
-  request : ExperimentalV2ClientRequest,
+  state : @experimental.ExperimentalV2ClientState,
+  request : @experimental.ExperimentalV2ClientRequest,
 ) -> Unit raise {
-  let step = experimental_v2_client_reduce(state, AgentRequest(request))
+  let step = @experimental.experimental_v2_client_reduce(
+    state,
+    AgentRequest(request),
+  )
   assert_eq(step.commands.length(), 1)
   match step.commands[0] {
     DispatchRequest(_) => ()
@@ -129,10 +134,10 @@ fn client_state_test_dispatched_request(
 
 ///|
 fn client_state_test_dispatched_notification(
-  state : ExperimentalV2ClientState,
-  notification : ExperimentalV2ClientNotification,
+  state : @experimental.ExperimentalV2ClientState,
+  notification : @experimental.ExperimentalV2ClientNotification,
 ) -> Unit raise {
-  let step = experimental_v2_client_reduce(
+  let step = @experimental.experimental_v2_client_reduce(
     state,
     AgentNotification(notification),
   )
@@ -145,11 +150,13 @@ fn client_state_test_dispatched_notification(
 
 ///|
 fn client_state_test_denied(
-  state : ExperimentalV2ClientState,
-  request : ExperimentalV2ClientRequest,
+  state : @experimental.ExperimentalV2ClientState,
+  request : @experimental.ExperimentalV2ClientRequest,
   capability : String,
 ) -> Unit raise {
-  try experimental_v2_client_reduce(state, AgentRequest(request)) catch {
+  try
+    @experimental.experimental_v2_client_reduce(state, AgentRequest(request))
+  catch {
     CapabilityDenied(method_name="elicitation/create", capability=actual) =>
       assert_eq(actual, capability)
     _ => fail("expected elicitation/create to deny " + capability)
@@ -161,15 +168,15 @@ fn client_state_test_denied(
 ///|
 test "v2 client sends version two and readies on a version two result" {
   let capabilities = client_state_test_capabilities(false, false)
-  let params = experimental_v2_client_initialize_params(
+  let params = @experimental.experimental_v2_client_initialize_params(
     info=client_state_test_info("client"),
     capabilities~,
   )
   assert_eq(params.protocol_version, 2)
 
-  let state = experimental_v2_client_state_new(capabilities~)
+  let state = @experimental.experimental_v2_client_state_new(capabilities~)
   assert_eq(state.phase, ClientAwaitingInitialize)
-  let ready = experimental_v2_client_reduce(
+  let ready = @experimental.experimental_v2_client_reduce(
     state,
     InitializeResult(client_state_test_initialize_result(2)),
   )
@@ -184,10 +191,10 @@ test "v2 client sends version two and readies on a version two result" {
 
 ///|
 test "v2 client fails terminally on a mismatched negotiate result" {
-  let state = experimental_v2_client_state_new(
+  let state = @experimental.experimental_v2_client_state_new(
     capabilities=client_state_test_capabilities(false, false),
   )
-  let failed = experimental_v2_client_reduce(
+  let failed = @experimental.experimental_v2_client_reduce(
     state,
     InitializeResult(client_state_test_initialize_result(1)),
   )
@@ -211,7 +218,7 @@ test "v2 client fails terminally on a mismatched negotiate result" {
 
 ///|
 test "v2 client gates inbound traffic on readiness" {
-  let state = experimental_v2_client_state_new(
+  let state = @experimental.experimental_v2_client_state_new(
     capabilities=client_state_test_capabilities(true, true),
   )
   client_state_test_error(
@@ -231,7 +238,7 @@ test "v2 client gates inbound traffic on readiness" {
   )
 
   // Protocol-level cancellation is live before readiness.
-  let step = experimental_v2_client_reduce(
+  let step = @experimental.experimental_v2_client_reduce(
     state,
     AgentNotification(CancelRequest(RequestIdNumber(3L))),
   )

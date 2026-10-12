@@ -1,6 +1,8 @@
 ///|
-fn client_adapter_test_state(endpoint : ClientEndpoint) -> ClientAdapterState {
-  client_adapter_state_new(
+fn client_adapter_test_state(
+  endpoint : @client.ClientEndpoint,
+) -> @client.ClientAdapterState {
+  @client.client_adapter_state_new(
     protocol=client_protocol_state_ready(
       capabilities=Value(endpoint.capabilities()),
     ),
@@ -46,7 +48,7 @@ fn client_adapter_test_notification(
 
 ///|
 fn client_adapter_test_response(
-  step : ClientAdapterStep,
+  step : @client.ClientAdapterStep,
 ) -> JsonRpcResponse raise {
   assert_eq(step.outputs.length(), 1)
   match step.outputs[0] {
@@ -57,7 +59,7 @@ fn client_adapter_test_response(
 
 ///|
 fn client_adapter_test_success(
-  step : ClientAdapterStep,
+  step : @client.ClientAdapterStep,
   id : RequestId,
 ) -> Json raise {
   match client_adapter_test_response(step) {
@@ -71,7 +73,7 @@ fn client_adapter_test_success(
 
 ///|
 fn client_adapter_test_error_code(
-  step : ClientAdapterStep,
+  step : @client.ClientAdapterStep,
 ) -> JsonRpcErrorCode raise {
   match client_adapter_test_response(step) {
     Error(failure) => failure.error.code
@@ -81,8 +83,8 @@ fn client_adapter_test_error_code(
 
 ///|
 fn client_adapter_test_immediate(
-  admission : ClientAdapterAdmission,
-) -> ClientAdapterStep raise {
+  admission : @client.ClientAdapterAdmission,
+) -> @client.ClientAdapterStep raise {
   match admission {
     Immediate(step) => step
     Invoke(..) => fail("expected an immediate adapter step")
@@ -91,21 +93,21 @@ fn client_adapter_test_immediate(
 
 ///|
 async fn client_adapter_test_round_trip(
-  state : ClientAdapterState,
-  endpoint : ClientEndpoint,
+  state : @client.ClientAdapterState,
+  endpoint : @client.ClientEndpoint,
   message : JsonRpcMessage,
-) -> ClientAdapterStep raise ClientAdapterError {
-  match client_adapter_admit(state, endpoint, message) {
+) -> @client.ClientAdapterStep raise @client.ClientAdapterError {
+  match @client.client_adapter_admit(state, endpoint, message) {
     Immediate(step) => step
     Invoke(state=reserved, invocation~) => {
-      let completion = client_adapter_execute(invocation, endpoint)
-      client_adapter_complete(reserved, invocation, completion)
+      let completion = @client.client_adapter_execute(invocation, endpoint)
+      @client.client_adapter_complete(reserved, invocation, completion)
     }
   }
 }
 
 ///|
-fn client_adapter_test_full_endpoint() -> ClientEndpoint {
+fn client_adapter_test_full_endpoint() -> @client.ClientEndpoint {
   client_endpoint_test_endpoint("adapter", true)
 }
 
@@ -163,15 +165,15 @@ async fn client_adapter_test_permission_failed(
 ///|
 fn client_adapter_test_permission_endpoint(
   handler : async (RequestPermissionRequest) -> RequestPermissionResponse,
-) -> ClientEndpoint {
-  let spec = client_spec(
+) -> @client.ClientEndpoint {
+  let spec = @client.client_spec(
     info=client_service_test_info("permission-adapter"),
-    session=client_session_service(
+    session=@client.client_session_service(
       session_update=client_service_test_update,
       request_permission=handler,
     ),
   )
-  @reader.Reader::run(client_program(@reader.Reader::pure(spec)), ()).unwrap()
+  @reader.Reader::run(@client.client_program(@reader.Reader::pure(spec)), ()).unwrap()
 }
 
 ///|
@@ -397,7 +399,7 @@ async test "Client notifications stay side-effect free in the adapter" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)
   let update = match
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification(
@@ -405,8 +407,8 @@ async test "Client notifications stay side-effect free in the adapter" {
       ),
     ) {
     Invoke(state=reserved, invocation~) => {
-      let completion = client_adapter_execute(invocation, endpoint)
-      client_adapter_complete(reserved, invocation, completion)
+      let completion = @client.client_adapter_execute(invocation, endpoint)
+      @client.client_adapter_complete(reserved, invocation, completion)
     }
     Immediate(_) => fail("session/update must be invoked")
   }
@@ -414,7 +416,7 @@ async test "Client notifications stay side-effect free in the adapter" {
   assert_eq(update.outputs.length(), 0)
 
   let complete = match
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification(
@@ -422,8 +424,8 @@ async test "Client notifications stay side-effect free in the adapter" {
       ),
     ) {
     Invoke(state=reserved, invocation~) => {
-      let completion = client_adapter_execute(invocation, endpoint)
-      client_adapter_complete(reserved, invocation, completion)
+      let completion = @client.client_adapter_execute(invocation, endpoint)
+      @client.client_adapter_complete(reserved, invocation, completion)
     }
     Immediate(_) => fail("elicitation/complete must be invoked")
   }
@@ -431,7 +433,7 @@ async test "Client notifications stay side-effect free in the adapter" {
   assert_eq(complete.outputs.length(), 0)
 
   let cancel = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification(
@@ -446,7 +448,7 @@ async test "Client notifications stay side-effect free in the adapter" {
   }
 
   let cancel_number = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification("$/cancel_request", "{\"requestId\":7}"),
@@ -459,7 +461,7 @@ async test "Client notifications stay side-effect free in the adapter" {
   }
 
   let malformed_cancel = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification("$/cancel_request", "{}"),
@@ -477,7 +479,7 @@ async test "Client notifications stay side-effect free in the adapter" {
 test "Client adapter accepts unknown notifications as trace intents without responses" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)
-  let admission = client_adapter_admit(
+  let admission = @client.client_adapter_admit(
     state,
     endpoint,
     client_adapter_test_notification("vendor/unknown", "{}"),
@@ -505,21 +507,21 @@ test "Client adapter accepts unknown notifications as trace intents without resp
 
 ///|
 test "Client adapter rejects elicitation completion without URL capability" {
-  let form_only_elicitation = try! client_elicitation_service(
+  let form_only_elicitation = try! @client.client_elicitation_service(
     form=client_service_test_form,
     complete=client_service_test_complete,
   )
-  let form_only_spec = client_spec(
+  let form_only_spec = @client.client_spec(
     info=client_service_test_info("form-only-adapter"),
     session=client_service_test_session(),
     elicitation=form_only_elicitation,
   )
   let endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(form_only_spec)),
+    @client.client_program(@reader.Reader::pure(form_only_spec)),
     (),
   ).unwrap()
   match
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(endpoint),
       endpoint,
       client_adapter_test_notification(
@@ -541,7 +543,7 @@ test "Client adapter rejects elicitation completion without URL capability" {
 ///|
 async test "Client adapter invokes URL completion when capability is advertised" {
   let endpoint = client_adapter_test_full_endpoint()
-  let admission = client_adapter_admit(
+  let admission = @client.client_adapter_admit(
     client_adapter_test_state(endpoint),
     endpoint,
     client_adapter_test_notification(
@@ -550,8 +552,10 @@ async test "Client adapter invokes URL completion when capability is advertised"
   )
   match admission {
     Invoke(state=reserved, invocation~) => {
-      let completion = client_adapter_execute(invocation, endpoint)
-      let done = client_adapter_complete(reserved, invocation, completion)
+      let completion = @client.client_adapter_execute(invocation, endpoint)
+      let done = @client.client_adapter_complete(
+        reserved, invocation, completion,
+      )
       assert_eq(done.outputs.length(), 0)
     }
     Immediate(_) => fail("URL-enabled completion must invoke the handler")
@@ -563,7 +567,7 @@ test "Client adapter maps gates, malformed methods, and readiness" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)
   let unknown = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(Number(1), "vendor/unknown", "{}"),
@@ -572,7 +576,7 @@ test "Client adapter maps gates, malformed methods, and readiness" {
   assert_eq(client_adapter_test_error_code(unknown), MethodNotFound)
 
   let wrong_direction = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -585,7 +589,7 @@ test "Client adapter maps gates, malformed methods, and readiness" {
   assert_eq(client_adapter_test_error_code(wrong_direction), MethodNotFound)
 
   let malformed = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(Number(3), "fs/read_text_file", "{}"),
@@ -594,8 +598,8 @@ test "Client adapter maps gates, malformed methods, and readiness" {
   assert_eq(client_adapter_test_error_code(malformed), InvalidParams)
 
   let unready = client_adapter_test_immediate(
-    client_adapter_admit(
-      client_adapter_state_new(
+    @client.client_adapter_admit(
+      @client.client_adapter_state_new(
         protocol=client_protocol_state_new(
           capabilities=Value(endpoint.capabilities()),
         ),
@@ -610,17 +614,17 @@ test "Client adapter maps gates, malformed methods, and readiness" {
   )
   assert_eq(client_adapter_test_error_code(unready), InvalidRequest)
 
-  let read_only_spec = client_spec(
+  let read_only_spec = @client.client_spec(
     info=client_service_test_info("read-only-adapter"),
     session=client_service_test_session(),
     file_system=client_service_test_read_only_files(),
   )
   let read_only = @reader.Reader::run(
-    client_program(@reader.Reader::pure(read_only_spec)),
+    @client.client_program(@reader.Reader::pure(read_only_spec)),
     (),
   ).unwrap()
   let denied_write = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(read_only),
       read_only,
       client_adapter_test_request(
@@ -634,7 +638,7 @@ test "Client adapter maps gates, malformed methods, and readiness" {
 
   let minimal = client_endpoint_test_endpoint("minimal-adapter", false)
   let denied_terminal = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(minimal),
       minimal,
       client_adapter_test_request(
@@ -661,24 +665,26 @@ async test "Client adapter admits independent requests for owner scheduling" {
     "fs/write_text_file",
     "{\"sessionId\":\"session\",\"path\":\"/tmp/output\",\"content\":\"body\"}",
   )
-  let first = match client_adapter_admit(initial, endpoint, first_message) {
+  let first = match
+    @client.client_adapter_admit(initial, endpoint, first_message) {
     Invoke(state=reserved, invocation~) => (reserved, invocation)
     Immediate(_) => fail("first request must be invoked")
   }
-  let second = match client_adapter_admit(first.0, endpoint, second_message) {
+  let second = match
+    @client.client_adapter_admit(first.0, endpoint, second_message) {
     Invoke(state=reserved, invocation~) => (reserved, invocation)
     Immediate(_) => fail("second request must be invoked")
   }
-  let second_completion = client_adapter_execute(second.1, endpoint)
-  let after_second = client_adapter_complete(
+  let second_completion = @client.client_adapter_execute(second.1, endpoint)
+  let after_second = @client.client_adapter_complete(
     second.0,
     second.1,
     second_completion,
   )
   ignore(client_adapter_test_success(after_second, Number(2)))
 
-  let first_completion = client_adapter_execute(first.1, endpoint)
-  let after_first = client_adapter_complete(
+  let first_completion = @client.client_adapter_execute(first.1, endpoint)
+  let after_first = @client.client_adapter_complete(
     after_second.state,
     first.1,
     first_completion,
@@ -690,7 +696,7 @@ async test "Client adapter admits independent requests for owner scheduling" {
 async test "Client adapter completion matching is fail-fast" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)
-  let admission = client_adapter_admit(
+  let admission = @client.client_adapter_admit(
     state,
     endpoint,
     client_adapter_test_request(
@@ -703,25 +709,25 @@ async test "Client adapter completion matching is fail-fast" {
     Invoke(state=reserved, invocation~) => (reserved, invocation)
     Immediate(_) => fail("request must be invoked")
   }
-  let completion = client_adapter_execute(invocation, endpoint)
-  ignore(client_adapter_complete(reserved, invocation, completion))
+  let completion = @client.client_adapter_execute(invocation, endpoint)
+  ignore(@client.client_adapter_complete(reserved, invocation, completion))
 
-  let wrong : ClientAdapterCompletion = FsWriteTextFileCompleted(
+  let wrong : @client.ClientAdapterCompletion = FsWriteTextFileCompleted(
     id=Number(20),
     result=Ok({ meta: Omitted, }),
   )
-  try client_adapter_complete(reserved, invocation, wrong) catch {
+  try @client.client_adapter_complete(reserved, invocation, wrong) catch {
     CompletionMismatch(method_name="fs/read_text_file") => ()
     _ => fail("wrong completion must mismatch")
   } noraise {
     _ => fail("wrong completion must raise")
   }
 
-  let wrong_id : ClientAdapterCompletion = FsReadTextFileCompleted(
+  let wrong_id : @client.ClientAdapterCompletion = FsReadTextFileCompleted(
     id=Number(21),
     result=Ok({ content: "wrong", meta: Omitted, }),
   )
-  try client_adapter_complete(reserved, invocation, wrong_id) catch {
+  try @client.client_adapter_complete(reserved, invocation, wrong_id) catch {
     CompletionMismatch(method_name="fs/read_text_file") => ()
     _ => fail("wrong id must mismatch")
   } noraise {
@@ -733,7 +739,7 @@ async test "Client adapter completion matching is fail-fast" {
 async test "Client adapter notification completion is variant checked" {
   let endpoint = client_adapter_test_full_endpoint()
   let state = client_adapter_test_state(endpoint)
-  let admission = client_adapter_admit(
+  let admission = @client.client_adapter_admit(
     state,
     endpoint,
     client_adapter_test_notification(
@@ -744,32 +750,32 @@ async test "Client adapter notification completion is variant checked" {
     Invoke(state=reserved, invocation~) => (reserved, invocation)
     Immediate(_) => fail("notification must be invoked")
   }
-  let wrong : ClientAdapterCompletion = ElicitationCompleteCompleted(
+  let wrong : @client.ClientAdapterCompletion = ElicitationCompleteCompleted(
     result=Ok(()),
   )
-  try client_adapter_complete(reserved, invocation, wrong) catch {
+  try @client.client_adapter_complete(reserved, invocation, wrong) catch {
     CompletionMismatch(method_name="session/update") => ()
     _ => fail("wrong notification variant must mismatch")
   } noraise {
     _ => fail("wrong notification variant must raise")
   }
 
-  let completion = client_adapter_execute(invocation, endpoint)
-  let done = client_adapter_complete(reserved, invocation, completion)
+  let completion = @client.client_adapter_execute(invocation, endpoint)
+  let done = @client.client_adapter_complete(reserved, invocation, completion)
   assert_eq(done.outputs.length(), 0)
 
-  let failing_service = client_spec(
+  let failing_service = @client.client_spec(
     info=client_service_test_info("notification-failure"),
-    session=client_session_service(
+    session=@client.client_session_service(
       session_update=client_adapter_test_failing_update,
       request_permission=client_service_test_permission,
     ),
   )
   let failing_endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(failing_service)),
+    @client.client_program(@reader.Reader::pure(failing_service)),
     (),
   ).unwrap()
-  let failing_admission = client_adapter_admit(
+  let failing_admission = @client.client_adapter_admit(
     client_adapter_test_state(failing_endpoint),
     failing_endpoint,
     client_adapter_test_notification(
@@ -778,8 +784,12 @@ async test "Client adapter notification completion is variant checked" {
   )
   match failing_admission {
     Invoke(state=reserved, invocation~) => {
-      let completion = client_adapter_execute(invocation, failing_endpoint)
-      let trace = client_adapter_complete(reserved, invocation, completion)
+      let completion = @client.client_adapter_execute(
+        invocation, failing_endpoint,
+      )
+      let trace = @client.client_adapter_complete(
+        reserved, invocation, completion,
+      )
       match trace.outputs[0] {
         Command(TraceError(method_name="session/update", error~)) =>
           assert_eq(error.code, InternalError)
@@ -792,16 +802,16 @@ async test "Client adapter notification completion is variant checked" {
 
 ///|
 async test "Client adapter maps cancellation and redacts handler failures" {
-  let cancelled_files = try! client_file_system_service(
+  let cancelled_files = try! @client.client_file_system_service(
     read=client_adapter_test_application_cancelled,
   )
-  let cancelled_spec = client_spec(
+  let cancelled_spec = @client.client_spec(
     info=client_service_test_info("application-cancelled"),
     session=client_service_test_session(),
     file_system=cancelled_files,
   )
   let cancelled_endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(cancelled_spec)),
+    @client.client_program(@reader.Reader::pure(cancelled_spec)),
     (),
   ).unwrap()
   let cancelled = client_adapter_test_round_trip(
@@ -815,16 +825,16 @@ async test "Client adapter maps cancellation and redacts handler failures" {
   )
   assert_eq(client_adapter_test_error_code(cancelled), RequestCancelled)
 
-  let secret_files = try! client_file_system_service(
+  let secret_files = try! @client.client_file_system_service(
     read=client_adapter_test_secret_failure,
   )
-  let secret_spec = client_spec(
+  let secret_spec = @client.client_spec(
     info=client_service_test_info("secret-failure"),
     session=client_service_test_session(),
     file_system=secret_files,
   )
   let secret_endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(secret_spec)),
+    @client.client_program(@reader.Reader::pure(secret_spec)),
     (),
   ).unwrap()
   let secret = client_adapter_test_round_trip(
@@ -842,16 +852,16 @@ async test "Client adapter maps cancellation and redacts handler failures" {
     Success(_) => fail("secret failure must be an error")
   }
 
-  let thrown_files = try! client_file_system_service(
+  let thrown_files = try! @client.client_file_system_service(
     read=client_adapter_test_thrown_cancel,
   )
-  let thrown_spec = client_spec(
+  let thrown_spec = @client.client_spec(
     info=client_service_test_info("task-cancel"),
     session=client_service_test_session(),
     file_system=thrown_files,
   )
   let thrown_endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(thrown_spec)),
+    @client.client_program(@reader.Reader::pure(thrown_spec)),
     (),
   ).unwrap()
   let thrown = client_adapter_test_round_trip(
@@ -869,11 +879,11 @@ async test "Client adapter maps cancellation and redacts handler failures" {
 ///|
 test "Client adapter rejects endpoint mismatch and inbound responses" {
   let endpoint = client_adapter_test_full_endpoint()
-  let mismatched = client_adapter_state_new(
+  let mismatched = @client.client_adapter_state_new(
     protocol=client_protocol_state_ready(capabilities=Omitted),
   )
   try
-    client_adapter_admit(
+    @client.client_adapter_admit(
       mismatched,
       endpoint,
       client_adapter_test_request(Number(1), "vendor/unknown", "{}"),
@@ -889,7 +899,7 @@ test "Client adapter rejects endpoint mismatch and inbound responses" {
   let response = JsonRpcMessage::response(
     JsonRpcResponse::success(id=Number(1), result=Json::string("ok")),
   )
-  try client_adapter_admit(state, endpoint, response) catch {
+  try @client.client_adapter_admit(state, endpoint, response) catch {
     UnexpectedMessage(kind="response") => ()
     _ => fail("expected inbound response rejection")
   } noraise {

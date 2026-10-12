@@ -104,7 +104,7 @@ fn broker_channel_test_new_params(cwd : String) -> NewSessionParams {
 
 ///|
 fn broker_channel_test_request(frame : Bytes) -> @jsonrpc.JsonRpcRequest raise {
-  match jsonrpc_decode(@utf8.decode(frame.view())) {
+  match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Request(request) => request
     _ => fail("expected one JSON-RPC request frame")
   }
@@ -141,7 +141,7 @@ async test "client connection over channel submits forward requests with distinc
     let runner = group.spawn(() => broker_channel_test_run(ports, captured))
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = client_connection_over_channel(channel~)
+      let connection = @broker.client_connection_over_channel(channel~)
       let first = connection.new_session(
         broker_channel_test_new_params("/first"),
       )
@@ -203,7 +203,7 @@ async test "client connection over channel maps an undecodable reply to a typed 
     let runner = group.spawn(() => broker_channel_test_run(ports, captured))
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = client_connection_over_channel(channel~)
+      let connection = @broker.client_connection_over_channel(channel~)
       try {
         let _ = connection.new_session(broker_channel_test_new_params("/first"))
         fail("expected a typed client connection reply mismatch")
@@ -257,7 +257,7 @@ async test "client connection over channel submits engine cancel notifications" 
     let runner = group.spawn(() => broker_channel_test_run(ports, captured))
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = client_connection_over_channel(channel~)
+      let connection = @broker.client_connection_over_channel(channel~)
       // The synchronous notification port submits the bidirectional
       // cancellation through the real engine instead of failing fast; the
       // facade call only returns once the event-queue offer succeeded.
@@ -269,7 +269,7 @@ async test "client connection over channel submits engine cancel notifications" 
     input.put(None)
     runner.wait()
     assert_eq(output.length(), 1)
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Notification(notification) =>
         assert_eq(notification.method_name, "$/cancel_request")
       _ => fail("cancel_request must write exactly one $/cancel_request frame")
@@ -297,7 +297,7 @@ async test "client connection over channel submits session cancel notifications"
     let runner = group.spawn(() => broker_channel_test_run(ports, captured))
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = client_connection_over_channel(channel~)
+      let connection = @broker.client_connection_over_channel(channel~)
       // The stable v1 Client-to-Agent notification goes through the same
       // synchronous submission path; Ok records event-queue acceptance.
       connection.cancel({ session_id: "session", meta: Omitted, })
@@ -308,7 +308,7 @@ async test "client connection over channel submits session cancel notifications"
     input.put(None)
     runner.wait()
     assert_eq(output.length(), 1)
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Notification(notification) =>
         assert_eq(notification.method_name, "session/cancel")
       _ => fail("cancel must write exactly one session/cancel frame")
@@ -347,7 +347,7 @@ async test "client connection over channel maps closed notifications to typed un
     input.put(None)
     runner.wait()
     let channel = captured.get()
-    let connection = client_connection_over_channel(channel~)
+    let connection = @broker.client_connection_over_channel(channel~)
     try {
       connection.cancel({ session_id: "session", meta: Omitted, })
       observed.push("unexpected-success")

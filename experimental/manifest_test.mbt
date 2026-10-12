@@ -1,6 +1,6 @@
 ///|
 fn manifest_method_names(
-  methods : Array[ExperimentalV2Method],
+  methods : Array[@experimental.ExperimentalV2Method],
 ) -> Array[String] {
   let names : Array[String] = []
   for entry in methods {
@@ -11,7 +11,7 @@ fn manifest_method_names(
 
 ///|
 fn manifest_has_name(
-  methods : Array[ExperimentalV2Method],
+  methods : Array[@experimental.ExperimentalV2Method],
   wanted : String,
 ) -> Bool {
   for entry in methods {
@@ -24,7 +24,7 @@ fn manifest_has_name(
 
 ///|
 test "v2 manifest has the exact fixed method names" {
-  let methods = experimental_v2_method_manifest()
+  let methods = @experimental.experimental_v2_method_manifest()
   assert_eq(manifest_method_names(methods), [
     "initialize", "auth/login", "auth/logout", "session/new", "session/prompt", "session/list",
     "session/delete", "session/resume", "session/close", "session/set_config_option",
@@ -35,7 +35,7 @@ test "v2 manifest has the exact fixed method names" {
 
 ///|
 test "v2 manifest records request and notification directions" {
-  let methods = experimental_v2_method_manifest()
+  let methods = @experimental.experimental_v2_method_manifest()
   let mut client_requests = 0
   let mut client_notifications = 0
   let mut agent_requests = 0
@@ -61,7 +61,7 @@ test "v2 manifest records request and notification directions" {
 
 ///|
 test "v1-only and unstable overlay names are outside the v2 manifest" {
-  let methods = experimental_v2_method_manifest()
+  let methods = @experimental.experimental_v2_method_manifest()
   // Exact-set equality above is the exclusion proof for every absent name.
   // Keep the named checks as readable regression guards for the most likely
   // version mix-ups: v1-only methods and unstable-overlay methods.
@@ -83,8 +83,8 @@ test "v1-only and unstable overlay names are outside the v2 manifest" {
 
 ///|
 test "v2 manifest calls return independent arrays" {
-  let first = experimental_v2_method_manifest()
-  let second = experimental_v2_method_manifest()
+  let first = @experimental.experimental_v2_method_manifest()
+  let second = @experimental.experimental_v2_method_manifest()
   first.push({
     method_name: "test-only",
     direction: ClientToAgent,
@@ -98,8 +98,8 @@ test "v2 manifest calls return independent arrays" {
 /// Render one method entry as a sortable exact-set row.
 fn manifest_drift_row(
   method_name : String,
-  direction : ExperimentalV2MethodDirection,
-  kind : ExperimentalV2MethodKind,
+  direction : @experimental.ExperimentalV2MethodDirection,
+  kind : @experimental.ExperimentalV2MethodKind,
 ) -> String {
   let direction_text = match direction {
     ClientToAgent => "client->agent"
@@ -148,7 +148,7 @@ fn manifest_drift_contains(rows : Array[String], wanted : String) -> Bool {
 /// Any deviation from the pinned v2 shape aborts instead of guessing.
 fn pinned_v2_meta_rows(
   meta : Json,
-) -> Array[(String, ExperimentalV2MethodDirection)] {
+) -> Array[(String, @experimental.ExperimentalV2MethodDirection)] {
   let fields = match meta {
     Object(fields) => fields
     _ => abort("pinned v2 meta.json is not a JSON object")
@@ -160,8 +160,8 @@ fn pinned_v2_meta_rows(
       }
     _ => abort("pinned v2 meta.json is missing the numeric version field")
   }
-  let rows : Array[(String, ExperimentalV2MethodDirection)] = []
-  let groups : Array[(String, ExperimentalV2MethodDirection)] = [
+  let rows : Array[(String, @experimental.ExperimentalV2MethodDirection)] = []
+  let groups : Array[(String, @experimental.ExperimentalV2MethodDirection)] = [
     ("agentMethods", ClientToAgent),
     ("clientMethods", AgentToClient),
     ("protocolMethods", Bidirectional),
@@ -296,7 +296,7 @@ fn pinned_v2_schema_def_count(
 fn pinned_v2_direction_from_side(
   name : String,
   side : String,
-) -> ExperimentalV2MethodDirection {
+) -> @experimental.ExperimentalV2MethodDirection {
   match side {
     "agent" => ClientToAgent
     "client" => AgentToClient
@@ -316,7 +316,7 @@ fn pinned_v2_direction_from_side(
 fn pinned_v2_kind_from_count(
   name : String,
   count : Int32,
-) -> ExperimentalV2MethodKind {
+) -> @experimental.ExperimentalV2MethodKind {
   match count {
     1 => Notification
     2 => Request
@@ -379,7 +379,7 @@ async test "v2 manifest is the exact method set of the pinned v2 schema and meta
     expected.push(manifest_drift_row(name, side_direction, kind))
   }
   let actual : Array[String] = []
-  for entry in experimental_v2_method_manifest() {
+  for entry in @experimental.experimental_v2_method_manifest() {
     actual.push(
       manifest_drift_row(entry.method_name, entry.direction, entry.kind),
     )
@@ -415,10 +415,16 @@ async test "v2 unstable manifest is a deliberate session/fork subset of the pinn
       "pinned v2 meta.unstable.json does not list session/fork among its agent methods",
     )
   }
-  assert_eq(manifest_method_names(experimental_v2_unstable_method_manifest()), [
-    "session/fork",
-  ])
+  assert_eq(
+    manifest_method_names(
+      @experimental.experimental_v2_unstable_method_manifest(),
+    ),
+    ["session/fork"],
+  )
   assert_false(
-    manifest_has_name(experimental_v2_method_manifest(), "session/fork"),
+    manifest_has_name(
+      @experimental.experimental_v2_method_manifest(),
+      "session/fork",
+    ),
   )
 }

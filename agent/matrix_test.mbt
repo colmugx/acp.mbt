@@ -10,7 +10,7 @@
 
 ///|
 async fn agent_matrix_test_new_with_modes(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -43,7 +43,7 @@ async fn agent_matrix_test_new_with_modes(
 /// A buggy handler returning a degenerate empty session id.  The result codec
 /// must turn this into an observable failure, never a success response.
 async fn agent_matrix_test_empty_id_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -55,7 +55,7 @@ async fn agent_matrix_test_empty_id_new(
 /// them as an unavailable operation which the adapter maps to a typed
 /// resource-not-found error.
 async fn agent_matrix_test_load_unknown_session(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : LoadSessionParams,
 ) -> LoadSessionResult {
   @async.pause()
@@ -64,7 +64,7 @@ async fn agent_matrix_test_load_unknown_session(
 
 ///|
 async fn agent_matrix_test_delete_ok(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : DeleteSessionParams,
 ) -> DeleteSessionResult {
   @async.pause()
@@ -73,7 +73,7 @@ async fn agent_matrix_test_delete_ok(
 
 ///|
 async fn agent_matrix_test_delete_unknown_session(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : DeleteSessionParams,
 ) -> DeleteSessionResult {
   @async.pause()
@@ -84,7 +84,7 @@ async fn agent_matrix_test_delete_unknown_session(
 /// A fork addresses the new session id of the forked copy; history stays with
 /// the original session.
 async fn agent_matrix_test_fork(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ForkSessionParams,
 ) -> ForkSessionResult {
   @async.pause()
@@ -98,7 +98,7 @@ async fn agent_matrix_test_fork(
 
 ///|
 async fn agent_matrix_test_list(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : ListSessionsParams,
 ) -> ListSessionsResult {
   @async.pause()
@@ -139,7 +139,7 @@ fn agent_matrix_test_select_option() -> SessionConfigOption {
 ///|
 /// Returns the complete replacement option set after one update.
 async fn agent_matrix_test_set_config(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : SetSessionConfigOptionParams,
 ) -> SetSessionConfigOptionResult {
   @async.pause()
@@ -163,7 +163,7 @@ async fn agent_matrix_test_set_config(
 /// The final prompt response of a cancelled turn carries stopReason
 /// "cancelled" as a success result, not a JSON-RPC error.
 async fn agent_matrix_test_cancelled_prompt(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : PromptParams,
 ) -> PromptResult {
   @async.pause()
@@ -173,14 +173,14 @@ async fn agent_matrix_test_cancelled_prompt(
 
 ///|
 fn agent_matrix_test_endpoint(
-  new_session~ : AgentNewSessionHandler = agent_service_test_new,
-  prompt~ : AgentPromptHandler = agent_service_test_prompt,
-  load~ : AgentLoadSessionHandler = agent_service_test_load,
-  delete~ : AgentDeleteSessionHandler = agent_matrix_test_delete_ok,
-) -> AgentEndpoint {
-  let spec = agent_spec(
+  new_session~ : @agent.AgentNewSessionHandler = agent_service_test_new,
+  prompt~ : @agent.AgentPromptHandler = agent_service_test_prompt,
+  load~ : @agent.AgentLoadSessionHandler = agent_service_test_load,
+  delete~ : @agent.AgentDeleteSessionHandler = agent_matrix_test_delete_ok,
+) -> @agent.AgentEndpoint {
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("matrix"),
-    sessions=agent_session_service(
+    sessions=@agent.agent_session_service(
       new_session~,
       prompt~,
       cancel=agent_service_test_cancel,
@@ -193,31 +193,31 @@ fn agent_matrix_test_endpoint(
       set_mode=agent_adapter_test_set_mode,
       set_config_option=agent_matrix_test_set_config,
     ),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  agent_endpoint_from_spec(spec)
+  @agent.agent_endpoint_from_spec(spec)
 }
 
 ///|
 /// Required-operations-only endpoint: every optional session capability is
 /// omitted from the advertisement, so the matching methods must be denied
 /// before any handler exists to call.
-fn agent_matrix_test_minimal_endpoint() -> AgentEndpoint {
-  let spec = agent_spec(
+fn agent_matrix_test_minimal_endpoint() -> @agent.AgentEndpoint {
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("matrix-minimal"),
     sessions=agent_service_test_sessions(false),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  agent_endpoint_from_spec(spec)
+  @agent.agent_endpoint_from_spec(spec)
 }
 
 ///|
 fn agent_matrix_test_invoke_admission(
-  state : AgentAdapterState,
-  endpoint : AgentEndpoint,
+  state : @agent.AgentAdapterState,
+  endpoint : @agent.AgentEndpoint,
   message : JsonRpcMessage,
-) -> (AgentAdapterState, AgentAdapterInvocation) raise {
-  match agent_adapter_admit(state, endpoint, message) {
+) -> (@agent.AgentAdapterState, @agent.AgentAdapterInvocation) raise {
+  match @agent.agent_adapter_admit(state, endpoint, message) {
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => fail("expected an admitted typed invocation")
   }
@@ -227,7 +227,7 @@ fn agent_matrix_test_invoke_admission(
 async test "matrix C01 initialize response shape version auth and info are exact" {
   let endpoint = agent_matrix_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
-  let misordered = agent_adapter_admit(
+  let misordered = @agent.agent_adapter_admit(
     initial,
     endpoint,
     agent_adapter_test_request(
@@ -261,7 +261,7 @@ async test "matrix C01 initialize response shape version auth and info are exact
     agent_adapter_test_success(auth_initialized, Number(2)),
   )
   assert_eq(auth_decoded.auth_methods, auth_endpoint.auth_methods())
-  let duplicate = agent_adapter_admit(
+  let duplicate = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -283,7 +283,7 @@ async test "matrix C01 initialize response shape version auth and info are exact
 async test "matrix C02 authenticate admits only advertised method ids" {
   let endpoint = agent_adapter_test_auth_endpoint()
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))
-  let unknown = agent_adapter_admit(
+  let unknown = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -321,7 +321,7 @@ async test "matrix C04 session new validates cwd mcp and session id shape" {
   let endpoint = agent_matrix_test_endpoint()
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))
   let context = agent_service_test_context()
-  let relative_cwd = agent_adapter_admit(
+  let relative_cwd = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -337,7 +337,7 @@ async test "matrix C04 session new validates cwd mcp and session id shape" {
     }
     Invoke(..) => fail("a relative cwd must not invoke a handler")
   }
-  let relative_command = agent_adapter_admit(
+  let relative_command = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -405,7 +405,7 @@ async test "matrix C04 session new validates cwd mcp and session id shape" {
 async test "matrix C05 session load is gated typed and never aliases resume" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(
@@ -472,7 +472,7 @@ async test "matrix C05 session load is gated typed and never aliases resume" {
     ),
   )
   try
-    agent_adapter_complete(
+    @agent.agent_adapter_complete(
       admission.0,
       admission.1,
       SessionResumeCompleted(
@@ -492,7 +492,7 @@ async test "matrix C05 session load is gated typed and never aliases resume" {
 async test "matrix C06 session resume is gated and completes without replay" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(
@@ -538,7 +538,7 @@ async test "matrix C06 session resume is gated and completes without replay" {
     ),
   )
   try
-    agent_adapter_complete(
+    @agent.agent_adapter_complete(
       admission.0,
       admission.1,
       SessionLoadCompleted(
@@ -558,7 +558,7 @@ async test "matrix C06 session resume is gated and completes without replay" {
 async test "matrix session fork wire frame mirrors the resume recipe" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(
@@ -593,10 +593,10 @@ async test "matrix session fork wire frame mirrors the resume recipe" {
     }
     _ => fail("session/fork must admit a typed fork invocation")
   }
-  let forked = agent_adapter_complete(
+  let forked = @agent.agent_adapter_complete(
     admission.0,
     admission.1,
-    agent_adapter_execute(admission.1, endpoint, context),
+    @agent.agent_adapter_execute(admission.1, endpoint, context),
   )
   // The agent-to-client response addresses the fork copy by its new session
   // id; the original session id never appears in the result.
@@ -605,7 +605,7 @@ async test "matrix session fork wire frame mirrors the resume recipe" {
   )
   assert_eq(decoded.session_id, "matrix-fork-1")
   try
-    agent_adapter_complete(
+    @agent.agent_adapter_complete(
       admission.0,
       admission.1,
       SessionResumeCompleted(
@@ -625,7 +625,7 @@ async test "matrix session fork wire frame mirrors the resume recipe" {
 async test "matrix C07 session list filters pass through and paging is exact" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(Number(2), "session/list", "{}"),
@@ -655,10 +655,14 @@ async test "matrix C07 session list filters pass through and paging is exact" {
     }
     _ => fail("list filters must reach the handler as typed params")
   }
-  let listed = agent_adapter_complete(
+  let listed = @agent.agent_adapter_complete(
     admission.0,
     admission.1,
-    agent_adapter_execute(admission.1, endpoint, agent_service_test_context()),
+    @agent.agent_adapter_execute(
+      admission.1,
+      endpoint,
+      agent_service_test_context(),
+    ),
   )
   let decoded = list_sessions_result_from_json(
     agent_adapter_test_success(listed, Number(4)),
@@ -672,7 +676,7 @@ async test "matrix C07 session list filters pass through and paging is exact" {
 async test "matrix C08 session delete unknown id is typed resource not found" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(
@@ -732,7 +736,7 @@ async test "matrix C08 session delete unknown id is typed resource not found" {
 async test "matrix C09 session close is gated and completes typed" {
   let minimal = agent_matrix_test_minimal_endpoint()
   let minimal_initialized = agent_adapter_test_initialized(minimal, Number(1))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     minimal_initialized.state,
     minimal,
     agent_adapter_test_request(
@@ -774,7 +778,7 @@ async test "matrix C09 session close is gated and completes typed" {
 async test "matrix C10 set mode stays typed and mode states stay consistent" {
   let endpoint = agent_matrix_test_endpoint()
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))
-  let malformed = agent_adapter_admit(
+  let malformed = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(
@@ -836,7 +840,7 @@ async test "matrix C11 set config option returns the complete option set" {
   // the SDK never applies values itself, and boolean values additionally
   // require the negotiated client capability.
   let bare = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       agent_adapter_test_state(endpoint),
       endpoint,
       agent_adapter_test_request(
@@ -848,7 +852,7 @@ async test "matrix C11 set config option returns the complete option set" {
     Immediate(step) => step
     Invoke(..) => fail("initialize must complete synchronously")
   }
-  let denied = agent_adapter_admit(
+  let denied = @agent.agent_adapter_admit(
     bare.state,
     endpoint,
     agent_adapter_test_request(
@@ -911,10 +915,10 @@ async test "matrix C13 turn cancellation settles cancelled without side effects"
       assert_eq(cancel_params.session_id, "s")
     _ => fail("session/cancel must admit a typed cancel invocation")
   }
-  let cancelled = agent_adapter_complete(
+  let cancelled = @agent.agent_adapter_complete(
     cancel_admission.0,
     cancel_admission.1,
-    agent_adapter_execute(cancel_admission.1, endpoint, context),
+    @agent.agent_adapter_execute(cancel_admission.1, endpoint, context),
   )
   assert_eq(cancelled.state, initialized.state)
   assert_eq(cancelled.outputs.length(), 0)
@@ -944,7 +948,7 @@ async test "matrix C13 turn cancellation settles cancelled without side effects"
     agent_adapter_test_notification("session/cancel", "{\"sessionId\":\"s\"}"),
   )
   try
-    agent_adapter_complete(
+    @agent.agent_adapter_complete(
       late_admission.0,
       late_admission.1,
       SessionPromptCompleted(

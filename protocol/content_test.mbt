@@ -1,34 +1,34 @@
 ///|
-fn omitted_annotations() -> ProtocolNullable[Annotations] {
+fn omitted_annotations() -> @protocol.ProtocolNullable[@protocol.Annotations] {
   Omitted
 }
 
 ///|
-fn omitted_json() -> ProtocolNullable[Json] {
+fn omitted_json() -> @protocol.ProtocolNullable[Json] {
   Omitted
 }
 
 ///|
 test "all five content block variants round trip" {
-  let text : ContentBlock = Text({
+  let text : @protocol.ContentBlock = Text({
     annotations: omitted_annotations(),
     text: "hello",
     meta: omitted_json(),
   })
-  let image : ContentBlock = Image({
+  let image : @protocol.ContentBlock = Image({
     annotations: omitted_annotations(),
     data: "aGVsbG8=",
     mime_type: "image/png",
     uri: Value("https://example.test/image.png"),
     meta: omitted_json(),
   })
-  let audio : ContentBlock = Audio({
+  let audio : @protocol.ContentBlock = Audio({
     annotations: omitted_annotations(),
     data: "aGVsbG8=",
     mime_type: "audio/wav",
     meta: omitted_json(),
   })
-  let link : ContentBlock = ResourceLink({
+  let link : @protocol.ContentBlock = ResourceLink({
     annotations: omitted_annotations(),
     description: Value("a document"),
     mime_type: Value("text/plain"),
@@ -38,7 +38,7 @@ test "all five content block variants round trip" {
     uri: "file:///tmp/readme",
     meta: omitted_json(),
   })
-  let resource : ContentBlock = Resource({
+  let resource : @protocol.ContentBlock = Resource({
     annotations: omitted_annotations(),
     resource: Text({
       mime_type: Value("text/plain"),
@@ -48,39 +48,52 @@ test "all five content block variants round trip" {
     }),
     meta: omitted_json(),
   })
-  let blocks : Array[ContentBlock] = [text, image, audio, link, resource]
+  let blocks : Array[@protocol.ContentBlock] = [
+    text, image, audio, link, resource,
+  ]
   for block in blocks {
-    let encoded = content_block_to_json(block)
-    assert_eq(content_block_from_json(encoded), block)
+    let encoded = @protocol.content_block_to_json(block)
+    assert_eq(@protocol.content_block_from_json(encoded), block)
   }
 }
 
 ///|
 test "content wrappers preserve omitted and explicit null fields" {
-  let block : ContentBlock = Text({
+  let block : @protocol.ContentBlock = Text({
     annotations: Null,
     text: "nullable",
     meta: Null,
   })
-  let chunk : ContentChunk = { content: block, message_id: Null, meta: Null, }
-  let decoded_block = content_block_from_json(content_block_to_json(block))
-  let decoded_chunk = content_chunk_from_json(content_chunk_to_json(chunk))
+  let chunk : @protocol.ContentChunk = {
+    content: block,
+    message_id: Null,
+    meta: Null,
+  }
+  let decoded_block = @protocol.content_block_from_json(
+    @protocol.content_block_to_json(block),
+  )
+  let decoded_chunk = @protocol.content_chunk_from_json(
+    @protocol.content_chunk_to_json(chunk),
+  )
   assert_eq(decoded_block, block)
   assert_eq(decoded_chunk, chunk)
-  let wrapper : Content = { content: block, meta: Null, }
-  assert_eq(content_from_json(content_to_json(wrapper)), wrapper)
+  let wrapper : @protocol.Content = { content: block, meta: Null, }
+  assert_eq(
+    @protocol.content_from_json(@protocol.content_to_json(wrapper)),
+    wrapper,
+  )
 }
 
 ///|
 test "annotations round trip roles priority and metadata" {
-  let annotations : Annotations = {
+  let annotations : @protocol.Annotations = {
     audience: Value([User, Assistant]),
     last_modified: Value("2026-08-11T00:00:00Z"),
     priority: Value(0.75),
     meta: Value({ "trace": Json::string("kept") }),
   }
   assert_eq(
-    annotations_from_json(annotations_to_json(annotations)),
+    @protocol.annotations_from_json(@protocol.annotations_to_json(annotations)),
     annotations,
   )
 }
@@ -88,7 +101,9 @@ test "annotations round trip roles priority and metadata" {
 ///|
 test "content codecs reject malformed discriminators and fields" {
   try
-    content_block_from_json(protocol_parse_json("{\"type\":\"video\"}"))
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json("{\"type\":\"video\"}"),
+    )
   catch {
     InvalidDiscriminator(path="content.type", value="video") => ()
     _ => fail("expected unknown content discriminator")
@@ -96,8 +111,8 @@ test "content codecs reject malformed discriminators and fields" {
     _ => fail("expected content decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json("{\"type\":\"text\",\"text\":3}"),
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json("{\"type\":\"text\",\"text\":3}"),
     )
   catch {
     ExpectedString(path="content.text") => ()
@@ -106,7 +121,9 @@ test "content codecs reject malformed discriminators and fields" {
     _ => fail("expected text decoding to fail")
   }
   try
-    content_block_from_json(protocol_parse_json("{\"type\":\"text\"}"))
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json("{\"type\":\"text\"}"),
+    )
   catch {
     MissingField(path="content.text") => ()
     _ => fail("expected missing text error")
@@ -114,8 +131,10 @@ test "content codecs reject malformed discriminators and fields" {
     _ => fail("expected text decoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json("{\"type\":\"text\",\"text\":\"ok\",\"extra\":true}"),
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
+        "{\"type\":\"text\",\"text\":\"ok\",\"extra\":true}",
+      ),
     )
   catch {
     UnknownField(path="content.extra") => ()
@@ -127,22 +146,22 @@ test "content codecs reject malformed discriminators and fields" {
 
 ///|
 test "media and blob payloads validate base64 without fallback" {
-  let bad_image : ContentBlock = Image({
+  let bad_image : @protocol.ContentBlock = Image({
     annotations: omitted_annotations(),
     data: "%%%",
     mime_type: "image/png",
     uri: Omitted,
     meta: omitted_json(),
   })
-  try content_block_to_json(bad_image) catch {
+  try @protocol.content_block_to_json(bad_image) catch {
     InvalidBase64(path="data") => ()
     _ => fail("expected image base64 validation")
   } noraise {
     _ => fail("expected image encoding to fail")
   }
   try
-    content_block_from_json(
-      protocol_parse_json(
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"audio\",\"data\":\"%%%\",\"mimeType\":\"audio/wav\"}",
       ),
     )
@@ -153,8 +172,8 @@ test "media and blob payloads validate base64 without fallback" {
     _ => fail("expected audio decoding to fail")
   }
   try
-    embedded_resource_resource_from_json(
-      protocol_parse_json(
+    @protocol.embedded_resource_resource_from_json(
+      @protocol.protocol_parse_json(
         "{\"text\":\"text\",\"blob\":\"aA==\",\"uri\":\"file:///x\"}",
       ),
     )
@@ -168,20 +187,22 @@ test "media and blob payloads validate base64 without fallback" {
 
 ///|
 test "embedded blob resources validate payload shape and base64" {
-  let blob : BlobResourceContents = {
+  let blob : @protocol.BlobResourceContents = {
     blob: "aGVsbG8=",
     mime_type: Value("application/octet-stream"),
     uri: "file:///tmp/blob",
     meta: omitted_json(),
   }
   assert_eq(
-    blob_resource_contents_from_json(blob_resource_contents_to_json(blob)),
+    @protocol.blob_resource_contents_from_json(
+      @protocol.blob_resource_contents_to_json(blob),
+    ),
     blob,
   )
 
   try
-    blob_resource_contents_from_json(
-      protocol_parse_json("{\"blob\":\"%%%\",\"uri\":\"file:///x\"}"),
+    @protocol.blob_resource_contents_from_json(
+      @protocol.protocol_parse_json("{\"blob\":\"%%%\",\"uri\":\"file:///x\"}"),
     )
   catch {
     InvalidBase64(path="resource.blob") => ()
@@ -190,13 +211,13 @@ test "embedded blob resources validate payload shape and base64" {
     _ => fail("expected direct blob decoding to fail")
   }
 
-  let bad_blob : BlobResourceContents = {
+  let bad_blob : @protocol.BlobResourceContents = {
     blob: "%%%",
     mime_type: Omitted,
     uri: "file:///x",
     meta: omitted_json(),
   }
-  try blob_resource_contents_to_json(bad_blob) catch {
+  try @protocol.blob_resource_contents_to_json(bad_blob) catch {
     InvalidBase64(path="blob") => ()
     _ => fail("expected blob encoding base64 validation")
   } noraise {
@@ -204,8 +225,8 @@ test "embedded blob resources validate payload shape and base64" {
   }
 
   try
-    content_block_from_json(
-      protocol_parse_json(
+    @protocol.content_block_from_json(
+      @protocol.protocol_parse_json(
         "{\"type\":\"resource\",\"resource\":{\"blob\":\"%%%\",\"uri\":\"file:///x\"}}",
       ),
     )
@@ -217,7 +238,9 @@ test "embedded blob resources validate payload shape and base64" {
   }
 
   try
-    blob_resource_contents_from_json(protocol_parse_json("{\"blob\":\"aA==\"}"))
+    @protocol.blob_resource_contents_from_json(
+      @protocol.protocol_parse_json("{\"blob\":\"aA==\"}"),
+    )
   catch {
     MissingField(path="resource.uri") => ()
     _ => fail("expected blob uri requirement")
@@ -226,8 +249,8 @@ test "embedded blob resources validate payload shape and base64" {
   }
 
   try
-    embedded_resource_resource_from_json(
-      protocol_parse_json("{\"uri\":\"file:///x\"}"),
+    @protocol.embedded_resource_resource_from_json(
+      @protocol.protocol_parse_json("{\"uri\":\"file:///x\"}"),
     )
   catch {
     InvalidField(
@@ -242,38 +265,47 @@ test "embedded blob resources validate payload shape and base64" {
 
 ///|
 test "resource link size preserves exact signed int64 boundaries" {
-  let max = resource_link_from_json(
-    protocol_parse_json(
+  let max = @protocol.resource_link_from_json(
+    @protocol.protocol_parse_json(
       "{\"name\":\"max\",\"uri\":\"file:///max\",\"size\":9223372036854775807}",
     ),
   )
-  let min = resource_link_from_json(
-    protocol_parse_json(
+  let min = @protocol.resource_link_from_json(
+    @protocol.protocol_parse_json(
       "{\"name\":\"min\",\"uri\":\"file:///min\",\"size\":-9223372036854775808}",
     ),
   )
   assert_eq(max.size, Value(9223372036854775807L))
   assert_eq(min.size, Value(-9223372036854775808L))
-  assert_eq(resource_link_from_json(resource_link_to_json(max)), max)
-  assert_eq(resource_link_from_json(resource_link_to_json(min)), min)
+  assert_eq(
+    @protocol.resource_link_from_json(@protocol.resource_link_to_json(max)),
+    max,
+  )
+  assert_eq(
+    @protocol.resource_link_from_json(@protocol.resource_link_to_json(min)),
+    min,
+  )
 }
 
 ///|
 test "resource link size preserves values above the binary-safe range" {
-  let large = resource_link_from_json(
-    protocol_parse_json(
+  let large = @protocol.resource_link_from_json(
+    @protocol.protocol_parse_json(
       "{\"name\":\"large\",\"uri\":\"file:///large\",\"size\":9007199254740993}",
     ),
   )
   assert_eq(large.size, Value(9007199254740993L))
-  assert_eq(resource_link_from_json(resource_link_to_json(large)), large)
+  assert_eq(
+    @protocol.resource_link_from_json(@protocol.resource_link_to_json(large)),
+    large,
+  )
 
   // The core JSON parser may return a rounded, repr-less Double for this
   // decimal form.  The protocol must reject it rather than fabricate an
   // Int64 from the rounded value.
   try
-    resource_link_from_json(
-      protocol_parse_json(
+    @protocol.resource_link_from_json(
+      @protocol.protocol_parse_json(
         "{\"name\":\"rounded\",\"uri\":\"file:///rounded\",\"size\":9007199254740993.0}",
       ),
     )
@@ -287,13 +319,13 @@ test "resource link size preserves values above the binary-safe range" {
 
 ///|
 test "resource link size accepts integral exponents and rejects invalid int64 values" {
-  let positive_exponent = resource_link_from_json(
-    protocol_parse_json(
+  let positive_exponent = @protocol.resource_link_from_json(
+    @protocol.protocol_parse_json(
       "{\"name\":\"positive\",\"uri\":\"file:///positive\",\"size\":1e+3}",
     ),
   )
-  let negative_exponent = resource_link_from_json(
-    protocol_parse_json(
+  let negative_exponent = @protocol.resource_link_from_json(
+    @protocol.protocol_parse_json(
       "{\"name\":\"negative\",\"uri\":\"file:///negative\",\"size\":1000e-3}",
     ),
   )
@@ -306,7 +338,9 @@ test "resource link size accepts integral exponents and rejects invalid int64 va
       "{\"name\":\"positive-overflow\",\"uri\":\"file:///positive-overflow\",\"size\":9223372036854775808}",
       "{\"name\":\"negative-overflow\",\"uri\":\"file:///negative-overflow\",\"size\":-9223372036854775809}",
     ] {
-    try resource_link_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.resource_link_from_json(@protocol.protocol_parse_json(source))
+    catch {
       InvalidField(path="resource_link.size", reason=_) => ()
       _ => fail("expected invalid signed int64 size")
     } noraise {

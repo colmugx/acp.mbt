@@ -68,7 +68,7 @@ fn client_runtime_test_cancel(victim : String) -> String {
 
 ///|
 fn client_runtime_test_decode(frame : Bytes) -> JsonRpcResponse raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Response(response) => response
     _ => fail("expected one JSON-RPC response frame")
   }
@@ -94,7 +94,7 @@ fn client_runtime_test_error(
 
 ///|
 fn client_runtime_test_request(frame : Bytes) -> JsonRpcRequest raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Request(request) => request
     _ => fail("expected one JSON-RPC request frame")
   }
@@ -113,22 +113,22 @@ fn client_runtime_test_traced(
 /// One Client endpoint whose `fs/read_text_file` handler is supplied by the
 /// test, so inbound requests can be gated deterministically.
 fn client_runtime_test_read_endpoint(
-  read : ClientReadTextFileHandler,
-) -> ClientEndpoint {
-  let files = try! client_file_system_service(read~)
-  let spec = client_spec(
+  read : @client.ClientReadTextFileHandler,
+) -> @client.ClientEndpoint {
+  let files = try! @client.client_file_system_service(read~)
+  let spec = @client.client_spec(
     info=client_service_test_info("runtime-read"),
     session=client_service_test_session(),
     file_system=files,
   )
-  @reader.Reader::run(client_program(@reader.Reader::pure(spec)), ()).unwrap()
+  @reader.Reader::run(@client.client_program(@reader.Reader::pure(spec)), ()).unwrap()
 }
 
 ///|
 async test "client runtime bridge observes session updates and answers permissions" {
   let observed : Array[SessionUpdateParams] = []
   let arrived : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let session = client_session_service(
+  let session = @client.client_session_service(
     session_update=async fn(params : SessionUpdateParams) {
       observed.push(params)
       arrived.put(())
@@ -143,12 +143,12 @@ async test "client runtime bridge observes session updates and answers permissio
       }
     },
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("runtime-observe"),
     session~,
   )
   let endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(spec)),
+    @client.client_program(@reader.Reader::pure(spec)),
     (),
   ).unwrap()
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
@@ -160,7 +160,7 @@ async test "client runtime bridge observes session updates and answers permissio
   input.put(client_runtime_test_chunk(client_runtime_test_permission("perm")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -219,7 +219,7 @@ async test "client runtime bridge completes two requests in reverse order exactl
   input.put(client_runtime_test_chunk(client_runtime_test_read("second")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -271,7 +271,7 @@ async test "client runtime bridge cancels one pending request by typed id" {
   input.put(client_runtime_test_chunk(client_runtime_test_read("sibling")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -317,7 +317,7 @@ async test "client runtime bridge close aborts pending work and settles inbound"
   input.put(client_runtime_test_chunk(client_runtime_test_read("pending")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -352,7 +352,7 @@ async test "client runtime bridge surfaces a typed handler failure" {
   input.put(client_runtime_test_chunk(client_runtime_test_read("fails")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -386,7 +386,7 @@ async test "client runtime bridge traces an unknown notification without replyin
     ),
   )
   input.put(None)
-  client_runtime_run(
+  @client.client_runtime_run(
     endpoint~,
     initial_state=client_adapter_test_state(endpoint),
     ports~,
@@ -400,14 +400,16 @@ async test "client runtime bridge traces an unknown notification without replyin
 
 ///|
 async test "client runtime bridge rejects a capability-gated request without state change" {
-  let read_only = try! client_file_system_service(read=client_service_test_read)
-  let spec = client_spec(
+  let read_only = try! @client.client_file_system_service(
+    read=client_service_test_read,
+  )
+  let spec = @client.client_spec(
     info=client_service_test_info("runtime-gate"),
     session=client_service_test_session(),
     file_system=read_only,
   )
   let endpoint = @reader.Reader::run(
-    client_program(@reader.Reader::pure(spec)),
+    @client.client_program(@reader.Reader::pure(spec)),
     (),
   ).unwrap()
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
@@ -419,7 +421,7 @@ async test "client runtime bridge rejects a capability-gated request without sta
   input.put(client_runtime_test_chunk(client_runtime_test_read("after")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run(
+      @client.client_runtime_run(
         endpoint~,
         initial_state=client_adapter_test_state(endpoint),
         ports~,
@@ -490,7 +492,9 @@ fn client_runtime_test_outbound_ports(
 ///|
 async test "client runtime outbound serves inbound requests while forwarding" {
   let endpoint = client_endpoint_test_endpoint("runtime-outbound", true)
-  let connections : @aqueue.Queue[ClientConnection] = Queue(kind=Unbounded)
+  let connections : @aqueue.Queue[@client.ClientConnection] = Queue(
+    kind=Unbounded,
+  )
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
@@ -502,7 +506,7 @@ async test "client runtime outbound serves inbound requests while forwarding" {
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      client_runtime_run_with_outbound(
+      @client.client_runtime_run_with_outbound(
         endpoint_factory=channel => {
           // The factory is synchronous by engine contract, so the handoff
           // uses the non-blocking bounded try_put exactly like the engine's

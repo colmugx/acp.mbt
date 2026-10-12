@@ -1,48 +1,59 @@
 ///|
-fn fs_test_meta() -> ProtocolNullable[Json] {
+fn fs_test_meta() -> @protocol.ProtocolNullable[Json] {
   Value({ "source": Json::string("test") })
 }
 
 ///|
 test "filesystem host methods preserve nullable fields and round trip" {
-  let read : ReadTextFileParams = {
+  let read : @protocol.ReadTextFileParams = {
     session_id: "session-1",
     path: "/workspace/notes.txt",
     line: Value(2UL),
     limit: Null,
     meta: fs_test_meta(),
   }
-  let encoded_read = read_text_file_params_to_json(read)
-  let decoded_read = read_text_file_params_from_json(encoded_read) catch {
+  let encoded_read = @protocol.read_text_file_params_to_json(read)
+  let decoded_read = @protocol.read_text_file_params_from_json(encoded_read) catch {
     InvalidField(path~, reason~) =>
       fail(
-        path + ":" + reason + " wire=" + protocol_stringify_json(encoded_read),
+        path +
+        ":" +
+        reason +
+        " wire=" +
+        @protocol.protocol_stringify_json(encoded_read),
       )
     _ => fail("unexpected filesystem integer decode error")
   }
   assert_eq(decoded_read, read)
 
-  let read_result : ReadTextFileResult = { content: "héllo\n", meta: Omitted, }
+  let read_result : @protocol.ReadTextFileResult = {
+    content: "héllo\n",
+    meta: Omitted,
+  }
   assert_eq(
-    read_text_file_result_from_json(read_text_file_result_to_json(read_result)),
+    @protocol.read_text_file_result_from_json(
+      @protocol.read_text_file_result_to_json(read_result),
+    ),
     read_result,
   )
 
-  let write : WriteTextFileParams = {
+  let write : @protocol.WriteTextFileParams = {
     session_id: "session-1",
     path: "/workspace/notes.txt",
     content: "updated",
     meta: Null,
   }
   assert_eq(
-    write_text_file_params_from_json(write_text_file_params_to_json(write)),
+    @protocol.write_text_file_params_from_json(
+      @protocol.write_text_file_params_to_json(write),
+    ),
     write,
   )
 
-  let write_result : WriteTextFileResult = { meta: fs_test_meta(), }
+  let write_result : @protocol.WriteTextFileResult = { meta: fs_test_meta(), }
   assert_eq(
-    write_text_file_result_from_json(
-      write_text_file_result_to_json(write_result),
+    @protocol.write_text_file_result_from_json(
+      @protocol.write_text_file_result_to_json(write_result),
     ),
     write_result,
   )
@@ -51,8 +62,10 @@ test "filesystem host methods preserve nullable fields and round trip" {
 ///|
 test "filesystem host validation rejects unsafe paths and invalid windows" {
   try
-    read_text_file_params_from_json(
-      protocol_parse_json("{\"sessionId\":\"s\",\"path\":\"relative.txt\"}"),
+    @protocol.read_text_file_params_from_json(
+      @protocol.protocol_parse_json(
+        "{\"sessionId\":\"s\",\"path\":\"relative.txt\"}",
+      ),
     )
   catch {
     InvalidPath(path="fs/read_text_file.path", value="relative.txt") => ()
@@ -62,8 +75,8 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
   }
 
   try
-    read_text_file_params_from_json(
-      protocol_parse_json(
+    @protocol.read_text_file_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"s\",\"path\":\"/tmp/x\",\"line\":0}",
       ),
     )
@@ -75,8 +88,8 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
   }
 
   try
-    write_text_file_params_from_json(
-      protocol_parse_json(
+    @protocol.write_text_file_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"\",\"path\":\"/tmp/x\",\"content\":\"x\"}",
       ),
     )
@@ -88,8 +101,8 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
   }
 
   try
-    read_text_file_params_from_json(
-      protocol_parse_json(
+    @protocol.read_text_file_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"s\",\"path\":\"/tmp/x\",\"unknown\":true}",
       ),
     )
@@ -101,7 +114,7 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
   }
 
   try
-    read_text_file_params_to_json({
+    @protocol.read_text_file_params_to_json({
       session_id: "s",
       path: "/tmp/x",
       line: Value(0UL),
@@ -119,11 +132,15 @@ test "filesystem host validation rejects unsafe paths and invalid windows" {
 ///|
 test "filesystem uint64 windows preserve exact values and reject invalid numbers" {
   let source = "{\"sessionId\":\"s\",\"path\":\"/workspace/notes.txt\",\"line\":9007199254740993,\"limit\":18446744073709551615}"
-  let decoded = read_text_file_params_from_json(protocol_parse_json(source))
+  let decoded = @protocol.read_text_file_params_from_json(
+    @protocol.protocol_parse_json(source),
+  )
   assert_eq(decoded.line, Value(9007199254740993UL))
   assert_eq(decoded.limit, Value(18446744073709551615UL))
   assert_eq(
-    read_text_file_params_from_json(read_text_file_params_to_json(decoded)),
+    @protocol.read_text_file_params_from_json(
+      @protocol.read_text_file_params_to_json(decoded),
+    ),
     decoded,
   )
 
@@ -145,7 +162,11 @@ test "filesystem uint64 windows preserve exact values and reject invalid numbers
   ]
   for pair in invalid {
     let (source, expected_path) = pair
-    try read_text_file_params_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.read_text_file_params_from_json(
+        @protocol.protocol_parse_json(source),
+      )
+    catch {
       InvalidField(path=actual_path, reason=_) =>
         assert_eq(actual_path, expected_path)
       _ => fail("expected invalid filesystem uint64 value")

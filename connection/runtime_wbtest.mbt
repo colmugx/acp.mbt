@@ -209,7 +209,7 @@ async test "runtime preserves a typed handler error response" {
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(_)) => ()
     _ => fail("expected typed handler error response")
   }
@@ -255,7 +255,7 @@ async test "runtime cancellation completes the inbound request explicitly" {
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(failure)) => assert_eq(failure.error.code, RequestCancelled)
     _ => fail("expected cancellation error response")
   }
@@ -454,7 +454,7 @@ async test "runtime cancellation converts a late raised handler failure" {
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(failure)) => assert_eq(failure.error.code, RequestCancelled)
     _ => fail("expected cancellation error response")
   }
@@ -761,7 +761,7 @@ async test "runtime ignores duplicate handler completion exactly once" {
   assert_eq(late.length(), 1)
   match writer_queue.get() {
     RuntimeFrame(frame) =>
-      match jsonrpc_decode(@utf8.decode(frame.view())) {
+      match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
         Response(Success(response)) => assert_eq(response.id, Number(1))
         _ => fail("expected exactly one handler response")
       }
@@ -1339,7 +1339,7 @@ async test "runtime rejects completion with a mismatched task request" {
   )
   match writer_queue.get() {
     RuntimeFrame(frame) =>
-      match jsonrpc_decode(@utf8.decode(frame.view())) {
+      match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
         Response(Error(response)) => assert_eq(response.id, Number(2))
         _ => fail("mismatched completion must not produce a success response")
       }
@@ -1873,7 +1873,7 @@ async test "runtime applies owner commands in order" {
   }
   match writer_queue.get() {
     RuntimeFrame(frame) =>
-      match jsonrpc_decode(@utf8.decode(frame.view())) {
+      match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
         Notification(actual) => assert_eq(actual, notification)
         _ => fail("owner notification must be queued as a notification")
       }
@@ -2032,7 +2032,7 @@ async test "runtime owner runner emits immediate success response" {
   input.put(None)
   connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(41))
       assert_eq(response.result, Json::string("owner-success"))
@@ -2056,7 +2056,7 @@ async test "runtime owner runner emits immediate handler error response" {
   input.put(None)
   connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(response)) => {
       assert_eq(response.id, Number(42))
       assert_eq(response.error, error)
@@ -2084,7 +2084,7 @@ async test "runtime owner runner emits notification effect without response" {
   input.put(None)
   connection_runtime_run_owner(ports, runtime_test_options(), owner_port)
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Notification(actual) => assert_eq(actual, notification)
     _ => fail("owner notification effect must not produce a response")
   }
@@ -2137,14 +2137,14 @@ async test "runtime owner runner completes concurrent requests in reverse order 
   })
   assert_eq(start_order, [1, 2])
   assert_eq(output.length(), 2)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(2))
       assert_eq(response.result, Json::number(2.0, repr="2"))
     }
     _ => fail("first reverse completion response must be request two")
   }
-  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+  match jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(1))
       assert_eq(response.result, Json::number(1.0, repr="1"))
@@ -2195,7 +2195,7 @@ async test "runtime owner execute failure becomes one typed error response" {
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(response)) => {
       assert_eq(response.id, Number(43))
       assert_eq(response.error, error)
@@ -2242,7 +2242,7 @@ async test "runtime owner notification invoke applies effects without a response
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Notification(actual) => assert_eq(actual, notification)
     _ => fail("notification invoke must emit its wire effect only")
   }
@@ -3314,7 +3314,7 @@ async test "runtime applies immediate request completion before owner commands" 
     }
     match writer_queue.get() {
       RuntimeFrame(frame) =>
-        match jsonrpc_decode(@utf8.decode(frame.view())) {
+        match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
           Response(Success(response)) => {
             assert_eq(response.id, Number(41))
             assert_eq(response.result, Json::string("immediate-result"))
@@ -3325,7 +3325,7 @@ async test "runtime applies immediate request completion before owner commands" 
     }
     match writer_queue.get() {
       RuntimeFrame(frame) =>
-        match jsonrpc_decode(@utf8.decode(frame.view())) {
+        match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
           Notification(notification) =>
             assert_eq(notification, runtime_owner_test_notification())
           _ => fail("owner notification must follow immediate response")
@@ -3405,7 +3405,7 @@ async test "runtime engine returns generic dispatch state after close" {
   assert_eq(cancellations.length(), 2)
   assert_eq(closes.length(), 1)
   assert_eq(output.length(), 1)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(failure)) => assert_eq(failure.error.code, InternalError)
     _ => fail("expected close to flush the pending request failure")
   }
@@ -3538,7 +3538,7 @@ async test "runtime owner inbound cancel releases one task and keeps its sibling
   assert_eq(completed, [-1, 2])
   assert_eq(aborted, [])
   assert_eq(output.length(), 2)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(failure)) => {
       assert_eq(failure.id, Number(1))
       assert_eq(failure.error.code, RequestCancelled)
@@ -3546,7 +3546,7 @@ async test "runtime owner inbound cancel releases one task and keeps its sibling
     _ =>
       fail("cancelled request must settle with one RequestCancelled response")
   }
-  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+  match jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(2))
       match response.result {
@@ -3911,14 +3911,14 @@ async test "runtime owner tolerates benign wire cancels and keeps serving reques
   // Exactly two responses: the typed cancellation for request one and the
   // normal success for request two. No close, no synthesized extra frame.
   assert_eq(output.length(), 2)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(failure)) => {
       assert_eq(failure.id, Number(1))
       assert_eq(failure.error.code, RequestCancelled)
     }
     _ => fail("live cancel must still produce exactly one cancellation error")
   }
-  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+  match jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(2))
       assert_eq(response.result, Json::number(2.0, repr="2"))
@@ -4056,7 +4056,7 @@ async test "runtime owner eof close stops admission and empties pending work" {
   assert_true(shutdown.val)
   match writer_queue.get() {
     RuntimeFrame(frame) =>
-      match jsonrpc_decode(@utf8.decode(frame.view())) {
+      match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
         Response(Error(failure)) => {
           assert_eq(failure.id, Number(1))
           assert_eq(failure.error.code, InternalError)
@@ -4302,7 +4302,7 @@ async test "runtime dispatch admission failure leaves no task or pending leak" {
   for expected in expected_ids {
     match writer_queue.get() {
       RuntimeFrame(frame) =>
-        match jsonrpc_decode(@utf8.decode(frame.view())) {
+        match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
           Response(Error(failure)) => {
             assert_eq(failure.error.code, InternalError)
             assert_eq(failure.id, expected)
@@ -4383,7 +4383,7 @@ async test "runtime typed cancel failure settles its pending without leaks" {
   assert_eq(command_failures[0].error_kind, "task_control_missing")
   match writer_queue.get() {
     RuntimeFrame(frame) =>
-      match jsonrpc_decode(@utf8.decode(frame.view())) {
+      match jsonrpc_decode(@utf8.decode(frame.exact_view())) {
         Response(Error(failure)) => {
           assert_eq(failure.id, Number(1))
           assert_eq(failure.error.code, InternalError)
@@ -4471,14 +4471,14 @@ async test "runtime owner handler failure cleans its task without leaking siblin
   assert_eq(cancelled, [])
   assert_eq(aborted, [])
   assert_eq(output.length(), 2)
-  match jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Error(response)) => {
       assert_eq(response.id, Number(1))
       assert_eq(response.error, failure)
     }
     _ => fail("failed handler must settle with one typed error response")
   }
-  match jsonrpc_decode(@utf8.decode(output[1].view())) {
+  match jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
     Response(Success(response)) => {
       assert_eq(response.id, Number(2))
       match response.result {
@@ -4668,7 +4668,7 @@ async test "runtime outbound channel round-trips one request through the wire" {
       Error(_) => fail("channel round-trip must deliver the success response")
     }
     assert_eq(output.length(), 1)
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Request(request) => {
         assert_eq(request.id, Number(1))
         assert_eq(request.method_name, "ask")
@@ -4837,7 +4837,7 @@ async test "runtime outbound notification acks enqueue before flush" {
     input.put(None)
     runner.wait()
     assert_eq(output.length(), 1)
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Notification(notification) => assert_eq(notification.method_name, "note")
       _ => fail("channel must write exactly the submitted notification frame")
     }
@@ -4983,11 +4983,11 @@ async test "runtime outbound reverse replies reach each own waiter" {
       Error(_) => fail("first waiter must receive its own response")
     }
     assert_eq(output.length(), 2)
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Request(request) => assert_eq(request.method_name, "one")
       _ => fail("first frame must be the first request")
     }
-    match jsonrpc_decode(@utf8.decode(output[1].view())) {
+    match jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
       Request(request) => assert_eq(request.method_name, "two")
       _ => fail("second frame must be the second request")
     }
@@ -5171,7 +5171,7 @@ async test "runtime outbound sync notification reaches the wire without parking"
       (notification, response)
     })
     written.get()
-    match jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Notification(notification) =>
         assert_eq(notification.method_name, "session/cancel")
       _ => fail("sync submission must write exactly the notification frame")

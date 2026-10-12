@@ -2,8 +2,8 @@
 test "v2 initialize params round-trip with every optional field" {
   let decoded = model_test_round_trip(
     "{\"protocolVersion\":2,\"info\":{\"name\":\"client\",\"title\":\"Demo\",\"version\":\"1.0\",\"_meta\":{\"k\":1}},\"capabilities\":{\"elicitation\":{\"form\":{},\"url\":{}}},\"_meta\":{\"t\":2}}",
-    value => experimental_v2_decode_initialize_params(value),
-    experimental_v2_encode_initialize_params,
+    value => @experimental.experimental_v2_decode_initialize_params(value),
+    @experimental.experimental_v2_encode_initialize_params,
   )
   assert_eq(decoded.protocol_version, 2)
   assert_eq(decoded.info.title, Some("Demo"))
@@ -13,16 +13,16 @@ test "v2 initialize params round-trip with every optional field" {
 
 ///|
 test "v2 initialize params default omitted capabilities to the empty object" {
-  let decoded = experimental_v2_decode_initialize_params(
-    experimental_v2_parse_json(
+  let decoded = @experimental.experimental_v2_decode_initialize_params(
+    @experimental.experimental_v2_parse_json(
       "{\"protocolVersion\":2,\"info\":{\"name\":\"c\",\"version\":\"0\"}}",
     ),
   )
   assert_true(
     decoded.capabilities is { elicitation: MarkerUnsupported, meta: None, },
   )
-  let encoded = experimental_v2_require_object(
-    experimental_v2_encode_initialize_params(decoded),
+  let encoded = @experimental.experimental_v2_require_object(
+    @experimental.experimental_v2_encode_initialize_params(decoded),
     path="encoded",
   )
   assert_true(encoded.get("capabilities") is Some(Object(_)))
@@ -31,8 +31,8 @@ test "v2 initialize params default omitted capabilities to the empty object" {
 ///|
 test "v2 initialize params reject null capabilities and unknown fields" {
   try
-    experimental_v2_decode_initialize_params(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_initialize_params(
+      @experimental.experimental_v2_parse_json(
         "{\"protocolVersion\":2,\"info\":{\"name\":\"c\",\"version\":\"0\"},\"capabilities\":null}",
       ),
     )
@@ -43,8 +43,8 @@ test "v2 initialize params reject null capabilities and unknown fields" {
     _ => fail("expected ExpectedObject for null capabilities")
   }
   try
-    experimental_v2_decode_initialize_params(
-      experimental_v2_parse_json(
+    @experimental.experimental_v2_decode_initialize_params(
+      @experimental.experimental_v2_parse_json(
         "{\"protocolVersion\":2,\"info\":{\"name\":\"c\",\"version\":\"0\"},\"clientInfo\":{}}",
       ),
     )
@@ -59,7 +59,9 @@ test "v2 initialize params reject null capabilities and unknown fields" {
 ///|
 test "v2 initialize params pin protocolVersion to uint16" {
   let decode_version = source => {
-    experimental_v2_decode_initialize_params(experimental_v2_parse_json(source))
+    @experimental.experimental_v2_decode_initialize_params(
+      @experimental.experimental_v2_parse_json(source),
+    )
   }
   let base = "{\"protocolVersion\":REPLACE,\"info\":{\"name\":\"c\",\"version\":\"0\"}}"
   try decode_version(base.replace(old="REPLACE", new="65536")) catch {
@@ -105,8 +107,8 @@ test "v2 initialize params pin protocolVersion to uint16" {
 ///|
 test "v2 initialize params require a present info object" {
   try
-    experimental_v2_decode_initialize_params(
-      experimental_v2_parse_json("{\"protocolVersion\":2}"),
+    @experimental.experimental_v2_decode_initialize_params(
+      @experimental.experimental_v2_parse_json("{\"protocolVersion\":2}"),
     )
   catch {
     MissingField(path="initialize.info") => ()
@@ -115,8 +117,10 @@ test "v2 initialize params require a present info object" {
     _ => fail("expected MissingField for an absent info")
   }
   try
-    experimental_v2_decode_initialize_params(
-      experimental_v2_parse_json("{\"protocolVersion\":2,\"info\":null}"),
+    @experimental.experimental_v2_decode_initialize_params(
+      @experimental.experimental_v2_parse_json(
+        "{\"protocolVersion\":2,\"info\":null}",
+      ),
     )
   catch {
     ExpectedObject(path="initialize.info") => ()
@@ -130,19 +134,21 @@ test "v2 initialize params require a present info object" {
 test "v2 implementation round-trips optional title and meta" {
   let decoded = model_test_round_trip(
     "{\"name\":\"agent\",\"title\":null,\"version\":\"1.2\",\"_meta\":{\"os\":\"darwin\"}}",
-    value => experimental_v2_decode_implementation(value),
-    experimental_v2_encode_implementation,
+    value => @experimental.experimental_v2_decode_implementation(value),
+    @experimental.experimental_v2_encode_implementation,
   )
   assert_true(decoded.title is None)
   assert_true(
-    experimental_v2_decode_implementation(
-      experimental_v2_parse_json("{\"name\":\"a\",\"version\":\"1\"}"),
+    @experimental.experimental_v2_decode_implementation(
+      @experimental.experimental_v2_parse_json(
+        "{\"name\":\"a\",\"version\":\"1\"}",
+      ),
     ).title
     is None,
   )
   try
-    experimental_v2_decode_implementation(
-      experimental_v2_parse_json("{\"name\":\"a\",\"version\":1}"),
+    @experimental.experimental_v2_decode_implementation(
+      @experimental.experimental_v2_parse_json("{\"name\":\"a\",\"version\":1}"),
     )
   catch {
     ExpectedString(path="info.version") => ()
@@ -156,8 +162,8 @@ test "v2 implementation round-trips optional title and meta" {
 test "v2 initialize result round-trips auth methods both known and open" {
   let decoded = model_test_round_trip(
     "{\"protocolVersion\":2,\"info\":{\"name\":\"a\",\"version\":\"1\"},\"capabilities\":{\"session\":{}},\"authMethods\":[{\"type\":\"agent\",\"methodId\":\"local\",\"name\":\"Local\",\"description\":null},{\"type\":\"_sso\",\"methodId\":\"s\",\"name\":\"SSO\",\"cfg\":true}]}",
-    value => experimental_v2_decode_initialize_result(value),
-    experimental_v2_encode_initialize_result,
+    value => @experimental.experimental_v2_decode_initialize_result(value),
+    @experimental.experimental_v2_encode_initialize_result,
   )
   guard decoded.auth_methods is Some([first, second]) else {
     fail("expected two decoded auth methods")
@@ -168,8 +174,8 @@ test "v2 initialize result round-trips auth methods both known and open" {
   assert_true(second is Extension(tag="_sso", ..))
   let bare = model_test_round_trip(
     "{\"protocolVersion\":2,\"info\":{\"name\":\"a\",\"version\":\"1\"}}",
-    value => experimental_v2_decode_initialize_result(value),
-    experimental_v2_encode_initialize_result,
+    value => @experimental.experimental_v2_decode_initialize_result(value),
+    @experimental.experimental_v2_encode_initialize_result,
   )
   assert_true(bare.auth_methods is None)
   assert_true(

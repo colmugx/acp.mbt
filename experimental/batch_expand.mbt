@@ -81,9 +81,9 @@ async fn experimental_v2_batch_expanding_read(
       } else {
         state.pending.length()
       }
-      let chunk = state.pending.view(start=0, end=take).to_owned()
+      let chunk = state.pending.exact_view(start=0, end=take).to_owned()
       state.pending = state.pending
-        .view(start=take, end=state.pending.length())
+        .exact_view(start=take, end=state.pending.length())
         .to_owned()
       return Some(chunk)
     }

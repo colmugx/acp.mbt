@@ -21,7 +21,7 @@ fn session_config_test_meta() -> ProtocolNullable[Json] {
 }
 
 ///|
-fn session_config_test_modes() -> SessionModeState {
+fn session_config_test_modes() -> @session.SessionModeState {
   {
     current_mode_id: "code",
     available_modes: [
@@ -81,69 +81,75 @@ fn session_config_test_select_option() -> SessionConfigOption {
 test "session modes and set mode data round trip" {
   let modes = session_config_test_modes()
   assert_eq(
-    session_mode_state_from_json(session_mode_state_to_json(modes)),
+    @session.session_mode_state_from_json(
+      @session.session_mode_state_to_json(modes),
+    ),
     modes,
   )
 
-  let params : SetSessionModeParams = {
+  let params : @session.SetSessionModeParams = {
     session_id: "s-mode",
     mode_id: "code",
     meta: Null,
   }
   assert_eq(
-    set_session_mode_params_from_json(set_session_mode_params_to_json(params)),
+    @session.set_session_mode_params_from_json(
+      @session.set_session_mode_params_to_json(params),
+    ),
     params,
   )
-  let result : SetSessionModeResult = {
+  let result : @session.SetSessionModeResult = {
     meta: Value({ "ok": Json::boolean(true) }),
   }
   assert_eq(
-    set_session_mode_result_from_json(set_session_mode_result_to_json(result)),
+    @session.set_session_mode_result_from_json(
+      @session.set_session_mode_result_to_json(result),
+    ),
     result,
   )
 }
 
 ///|
 test "set config option preserves boolean and value id typed values" {
-  let boolean : SetSessionConfigOptionParams = {
+  let boolean : @session.SetSessionConfigOptionParams = {
     session_id: "s-config",
     config_id: "confirm",
     value: Boolean(false),
     meta: Null,
   }
   assert_eq(
-    set_session_config_option_params_from_json(
-      set_session_config_option_params_to_json(boolean),
+    @session.set_session_config_option_params_from_json(
+      @session.set_session_config_option_params_to_json(boolean),
     ),
     boolean,
   )
   assert_eq(
-    set_session_config_option_params_to_json(boolean),
+    @session.set_session_config_option_params_to_json(boolean),
     protocol_parse_json(
       "{\"sessionId\":\"s-config\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":false,\"_meta\":null}",
     ),
   )
 
-  let value_id : SetSessionConfigOptionParams = {
+  let value_id : @session.SetSessionConfigOptionParams = {
     session_id: "s-config",
     config_id: "model",
     value: ValueId("quality"),
     meta: Omitted,
   }
   assert_eq(
-    set_session_config_option_params_from_json(
-      set_session_config_option_params_to_json(value_id),
+    @session.set_session_config_option_params_from_json(
+      @session.set_session_config_option_params_to_json(value_id),
     ),
     value_id,
   )
   assert_eq(
-    set_session_config_option_params_to_json(value_id),
+    @session.set_session_config_option_params_to_json(value_id),
     protocol_parse_json(
       "{\"sessionId\":\"s-config\",\"configId\":\"model\",\"value\":\"quality\"}",
     ),
   )
 
-  let result : SetSessionConfigOptionResult = {
+  let result : @session.SetSessionConfigOptionResult = {
     config_options: [
       session_config_test_boolean_option(),
       session_config_test_select_option(),
@@ -151,8 +157,8 @@ test "set config option preserves boolean and value id typed values" {
     meta: Null,
   }
   assert_eq(
-    set_session_config_option_result_from_json(
-      set_session_config_option_result_to_json(result),
+    @session.set_session_config_option_result_from_json(
+      @session.set_session_config_option_result_to_json(result),
     ),
     result,
   )
@@ -182,7 +188,7 @@ test "config option categories and available command input retain wire shape" {
 ///|
 test "config mode and value errors are explicit" {
   try
-    session_mode_state_from_json(
+    @session.session_mode_state_from_json(
       protocol_parse_json(
         "{\"currentModeId\":\"ask\",\"availableModes\":[{\"id\":\"ask\",\"name\":\"Ask\",\"unknown\":true}]}",
       ),
@@ -195,7 +201,7 @@ test "config mode and value errors are explicit" {
   }
 
   try
-    session_mode_state_from_json(
+    @session.session_mode_state_from_json(
       protocol_parse_json("{\"currentModeId\":\"ask\"}"),
     )
   catch {
@@ -206,7 +212,7 @@ test "config mode and value errors are explicit" {
   }
 
   try
-    set_session_config_option_params_from_json(
+    @session.set_session_config_option_params_from_json(
       protocol_parse_json(
         "{\"sessionId\":\"s\",\"configId\":\"x\",\"type\":\"select\",\"value\":\"a\"}",
       ),
@@ -220,7 +226,7 @@ test "config mode and value errors are explicit" {
   }
 
   try
-    set_session_config_option_params_from_json(
+    @session.set_session_config_option_params_from_json(
       protocol_parse_json(
         "{\"sessionId\":\"s\",\"configId\":\"x\",\"value\":true}",
       ),
@@ -233,7 +239,7 @@ test "config mode and value errors are explicit" {
   }
 
   try
-    set_session_config_option_params_from_json(
+    @session.set_session_config_option_params_from_json(
       protocol_parse_json(
         "{\"sessionId\":\"s\",\"configId\":\"x\",\"type\":\"boolean\",\"value\":\"yes\"}",
       ),
@@ -246,7 +252,7 @@ test "config mode and value errors are explicit" {
   }
 
   try
-    set_session_config_option_params_from_json(
+    @session.set_session_config_option_params_from_json(
       protocol_parse_json(
         "{\"sessionId\":\"s\",\"configId\":\"x\",\"value\":\"a\",\"extra\":true}",
       ),
@@ -262,7 +268,7 @@ test "config mode and value errors are explicit" {
 ///|
 test "mode state rejects a current mode outside available modes" {
   try
-    session_mode_state_from_json(
+    @session.session_mode_state_from_json(
       protocol_parse_json(
         "{\"currentModeId\":\"gone\",\"availableModes\":[{\"id\":\"ask\",\"name\":\"Ask\"},{\"id\":\"code\",\"name\":\"Code\"}]}",
       ),
@@ -274,14 +280,14 @@ test "mode state rejects a current mode outside available modes" {
     _ => fail("expected unknown current mode rejection on decode")
   }
 
-  let inconsistent : SessionModeState = {
+  let inconsistent : @session.SessionModeState = {
     current_mode_id: "gone",
     available_modes: [
       { id: "ask", name: "Ask", description: Omitted, meta: Omitted, },
     ],
     meta: Omitted,
   }
-  try session_mode_state_to_json(inconsistent) catch {
+  try @session.session_mode_state_to_json(inconsistent) catch {
     InvalidField(path="currentModeId", reason=_) => ()
     _ => fail("expected unknown current mode rejection on encode")
   } noraise {
@@ -292,7 +298,9 @@ test "mode state rejects a current mode outside available modes" {
 ///|
 test "set config option result must carry the complete option set" {
   try
-    set_session_config_option_result_from_json(protocol_parse_json("{}"))
+    @session.set_session_config_option_result_from_json(
+      protocol_parse_json("{}"),
+    )
   catch {
     MissingField(path="session/set_config_option.configOptions") => ()
     _ => fail("expected missing complete configOptions rejection")

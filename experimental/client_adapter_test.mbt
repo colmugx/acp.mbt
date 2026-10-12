@@ -55,7 +55,7 @@ fn experimental_v2_client_test_cancel_frame(victim : String) -> String {
 
 ///|
 fn experimental_v2_client_test_success(
-  step : ExperimentalV2ClientAdapterStep,
+  step : @experimental.ExperimentalV2ClientAdapterStep,
 ) -> (@jsonrpc.RequestId, Json) raise {
   match step.outputs {
     [Response(Success(success))] => (success.id, success.result)
@@ -65,7 +65,7 @@ fn experimental_v2_client_test_success(
 
 ///|
 fn experimental_v2_client_test_error_code(
-  step : ExperimentalV2ClientAdapterStep,
+  step : @experimental.ExperimentalV2ClientAdapterStep,
 ) -> (@jsonrpc.JsonRpcId, @jsonrpc.JsonRpcErrorCode) raise {
   match step.outputs {
     [Response(Error(failure))] => (failure.id, failure.error.code)
@@ -76,12 +76,12 @@ fn experimental_v2_client_test_error_code(
 ///|
 test "v2 client adapter answers permission before initialize" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
-  let awaiting = experimental_v2_client_adapter_state_new(
-    protocol=experimental_v2_client_state_new(
+  let awaiting = @experimental.experimental_v2_client_adapter_state_new(
+    protocol=@experimental.experimental_v2_client_state_new(
       capabilities=endpoint.capabilities(),
     ),
   )
-  let admission = try! experimental_v2_client_adapter_admit(
+  let admission = try! @experimental.experimental_v2_client_adapter_admit(
     awaiting,
     endpoint,
     experimental_v2_client_test_message(
@@ -100,11 +100,11 @@ test "v2 client adapter answers permission before initialize" {
 
 ///|
 async test "v2 client adapter settles a selected permission outcome" {
-  let updates : Array[ExperimentalV2UpdateSessionNotification] = []
-  let permissions : Array[ExperimentalV2RequestPermissionRequest] = []
+  let updates : Array[@experimental.ExperimentalV2UpdateSessionNotification] = []
+  let permissions : Array[@experimental.ExperimentalV2RequestPermissionRequest] = []
   let endpoint = experimental_v2_client_test_endpoint(updates, permissions, [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let admission = try! experimental_v2_client_adapter_admit(
+  let admission = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -125,8 +125,10 @@ async test "v2 client adapter settles a selected permission outcome" {
     }
     _ => fail("expected a typed permission invocation")
   }
-  let completion = experimental_v2_client_execute(invocation, endpoint)
-  let step = try! experimental_v2_client_adapter_complete(
+  let completion = @experimental.experimental_v2_client_execute(
+    invocation, endpoint,
+  )
+  let step = try! @experimental.experimental_v2_client_adapter_complete(
     state, invocation, completion,
   )
   assert_eq(permissions.length(), 1)
@@ -147,11 +149,11 @@ async test "v2 client adapter settles a selected permission outcome" {
 test "v2 client adapter rejects an unoffered selected permission option" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let invocation : ExperimentalV2ClientInvocation = RequestPermissionInvocation(
+  let invocation : @experimental.ExperimentalV2ClientInvocation = RequestPermissionInvocation(
     id=String("perm"),
     params=experimental_v2_client_test_permission_request(),
   )
-  let step = try! experimental_v2_client_adapter_complete(
+  let step = try! @experimental.experimental_v2_client_adapter_complete(
     state,
     invocation,
     RequestPermissionCompleted(
@@ -170,11 +172,11 @@ test "v2 client adapter rejects an unoffered selected permission option" {
 test "v2 client adapter settles a cancelled permission handler" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let invocation : ExperimentalV2ClientInvocation = RequestPermissionInvocation(
+  let invocation : @experimental.ExperimentalV2ClientInvocation = RequestPermissionInvocation(
     id=String("perm"),
     params=experimental_v2_client_test_permission_request(),
   )
-  let step = try! experimental_v2_client_adapter_complete(
+  let step = try! @experimental.experimental_v2_client_adapter_complete(
     state,
     invocation,
     RequestPermissionCompleted(id=String("perm"), result=Err(Cancelled)),
@@ -199,7 +201,7 @@ async test "v2 client adapter dispatches form elicitation and gates url" {
     with_form=true,
   )
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let admission = try! experimental_v2_client_adapter_admit(
+  let admission = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -217,8 +219,10 @@ async test "v2 client adapter dispatches form elicitation and gates url" {
     }
     _ => fail("expected a typed elicitation invocation")
   }
-  let completion = experimental_v2_client_execute(invocation, endpoint)
-  let step = try! experimental_v2_client_adapter_complete(
+  let completion = @experimental.experimental_v2_client_execute(
+    invocation, endpoint,
+  )
+  let step = try! @experimental.experimental_v2_client_adapter_complete(
     state, invocation, completion,
   )
   assert_eq(form_replies, ["name?"])
@@ -229,7 +233,7 @@ async test "v2 client adapter dispatches form elicitation and gates url" {
   }
   // The url marker is absent, so a url-mode create is denied by capability
   // before any handler runs.
-  let denied = try! experimental_v2_client_adapter_admit(
+  let denied = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -244,7 +248,7 @@ async test "v2 client adapter dispatches form elicitation and gates url" {
     _ => fail("an unadvertised url elicitation must be immediate")
   }
   // Extension modes are denied by capability with their tag named.
-  let extension = try! experimental_v2_client_adapter_admit(
+  let extension = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -262,13 +266,13 @@ async test "v2 client adapter dispatches form elicitation and gates url" {
 
 ///|
 async test "v2 client adapter streams notifications through the sinks" {
-  let updates : Array[ExperimentalV2UpdateSessionNotification] = []
+  let updates : Array[@experimental.ExperimentalV2UpdateSessionNotification] = []
   let endpoint = experimental_v2_client_test_endpoint(updates, [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
   let update = experimental_v2_client_test_update_notification(
     Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
-  let admission = try! experimental_v2_client_adapter_admit(
+  let admission = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -285,15 +289,17 @@ async test "v2 client adapter streams notifications through the sinks" {
     SessionUpdateInvocation(params~) => assert_eq(params, update)
     _ => fail("expected a typed session/update invocation")
   }
-  let completion = experimental_v2_client_execute(invocation, endpoint)
-  let step = try! experimental_v2_client_adapter_complete(
+  let completion = @experimental.experimental_v2_client_execute(
+    invocation, endpoint,
+  )
+  let step = try! @experimental.experimental_v2_client_adapter_complete(
     state, invocation, completion,
   )
   assert_eq(step.outputs, [])
   assert_eq(step.state, state)
   assert_eq(updates, [update])
   // A failing sink produces one trace command and no response.
-  let failing = try! experimental_v2_client_adapter_complete(
+  let failing = try! @experimental.experimental_v2_client_adapter_complete(
     state,
     invocation,
     SessionUpdateCompleted(result=Err(Application(message="sink failed"))),
@@ -311,7 +317,7 @@ async test "v2 client adapter streams notifications through the sinks" {
     ),
   ])
   // elicitation/complete reaches its sink the same way.
-  let complete_admission = try! experimental_v2_client_adapter_admit(
+  let complete_admission = try! @experimental.experimental_v2_client_adapter_admit(
     experimental_v2_client_test_adapter_state(
       experimental_v2_client_test_endpoint([], [], [], with_complete=true),
     ),
@@ -335,7 +341,7 @@ async test "v2 client adapter streams notifications through the sinks" {
 test "v2 client adapter plans typed cancel for dollar-cancel-request" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let admission = try! experimental_v2_client_adapter_admit(
+  let admission = try! @experimental.experimental_v2_client_adapter_admit(
     state,
     endpoint,
     experimental_v2_client_test_message(
@@ -355,12 +361,12 @@ test "v2 client adapter plans typed cancel for dollar-cancel-request" {
 test "v2 client adapter rejects late and mismatched completions" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
   let state = experimental_v2_client_test_adapter_state(endpoint)
-  let invocation : ExperimentalV2ClientInvocation = RequestPermissionInvocation(
+  let invocation : @experimental.ExperimentalV2ClientInvocation = RequestPermissionInvocation(
     id=String("perm"),
     params=experimental_v2_client_test_permission_request(),
   )
   try
-    experimental_v2_client_adapter_complete(
+    @experimental.experimental_v2_client_adapter_complete(
       state,
       invocation,
       RequestPermissionCompleted(
@@ -375,7 +381,7 @@ test "v2 client adapter rejects late and mismatched completions" {
     _ => fail("expected a late completion failure")
   }
   try
-    experimental_v2_client_adapter_complete(
+    @experimental.experimental_v2_client_adapter_complete(
       state,
       invocation,
       ElicitationCreateCompleted(
@@ -395,13 +401,13 @@ test "v2 client adapter rejects late and mismatched completions" {
 ///|
 test "v2 client adapter rejects drifted endpoint capabilities" {
   let endpoint = experimental_v2_client_test_endpoint([], [], [])
-  let drifted = experimental_v2_client_adapter_state_new(
+  let drifted = @experimental.experimental_v2_client_adapter_state_new(
     protocol=experimental_v2_client_test_ready_state(
       capabilities=experimental_v2_client_test_capabilities(form=true),
     ),
   )
   try
-    experimental_v2_client_adapter_admit(
+    @experimental.experimental_v2_client_adapter_admit(
       drifted,
       endpoint,
       experimental_v2_client_test_message(
@@ -409,7 +415,7 @@ test "v2 client adapter rejects drifted endpoint capabilities" {
       ),
     )
   catch {
-    ExperimentalV2ClientAdapterError::EndpointMismatch(reason~) =>
+    @experimental.ExperimentalV2ClientAdapterError::EndpointMismatch(reason~) =>
       assert_eq(reason, "state capabilities do not match endpoint")
     _ => fail("expected an endpoint mismatch failure")
   } noraise {

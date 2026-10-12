@@ -882,7 +882,7 @@ async test "typed owner keeps the legacy connection runtime callable" {
     feeder.wait()
   })
   assert_eq(output.length(), 1)
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(success)) => assert_eq(success.id, Number(1))
     _ => fail("legacy runtime must still produce one response")
   }

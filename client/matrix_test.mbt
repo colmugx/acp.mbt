@@ -11,9 +11,9 @@
 
 ///|
 fn client_matrix_test_endpoint(
-  spec : Result[ClientSpec, ClientCompositionError],
-) -> ClientEndpoint {
-  @reader.Reader::run(client_program(@reader.Reader::pure(spec)), ()).unwrap()
+  spec : Result[@client.ClientSpec, ClientCompositionError],
+) -> @client.ClientEndpoint {
+  @reader.Reader::run(@client.client_program(@reader.Reader::pure(spec)), ()).unwrap()
 }
 
 ///|
@@ -40,7 +40,7 @@ fn client_matrix_test_update_kind(update : SessionUpdate) -> String {
 /// Assert that a rejected notification produced exactly one typed trace
 /// intent and no JSON-RPC response.
 fn client_matrix_test_trace_error(
-  admission : ClientAdapterAdmission,
+  admission : @client.ClientAdapterAdmission,
   method_name~ : String,
   code~ : JsonRpcErrorCode,
 ) -> Unit raise {
@@ -60,7 +60,7 @@ fn client_matrix_test_trace_error(
 /// Capture every delivered session update in the caller-owned typed sink.
 fn client_matrix_test_capture_updates(
   seen~ : Array[SessionUpdateParams],
-) -> ClientSessionUpdateHandler {
+) -> @client.ClientSessionUpdateHandler {
   async fn(params : SessionUpdateParams) -> Unit {
     @async.pause()
     seen.push(params)
@@ -70,7 +70,7 @@ fn client_matrix_test_capture_updates(
 ///|
 fn client_matrix_test_capture_read(
   seen~ : Array[ReadTextFileParams],
-) -> ClientReadTextFileHandler {
+) -> @client.ClientReadTextFileHandler {
   async fn(params : ReadTextFileParams) -> ReadTextFileResult {
     @async.pause()
     seen.push(params)
@@ -81,7 +81,7 @@ fn client_matrix_test_capture_read(
 ///|
 /// Model a missing file as the service-owned typed rejection: an unavailable
 /// operation that the adapter surfaces as resource-not-found.
-fn client_matrix_test_unavailable_read() -> ClientReadTextFileHandler {
+fn client_matrix_test_unavailable_read() -> @client.ClientReadTextFileHandler {
   async fn(_params : ReadTextFileParams) -> ReadTextFileResult {
     @async.pause()
     raise HandlerError::UnavailableOperation(method_name="fs/read_text_file")
@@ -91,7 +91,7 @@ fn client_matrix_test_unavailable_read() -> ClientReadTextFileHandler {
 ///|
 fn client_matrix_test_capture_write(
   seen~ : Array[WriteTextFileParams],
-) -> ClientWriteTextFileHandler {
+) -> @client.ClientWriteTextFileHandler {
   async fn(params : WriteTextFileParams) -> WriteTextFileResult {
     @async.pause()
     seen.push(params)
@@ -102,7 +102,7 @@ fn client_matrix_test_capture_write(
 ///|
 /// Model a failed write as an application failure that must remain visible
 /// as a JSON-RPC error, never a silent success.
-fn client_matrix_test_failing_write() -> ClientWriteTextFileHandler {
+fn client_matrix_test_failing_write() -> @client.ClientWriteTextFileHandler {
   async fn(_params : WriteTextFileParams) -> WriteTextFileResult {
     @async.pause()
     raise HandlerError::Application(message="disk full")
@@ -112,7 +112,7 @@ fn client_matrix_test_failing_write() -> ClientWriteTextFileHandler {
 ///|
 fn client_matrix_test_fixed_create(
   terminal_id : String,
-) -> ClientTerminalCreateHandler {
+) -> @client.ClientTerminalCreateHandler {
   async fn(_params : TerminalCreateParams) -> TerminalCreateResult {
     @async.pause()
     { terminal_id, meta: Omitted, }
@@ -122,7 +122,7 @@ fn client_matrix_test_fixed_create(
 ///|
 /// A buggy service returning a degenerate empty terminal id.  The result
 /// codec must turn this into an observable failure, never a success response.
-fn client_matrix_test_degenerate_create() -> ClientTerminalCreateHandler {
+fn client_matrix_test_degenerate_create() -> @client.ClientTerminalCreateHandler {
   async fn(_params : TerminalCreateParams) -> TerminalCreateResult {
     @async.pause()
     { terminal_id: "", meta: Omitted, }
@@ -135,7 +135,7 @@ fn client_matrix_test_degenerate_create() -> ClientTerminalCreateHandler {
 fn client_matrix_test_tracked_output(
   terminal_id~ : String,
   seen~ : Array[TerminalOutputParams],
-) -> ClientTerminalOutputHandler {
+) -> @client.ClientTerminalOutputHandler {
   async fn(params : TerminalOutputParams) -> TerminalOutputResult {
     @async.pause()
     seen.push(params)
@@ -159,7 +159,7 @@ fn client_matrix_test_tracked_output(
 ///|
 /// Return the final status by terminal id: normal exit or signal death.
 /// Unknown ids are the service-owned resource failure.
-fn client_matrix_test_status_wait() -> ClientTerminalWaitForExitHandler {
+fn client_matrix_test_status_wait() -> @client.ClientTerminalWaitForExitHandler {
   async fn(params : TerminalWaitForExitParams) -> TerminalWaitForExitResult {
     @async.pause()
     if params.terminal_id == "exit-0" {
@@ -180,7 +180,7 @@ fn client_matrix_test_status_wait() -> ClientTerminalWaitForExitHandler {
 fn client_matrix_test_release_once(
   terminal_id~ : String,
   released~ : Array[String],
-) -> ClientTerminalReleaseHandler {
+) -> @client.ClientTerminalReleaseHandler {
   async fn(params : TerminalReleaseParams) -> TerminalReleaseResult {
     @async.pause()
     if params.terminal_id == terminal_id && !released.contains(terminal_id) {
@@ -197,7 +197,7 @@ fn client_matrix_test_release_once(
 fn client_matrix_test_registry_output(
   terminal_id~ : String,
   released~ : Array[String],
-) -> ClientTerminalOutputHandler {
+) -> @client.ClientTerminalOutputHandler {
   async fn(params : TerminalOutputParams) -> TerminalOutputResult {
     @async.pause()
     if params.terminal_id == terminal_id && !released.contains(terminal_id) {
@@ -217,7 +217,7 @@ fn client_matrix_test_registry_output(
 fn client_matrix_test_form_result(
   result~ : ElicitationCreateResult,
   seen~ : Array[ElicitationFormParams],
-) -> ClientElicitationFormHandler {
+) -> @client.ClientElicitationFormHandler {
   async fn(params : ElicitationFormParams) -> ElicitationCreateResult {
     @async.pause()
     seen.push(params)
@@ -229,7 +229,7 @@ fn client_matrix_test_form_result(
 fn client_matrix_test_url_result(
   result~ : ElicitationCreateResult,
   seen~ : Array[ElicitationUrlParams],
-) -> ClientElicitationUrlHandler {
+) -> @client.ClientElicitationUrlHandler {
   async fn(params : ElicitationUrlParams) -> ElicitationCreateResult {
     @async.pause()
     seen.push(params)
@@ -243,7 +243,7 @@ fn client_matrix_test_url_result(
 fn client_matrix_test_registry_complete(
   active~ : Array[String],
   completed~ : Array[String],
-) -> ClientElicitationCompleteHandler {
+) -> @client.ClientElicitationCompleteHandler {
   async fn(params : ElicitationCompleteParams) -> Unit {
     @async.pause()
     if active.contains(params.elicitation_id) {
@@ -259,9 +259,9 @@ fn client_matrix_test_registry_complete(
 ///|
 async test "matrix D02 session update delivers every variant typed without responses" {
   let received : Array[SessionUpdateParams] = []
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-update"),
-    session=client_session_service(
+    session=@client.client_session_service(
       session_update=client_matrix_test_capture_updates(seen=received),
       request_permission=client_service_test_permission,
     ),
@@ -347,7 +347,7 @@ async test "matrix D02 session update delivers every variant typed without respo
     _ => fail("expected the usage_update fixture")
   }
   client_matrix_test_trace_error(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification(
@@ -358,7 +358,7 @@ async test "matrix D02 session update delivers every variant typed without respo
     code=InvalidParams,
   )
   client_matrix_test_trace_error(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification(
@@ -373,10 +373,10 @@ async test "matrix D02 session update delivers every variant typed without respo
 ///|
 async test "matrix D03 fs read text file is typed gated and strict" {
   let seen : Array[ReadTextFileParams] = []
-  let files = try! client_file_system_service(
+  let files = try! @client.client_file_system_service(
     read=client_matrix_test_capture_read(seen~),
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-read"),
     session=client_service_test_session(),
     file_system=files,
@@ -404,7 +404,7 @@ async test "matrix D03 fs read text file is typed gated and strict" {
   assert_eq(read.state, state)
 
   let relative = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -417,7 +417,7 @@ async test "matrix D03 fs read text file is typed gated and strict" {
   assert_eq(client_adapter_test_error_code(relative), InvalidParams)
 
   let zero_line = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -431,7 +431,7 @@ async test "matrix D03 fs read text file is typed gated and strict" {
 
   let minimal = client_endpoint_test_endpoint("matrix-read-minimal", false)
   let ungated = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(minimal),
       minimal,
       client_adapter_test_request(
@@ -445,10 +445,10 @@ async test "matrix D03 fs read text file is typed gated and strict" {
 
   // Boundary: file existence is service-owned; the missing-file rejection is
   // the handler's typed unavailable operation, surfaced as resource-not-found.
-  let missing_files = try! client_file_system_service(
+  let missing_files = try! @client.client_file_system_service(
     read=client_matrix_test_unavailable_read(),
   )
-  let missing_spec = client_spec(
+  let missing_spec = @client.client_spec(
     info=client_service_test_info("matrix-read-missing"),
     session=client_service_test_session(),
     file_system=missing_files,
@@ -469,10 +469,10 @@ async test "matrix D03 fs read text file is typed gated and strict" {
 ///|
 async test "matrix D04 fs write text file is typed and failures stay visible" {
   let seen : Array[WriteTextFileParams] = []
-  let files = try! client_file_system_service(
+  let files = try! @client.client_file_system_service(
     write=client_matrix_test_capture_write(seen~),
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-write"),
     session=client_service_test_session(),
     file_system=files,
@@ -504,7 +504,7 @@ async test "matrix D04 fs write text file is typed and failures stay visible" {
     ] {
     let (id, source) = case
     let rejected = client_adapter_test_immediate(
-      client_adapter_admit(
+      @client.client_adapter_admit(
         state,
         endpoint,
         client_adapter_test_request(Number(id), "fs/write_text_file", source),
@@ -515,10 +515,10 @@ async test "matrix D04 fs write text file is typed and failures stay visible" {
 
   // Boundary: write persistence is service-owned; a failed write must stay a
   // visible JSON-RPC error and never collapse into a success response.
-  let failing_files = try! client_file_system_service(
+  let failing_files = try! @client.client_file_system_service(
     write=client_matrix_test_failing_write(),
   )
-  let failing_spec = client_spec(
+  let failing_spec = @client.client_spec(
     info=client_service_test_info("matrix-write-failing"),
     session=client_service_test_session(),
     file_system=failing_files,
@@ -539,7 +539,7 @@ async test "matrix D04 fs write text file is typed and failures stay visible" {
 ///|
 async test "matrix D05 terminal create validates shape and terminal id" {
   let seen : Array[TerminalCreateParams] = []
-  let terminal = client_terminal_service(
+  let terminal = @client.client_terminal_service(
     create=async fn(params : TerminalCreateParams) -> TerminalCreateResult {
       @async.pause()
       seen.push(params)
@@ -550,7 +550,7 @@ async test "matrix D05 terminal create validates shape and terminal id" {
     kill=client_service_test_kill,
     release=client_service_test_release,
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-create"),
     session=client_service_test_session(),
     terminal~,
@@ -586,7 +586,7 @@ async test "matrix D05 terminal create validates shape and terminal id" {
   assert_eq(created.state, state)
 
   let relative_cwd = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -600,7 +600,7 @@ async test "matrix D05 terminal create validates shape and terminal id" {
 
   let minimal = client_endpoint_test_endpoint("matrix-create-minimal", false)
   let ungated = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(minimal),
       minimal,
       client_adapter_test_request(
@@ -614,14 +614,14 @@ async test "matrix D05 terminal create validates shape and terminal id" {
 
   // Boundary: process spawning is service-owned; the SDK still rejects a
   // degenerate empty terminalId result instead of acknowledging it.
-  let degenerate = client_terminal_service(
+  let degenerate = @client.client_terminal_service(
     create=client_matrix_test_degenerate_create(),
     output=client_service_test_output,
     wait_for_exit=client_service_test_wait,
     kill=client_service_test_kill,
     release=client_service_test_release,
   )
-  let degenerate_spec = client_spec(
+  let degenerate_spec = @client.client_spec(
     info=client_service_test_info("matrix-create-degenerate"),
     session=client_service_test_session(),
     terminal=degenerate,
@@ -642,7 +642,7 @@ async test "matrix D05 terminal create validates shape and terminal id" {
 ///|
 async test "matrix D06 terminal output is repeatable and result shape is exact" {
   let seen : Array[TerminalOutputParams] = []
-  let terminal = client_terminal_service(
+  let terminal = @client.client_terminal_service(
     create=client_matrix_test_fixed_create("matrix-terminal"),
     output=client_matrix_test_tracked_output(
       terminal_id="matrix-terminal",
@@ -652,7 +652,7 @@ async test "matrix D06 terminal output is repeatable and result shape is exact" 
     kill=client_service_test_kill,
     release=client_service_test_release,
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-output"),
     session=client_service_test_session(),
     terminal~,
@@ -689,7 +689,7 @@ async test "matrix D06 terminal output is repeatable and result shape is exact" 
   assert_eq(seen[1].terminal_id, "matrix-terminal")
 
   let malformed = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -717,14 +717,14 @@ async test "matrix D06 terminal output is repeatable and result shape is exact" 
 
 ///|
 async test "matrix D07 terminal wait for exit returns the final status" {
-  let terminal = client_terminal_service(
+  let terminal = @client.client_terminal_service(
     create=client_matrix_test_fixed_create("matrix-terminal"),
     output=client_service_test_output,
     wait_for_exit=client_matrix_test_status_wait(),
     kill=client_service_test_kill,
     release=client_service_test_release,
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-wait"),
     session=client_service_test_session(),
     terminal~,
@@ -762,7 +762,7 @@ async test "matrix D07 terminal wait for exit returns the final status" {
   assert_eq(signal_decoded.signal, Value("SIGTERM"))
 
   let malformed = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -790,7 +790,7 @@ async test "matrix D07 terminal wait for exit returns the final status" {
 ///|
 async test "matrix D08 terminal kill terminates without releasing the id" {
   let seen : Array[TerminalOutputParams] = []
-  let terminal = client_terminal_service(
+  let terminal = @client.client_terminal_service(
     create=client_matrix_test_fixed_create("matrix-terminal"),
     output=client_matrix_test_tracked_output(
       terminal_id="matrix-terminal",
@@ -800,7 +800,7 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
     kill=client_service_test_kill,
     release=client_service_test_release,
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-kill"),
     session=client_service_test_session(),
     terminal~,
@@ -835,7 +835,7 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
 
   // Kill and release are distinct typed operations; crossing their
   // completions fails fast instead of aliasing one into the other.
-  let admission = client_adapter_admit(
+  let admission = @client.client_adapter_admit(
     state,
     endpoint,
     client_adapter_test_request(
@@ -848,11 +848,11 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
     Invoke(state=reserved, invocation~) => (reserved, invocation)
     Immediate(_) => fail("terminal/kill must be invoked")
   }
-  let crossed : ClientAdapterCompletion = TerminalReleaseCompleted(
+  let crossed : @client.ClientAdapterCompletion = TerminalReleaseCompleted(
     id=Number(10),
     result=Ok({ meta: Omitted, }),
   )
-  try client_adapter_complete(reserved, invocation, crossed) catch {
+  try @client.client_adapter_complete(reserved, invocation, crossed) catch {
     CompletionMismatch(method_name="terminal/kill") => ()
     _ => fail("expected a kill/release completion mismatch")
   } noraise {
@@ -860,7 +860,7 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
   }
 
   let malformed = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_request(
@@ -876,7 +876,7 @@ async test "matrix D08 terminal kill terminates without releasing the id" {
 ///|
 async test "matrix D09 terminal release invalidates ids in the service" {
   let released : Array[String] = []
-  let terminal = client_terminal_service(
+  let terminal = @client.client_terminal_service(
     create=client_matrix_test_fixed_create("matrix-terminal"),
     output=client_matrix_test_registry_output(
       terminal_id="matrix-terminal",
@@ -889,7 +889,7 @@ async test "matrix D09 terminal release invalidates ids in the service" {
       released~,
     ),
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-release"),
     session=client_service_test_session(),
     terminal~,
@@ -961,10 +961,10 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
     meta: Omitted,
   }
   let form_files_spec = (result : ElicitationCreateResult) => {
-    let elicitation = try! client_elicitation_service(
+    let elicitation = try! @client.client_elicitation_service(
       form=client_matrix_test_form_result(result~, seen=form_seen),
     )
-    client_spec(
+    @client.client_spec(
       info=client_service_test_info("matrix-elicitation-form"),
       session=client_service_test_session(),
       elicitation~,
@@ -1015,11 +1015,11 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
   assert_eq(cancel_decoded.content, Omitted)
 
   let url_seen : Array[ElicitationUrlParams] = []
-  let url_elicitation = try! client_elicitation_service(
+  let url_elicitation = try! @client.client_elicitation_service(
     url=client_matrix_test_url_result(result=declined, seen=url_seen),
     complete=client_service_test_complete,
   )
-  let url_spec = client_spec(
+  let url_spec = @client.client_spec(
     info=client_service_test_info("matrix-elicitation-url"),
     session=client_service_test_session(),
     elicitation=url_elicitation,
@@ -1047,7 +1047,7 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
   // An unadvertised mode must not be displayed nor fabricate a response:
   // the capability gate rejects before any handler exists to call.
   let form_denied = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       url_state,
       url_endpoint,
       client_adapter_test_request(
@@ -1058,17 +1058,17 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
     ),
   )
   assert_eq(client_adapter_test_error_code(form_denied), ResourceNotFound)
-  let form_only_elicitation = try! client_elicitation_service(
+  let form_only_elicitation = try! @client.client_elicitation_service(
     form=client_service_test_form,
   )
-  let form_only_spec = client_spec(
+  let form_only_spec = @client.client_spec(
     info=client_service_test_info("matrix-elicitation-form-only"),
     session=client_service_test_session(),
     elicitation=form_only_elicitation,
   )
   let form_only_endpoint = client_matrix_test_endpoint(form_only_spec)
   let url_denied = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       client_adapter_test_state(form_only_endpoint),
       form_only_endpoint,
       client_adapter_test_request(
@@ -1082,7 +1082,7 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
 
   // Mode mixing is rejected by the strict codec before any handler runs.
   let mixed = client_adapter_test_immediate(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       accept_state,
       accept_endpoint,
       client_adapter_test_request(
@@ -1119,11 +1119,11 @@ async test "matrix D10 elicitation create outcomes are typed per mode" {
 async test "matrix D11 elicitation complete never finishes unknown ids" {
   let active : Array[String] = ["matrix-live"]
   let completed : Array[String] = []
-  let elicitation = try! client_elicitation_service(
+  let elicitation = try! @client.client_elicitation_service(
     url=client_service_test_url,
     complete=client_matrix_test_registry_complete(active~, completed~),
   )
-  let spec = client_spec(
+  let spec = @client.client_spec(
     info=client_service_test_info("matrix-complete"),
     session=client_service_test_session(),
     elicitation~,
@@ -1160,7 +1160,7 @@ async test "matrix D11 elicitation complete never finishes unknown ids" {
   assert_eq(completed, ["matrix-live"])
 
   client_matrix_test_trace_error(
-    client_adapter_admit(
+    @client.client_adapter_admit(
       state,
       endpoint,
       client_adapter_test_notification("elicitation/complete", "{}"),

@@ -460,7 +460,7 @@ fn jsonrpc_trim_leading_zeroes(text : String) -> String {
   if first == chars.length() {
     "0"
   } else {
-    text.sub(start=first).to_owned()
+    text.exact_view(start=first).to_owned()
   }
 }
 
@@ -515,7 +515,9 @@ fn jsonrpc_parse_int64_decimal(
         return Err(Fractional)
       }
     }
-    let integer_digits = digits.sub(end=digits.length() - remove).to_owned()
+    let integer_digits = digits
+      .exact_view(end=digits.length() - remove)
+      .to_owned()
     let sign = if start == 1 { "-" } else { "" }
     jsonrpc_parse_int64_text(sign + integer_digits)
   } else {

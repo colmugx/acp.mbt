@@ -99,7 +99,7 @@ fn agent_context_test_complete_params() -> ElicitationCompleteParams {
 ///|
 async fn agent_context_test_all_requests(
   request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   match request {
     SessionRequestPermission(params) => {
@@ -165,7 +165,7 @@ async fn agent_context_test_all_requests(
 ///|
 async fn agent_context_test_notifications(
   notification : ClientNotification,
-) -> Result[Unit, AgentContextError] {
+) -> Result[Unit, @agent.AgentContextError] {
   @async.pause()
   match notification {
     SessionUpdate(params) => assert_eq(params.session_id, "session")
@@ -179,8 +179,8 @@ async fn agent_context_test_notifications(
 }
 
 ///|
-fn agent_context_test_all_methods_context() -> AgentContext {
-  agent_context(
+fn agent_context_test_all_methods_context() -> @agent.AgentContext {
+  @agent.agent_context(
     request_broker=agent_context_test_all_requests,
     notification_broker=agent_context_test_notifications,
   )
@@ -227,14 +227,14 @@ async test "AgentContext exposes every typed Client request and notification" {
 ///|
 async fn agent_context_test_mismatch_request(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   Ok(AgentReplyFsReadTextFile({ content: "wrong", meta: Omitted, }))
 }
 
 ///|
 async test "AgentContext rejects a reply with the wrong typed variant" {
-  let context = agent_context(
+  let context = @agent.agent_context(
     request_broker=agent_context_test_mismatch_request,
     notification_broker=agent_context_test_notifications,
   )
@@ -252,7 +252,7 @@ async test "AgentContext rejects a reply with the wrong typed variant" {
 ///|
 async fn agent_context_test_unavailable_request(
   request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   Err(AgentContextUnavailable(method_name=request.method_name()))
 }
@@ -260,7 +260,7 @@ async fn agent_context_test_unavailable_request(
 ///|
 async fn agent_context_test_cancelled_request(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   Err(AgentContextCancelled(method_name="terminal/kill"))
 }
@@ -268,7 +268,7 @@ async fn agent_context_test_cancelled_request(
 ///|
 async fn agent_context_test_broker_failure_request(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   Err(AgentContextBrokerFailure(method_name="terminal/release"))
 }
@@ -276,14 +276,14 @@ async fn agent_context_test_broker_failure_request(
 ///|
 async fn agent_context_test_failing_notification(
   _notification : ClientNotification,
-) -> Result[Unit, AgentContextError] {
+) -> Result[Unit, @agent.AgentContextError] {
   @async.pause()
   Err(AgentContextBrokerFailure(method_name="session/update"))
 }
 
 ///|
 async test "AgentContext preserves typed unavailable cancellation and broker failures" {
-  let unavailable = agent_context(
+  let unavailable = @agent.agent_context(
     request_broker=agent_context_test_unavailable_request,
     notification_broker=agent_context_test_notifications,
   )
@@ -295,7 +295,7 @@ async test "AgentContext preserves typed unavailable cancellation and broker fai
     _ => fail("expected unavailable error")
   }
 
-  let cancelled = agent_context(
+  let cancelled = @agent.agent_context(
     request_broker=agent_context_test_cancelled_request,
     notification_broker=agent_context_test_notifications,
   )
@@ -307,7 +307,7 @@ async test "AgentContext preserves typed unavailable cancellation and broker fai
     _ => fail("expected cancellation error")
   }
 
-  let failed = agent_context(
+  let failed = @agent.agent_context(
     request_broker=agent_context_test_broker_failure_request,
     notification_broker=agent_context_test_failing_notification,
   )
@@ -332,7 +332,7 @@ async test "AgentContext preserves typed unavailable cancellation and broker fai
 ///|
 async fn agent_context_test_raise_cancelled(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   raise HandlerError::Cancelled
 }
@@ -340,7 +340,7 @@ async fn agent_context_test_raise_cancelled(
 ///|
 async fn agent_context_test_thrown_cancel(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.with_task_group(group => {
     let task = group.spawn(() => {
       @async.pause()
@@ -356,14 +356,14 @@ async fn agent_context_test_thrown_cancel(
 ///|
 async fn agent_context_test_raise_failure(
   _request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   raise HandlerError::Application(message="secret payload")
 }
 
 ///|
 async test "AgentContext distinguishes task cancellation from handler errors" {
-  let cancelled = agent_context(
+  let cancelled = @agent.agent_context(
     request_broker=agent_context_test_raise_cancelled,
     notification_broker=agent_context_test_notifications,
   )
@@ -377,7 +377,7 @@ async test "AgentContext distinguishes task cancellation from handler errors" {
     _ => fail("expected non-cancellation handler error mapping")
   }
 
-  let failed = agent_context(
+  let failed = @agent.agent_context(
     request_broker=agent_context_test_raise_failure,
     notification_broker=agent_context_test_notifications,
   )
@@ -393,14 +393,14 @@ async test "AgentContext distinguishes task cancellation from handler errors" {
 ///|
 async fn agent_context_test_thrown_notification_failure(
   _notification : ClientNotification,
-) -> Result[Unit, AgentContextError] {
+) -> Result[Unit, @agent.AgentContextError] {
   @async.pause()
   raise HandlerError::Application(message="notification secret")
 }
 
 ///|
 async test "AgentContext maps thrown notification failures with method" {
-  let context = agent_context(
+  let context = @agent.agent_context(
     request_broker=agent_context_test_all_requests,
     notification_broker=agent_context_test_thrown_notification_failure,
   )
@@ -415,7 +415,7 @@ async test "AgentContext maps thrown notification failures with method" {
 
 ///|
 async test "AgentContext maps actual task cancellation with method" {
-  let context = agent_context(
+  let context = @agent.agent_context(
     request_broker=agent_context_test_thrown_cancel,
     notification_broker=agent_context_test_notifications,
   )
@@ -433,7 +433,7 @@ async test "AgentContext maps actual task cancellation with method" {
 ///|
 async fn agent_context_test_first_context_request(
   request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   match request {
     SessionRequestPermission(_) =>
@@ -445,7 +445,7 @@ async fn agent_context_test_first_context_request(
 ///|
 async fn agent_context_test_second_context_request(
   request : ClientRequest,
-) -> Result[AgentOutboundReply, AgentContextError] {
+) -> Result[@agent.AgentOutboundReply, @agent.AgentContextError] {
   @async.pause()
   match request {
     SessionRequestPermission(_) =>
@@ -461,11 +461,11 @@ async fn agent_context_test_second_context_request(
 
 ///|
 async test "two AgentContext values keep caller transports isolated" {
-  let first = agent_context(
+  let first = @agent.agent_context(
     request_broker=agent_context_test_first_context_request,
     notification_broker=agent_context_test_notifications,
   )
-  let second = agent_context(
+  let second = @agent.agent_context(
     request_broker=agent_context_test_second_context_request,
     notification_broker=agent_context_test_notifications,
   )
@@ -481,7 +481,7 @@ async test "two AgentContext values keep caller transports isolated" {
 
 ///|
 async test "AgentContext defaults the clientInfo accessor to Omitted" {
-  let context = agent_context(
+  let context = @agent.agent_context(
     request_broker=agent_context_test_all_requests,
     notification_broker=agent_context_test_notifications,
   )

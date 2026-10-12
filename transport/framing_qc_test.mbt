@@ -81,11 +81,11 @@ fn framing_qc_chunks(sample : FramingFeedCase, payload : Bytes) -> Array[Bytes] 
     let cut = !sample.cuts.is_empty() &&
       sample.cuts[index % sample.cuts.length()]
     if cut && index + 1 < payload.length() {
-      chunks.push(payload.view(start~, end=index + 1).to_owned())
+      chunks.push(payload.exact_view(start~, end=index + 1).to_owned())
       start = index + 1
     }
   }
-  chunks.push(payload.view(start~, end=payload.length()).to_owned())
+  chunks.push(payload.exact_view(start~, end=payload.length()).to_owned())
   chunks
 }
 
@@ -95,10 +95,10 @@ test "framing property: chunk boundaries never change decoded frames" {
     (sample : FramingFeedCase) => {
       let payload = framing_qc_payload(sample)
       let chunks = framing_qc_chunks(sample, payload)
-      let mut state = framing_state(max_frame_bytes=payload.length())
+      let mut state = @transport.framing_state(max_frame_bytes=payload.length())
       let frames = []
       for chunk in chunks {
-        let step = framing_feed(state, chunk)
+        let step = @transport.framing_feed(state, chunk)
         state = step.state
         for frame in step.frames {
           frames.push(frame)
@@ -106,7 +106,7 @@ test "framing property: chunk boundaries never change decoded frames" {
       }
       // A completed stream must finish cleanly; a partial line would raise
       // UnexpectedEof and falsify the property.
-      ignore(framing_finish(state))
+      ignore(@transport.framing_finish(state))
       frames == sample.lines
     },
     count=300,
@@ -125,9 +125,9 @@ test "framing property: oversized frames are rejected under any chunking" {
       let oversized = { ..sample, lines, }
       let chunks = framing_qc_chunks(oversized, framing_qc_payload(oversized))
       try {
-        let mut state = framing_state(max_frame_bytes=8)
+        let mut state = @transport.framing_state(max_frame_bytes=8)
         for chunk in chunks {
-          let step = framing_feed(state, chunk)
+          let step = @transport.framing_feed(state, chunk)
           state = step.state
         }
         false

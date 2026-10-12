@@ -447,7 +447,7 @@ pub fn resource_link_to_json(
   match value.size {
     Omitted => ()
     Null => fields["size"] = Json::null()
-    Value(size) => fields["size"] = size.to_json()
+    Value(size) => fields["size"] = Json(size)
   }
   protocol_put_nullable(fields, "title", value.title, value => {
     Json::string(value)

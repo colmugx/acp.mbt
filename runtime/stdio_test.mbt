@@ -5,10 +5,10 @@
 /// rendered line carries all five trace fields in fixed order and ends with
 /// exactly one newline.
 test "stderr trace line renders one sanitized line per event" {
-  let event = runtime_trace_event(
+  let event = @runtime.runtime_trace_event(
     "outbound", "phase\ninjected", "id\u{0000}probe", "method\ttab", "writer_failed",
   )
-  let line = runtime_trace_stderr_line(event)
+  let line = @runtime.runtime_trace_stderr_line(event)
   assert_true(line.has_suffix("\n"))
   let mut newlines = 0
   for ch in line {
@@ -22,8 +22,8 @@ test "stderr trace line renders one sanitized line per event" {
   assert_true(line.contains("request_id=id?probe"))
   assert_true(line.contains("method=method?tab"))
   assert_true(line.contains("error=writer_failed"))
-  let unicode = runtime_trace_stderr_line(
-    runtime_trace_event("inbound", "p", "i", "méthode", "e"),
+  let unicode = @runtime.runtime_trace_stderr_line(
+    @runtime.runtime_trace_event("inbound", "p", "i", "méthode", "e"),
   )
   assert_true(unicode.contains("method=m?thode"))
 }
@@ -36,18 +36,18 @@ test "stderr trace line renders one sanitized line per event" {
 /// the request id — both sanitized.
 test "trace lines carry routing fields but never parse as protocol frames" {
   let lines = [
-    runtime_trace_stderr_line(
-      runtime_trace_event(
+    @runtime.runtime_trace_stderr_line(
+      @runtime.runtime_trace_event(
         "inbound", "cancel_requested", "42", "$/cancel_request", "cancel",
       ),
     ),
-    runtime_trace_stderr_line(
-      runtime_trace_event(
+    @runtime.runtime_trace_stderr_line(
+      @runtime.runtime_trace_event(
         "runtime", "owner_trace", "", "session/update", "owner",
       ),
     ),
-    runtime_trace_stderr_line(
-      runtime_trace_event("outbound", "writer_written", "", "", ""),
+    @runtime.runtime_trace_stderr_line(
+      @runtime.runtime_trace_event("outbound", "writer_written", "", "", ""),
     ),
   ]
   for line in lines {
@@ -74,11 +74,17 @@ test "trace lines carry routing fields but never parse as protocol frames" {
 /// same `read_some`/`write` shapes proven end-to-end over a real child
 /// process in `process_test.mbt`.
 test "runtime_stdio_ports binds real stdio with a total default trace" {
-  let ports = runtime_stdio_ports()
-  (ports.trace)(runtime_trace_event("runtime", "constructed", "", "", ""))
+  let ports = @runtime.runtime_stdio_ports()
+  (ports.trace)(
+    @runtime.runtime_trace_event("runtime", "constructed", "", "", ""),
+  )
   let observed : Array[String] = []
-  let traced = runtime_stdio_ports(trace=event => observed.push(event.phase))
-  (traced.trace)(runtime_trace_event("runtime", "observed", "", "", ""))
+  let traced = @runtime.runtime_stdio_ports(trace=event => {
+    observed.push(event.phase)
+  })
+  (traced.trace)(
+    @runtime.runtime_trace_event("runtime", "observed", "", "", ""),
+  )
   assert_eq(observed, ["observed"])
 }
 
@@ -92,11 +98,11 @@ async test "raw trace writer delivers bytes through a real file descriptor" {
   let (reader, writer) = @async_pipe.pipe()
   defer reader.close()
   let line = @utf8.encode(
-    runtime_trace_stderr_line(
-      runtime_trace_event("outbound", "writer_written", "", "", ""),
+    @runtime.runtime_trace_stderr_line(
+      @runtime.runtime_trace_event("outbound", "writer_written", "", "", ""),
     ),
   )
-  let written = runtime_libc_write(writer.fd(), line, line.length())
+  let written = @runtime.runtime_libc_write(writer.fd(), line, line.length())
   assert_eq(written, line.length())
   // The write end must close before draining: EOF is the only terminator the
   // reader accepts, mirroring how the default sink's fd-2 writes are

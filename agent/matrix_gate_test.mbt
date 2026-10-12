@@ -15,7 +15,7 @@
 /// adapter half of row G07; the engine half (owner_trace reaching the trace
 /// sink instead of the writer port) is proven in agent/runtime_test.mbt.
 fn agent_matrix_gate_test_trace_error(
-  admission : AgentAdapterAdmission,
+  admission : @agent.AgentAdapterAdmission,
   method_name~ : String,
   code~ : JsonRpcErrorCode,
 ) -> Unit raise {
@@ -46,7 +46,7 @@ async test "matrix A07 B02 non-v1 initialize keeps the agent pre-initialized" {
   let endpoint = agent_adapter_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
   let mismatch = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_request(
@@ -68,7 +68,7 @@ async test "matrix A07 B02 non-v1 initialize keeps the agent pre-initialized" {
   assert_true(mismatch.state.protocol().protocol_version is Omitted)
   // Business traffic on the un-negotiated connection is still rejected with
   // the state exactly unchanged: no partial initialize leaked into the phase.
-  let premature = agent_adapter_admit(
+  let premature = @agent.agent_adapter_admit(
     mismatch.state,
     endpoint,
     agent_adapter_test_request(
@@ -86,7 +86,7 @@ async test "matrix A07 B02 non-v1 initialize keeps the agent pre-initialized" {
   }
   // A subsequent v1 initialize negotiates normally on the same connection.
   let accepted = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       mismatch.state,
       endpoint,
       agent_adapter_test_request(
@@ -113,7 +113,7 @@ async test "matrix A07 B02 non-v1 initialize keeps the agent pre-initialized" {
 async test "matrix B01 business traffic before initialize is rejected typed" {
   let endpoint = agent_adapter_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
-  let premature_request = agent_adapter_admit(
+  let premature_request = @agent.agent_adapter_admit(
     initial,
     endpoint,
     agent_adapter_test_request(
@@ -130,7 +130,7 @@ async test "matrix B01 business traffic before initialize is rejected typed" {
     Invoke(..) => fail("a session method before initialize must not invoke")
   }
   agent_matrix_gate_test_trace_error(
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initial,
       endpoint,
       agent_adapter_test_notification("session/cancel", "{\"sessionId\":\"s\"}"),
@@ -148,7 +148,7 @@ async test "matrix B01 business traffic before initialize is rejected typed" {
 async test "matrix B09 logout is gated by the advertised auth capability" {
   let endpoint = agent_adapter_test_endpoint()
   let initial = agent_adapter_test_state(endpoint)
-  let before_initialize = agent_adapter_admit(
+  let before_initialize = @agent.agent_adapter_admit(
     initial,
     endpoint,
     agent_adapter_test_request(Number(1), "logout", "{}"),
@@ -159,7 +159,7 @@ async test "matrix B09 logout is gated by the advertised auth capability" {
     Invoke(..) => fail("logout before initialize must not invoke")
   }
   let initialized = agent_adapter_test_initialized(endpoint, Number(2))
-  let ungated = agent_adapter_admit(
+  let ungated = @agent.agent_adapter_admit(
     initialized.state,
     endpoint,
     agent_adapter_test_request(Number(3), "logout", "{}"),
@@ -195,7 +195,7 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
   ]
   for fixture in gated_fixtures {
     let (id, source) = fixture
-    let denied = agent_adapter_admit(
+    let denied = @agent.agent_adapter_admit(
       plain_initialized.state,
       plain,
       agent_adapter_test_request(Number(id), "session/prompt", source),
@@ -220,7 +220,7 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
     ] {
     let (id, source) = case
     match
-      agent_adapter_admit(
+      @agent.agent_adapter_admit(
         plain_initialized.state,
         plain,
         agent_adapter_test_request(Number(id), "session/prompt", source),
@@ -233,13 +233,13 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
   // With every prompt capability advertised the same payloads reach the
   // handler as typed blocks.
   let seen : Array[PromptParams] = []
-  let supported = agent_endpoint_from_spec(
-    agent_spec(
+  let supported = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("matrix-prompt-gates"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt=async fn(
-          _context : AgentContext,
+          _context : @agent.AgentContext,
           params : PromptParams,
         ) -> PromptResult {
           @async.pause()
@@ -248,7 +248,7 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
         },
         cancel=agent_service_test_cancel,
       ),
-      support=agent_support(
+      support=@agent.agent_support(
         prompt_image=true,
         prompt_audio=true,
         prompt_embedded_context=true,
@@ -291,12 +291,12 @@ async test "matrix B08 F05 prompt content gates run before invocation" {
 /// an HTTP entry never decoding as stdio — is proven in
 /// protocol/matrix_test.mbt).
 async test "matrix G03 a denied remote MCP server never falls back to stdio" {
-  let unsupported = agent_adapter_test_b09_endpoint(agent_support())
+  let unsupported = agent_adapter_test_b09_endpoint(@agent.agent_support())
   let unsupported_initialized = agent_adapter_test_initialized(
     unsupported,
     Number(1),
   )
-  let mixed = agent_adapter_admit(
+  let mixed = @agent.agent_adapter_admit(
     unsupported_initialized.state,
     unsupported,
     agent_adapter_test_request(
@@ -313,7 +313,7 @@ async test "matrix G03 a denied remote MCP server never falls back to stdio" {
     Invoke(..) => fail("a denied remote MCP entry must not invoke a handler")
   }
   match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       unsupported_initialized.state,
       unsupported,
       agent_adapter_test_request(
@@ -326,10 +326,12 @@ async test "matrix G03 a denied remote MCP server never falls back to stdio" {
     Immediate(_) => fail("the stdio-only list must dispatch unchanged")
     Invoke(..) => fail("session/new admitted the wrong invocation")
   }
-  let http_only = agent_adapter_test_b09_endpoint(agent_support(mcp_http=true))
+  let http_only = agent_adapter_test_b09_endpoint(
+    @agent.agent_support(mcp_http=true),
+  )
   let http_initialized = agent_adapter_test_initialized(http_only, Number(4))
   match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       http_initialized.state,
       http_only,
       agent_adapter_test_request(
@@ -342,7 +344,7 @@ async test "matrix G03 a denied remote MCP server never falls back to stdio" {
     Immediate(_) => fail("an advertised HTTP transport must dispatch")
     Invoke(..) => fail("session/new admitted the wrong invocation")
   }
-  let sse_denied = agent_adapter_admit(
+  let sse_denied = @agent.agent_adapter_admit(
     http_initialized.state,
     http_only,
     agent_adapter_test_request(
@@ -370,7 +372,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   assert_true(
     initialized.state.protocol().authentication is AwaitingAuthentication,
   )
-  let denied_new = agent_adapter_admit(
+  let denied_new = @agent.agent_adapter_admit(
     initialized.state,
     auth_endpoint,
     agent_adapter_test_request(
@@ -390,7 +392,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   // A cancel notification cannot sneak past the gate either: it is traced
   // with its method name and produces no response (row G07).
   agent_matrix_gate_test_trace_error(
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       auth_endpoint,
       agent_adapter_test_notification("session/cancel", "{\"sessionId\":\"s\"}"),
@@ -399,7 +401,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
     code=AuthRequired,
   )
   // Logging out before authenticating is a typed auth failure, not a bypass.
-  let premature_logout = agent_adapter_admit(
+  let premature_logout = @agent.agent_adapter_admit(
     initialized.state,
     auth_endpoint,
     agent_adapter_test_request(Number(3), "logout", "{}"),
@@ -430,7 +432,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   assert_true(
     failed_auth.state.protocol().authentication is AwaitingAuthentication,
   )
-  let still_denied = agent_adapter_admit(
+  let still_denied = @agent.agent_adapter_admit(
     failed_auth.state,
     failing,
     agent_adapter_test_request(
@@ -447,7 +449,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   // The full sequence: authenticate succeeds, session creation opens,
   // logout completes, and session creation requires authentication again.
   let auth_admission = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       initialized.state,
       auth_endpoint,
       agent_adapter_test_request(
@@ -459,7 +461,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
     Invoke(state~, invocation~) => (state, invocation)
     Immediate(_) => fail("an advertised authenticate must invoke")
   }
-  let authenticated = agent_adapter_complete(
+  let authenticated = @agent.agent_adapter_complete(
     auth_admission.0,
     auth_admission.1,
     AuthenticateCompleted(id=Number(7), result=Ok({ meta: Omitted, })),
@@ -467,7 +469,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   ignore(agent_adapter_test_success(authenticated, Number(7)))
   assert_true(authenticated.state.protocol().authentication is Authenticated)
   match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       authenticated.state,
       auth_endpoint,
       agent_adapter_test_request(
@@ -481,7 +483,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
     Invoke(..) => fail("session/new admitted the wrong invocation")
   }
   let logout_admission = match
-    agent_adapter_admit(
+    @agent.agent_adapter_admit(
       authenticated.state,
       auth_endpoint,
       agent_adapter_test_request(Number(9), "logout", "{}"),
@@ -490,7 +492,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
     Immediate(_) => fail("an advertised logout must invoke")
   }
   assert_true(logout_admission.0.reservation() is LogoutPending(_))
-  let logged_out = agent_adapter_complete(
+  let logged_out = @agent.agent_adapter_complete(
     logout_admission.0,
     logout_admission.1,
     LogoutCompleted(id=Number(9), result=Ok({ meta: Omitted, })),
@@ -499,7 +501,7 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
   assert_true(
     logged_out.state.protocol().authentication is AwaitingAuthentication,
   )
-  let denied_again = agent_adapter_admit(
+  let denied_again = @agent.agent_adapter_admit(
     logged_out.state,
     auth_endpoint,
     agent_adapter_test_request(
@@ -531,14 +533,14 @@ async test "matrix G04 auth required cannot be bypassed for session creation" {
 async test "matrix G05 cancelled permission settles the turn after final updates" {
   let updates : Array[SessionUpdateParams] = []
   let permissions : Array[RequestPermissionRequest] = []
-  let notification_broker : AgentContextNotificationBroker = notification => {
+  let notification_broker : @agent.AgentContextNotificationBroker = notification => {
     match notification {
       SessionUpdate(params) => updates.push(params)
       _ => abort("expected the completed tool update notification")
     }
     Ok(())
   }
-  let request_broker : AgentContextRequestBroker = request => {
+  let request_broker : @agent.AgentContextRequestBroker = request => {
     match request {
       SessionRequestPermission(params) => {
         permissions.push(params)
@@ -547,14 +549,14 @@ async test "matrix G05 cancelled permission settles the turn after final updates
       _ => abort("expected the typed permission request")
     }
   }
-  let context = agent_context(request_broker~, notification_broker~)
-  let endpoint = agent_endpoint_from_spec(
-    agent_spec(
+  let context = @agent.agent_context(request_broker~, notification_broker~)
+  let endpoint = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("matrix-g05"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt=async fn(
-          context : AgentContext,
+          context : @agent.AgentContext,
           _params : PromptParams,
         ) -> PromptResult {
           @async.pause()
@@ -604,7 +606,7 @@ async test "matrix G05 cancelled permission settles the turn after final updates
         },
         cancel=agent_service_test_cancel,
       ),
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   )
   let initialized = agent_adapter_test_initialized(endpoint, Number(1))

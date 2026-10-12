@@ -11,9 +11,9 @@ async test "agent_serve_stdio validates options before binding stdio" {
   let endpoint = agent_adapter_test_endpoint()
   let raised : Array[Unit] = []
   try {
-    agent_serve_stdio(
+    @agent.agent_serve_stdio(
       endpoint~,
-      context=agent_context(
+      context=@agent.agent_context(
         request_broker=_request => {
           Err(AgentContextBrokerFailure(method_name="session/new"))
         },

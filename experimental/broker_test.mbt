@@ -111,7 +111,7 @@ fn experimental_v2_broker_test_chunk(frame : String) -> Bytes? {
 fn experimental_v2_broker_test_request(
   frame : Bytes,
 ) -> @jsonrpc.JsonRpcRequest raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Request(request) => request
     _ => fail("expected one JSON-RPC request frame")
   }
@@ -121,7 +121,7 @@ fn experimental_v2_broker_test_request(
 fn experimental_v2_broker_test_notification(
   frame : Bytes,
 ) -> @jsonrpc.JsonRpcNotification raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Notification(notification) => notification
     _ => fail("expected one JSON-RPC notification frame")
   }
@@ -169,8 +169,10 @@ async test "v2 client connection over channel round-trips initialize and pins ve
     })
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = experimental_v2_client_connection_over_channel(channel~)
-      let params = experimental_v2_client_initialize_params(
+      let connection = @experimental.experimental_v2_client_connection_over_channel(
+        channel~,
+      )
+      let params = @experimental.experimental_v2_client_initialize_params(
         info=experimental_v2_client_test_info("client"),
         capabilities=experimental_v2_client_test_capabilities(),
       )
@@ -238,7 +240,9 @@ async test "v2 client connection over channel maps an undecodable reply to a typ
     })
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = experimental_v2_client_connection_over_channel(channel~)
+      let connection = @experimental.experimental_v2_client_connection_over_channel(
+        channel~,
+      )
       try {
         let _ = connection.prompt({
           session_id: "session",
@@ -247,8 +251,9 @@ async test "v2 client connection over channel maps an undecodable reply to a typ
         })
         fail("expected a typed reply mismatch")
       } catch {
-        ExperimentalV2ClientConnectionError::ReplyMismatch(method_name~) =>
-          assert_eq(method_name, "session/prompt")
+        @experimental.ExperimentalV2ClientConnectionError::ReplyMismatch(
+          method_name~
+        ) => assert_eq(method_name, "session/prompt")
         _ => fail("expected a typed reply mismatch")
       }
     })
@@ -289,8 +294,10 @@ async test "v2 client connection over channel classifies wire error codes" {
     })
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = experimental_v2_client_connection_over_channel(channel~)
-      let params : ExperimentalV2NewSessionParams = {
+      let connection = @experimental.experimental_v2_client_connection_over_channel(
+        channel~,
+      )
+      let params : @experimental.ExperimentalV2NewSessionParams = {
         cwd: "/",
         additional_directories: None,
         mcp_servers: None,
@@ -300,16 +307,18 @@ async test "v2 client connection over channel classifies wire error codes" {
         let _ = connection.new_session(params)
         fail("expected a typed cancellation")
       } catch {
-        ExperimentalV2ClientConnectionError::Cancelled(method_name~) =>
-          assert_eq(method_name, "session/new")
+        @experimental.ExperimentalV2ClientConnectionError::Cancelled(
+          method_name~
+        ) => assert_eq(method_name, "session/new")
         _ => fail("expected a typed cancellation")
       }
       try {
         let _ = connection.new_session({ ..params, cwd: "/second", })
         fail("expected a typed broker failure")
       } catch {
-        ExperimentalV2ClientConnectionError::BrokerFailure(method_name~) =>
-          assert_eq(method_name, "session/new")
+        @experimental.ExperimentalV2ClientConnectionError::BrokerFailure(
+          method_name~
+        ) => assert_eq(method_name, "session/new")
         _ => fail("expected a typed broker failure")
       }
     })
@@ -356,7 +365,9 @@ async test "v2 client connection over channel submits sync notifications" {
     })
     let submitter = group.spawn(() => {
       let channel = captured.get()
-      let connection = experimental_v2_client_connection_over_channel(channel~)
+      let connection = @experimental.experimental_v2_client_connection_over_channel(
+        channel~,
+      )
       connection.cancel_session({ session_id: "session", meta: None, })
       connection.cancel_request(RequestIdStr("peer-request"))
     })
@@ -366,7 +377,7 @@ async test "v2 client connection over channel submits sync notifications" {
     input.put(None)
     runner.wait()
     assert_eq(output.length(), 2)
-    match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].view())) {
+    match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
       Notification(notification) => {
         assert_eq(notification.method_name, "session/cancel")
         guard notification.params is Some(Object(fields)) else {
@@ -376,7 +387,7 @@ async test "v2 client connection over channel submits sync notifications" {
       }
       _ => fail("expected exactly one session/cancel frame")
     }
-    match @jsonrpc.jsonrpc_decode(@utf8.decode(output[1].view())) {
+    match @jsonrpc.jsonrpc_decode(@utf8.decode(output[1].exact_view())) {
       Notification(notification) => {
         assert_eq(notification.method_name, "$/cancel_request")
         guard notification.params is Some(Object(fields)) else {
@@ -421,13 +432,16 @@ async test "v2 client connection over channel maps closed notifications to typed
     input.put(None)
     runner.wait()
     let channel = captured.get()
-    let connection = experimental_v2_client_connection_over_channel(channel~)
+    let connection = @experimental.experimental_v2_client_connection_over_channel(
+      channel~,
+    )
     try {
       connection.cancel_session({ session_id: "session", meta: None, })
       fail("expected a typed unavailability")
     } catch {
-      ExperimentalV2ClientConnectionError::Unavailable(method_name~) =>
-        assert_eq(method_name, "session/cancel")
+      @experimental.ExperimentalV2ClientConnectionError::Unavailable(
+        method_name~
+      ) => assert_eq(method_name, "session/cancel")
       _ => fail("expected a typed unavailability")
     }
     assert_eq(output.length(), 0)

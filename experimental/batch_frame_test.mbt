@@ -1,6 +1,6 @@
 ///|
 fn batch_frame_test_split_frames(
-  split : ExperimentalV2WireFrameSplit,
+  split : @experimental.ExperimentalV2WireFrameSplit,
 ) -> Array[String] raise {
   match split {
     SplitBatchFrames(frames~, ..) => frames
@@ -11,7 +11,7 @@ fn batch_frame_test_split_frames(
 ///|
 test "v2 wire split expands a valid batch into ordered object frames" {
   let frames = batch_frame_test_split_frames(
-    experimental_v2_split_wire_frame(
+    @experimental.experimental_v2_split_wire_frame(
       "[{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/list\"},{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"r1\"}}]",
     ),
   )
@@ -25,7 +25,7 @@ test "v2 wire split expands a valid batch into ordered object frames" {
     "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"r1\"}}",
   )
   assert_true(
-    experimental_v2_split_wire_frame(
+    @experimental.experimental_v2_split_wire_frame(
       "[{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"session/list\"}]",
     )
     is SplitBatchFrames(intact=true, ..),
@@ -35,7 +35,7 @@ test "v2 wire split expands a valid batch into ordered object frames" {
 ///|
 test "v2 wire split accepts response entries because reply batches expand too" {
   let frames = batch_frame_test_split_frames(
-    experimental_v2_split_wire_frame(
+    @experimental.experimental_v2_split_wire_frame(
       "[{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null},{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}]",
     ),
   )
@@ -50,13 +50,13 @@ test "v2 wire split accepts response entries because reply batches expand too" {
 ///|
 test "v2 wire split returns lone objects and non-array values unchanged" {
   assert_true(
-    experimental_v2_split_wire_frame(
+    @experimental.experimental_v2_split_wire_frame(
       "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"m\"}",
     )
     is SplitLoneObject(value=Object(_)),
   )
   assert_true(
-    experimental_v2_split_wire_frame("42")
+    @experimental.experimental_v2_split_wire_frame("42")
     is SplitLoneObject(value=Number(_, ..)),
   )
 }
@@ -64,7 +64,7 @@ test "v2 wire split returns lone objects and non-array values unchanged" {
 ///|
 test "v2 wire split maps an empty array to one -32600 single reply" {
   assert_eq(
-    experimental_v2_split_wire_frame("[]"),
+    @experimental.experimental_v2_split_wire_frame("[]"),
     SplitSingleErrorReply(
       frame="{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"}}",
     ),
@@ -74,20 +74,21 @@ test "v2 wire split maps an empty array to one -32600 single reply" {
 ///|
 test "v2 wire split maps truncated batch json to one -32700 single reply" {
   assert_eq(
-    experimental_v2_split_wire_frame("[{\"jsonrpc\""),
+    @experimental.experimental_v2_split_wire_frame("[{\"jsonrpc\""),
     SplitSingleErrorReply(
       frame="{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Parse error\"}}",
     ),
   )
   // An unparseable frame is answered -32700 whatever it would have been.
   assert_true(
-    experimental_v2_split_wire_frame("{not json") is SplitSingleErrorReply(_),
+    @experimental.experimental_v2_split_wire_frame("{not json")
+    is SplitSingleErrorReply(_),
   )
 }
 
 ///|
 test "v2 wire split keeps invalid entries' -32600 replies in place" {
-  let split = experimental_v2_split_wire_frame(
+  let split = @experimental.experimental_v2_split_wire_frame(
     "[1,{\"jsonrpc\":\"2.0\",\"id\":\"r\",\"method\":\"session/prompt\"},\"junk\"]",
   )
   let frames = batch_frame_test_split_frames(split)
@@ -109,7 +110,7 @@ test "v2 wire split keeps invalid entries' -32600 replies in place" {
 
 ///|
 test "v2 collect replies batches single response frames into one line" {
-  let line = experimental_v2_collect_replies([
+  let line = @experimental.experimental_v2_collect_replies([
     "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":null}", "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}",
   ])
   assert_eq(
@@ -120,14 +121,14 @@ test "v2 collect replies batches single response frames into one line" {
 
 ///|
 test "v2 collect replies fails fast on empty and non-response frames" {
-  try experimental_v2_collect_replies([]) catch {
+  try @experimental.experimental_v2_collect_replies([]) catch {
     EmptyResponsesInput => ()
     _ => fail("expected EmptyResponsesInput")
   } noraise {
     _ => fail("expected EmptyResponsesInput")
   }
   try
-    experimental_v2_collect_replies([
+    @experimental.experimental_v2_collect_replies([
       "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"session/list\"}",
     ])
   catch {
@@ -137,7 +138,7 @@ test "v2 collect replies fails fast on empty and non-response frames" {
   } noraise {
     _ => fail("expected ReplyFrameDecodeFailed")
   }
-  try experimental_v2_collect_replies(["{not json"]) catch {
+  try @experimental.experimental_v2_collect_replies(["{not json"]) catch {
     ReplyFrameDecodeFailed(index~, ..) => assert_eq(index, 0)
     _ => fail("expected ReplyFrameDecodeFailed")
   } noraise {

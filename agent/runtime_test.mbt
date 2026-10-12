@@ -49,7 +49,7 @@ fn agent_runtime_test_session_new(id : String) -> String {
 
 ///|
 fn agent_runtime_test_decode(frame : Bytes) -> JsonRpcResponse raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Response(response) => response
     _ => fail("expected one JSON-RPC response frame")
   }
@@ -93,7 +93,7 @@ async test "agent runtime bridge initialize round-trips and advances protocol st
   input.put(agent_runtime_test_chunk(agent_runtime_test_initialize("init")))
   input.put(agent_runtime_test_chunk(agent_runtime_test_initialize("again")))
   input.put(None)
-  agent_runtime_run(
+  @agent.agent_runtime_run(
     endpoint~,
     context=agent_service_test_context(),
     initial_state=agent_adapter_test_state(endpoint),
@@ -101,7 +101,7 @@ async test "agent runtime bridge initialize round-trips and advances protocol st
     options=@runtime.runtime_default_options(),
   )
   assert_eq(output.length(), 2)
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(success)) => {
       assert_eq(success.id, String("init"))
       assert_true(success.result is Object(_))
@@ -147,7 +147,7 @@ async test "agent runtime bridge completes two requests in reverse order exactly
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("second")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -210,7 +210,7 @@ async test "agent runtime bridge cancels one pending request by typed id" {
   let cancel_frame = "{\"jsonrpc\":\"2.0\",\"method\":\"$/cancel_request\",\"params\":{\"requestId\":\"victim\"}}\n"
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -266,7 +266,7 @@ async test "agent runtime bridge close aborts pending work and settles inbound" 
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("pending")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -304,7 +304,7 @@ async test "agent runtime bridge surfaces a typed handler failure" {
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("fails")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -329,16 +329,16 @@ async test "agent runtime bridge surfaces a typed handler failure" {
 
 ///|
 async test "agent runtime bridge rejects a capability-gated request without state change" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("runtime-gate"),
-    sessions=agent_session_service(
+    sessions=@agent.agent_session_service(
       new_session=agent_service_test_new,
       prompt=agent_service_test_prompt,
       cancel=agent_service_test_cancel,
     ),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
@@ -353,7 +353,7 @@ async test "agent runtime bridge rejects a capability-gated request without stat
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("after")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -392,7 +392,7 @@ async test "agent runtime bridge traces an unknown notification without replying
     ),
   )
   input.put(None)
-  agent_runtime_run(
+  @agent.agent_runtime_run(
     endpoint~,
     context=agent_service_test_context(),
     initial_state=agent_adapter_test_state(endpoint),
@@ -406,14 +406,14 @@ async test "agent runtime bridge traces an unknown notification without replying
 ///|
 async test "agent runtime bridge fails visibly when the context broker fails" {
   let broker_calls : Array[String] = []
-  let request_broker : AgentContextRequestBroker = _request => {
+  let request_broker : @agent.AgentContextRequestBroker = _request => {
     broker_calls.push("called")
     Err(AgentContextBrokerFailure(method_name="fs/read_text_file"))
   }
-  let notification_broker : AgentContextNotificationBroker = _notification => {
+  let notification_broker : @agent.AgentContextNotificationBroker = _notification => {
     Err(AgentContextBrokerFailure(method_name="session/update"))
   }
-  let context = agent_context(request_broker~, notification_broker~)
+  let context = @agent.agent_context(request_broker~, notification_broker~)
   let endpoint = agent_adapter_test_endpoint(new_session=async fn(
     context,
     _params,
@@ -443,7 +443,7 @@ async test "agent runtime bridge fails visibly when the context broker fails" {
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("broker")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context~,
         initial_state=agent_adapter_test_state(endpoint),
@@ -492,7 +492,7 @@ async test "agent runtime bridge publishes initialize clientInfo to session hand
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("created")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -542,7 +542,7 @@ async test "agent runtime bridge publishes Omitted clientInfo when initialize om
   input.put(agent_runtime_test_chunk(agent_runtime_test_session_new("created")))
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run(
+      @agent.agent_runtime_run(
         endpoint~,
         context=agent_service_test_context(),
         initial_state=agent_adapter_test_state(endpoint),
@@ -624,7 +624,7 @@ fn agent_runtime_test_session_prompt(id : String) -> String {
 
 ///|
 fn agent_runtime_test_notification(frame : Bytes) -> JsonRpcNotification raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Notification(notification) => notification
     _ => fail("expected one JSON-RPC notification frame")
   }
@@ -632,7 +632,7 @@ fn agent_runtime_test_notification(frame : Bytes) -> JsonRpcNotification raise {
 
 ///|
 fn agent_runtime_test_request(frame : Bytes) -> JsonRpcRequest raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Request(request) => request
     _ => fail("expected one JSON-RPC request frame")
   }
@@ -701,17 +701,17 @@ fn agent_runtime_test_permission_request() -> RequestPermissionRequest {
 
 ///|
 fn agent_runtime_test_prompt_endpoint(
-  prompt : AgentPromptHandler,
-) -> AgentEndpoint {
-  agent_endpoint_from_spec(
-    agent_spec(
+  prompt : @agent.AgentPromptHandler,
+) -> @agent.AgentEndpoint {
+  @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("runtime-outbound"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt~,
         cancel=agent_service_test_cancel,
       ),
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   )
 }
@@ -720,7 +720,7 @@ fn agent_runtime_test_prompt_endpoint(
 async test "agent runtime outbound streams updates and round-trips permission" {
   let replies : Array[@protocol_data.RequestPermissionResponse] = []
   let endpoint = agent_runtime_test_prompt_endpoint(async fn(
-    context : AgentContext,
+    context : @agent.AgentContext,
     _params : PromptParams,
   ) -> PromptResult {
     context.session_update(agent_runtime_test_update_params("one"))
@@ -746,7 +746,7 @@ async test "agent runtime outbound streams updates and round-trips permission" {
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run_with_outbound(
+      @agent.agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => @broker.agent_context_over_channel(channel~),
         initial_state=agent_adapter_test_state(endpoint),
@@ -806,9 +806,9 @@ async test "agent runtime outbound streams updates and round-trips permission" {
 
 ///|
 async test "agent runtime outbound maps a peer error reply to a typed broker failure" {
-  let observed : Array[AgentContextError] = []
+  let observed : Array[@agent.AgentContextError] = []
   let endpoint = agent_runtime_test_prompt_endpoint(async fn(
-    context : AgentContext,
+    context : @agent.AgentContext,
     _params : PromptParams,
   ) -> PromptResult {
     try {
@@ -836,7 +836,7 @@ async test "agent runtime outbound maps a peer error reply to a typed broker fai
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run_with_outbound(
+      @agent.agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => @broker.agent_context_over_channel(channel~),
         initial_state=agent_adapter_test_state(endpoint),
@@ -877,9 +877,9 @@ async test "agent runtime outbound maps a peer error reply to a typed broker fai
 
 ///|
 async test "agent runtime outbound maps the cancelled error code to a typed cancel" {
-  let observed : Array[AgentContextError] = []
+  let observed : Array[@agent.AgentContextError] = []
   let endpoint = agent_runtime_test_prompt_endpoint(async fn(
-    context : AgentContext,
+    context : @agent.AgentContext,
     _params : PromptParams,
   ) -> PromptResult {
     try {
@@ -907,7 +907,7 @@ async test "agent runtime outbound maps the cancelled error code to a typed canc
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run_with_outbound(
+      @agent.agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => @broker.agent_context_over_channel(channel~),
         initial_state=agent_adapter_test_state(endpoint),
@@ -941,9 +941,9 @@ async test "agent runtime outbound maps the cancelled error code to a typed canc
 
 ///|
 async test "agent runtime outbound settles a parked submitter once on close" {
-  let observed : Array[AgentContextError] = []
+  let observed : Array[@agent.AgentContextError] = []
   let endpoint = agent_runtime_test_prompt_endpoint(async fn(
-    context : AgentContext,
+    context : @agent.AgentContext,
     _params : PromptParams,
   ) -> PromptResult {
     try {
@@ -971,7 +971,7 @@ async test "agent runtime outbound settles a parked submitter once on close" {
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run_with_outbound(
+      @agent.agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => @broker.agent_context_over_channel(channel~),
         initial_state=agent_adapter_test_state(endpoint),
@@ -1012,9 +1012,9 @@ async test "agent runtime outbound settles a parked submitter once on close" {
 
 ///|
 async test "agent runtime outbound maps an undecodable reply to a typed mismatch" {
-  let observed : Array[AgentContextError] = []
+  let observed : Array[@agent.AgentContextError] = []
   let endpoint = agent_runtime_test_prompt_endpoint(async fn(
-    context : AgentContext,
+    context : @agent.AgentContext,
     _params : PromptParams,
   ) -> PromptResult {
     try {
@@ -1042,7 +1042,7 @@ async test "agent runtime outbound maps an undecodable reply to a typed mismatch
   )
   @async.with_task_group(group => {
     let runtime = group.spawn(() => {
-      agent_runtime_run_with_outbound(
+      @agent.agent_runtime_run_with_outbound(
         endpoint~,
         context_factory=channel => @broker.agent_context_over_channel(channel~),
         initial_state=agent_adapter_test_state(endpoint),

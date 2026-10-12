@@ -1,5 +1,7 @@
 ///|
-fn session_fold_test_text_block(text : String) -> ExperimentalV2ContentBlock {
+fn session_fold_test_text_block(
+  text : String,
+) -> @experimental.ExperimentalV2ContentBlock {
   Known(BlockText({ text, annotations: None, meta: None, }))
 }
 
@@ -7,22 +9,24 @@ fn session_fold_test_text_block(text : String) -> ExperimentalV2ContentBlock {
 fn session_fold_test_chunk(
   message_id : String,
   text : String,
-) -> ExperimentalV2ContentChunk {
+) -> @experimental.ExperimentalV2ContentChunk {
   { message_id, content: session_fold_test_text_block(text), meta: None, }
 }
 
 ///|
 fn session_fold_test_upsert(
   message_id : String,
-  content : ExperimentalV2Patch[Array[ExperimentalV2ContentBlock]],
-) -> ExperimentalV2MessageUpsert {
+  content : @experimental.ExperimentalV2Patch[
+    Array[@experimental.ExperimentalV2ContentBlock],
+  ],
+) -> @experimental.ExperimentalV2MessageUpsert {
   { message_id, content, meta: PatchOmitted, }
 }
 
 ///|
 fn session_fold_test_tool_call_update(
   tool_call_id : String,
-) -> ExperimentalV2ToolCallUpdate {
+) -> @experimental.ExperimentalV2ToolCallUpdate {
   {
     tool_call_id,
     title: PatchOmitted,
@@ -39,7 +43,7 @@ fn session_fold_test_tool_call_update(
 ///|
 fn session_fold_test_tool_content(
   text : String,
-) -> ExperimentalV2ToolCallContent {
+) -> @experimental.ExperimentalV2ToolCallContent {
   Known(
     ToolCallContentBlock({
       content: session_fold_test_text_block(text),
@@ -49,15 +53,17 @@ fn session_fold_test_tool_content(
 }
 
 ///|
-fn session_fold_test_location(path : String) -> ExperimentalV2ToolCallLocation {
+fn session_fold_test_location(
+  path : String,
+) -> @experimental.ExperimentalV2ToolCallLocation {
   { path, line: None, meta: None, }
 }
 
 ///|
 fn session_fold_test_plan_entry(
   content : String,
-  status : ExperimentalV2PlanEntryStatus,
-) -> ExperimentalV2PlanEntry {
+  status : @experimental.ExperimentalV2PlanEntryStatus,
+) -> @experimental.ExperimentalV2PlanEntry {
   { content, priority: PlanPriorityHigh, status, meta: None, }
 }
 
@@ -65,7 +71,7 @@ fn session_fold_test_plan_entry(
 fn session_fold_test_config_option(
   config_id : String,
   flag : Bool,
-) -> ExperimentalV2SessionConfigOption {
+) -> @experimental.ExperimentalV2SessionConfigOption {
   Known({
     config_id,
     name: "Option \{config_id}",
@@ -78,10 +84,10 @@ fn session_fold_test_config_option(
 
 ///|
 fn session_fold_test_apply(
-  state : ExperimentalV2SessionFold,
-  update : ExperimentalV2SessionUpdate,
-) -> ExperimentalV2SessionFold raise {
-  match experimental_v2_session_fold_apply(state, update) {
+  state : @experimental.ExperimentalV2SessionFold,
+  update : @experimental.ExperimentalV2SessionUpdate,
+) -> @experimental.ExperimentalV2SessionFold raise {
+  match @experimental.experimental_v2_session_fold_apply(state, update) {
     Ok(state) => state
     Err(_) => fail("expected update to apply")
   }
@@ -89,9 +95,9 @@ fn session_fold_test_apply(
 
 ///|
 fn session_fold_test_apply_all(
-  state : ExperimentalV2SessionFold,
-  updates : Array[ExperimentalV2SessionUpdate],
-) -> ExperimentalV2SessionFold raise {
+  state : @experimental.ExperimentalV2SessionFold,
+  updates : Array[@experimental.ExperimentalV2SessionUpdate],
+) -> @experimental.ExperimentalV2SessionFold raise {
   let mut current = state
   for update in updates {
     current = session_fold_test_apply(current, update)
@@ -102,7 +108,7 @@ fn session_fold_test_apply_all(
 ///|
 test "v2 fold chunks aggregate per kind and message id without cross-kind merge" {
   let state = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(UpdateUserMessageChunk(session_fold_test_chunk("m1", "Hello"))),
   )
   let state = session_fold_test_apply(
@@ -155,7 +161,7 @@ test "v2 fold chunks aggregate per kind and message id without cross-kind merge"
 ///|
 test "v2 fold message upsert applies exact tri-state content over chunks" {
   let chunked = session_fold_test_apply_all(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     [
       Known(UpdateAgentMessageChunk(session_fold_test_chunk("a", "one"))),
       Known(UpdateAgentMessageChunk(session_fold_test_chunk("a", "two"))),
@@ -255,7 +261,7 @@ test "v2 fold message upsert applies exact tri-state content over chunks" {
 ///|
 test "v2 fold tool call first update creates with defaults then patches" {
   let created = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(
       UpdateToolCall({
         ..session_fold_test_tool_call_update("call-1"),
@@ -384,12 +390,12 @@ test "v2 fold tool call first update creates with defaults then patches" {
 ///|
 test "v2 fold tool call content chunk before any update fails typed" {
   let state = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(UpdateState(Known(StateRunning({ meta: None, })))),
   )
   let before = state
   match
-    experimental_v2_session_fold_apply(
+    @experimental.experimental_v2_session_fold_apply(
       state,
       Known(
         UpdateToolCallContentChunk({
@@ -410,7 +416,7 @@ test "v2 fold tool call content chunk before any update fails typed" {
 ///|
 test "v2 fold plan updates replace entries per plan id" {
   let first = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(
       UpdatePlan({
         plan: Known(
@@ -488,21 +494,23 @@ test "v2 fold plan updates replace entries per plan id" {
 
 ///|
 test "v2 fold unknown plan variant keys by raw planId and preserves bytes" {
-  let update = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let update = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"_kanban\",\"planId\":\"p3\",\"lanes\":[1]}}",
     ),
   )
   let state = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     update,
   )
   assert_eq(state.plans.length(), 1)
   assert_eq(state.plans[0].plan_id, "p3")
   assert_true(state.plans[0].content is Extension(tag="_kanban", ..))
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_plan_update_content(state.plans[0].content),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_plan_update_content(
+        state.plans[0].content,
+      ),
     ),
     "{\"type\":\"_kanban\",\"planId\":\"p3\",\"lanes\":[1]}",
   )
@@ -529,10 +537,10 @@ test "v2 fold unknown plan variant keys by raw planId and preserves bytes" {
   // A raw variant without a planId violates the spec's MUST and fails
   // typed, for both a missing key and a non-string value.
   match
-    experimental_v2_session_fold_apply(
-      experimental_v2_session_fold_new(),
-      experimental_v2_decode_session_update(
-        experimental_v2_parse_json(
+    @experimental.experimental_v2_session_fold_apply(
+      @experimental.experimental_v2_session_fold_new(),
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(
           "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"_gantt\",\"tasks\":[]}}",
         ),
       ),
@@ -542,10 +550,10 @@ test "v2 fold unknown plan variant keys by raw planId and preserves bytes" {
     Ok(_) => fail("expected raw plan without planId to fail")
   }
   match
-    experimental_v2_session_fold_apply(
-      experimental_v2_session_fold_new(),
-      experimental_v2_decode_session_update(
-        experimental_v2_parse_json(
+    @experimental.experimental_v2_session_fold_apply(
+      @experimental.experimental_v2_session_fold_new(),
+      @experimental.experimental_v2_decode_session_update(
+        @experimental.experimental_v2_parse_json(
           "{\"sessionUpdate\":\"plan_update\",\"plan\":{\"type\":\"future_board\",\"planId\":7}}",
         ),
       ),
@@ -559,7 +567,7 @@ test "v2 fold unknown plan variant keys by raw planId and preserves bytes" {
 ///|
 test "v2 fold terminal upsert patches and output chunks store raw bytes" {
   let created = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(
       UpdateTerminal({
         terminal_id: "t1",
@@ -639,7 +647,7 @@ test "v2 fold terminal upsert patches and output chunks store raw bytes" {
   // A chunk for a first-seen terminalId creates it: the spec's terminals
   // rule retains state for ids whose updates arrive in any order.
   let first_seen = session_fold_test_apply(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     Known(
       UpdateTerminalOutputChunk({
         terminal_id: "t2",
@@ -663,7 +671,7 @@ test "v2 fold terminal upsert patches and output chunks store raw bytes" {
 
 ///|
 test "v2 fold lifecycle matrix records stop reason on idle only" {
-  let fresh = experimental_v2_session_fold_new()
+  let fresh = @experimental.experimental_v2_session_fold_new()
   assert_eq(fresh.phase, TurnIdle)
   assert_eq(fresh.stop_reason, None)
   // A turn starts on running and clears any previous stop reason.
@@ -736,8 +744,8 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
   )
   assert_eq(rerun.phase, TurnRunning)
   match
-    experimental_v2_session_fold_apply(
-      experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_apply(
+      @experimental.experimental_v2_session_fold_new(),
       Known(UpdateState(Known(StateRequiresAction({ meta: None, })))),
     ) {
     Err(IllegalStateTransition(from=TurnIdle, to=TurnRequiresAction)) => ()
@@ -748,15 +756,18 @@ test "v2 fold lifecycle matrix records stop reason on idle only" {
 
 ///|
 test "v2 fold cancel path keeps accepting updates until idle cancelled" {
-  let state = session_fold_test_apply_all(experimental_v2_session_fold_new(), [
-    Known(UpdateState(Known(StateRunning({ meta: None, })))),
-    Known(
-      UpdateToolCall({
-        ..session_fold_test_tool_call_update("call-1"),
-        title: PatchValue("Long task"),
-      }),
-    ),
-  ])
+  let state = session_fold_test_apply_all(
+    @experimental.experimental_v2_session_fold_new(),
+    [
+      Known(UpdateState(Known(StateRunning({ meta: None, })))),
+      Known(
+        UpdateToolCall({
+          ..session_fold_test_tool_call_update("call-1"),
+          title: PatchValue("Long task"),
+        }),
+      ),
+    ],
+  )
   // Updates after a cancel notification still fold; the fold learns about
   // the cancel only from the idle state update.
   let state = session_fold_test_apply(
@@ -797,7 +808,7 @@ test "v2 fold cancel path keeps accepting updates until idle cancelled" {
 
 ///|
 test "v2 fold replacement sets and session info tri-state" {
-  let fresh = experimental_v2_session_fold_new()
+  let fresh = @experimental.experimental_v2_session_fold_new()
   assert_eq(fresh.config_options, None)
   assert_eq(fresh.available_commands, None)
   assert_eq(fresh.usage, None)
@@ -940,17 +951,19 @@ test "v2 fold replacement sets and session info tri-state" {
 
 ///|
 test "v2 fold unknown session updates are preserved raw and re-emittable" {
-  let extension = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let extension = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"_custom\",\"payload\":true}",
     ),
   )
-  let future = experimental_v2_decode_session_update(
-    experimental_v2_parse_json("{\"sessionUpdate\":\"hologram\",\"x\":1}"),
+  let future = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
+      "{\"sessionUpdate\":\"hologram\",\"x\":1}",
+    ),
   )
   let state = session_fold_test_apply_all(
     session_fold_test_apply(
-      experimental_v2_session_fold_new(),
+      @experimental.experimental_v2_session_fold_new(),
       Known(UpdateState(Known(StateRunning({ meta: None, })))),
     ),
     [extension, future],
@@ -959,14 +972,14 @@ test "v2 fold unknown session updates are preserved raw and re-emittable" {
   assert_true(state.preserved[0] is Extension(tag="_custom", ..))
   assert_true(state.preserved[1] is Future(tag="hologram", ..))
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_session_update(state.preserved[0]),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_session_update(state.preserved[0]),
     ),
     "{\"sessionUpdate\":\"_custom\",\"payload\":true}",
   )
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_session_update(state.preserved[1]),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_session_update(state.preserved[1]),
     ),
     "{\"sessionUpdate\":\"hologram\",\"x\":1}",
   )
@@ -976,14 +989,14 @@ test "v2 fold unknown session updates are preserved raw and re-emittable" {
 
 ///|
 test "v2 fold unknown state update is preserved without moving the phase" {
-  let update = experimental_v2_decode_session_update(
-    experimental_v2_parse_json(
+  let update = @experimental.experimental_v2_decode_session_update(
+    @experimental.experimental_v2_parse_json(
       "{\"sessionUpdate\":\"state_update\",\"state\":\"_paused\"}",
     ),
   )
   let state = session_fold_test_apply(
     session_fold_test_apply(
-      experimental_v2_session_fold_new(),
+      @experimental.experimental_v2_session_fold_new(),
       Known(UpdateState(Known(StateRunning({ meta: None, })))),
     ),
     update,
@@ -994,8 +1007,8 @@ test "v2 fold unknown state update is preserved without moving the phase" {
   // re-stamps it on encode, so the preserved value re-emits with the same
   // fields in the codec's canonical order.
   assert_eq(
-    experimental_v2_stringify_json(
-      experimental_v2_encode_session_update(state.preserved[0]),
+    @experimental.experimental_v2_stringify_json(
+      @experimental.experimental_v2_encode_session_update(state.preserved[0]),
     ),
     "{\"state\":\"_paused\",\"sessionUpdate\":\"state_update\"}",
   )
@@ -1003,14 +1016,14 @@ test "v2 fold unknown state update is preserved without moving the phase" {
 
 ///|
 test "v2 fold apply is pure, deterministic, and leaves inputs untouched" {
-  let update : ExperimentalV2SessionUpdate = Known(
+  let update : @experimental.ExperimentalV2SessionUpdate = Known(
     UpdateAgentMessageChunk(session_fold_test_chunk("m1", "hello")),
   )
-  let fresh = experimental_v2_session_fold_new()
-  let first = experimental_v2_session_fold_apply(fresh, update)
-  let second = experimental_v2_session_fold_apply(fresh, update)
+  let fresh = @experimental.experimental_v2_session_fold_new()
+  let first = @experimental.experimental_v2_session_fold_apply(fresh, update)
+  let second = @experimental.experimental_v2_session_fold_apply(fresh, update)
   assert_eq(first, second)
-  assert_eq(fresh, experimental_v2_session_fold_new())
+  assert_eq(fresh, @experimental.experimental_v2_session_fold_new())
   let grown = session_fold_test_apply_all(fresh, [
     update,
     Known(
@@ -1048,7 +1061,7 @@ test "v2 fold apply is pure, deterministic, and leaves inputs untouched" {
   assert_eq(grown, snapshot)
   // A failing step leaves the input state untouched as well.
   match
-    experimental_v2_session_fold_apply(
+    @experimental.experimental_v2_session_fold_apply(
       grown,
       Known(
         UpdateToolCallContentChunk({
@@ -1067,7 +1080,7 @@ test "v2 fold apply is pure, deterministic, and leaves inputs untouched" {
 
 ///|
 test "v2 fold replay from start reproduces the live folded state" {
-  let live_sequence : Array[ExperimentalV2SessionUpdate] = [
+  let live_sequence : Array[@experimental.ExperimentalV2SessionUpdate] = [
     Known(UpdateState(Known(StateRunning({ meta: None, })))),
     Known(UpdateUserMessageChunk(session_fold_test_chunk("u1", "question"))),
     Known(
@@ -1108,13 +1121,13 @@ test "v2 fold replay from start reproduces the live folded state" {
     ),
   ]
   let live = session_fold_test_apply_all(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     live_sequence,
   )
   // Replay has no fold-specific mode: the same update sequence applied to a
   // fresh fold reproduces the live state exactly.
   let replayed = session_fold_test_apply_all(
-    experimental_v2_session_fold_new(),
+    @experimental.experimental_v2_session_fold_new(),
     live_sequence,
   )
   assert_eq(replayed, live)

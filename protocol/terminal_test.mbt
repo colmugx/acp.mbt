@@ -1,16 +1,16 @@
 ///|
-fn terminal_test_meta() -> ProtocolNullable[Json] {
+fn terminal_test_meta() -> @protocol.ProtocolNullable[Json] {
   Value({ "source": Json::string("test") })
 }
 
 ///|
-fn terminal_test_env() -> TerminalEnvVariable {
+fn terminal_test_env() -> @protocol.TerminalEnvVariable {
   { name: "LANG", value: "C.UTF-8", meta: Omitted, }
 }
 
 ///|
 test "terminal host methods round trip every wire shape" {
-  let create : TerminalCreateParams = {
+  let create : @protocol.TerminalCreateParams = {
     session_id: "session-1",
     command: "printf",
     args: Value(["héllo", "world"]),
@@ -19,110 +19,120 @@ test "terminal host methods round trip every wire shape" {
     output_byte_limit: Value(4096UL),
     meta: terminal_test_meta(),
   }
-  let encoded_create = terminal_create_params_to_json(create)
-  let decoded_create = terminal_create_params_from_json(encoded_create) catch {
+  let encoded_create = @protocol.terminal_create_params_to_json(create)
+  let decoded_create = @protocol.terminal_create_params_from_json(
+    encoded_create,
+  ) catch {
     InvalidField(path~, reason~) =>
       fail(
-        path + ":" + reason + " wire=" + protocol_stringify_json(encoded_create),
+        path +
+        ":" +
+        reason +
+        " wire=" +
+        @protocol.protocol_stringify_json(encoded_create),
       )
     _ => fail("unexpected terminal integer decode error")
   }
   assert_eq(decoded_create, create)
 
-  let create_result : TerminalCreateResult = {
+  let create_result : @protocol.TerminalCreateResult = {
     terminal_id: "terminal-1",
     meta: Null,
   }
   assert_eq(
-    terminal_create_result_from_json(
-      terminal_create_result_to_json(create_result),
+    @protocol.terminal_create_result_from_json(
+      @protocol.terminal_create_result_to_json(create_result),
     ),
     create_result,
   )
 
-  let output_params : TerminalOutputParams = {
+  let output_params : @protocol.TerminalOutputParams = {
     session_id: "session-1",
     terminal_id: "terminal-1",
     meta: Omitted,
   }
   assert_eq(
-    terminal_output_params_from_json(
-      terminal_output_params_to_json(output_params),
+    @protocol.terminal_output_params_from_json(
+      @protocol.terminal_output_params_to_json(output_params),
     ),
     output_params,
   )
 
-  let exit_status : TerminalExitStatus = {
+  let exit_status : @protocol.TerminalExitStatus = {
     exit_code: Value(4294967295UL),
     signal: Null,
     meta: terminal_test_meta(),
   }
-  let output_result : TerminalOutputResult = {
+  let output_result : @protocol.TerminalOutputResult = {
     output: "界\n",
     truncated: true,
     exit_status: Value(exit_status),
     meta: Omitted,
   }
   assert_eq(
-    terminal_output_result_from_json(
-      terminal_output_result_to_json(output_result),
+    @protocol.terminal_output_result_from_json(
+      @protocol.terminal_output_result_to_json(output_result),
     ),
     output_result,
   )
 
-  let wait_params : TerminalWaitForExitParams = {
+  let wait_params : @protocol.TerminalWaitForExitParams = {
     session_id: "session-1",
     terminal_id: "terminal-1",
     meta: Null,
   }
   assert_eq(
-    terminal_wait_for_exit_params_from_json(
-      terminal_wait_for_exit_params_to_json(wait_params),
+    @protocol.terminal_wait_for_exit_params_from_json(
+      @protocol.terminal_wait_for_exit_params_to_json(wait_params),
     ),
     wait_params,
   )
-  let wait_result : TerminalWaitForExitResult = {
+  let wait_result : @protocol.TerminalWaitForExitResult = {
     exit_code: Omitted,
     signal: Value("SIGTERM"),
     meta: terminal_test_meta(),
   }
   assert_eq(
-    terminal_wait_for_exit_result_from_json(
-      terminal_wait_for_exit_result_to_json(wait_result),
+    @protocol.terminal_wait_for_exit_result_from_json(
+      @protocol.terminal_wait_for_exit_result_to_json(wait_result),
     ),
     wait_result,
   )
 
-  let kill_params : TerminalKillParams = {
+  let kill_params : @protocol.TerminalKillParams = {
     session_id: "session-1",
     terminal_id: "terminal-1",
     meta: Omitted,
   }
   assert_eq(
-    terminal_kill_params_from_json(terminal_kill_params_to_json(kill_params)),
+    @protocol.terminal_kill_params_from_json(
+      @protocol.terminal_kill_params_to_json(kill_params),
+    ),
     kill_params,
   )
-  let kill_result : TerminalKillResult = { meta: Null, }
+  let kill_result : @protocol.TerminalKillResult = { meta: Null, }
   assert_eq(
-    terminal_kill_result_from_json(terminal_kill_result_to_json(kill_result)),
+    @protocol.terminal_kill_result_from_json(
+      @protocol.terminal_kill_result_to_json(kill_result),
+    ),
     kill_result,
   )
 
-  let release_params : TerminalReleaseParams = {
+  let release_params : @protocol.TerminalReleaseParams = {
     session_id: "session-1",
     terminal_id: "terminal-1",
     meta: terminal_test_meta(),
   }
   assert_eq(
-    terminal_release_params_from_json(
-      terminal_release_params_to_json(release_params),
+    @protocol.terminal_release_params_from_json(
+      @protocol.terminal_release_params_to_json(release_params),
     ),
     release_params,
   )
-  let release_result : TerminalReleaseResult = { meta: Omitted, }
+  let release_result : @protocol.TerminalReleaseResult = { meta: Omitted, }
   assert_eq(
-    terminal_release_result_from_json(
-      terminal_release_result_to_json(release_result),
+    @protocol.terminal_release_result_from_json(
+      @protocol.terminal_release_result_to_json(release_result),
     ),
     release_result,
   )
@@ -131,8 +141,8 @@ test "terminal host methods round trip every wire shape" {
 ///|
 test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
   try
-    terminal_create_params_from_json(
-      protocol_parse_json(
+    @protocol.terminal_create_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"s\",\"command\":\"echo\",\"cwd\":\"relative\"}",
       ),
     )
@@ -144,8 +154,8 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
   }
 
   try
-    terminal_create_params_from_json(
-      protocol_parse_json(
+    @protocol.terminal_create_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"s\",\"command\":\"echo\",\"outputByteLimit\":-1}",
       ),
     )
@@ -157,8 +167,8 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
   }
 
   try
-    terminal_output_result_from_json(
-      protocol_parse_json(
+    @protocol.terminal_output_result_from_json(
+      @protocol.protocol_parse_json(
         "{\"output\":\"x\",\"truncated\":false,\"exitStatus\":{\"exitCode\":4294967296}}",
       ),
     )
@@ -170,8 +180,8 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
   }
 
   try
-    terminal_output_params_from_json(
-      protocol_parse_json(
+    @protocol.terminal_output_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"sessionId\":\"s\",\"terminalId\":\"t\",\"unknown\":true}",
       ),
     )
@@ -183,7 +193,7 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
   }
 
   try
-    terminal_release_params_to_json({
+    @protocol.terminal_release_params_to_json({
       session_id: "s",
       terminal_id: "",
       meta: Omitted,
@@ -200,7 +210,7 @@ test "terminal host validation rejects unsafe ids, cwd, limits and fields" {
 test "terminal output byte limits preserve exact uint64 values and reject invalid numbers" {
   let limits : Array[UInt64] = [9007199254740993UL, 18446744073709551615UL]
   for limit in limits {
-    let create : TerminalCreateParams = {
+    let create : @protocol.TerminalCreateParams = {
       session_id: "session-1",
       command: "printf",
       args: Omitted,
@@ -210,7 +220,9 @@ test "terminal output byte limits preserve exact uint64 values and reject invali
       meta: Omitted,
     }
     assert_eq(
-      terminal_create_params_from_json(terminal_create_params_to_json(create)),
+      @protocol.terminal_create_params_from_json(
+        @protocol.terminal_create_params_to_json(create),
+      ),
       create,
     )
   }
@@ -226,7 +238,11 @@ test "terminal output byte limits preserve exact uint64 values and reject invali
   ]
   for pair in invalid {
     let (source, expected_path) = pair
-    try terminal_create_params_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.terminal_create_params_from_json(
+        @protocol.protocol_parse_json(source),
+      )
+    catch {
       InvalidField(path=actual_path, reason=_) =>
         assert_eq(actual_path, expected_path)
       _ => fail("expected invalid terminal uint64 value")

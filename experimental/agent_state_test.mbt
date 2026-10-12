@@ -1,34 +1,46 @@
 ///|
-fn agent_state_test_info(name : String) -> ExperimentalV2Implementation {
+fn agent_state_test_info(
+  name : String,
+) -> @experimental.ExperimentalV2Implementation {
   { name, title: None, version: "1.0.0", meta: None, }
 }
 
 ///|
-fn agent_state_test_marker() -> ExperimentalV2MarkerPayload {
+fn agent_state_test_marker() -> @experimental.ExperimentalV2MarkerPayload {
   { meta: None, }
 }
 
 ///|
 fn agent_state_test_config(
-  capabilities : ExperimentalV2AgentCapabilities,
-  auth_methods : Array[ExperimentalV2AuthMethod]?,
-) -> ExperimentalV2AgentEndpointConfig {
+  capabilities : @experimental.ExperimentalV2AgentCapabilities,
+  auth_methods : Array[@experimental.ExperimentalV2AuthMethod]?,
+) -> @experimental.ExperimentalV2AgentEndpointConfig {
   { info: agent_state_test_info("agent"), capabilities, auth_methods, }
 }
 
 ///|
-fn agent_state_test_no_capabilities() -> ExperimentalV2AgentCapabilities {
+fn agent_state_test_no_capabilities() -> @experimental.ExperimentalV2AgentCapabilities {
   { session: MarkerUnsupported, auth: MarkerUnsupported, meta: None, }
 }
 
 ///|
 fn agent_state_test_session_capabilities(
-  prompt : ExperimentalV2Marker[ExperimentalV2PromptCapabilities],
-  mcp : ExperimentalV2Marker[ExperimentalV2McpCapabilities],
-  delete : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
-  additional_directories : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
-  fork~ : ExperimentalV2Marker[ExperimentalV2MarkerPayload] = MarkerUnsupported,
-) -> ExperimentalV2AgentCapabilities {
+  prompt : @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2PromptCapabilities,
+  ],
+  mcp : @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2McpCapabilities,
+  ],
+  delete : @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2MarkerPayload,
+  ],
+  additional_directories : @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2MarkerPayload,
+  ],
+  fork~ : @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2MarkerPayload,
+  ] = MarkerUnsupported,
+) -> @experimental.ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
       prompt,
@@ -44,7 +56,7 @@ fn agent_state_test_session_capabilities(
 }
 
 ///|
-fn agent_state_test_all_capabilities() -> ExperimentalV2AgentCapabilities {
+fn agent_state_test_all_capabilities() -> @experimental.ExperimentalV2AgentCapabilities {
   agent_state_test_session_capabilities(
     MarkerSupported({
       image: MarkerSupported(agent_state_test_marker()),
@@ -73,10 +85,12 @@ fn agent_state_test_gate_capabilities(
   mcp_stdio : Bool,
   mcp_http : Bool,
   fork~ : Bool = false,
-) -> ExperimentalV2AgentCapabilities {
+) -> @experimental.ExperimentalV2AgentCapabilities {
   fn marker(
     supported : Bool,
-  ) -> ExperimentalV2Marker[ExperimentalV2MarkerPayload] {
+  ) -> @experimental.ExperimentalV2Marker[
+    @experimental.ExperimentalV2MarkerPayload,
+  ] {
     if supported {
       MarkerSupported(agent_state_test_marker())
     } else {
@@ -103,33 +117,36 @@ fn agent_state_test_gate_capabilities(
 
 ///|
 fn agent_state_test_state(
-  capabilities : ExperimentalV2AgentCapabilities,
-  auth_methods : Array[ExperimentalV2AuthMethod]?,
-) -> ExperimentalV2AgentState raise ExperimentalV2AgentStateError {
-  experimental_v2_agent_state_new(
+  capabilities : @experimental.ExperimentalV2AgentCapabilities,
+  auth_methods : Array[@experimental.ExperimentalV2AuthMethod]?,
+) -> @experimental.ExperimentalV2AgentState raise @experimental.ExperimentalV2AgentStateError {
+  @experimental.experimental_v2_agent_state_new(
     config=agent_state_test_config(capabilities, auth_methods),
   )
 }
 
 ///|
 fn agent_state_test_initialize(
-  state : ExperimentalV2AgentState,
+  state : @experimental.ExperimentalV2AgentState,
   protocol_version : Int32,
-) -> ExperimentalV2AgentStep raise ExperimentalV2AgentProtocolError {
-  let params : ExperimentalV2InitializeParams = {
+) -> @experimental.ExperimentalV2AgentStep raise @experimental.ExperimentalV2AgentProtocolError {
+  let params : @experimental.ExperimentalV2InitializeParams = {
     protocol_version,
     info: agent_state_test_info("client"),
     capabilities: { elicitation: MarkerUnsupported, meta: None, },
     meta: None,
   }
-  experimental_v2_agent_reduce(state, ClientRequest(Initialize(params)))
+  @experimental.experimental_v2_agent_reduce(
+    state,
+    ClientRequest(Initialize(params)),
+  )
 }
 
 ///|
 fn agent_state_test_initialized(
-  capabilities : ExperimentalV2AgentCapabilities,
-  auth_methods : Array[ExperimentalV2AuthMethod]?,
-) -> ExperimentalV2AgentState raise {
+  capabilities : @experimental.ExperimentalV2AgentCapabilities,
+  auth_methods : Array[@experimental.ExperimentalV2AuthMethod]?,
+) -> @experimental.ExperimentalV2AgentState raise {
   agent_state_test_initialize(
     agent_state_test_state(capabilities, auth_methods),
     2,
@@ -137,42 +154,48 @@ fn agent_state_test_initialized(
 }
 
 ///|
-fn agent_state_test_auth_method(method_id : String) -> ExperimentalV2AuthMethod {
+fn agent_state_test_auth_method(
+  method_id : String,
+) -> @experimental.ExperimentalV2AuthMethod {
   Known({ method_id, name: "Token", description: None, meta: None, })
 }
 
 ///|
 fn agent_state_test_login(
   method_id : String,
-) -> ExperimentalV2AgentRequest raise {
+) -> @experimental.ExperimentalV2AgentRequest raise {
   AuthLogin(
-    experimental_v2_decode_login_params(
-      experimental_v2_parse_json("{\"methodId\":\"\{method_id}\"}"),
+    @experimental.experimental_v2_decode_login_params(
+      @experimental.experimental_v2_parse_json(
+        "{\"methodId\":\"\{method_id}\"}",
+      ),
     ),
   )
 }
 
 ///|
-fn agent_state_test_logout() -> ExperimentalV2AgentRequest raise {
+fn agent_state_test_logout() -> @experimental.ExperimentalV2AgentRequest raise {
   AuthLogout(
-    experimental_v2_decode_logout_params(experimental_v2_parse_json("{}")),
-  )
-}
-
-///|
-fn agent_state_test_delete() -> ExperimentalV2AgentRequest raise {
-  SessionDelete(
-    experimental_v2_decode_delete_session_params(
-      experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
+    @experimental.experimental_v2_decode_logout_params(
+      @experimental.experimental_v2_parse_json("{}"),
     ),
   )
 }
 
 ///|
-fn agent_state_test_cancel() -> ExperimentalV2AgentNotification raise {
+fn agent_state_test_delete() -> @experimental.ExperimentalV2AgentRequest raise {
+  SessionDelete(
+    @experimental.experimental_v2_decode_delete_session_params(
+      @experimental.experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
+    ),
+  )
+}
+
+///|
+fn agent_state_test_cancel() -> @experimental.ExperimentalV2AgentNotification raise {
   SessionCancel(
-    experimental_v2_decode_cancel_session_params(
-      experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
+    @experimental.experimental_v2_decode_cancel_session_params(
+      @experimental.experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
     ),
   )
 }
@@ -180,10 +203,10 @@ fn agent_state_test_cancel() -> ExperimentalV2AgentNotification raise {
 ///|
 fn agent_state_test_new_request(
   source : String,
-) -> ExperimentalV2AgentRequest raise {
+) -> @experimental.ExperimentalV2AgentRequest raise {
   SessionNew(
-    experimental_v2_decode_new_session_params(
-      experimental_v2_parse_json(source),
+    @experimental.experimental_v2_decode_new_session_params(
+      @experimental.experimental_v2_parse_json(source),
     ),
   )
 }
@@ -191,10 +214,10 @@ fn agent_state_test_new_request(
 ///|
 fn agent_state_test_resume_request(
   source : String,
-) -> ExperimentalV2AgentRequest raise {
+) -> @experimental.ExperimentalV2AgentRequest raise {
   SessionResume(
-    experimental_v2_decode_resume_session_params(
-      experimental_v2_parse_json(source),
+    @experimental.experimental_v2_decode_resume_session_params(
+      @experimental.experimental_v2_parse_json(source),
     ),
   )
 }
@@ -202,9 +225,11 @@ fn agent_state_test_resume_request(
 ///|
 fn agent_state_test_prompt_request(
   source : String,
-) -> ExperimentalV2AgentRequest raise {
+) -> @experimental.ExperimentalV2AgentRequest raise {
   SessionPrompt(
-    experimental_v2_decode_prompt_params(experimental_v2_parse_json(source)),
+    @experimental.experimental_v2_decode_prompt_params(
+      @experimental.experimental_v2_parse_json(source),
+    ),
   )
 }
 
@@ -216,7 +241,7 @@ fn agent_state_test_gated_request(
   method_name : String,
   servers : String,
   with_additional_directories : Bool,
-) -> ExperimentalV2AgentRequest raise {
+) -> @experimental.ExperimentalV2AgentRequest raise {
   let roots = if with_additional_directories {
     ",\"additionalDirectories\":[\"/tmp\"]"
   } else {
@@ -241,10 +266,13 @@ fn agent_state_test_gated_request(
 
 ///|
 fn agent_state_test_dispatched(
-  state : ExperimentalV2AgentState,
-  request : ExperimentalV2AgentRequest,
+  state : @experimental.ExperimentalV2AgentState,
+  request : @experimental.ExperimentalV2AgentRequest,
 ) -> Unit raise {
-  let step = experimental_v2_agent_reduce(state, ClientRequest(request))
+  let step = @experimental.experimental_v2_agent_reduce(
+    state,
+    ClientRequest(request),
+  )
   assert_eq(step.commands.length(), 1)
   match step.commands[0] {
     DispatchRequest(_) => ()
@@ -254,13 +282,15 @@ fn agent_state_test_dispatched(
 
 ///|
 fn agent_state_test_denied(
-  state : ExperimentalV2AgentState,
-  request : ExperimentalV2AgentRequest,
+  state : @experimental.ExperimentalV2AgentState,
+  request : @experimental.ExperimentalV2AgentRequest,
   method_name : String,
   capability : String,
 ) -> Unit raise {
   let before = state
-  try experimental_v2_agent_reduce(state, ClientRequest(request)) catch {
+  try
+    @experimental.experimental_v2_agent_reduce(state, ClientRequest(request))
+  catch {
     CapabilityDenied(method_name=actual_method, capability=actual_capability) => {
       assert_eq(actual_method, method_name)
       assert_eq(actual_capability, capability)
@@ -274,12 +304,12 @@ fn agent_state_test_denied(
 
 ///|
 fn agent_state_test_error(
-  state : ExperimentalV2AgentState,
-  event : ExperimentalV2AgentEvent,
-  expected : ExperimentalV2AgentProtocolError,
+  state : @experimental.ExperimentalV2AgentState,
+  event : @experimental.ExperimentalV2AgentEvent,
+  expected : @experimental.ExperimentalV2AgentProtocolError,
 ) -> Unit raise {
   let before = state
-  try experimental_v2_agent_reduce(state, event) catch {
+  try @experimental.experimental_v2_agent_reduce(state, event) catch {
     error => assert_eq(error, expected)
   } noraise {
     _ => fail("expected a typed rejection")
@@ -347,7 +377,7 @@ test "v2 agent negotiation accepts only version two and rejects repetition" {
 ///|
 test "v2 agent advertisement construction fails fast on ambiguous auth sets" {
   try
-    experimental_v2_agent_state_new(
+    @experimental.experimental_v2_agent_state_new(
       config=agent_state_test_config(
         agent_state_test_no_capabilities(),
         Some([]),
@@ -360,7 +390,7 @@ test "v2 agent advertisement construction fails fast on ambiguous auth sets" {
     _ => fail("expected an empty authMethods advertisement to fail")
   }
   try
-    experimental_v2_agent_state_new(
+    @experimental.experimental_v2_agent_state_new(
       config=agent_state_test_config(
         agent_state_test_no_capabilities(),
         Some([
@@ -405,7 +435,7 @@ test "v2 auth coupling gates login and logout on the advertised method set" {
     ClientRequest(agent_state_test_login("unknown")),
     AuthMethodNotAdvertised(method_id="unknown"),
   )
-  let login_step = experimental_v2_agent_reduce(
+  let login_step = @experimental.experimental_v2_agent_reduce(
     advertised,
     ClientRequest(login),
   )
@@ -413,7 +443,7 @@ test "v2 auth coupling gates login and logout on the advertised method set" {
     Login(method_id="token") => ()
     _ => fail("expected a login command")
   }
-  let authenticated = experimental_v2_agent_reduce(
+  let authenticated = @experimental.experimental_v2_agent_reduce(
     login_step.state,
     LoginSucceeded(method_id="token"),
   )
@@ -429,12 +459,15 @@ test "v2 auth coupling gates login and logout on the advertised method set" {
     AlreadyLoggedIn,
   )
 
-  let logout_step = experimental_v2_agent_reduce(
+  let logout_step = @experimental.experimental_v2_agent_reduce(
     authenticated.state,
     ClientRequest(agent_state_test_logout()),
   )
   assert_true(logout_step.commands[0] is Logout)
-  let logged_out = experimental_v2_agent_reduce(logout_step.state, LoggedOut)
+  let logged_out = @experimental.experimental_v2_agent_reduce(
+    logout_step.state,
+    LoggedOut,
+  )
   assert_eq(logged_out.state.authentication, AuthPending)
   agent_state_test_error(
     logged_out.state,
@@ -456,8 +489,8 @@ test "v2 baseline session methods need no capability markers" {
   agent_state_test_dispatched(
     state,
     SessionList(
-      experimental_v2_decode_list_sessions_params(
-        experimental_v2_parse_json("{}"),
+      @experimental.experimental_v2_decode_list_sessions_params(
+        @experimental.experimental_v2_parse_json("{}"),
       ),
     ),
   )
@@ -468,8 +501,8 @@ test "v2 baseline session methods need no capability markers" {
   agent_state_test_dispatched(
     state,
     SessionClose(
-      experimental_v2_decode_close_session_params(
-        experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
+      @experimental.experimental_v2_decode_close_session_params(
+        @experimental.experimental_v2_parse_json("{\"sessionId\":\"s\"}"),
       ),
     ),
   )
@@ -482,8 +515,8 @@ test "v2 baseline session methods need no capability markers" {
   agent_state_test_dispatched(
     state,
     SessionSetConfigOption(
-      experimental_v2_decode_set_config_option(
-        experimental_v2_parse_json(
+      @experimental.experimental_v2_decode_set_config_option(
+        @experimental.experimental_v2_parse_json(
           "{\"sessionId\":\"s\",\"configId\":\"confirm\",\"type\":\"boolean\",\"value\":true}",
         ),
       ),
@@ -492,10 +525,12 @@ test "v2 baseline session methods need no capability markers" {
 }
 
 ///|
-fn agent_state_test_fork(source : String) -> ExperimentalV2AgentRequest raise {
+fn agent_state_test_fork(
+  source : String,
+) -> @experimental.ExperimentalV2AgentRequest raise {
   SessionFork(
-    experimental_v2_decode_fork_session_params(
-      experimental_v2_parse_json(source),
+    @experimental.experimental_v2_decode_fork_session_params(
+      @experimental.experimental_v2_parse_json(source),
     ),
   )
 }
@@ -873,15 +908,15 @@ test "v2 notifications require initialization and become cancellations" {
   )
 
   let state = agent_state_test_initialize(initial, 2).state
-  let session_step = experimental_v2_agent_reduce(
+  let session_step = @experimental.experimental_v2_agent_reduce(
     state,
     ClientNotification(cancel),
   )
   assert_true(session_step.commands[0] is CancelSession(session_id="s"))
-  let request_cancel : ExperimentalV2AgentNotification = CancelRequest(
+  let request_cancel : @experimental.ExperimentalV2AgentNotification = CancelRequest(
     RequestIdNumber(7L),
   )
-  let request_step = experimental_v2_agent_reduce(
+  let request_step = @experimental.experimental_v2_agent_reduce(
     state,
     ClientNotification(request_cancel),
   )

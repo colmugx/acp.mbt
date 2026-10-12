@@ -1,7 +1,6 @@
 import {
   "colmugx/acp/runtime",
   "moonbitlang/core/encoding/utf8",
-  "moonbitlang/core/json",
   "moonbitlang/async/stdio",
 }
 

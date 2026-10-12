@@ -70,7 +70,7 @@ fn experimental_v2_agent_runtime_test_login(id : String) -> String {
 fn experimental_v2_agent_runtime_test_decode(
   frame : Bytes,
 ) -> @jsonrpc.JsonRpcResponse raise {
-  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.view())) {
+  match @jsonrpc.jsonrpc_decode(@utf8.decode(frame.exact_view())) {
     Response(response) => response
     _ => fail("expected one JSON-RPC response frame")
   }
@@ -98,15 +98,15 @@ fn experimental_v2_agent_runtime_test_error(
 
 ///|
 async fn experimental_v2_agent_runtime_test_run(
-  endpoint : ExperimentalV2AgentEndpoint,
-  context : ExperimentalV2AgentContext,
-  state : ExperimentalV2AgentAdapterState,
+  endpoint : @experimental.ExperimentalV2AgentEndpoint,
+  context : @experimental.ExperimentalV2AgentContext,
+  state : @experimental.ExperimentalV2AgentAdapterState,
   ports : @runtime.RuntimePorts,
 ) -> Unit {
   @connection.connection_runtime_run_owner(
     ports,
     @runtime.runtime_default_options(),
-    experimental_v2_agent_runtime_owner_port(
+    @experimental.experimental_v2_agent_runtime_owner_port(
       endpoint~,
       context~,
       initial_state=state,
@@ -137,12 +137,13 @@ async test "v2 agent runtime bridge initialize round-trips and rejects duplicate
   input.put(None)
   experimental_v2_agent_runtime_test_run(
     endpoint,
-    experimental_v2_agent_fail_fast_context(),
+    @experimental.experimental_v2_agent_fail_fast_context(),
     experimental_v2_agent_test_adapter_state(endpoint),
     ports,
   )
   assert_eq(output.length(), 2)
-  let result = match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].view())) {
+  let result = match
+    @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(success)) => success.result
     _ => fail("initialize must produce exactly one success response")
   }
@@ -183,13 +184,14 @@ async test "v2 agent runtime bridge answers a version-1 offer without initializi
   input.put(None)
   experimental_v2_agent_runtime_test_run(
     endpoint,
-    experimental_v2_agent_fail_fast_context(),
+    @experimental.experimental_v2_agent_fail_fast_context(),
     experimental_v2_agent_test_adapter_state(endpoint),
     ports,
   )
   assert_eq(output.length(), 2)
   // The rejected offer is a success response carrying version 2.
-  let answer = match @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].view())) {
+  let answer = match
+    @jsonrpc.jsonrpc_decode(@utf8.decode(output[0].exact_view())) {
     Response(Success(success)) => success.result
     _ => fail("the version negotiation answer must be a success response")
   }
@@ -252,7 +254,7 @@ async test "v2 agent runtime bridge completes two requests in reverse order exac
     let runtime = group.spawn(() => {
       experimental_v2_agent_runtime_test_run(
         endpoint,
-        experimental_v2_agent_fail_fast_context(),
+        @experimental.experimental_v2_agent_fail_fast_context(),
         experimental_v2_agent_test_adapter_state(endpoint),
         ports,
       )
@@ -332,7 +334,7 @@ async test "v2 agent runtime bridge cancels one pending request by typed id" {
     let runtime = group.spawn(() => {
       experimental_v2_agent_runtime_test_run(
         endpoint,
-        experimental_v2_agent_fail_fast_context(),
+        @experimental.experimental_v2_agent_fail_fast_context(),
         experimental_v2_agent_test_adapter_state(endpoint),
         ports,
       )
@@ -375,8 +377,8 @@ async test "v2 agent runtime bridge close aborts a pending login and settles it"
     with_auth=true,
     new_session=experimental_v2_agent_test_new,
   )
-  let login_gated : ExperimentalV2AgentEndpoint = experimental_v2_agent_endpoint_from_spec(
-    try! experimental_v2_agent_spec(
+  let login_gated : @experimental.ExperimentalV2AgentEndpoint = @experimental.experimental_v2_agent_endpoint_from_spec(
+    try! @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("agent"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(
@@ -385,7 +387,7 @@ async test "v2 agent runtime bridge close aborts a pending login and settles it"
       ),
       auth_methods=Some([experimental_v2_agent_test_token_method()]),
       auth=Some(
-        experimental_v2_agent_auth_service(
+        @experimental.experimental_v2_agent_auth_service(
           login=async fn(_context, _params) {
             arrived.put(())
             gate.get()
@@ -418,7 +420,7 @@ async test "v2 agent runtime bridge close aborts a pending login and settles it"
     let runtime = group.spawn(() => {
       experimental_v2_agent_runtime_test_run(
         login_gated,
-        experimental_v2_agent_fail_fast_context(),
+        @experimental.experimental_v2_agent_fail_fast_context(),
         experimental_v2_agent_test_adapter_state(login_gated),
         ports,
       )
@@ -446,14 +448,14 @@ async test "v2 agent runtime bridge close aborts a pending login and settles it"
 
 ///|
 async fn experimental_v2_agent_test_outbound_new(
-  context : ExperimentalV2AgentContext,
-  _params : ExperimentalV2NewSessionParams,
-) -> ExperimentalV2NewSessionResult {
+  context : @experimental.ExperimentalV2AgentContext,
+  _params : @experimental.ExperimentalV2NewSessionParams,
+) -> @experimental.ExperimentalV2NewSessionResult {
   @async.pause()
   // The fail-fast broker raises a typed ContextUnavailable naming the
   // outbound method; the handler lets it escape so the boundary normalizes
   // it into a visible typed failure.
-  let _reply : ExperimentalV2RequestPermissionResponse = context.request_permission({
+  let _reply : @experimental.ExperimentalV2RequestPermissionResponse = context.request_permission({
       session_id: "created",
       title: "proceed?",
       description: None,
@@ -500,7 +502,7 @@ async test "v2 agent runtime bridge makes broker fail-fast visible typed" {
     let runtime = group.spawn(() => {
       experimental_v2_agent_runtime_test_run(
         endpoint,
-        experimental_v2_agent_fail_fast_context(),
+        @experimental.experimental_v2_agent_fail_fast_context(),
         experimental_v2_agent_test_adapter_state(endpoint),
         ports,
       )
@@ -532,9 +534,9 @@ async test "v2 agent runtime bridge makes broker fail-fast visible typed" {
 ///|
 test "v2 agent owner port plans local effects and synthesizes completions" {
   let endpoint = experimental_v2_agent_test_endpoint(with_auth=true)
-  let port = experimental_v2_agent_runtime_owner_port(
+  let port = @experimental.experimental_v2_agent_runtime_owner_port(
     endpoint~,
-    context=experimental_v2_agent_fail_fast_context(),
+    context=@experimental.experimental_v2_agent_fail_fast_context(),
     initial_state=experimental_v2_agent_test_adapter_state(endpoint),
   )
   assert_eq(
@@ -552,7 +554,7 @@ test "v2 agent owner port plans local effects and synthesizes completions" {
     ),
     RuntimeOwnerCommands([RuntimeOwnerTrace(method_name="session/cancel")]),
   )
-  let invocation : ExperimentalV2AgentInvocation = AuthLoginInvocation(
+  let invocation : @experimental.ExperimentalV2AgentInvocation = AuthLoginInvocation(
     id=String("login-1"),
     params={ method_id: "token", meta: None, },
   )
@@ -601,9 +603,9 @@ test "v2 agent owner port plans local effects and synthesizes completions" {
 ///|
 async test "v2 agent owner port executes a typed invocation" {
   let endpoint = experimental_v2_agent_test_endpoint(with_auth=true)
-  let port = experimental_v2_agent_runtime_owner_port(
+  let port = @experimental.experimental_v2_agent_runtime_owner_port(
     endpoint~,
-    context=experimental_v2_agent_fail_fast_context(),
+    context=@experimental.experimental_v2_agent_fail_fast_context(),
     initial_state=experimental_v2_agent_test_adapter_state(endpoint),
   )
   let completion = (port.execute)(

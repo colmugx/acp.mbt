@@ -1,6 +1,6 @@
 ///|
 async fn agent_endpoint_test_failing_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.pause()
@@ -9,7 +9,7 @@ async fn agent_endpoint_test_failing_new(
 
 ///|
 async fn agent_endpoint_test_thrown_cancel_new(
-  _context : AgentContext,
+  _context : @agent.AgentContext,
   _params : NewSessionParams,
 ) -> NewSessionResult {
   @async.with_task_group(group => {
@@ -26,12 +26,12 @@ async fn agent_endpoint_test_thrown_cancel_new(
 
 ///|
 async test "typed async endpoint handlers and context ports are callable" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("async"),
     sessions=agent_service_test_sessions(false),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   let context = agent_service_test_context()
   let new_result = endpoint.new_session(context, {
     cwd: "/",
@@ -73,16 +73,16 @@ async test "typed async endpoint handlers and context ports are callable" {
 
 ///|
 async test "generic handler errors are normalized at the endpoint boundary" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("error-boundary"),
-    sessions=agent_session_service(
+    sessions=@agent.agent_session_service(
       new_session=agent_endpoint_test_failing_new,
       prompt=agent_service_test_prompt,
       cancel=agent_service_test_cancel,
     ),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   try
     endpoint.new_session(agent_service_test_context(), {
       cwd: "/",
@@ -101,16 +101,16 @@ async test "generic handler errors are normalized at the endpoint boundary" {
 
 ///|
 async test "endpoint preserves real task cancellation as structured cancellation" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("task-cancel"),
-    sessions=agent_session_service(
+    sessions=@agent.agent_session_service(
       new_session=agent_endpoint_test_thrown_cancel_new,
       prompt=agent_service_test_prompt,
       cancel=agent_service_test_cancel,
     ),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   try
     endpoint.new_session(agent_service_test_context(), {
       cwd: "/",
@@ -128,32 +128,32 @@ async test "endpoint preserves real task cancellation as structured cancellation
 
 ///|
 test "fork capability is advertised from handler presence only" {
-  let with_fork = agent_endpoint_from_spec(
-    agent_spec(
+  let with_fork = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("fork-capable"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt=agent_service_test_prompt,
         cancel=agent_service_test_cancel,
         fork_session=agent_service_test_fork,
       ),
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   )
   match with_fork.capabilities().session_capabilities {
     Value(session) => assert_eq(session.fork, Value({ meta: Omitted, }))
     _ => fail("a present fork handler should advertise the marker")
   }
-  let without_fork = agent_endpoint_from_spec(
-    agent_spec(
+  let without_fork = @agent.agent_endpoint_from_spec(
+    @agent.agent_spec(
       info=agent_service_test_info("fork-omitted"),
-      sessions=agent_session_service(
+      sessions=@agent.agent_session_service(
         new_session=agent_service_test_new,
         prompt=agent_service_test_prompt,
         cancel=agent_service_test_cancel,
         list=agent_service_test_list,
       ),
-      support=agent_support(),
+      support=@agent.agent_support(),
     ).unwrap(),
   )
   match without_fork.capabilities().session_capabilities {
@@ -164,12 +164,12 @@ test "fork capability is advertised from handler presence only" {
 
 ///|
 async test "fork session without a handler fails as unavailable" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("fork-unavailable"),
     sessions=agent_service_test_sessions(false),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   try
     endpoint.fork_session(agent_service_test_context(), {
       cwd: "/",
@@ -188,12 +188,12 @@ async test "fork session without a handler fails as unavailable" {
 
 ///|
 async test "missing optional operation fails instead of falling back" {
-  let spec = agent_spec(
+  let spec = @agent.agent_spec(
     info=agent_service_test_info("optional"),
     sessions=agent_service_test_sessions(false),
-    support=agent_support(),
+    support=@agent.agent_support(),
   ).unwrap()
-  let endpoint = agent_endpoint_from_spec(spec)
+  let endpoint = @agent.agent_endpoint_from_spec(spec)
   try
     endpoint.load_session(agent_service_test_context(), {
       mcp_servers: [],

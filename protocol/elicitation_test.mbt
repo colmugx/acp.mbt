@@ -1,11 +1,11 @@
 ///|
-fn elicitation_test_meta() -> ProtocolNullable[Json] {
+fn elicitation_test_meta() -> @protocol.ProtocolNullable[Json] {
   Value({ "source": Json::string("test") })
 }
 
 ///|
-fn elicitation_test_schema() -> Json raise ProtocolDecodeError {
-  protocol_parse_json(
+fn elicitation_test_schema() -> Json raise @protocol.ProtocolDecodeError {
+  @protocol.protocol_parse_json(
     "{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"Name\",\"minLength\":1},\"count\":{\"type\":\"integer\",\"minimum\":-2,\"maximum\":5}},\"required\":[\"name\"]}",
   )
 }
@@ -36,21 +36,21 @@ fn elicitation_test_array_schema_with_min_items(min_items : Json) -> Json {
 
 ///|
 test "elicitation form and URL unions preserve scope and schema" {
-  let form : ElicitationCreateParams = Form({
+  let form : @protocol.ElicitationCreateParams = Form({
     scope: Request(String("request-1")),
     message: "Provide details",
     requested_schema: elicitation_test_schema(),
     meta: elicitation_test_meta(),
   })
-  let decoded_form = elicitation_create_params_from_json(
-    elicitation_create_params_to_json(form),
+  let decoded_form = @protocol.elicitation_create_params_from_json(
+    @protocol.elicitation_create_params_to_json(form),
   ) catch {
     InvalidField(path~, reason~) => fail(path + ":" + reason)
     _ => fail("unexpected protocol decode error")
   }
   assert_eq(decoded_form, form)
 
-  let url : ElicitationCreateParams = Url({
+  let url : @protocol.ElicitationCreateParams = Url({
     scope: Session(session_id="session-1", tool_call_id=Value("tool-1")),
     elicitation_id: "elicitation-1",
     message: "Open the approval page",
@@ -58,19 +58,21 @@ test "elicitation form and URL unions preserve scope and schema" {
     meta: Null,
   })
   assert_eq(
-    elicitation_create_params_from_json(elicitation_create_params_to_json(url)),
+    @protocol.elicitation_create_params_from_json(
+      @protocol.elicitation_create_params_to_json(url),
+    ),
     url,
   )
 
-  let session_without_tool : ElicitationCreateParams = Form({
+  let session_without_tool : @protocol.ElicitationCreateParams = Form({
     scope: Session(session_id="session-1", tool_call_id=Omitted),
     message: "Provide details",
     requested_schema: elicitation_test_schema(),
     meta: Omitted,
   })
   assert_eq(
-    elicitation_create_params_from_json(
-      elicitation_create_params_to_json(session_without_tool),
+    @protocol.elicitation_create_params_from_json(
+      @protocol.elicitation_create_params_to_json(session_without_tool),
     ),
     session_without_tool,
   )
@@ -78,28 +80,28 @@ test "elicitation form and URL unions preserve scope and schema" {
 
 ///|
 test "elicitation actions and complete notification round trip" {
-  let actions : Array[ElicitationAction] = [Accept, Decline, Cancel]
+  let actions : Array[@protocol.ElicitationAction] = [Accept, Decline, Cancel]
   for action in actions {
-    let result : ElicitationCreateResult = {
+    let result : @protocol.ElicitationCreateResult = {
       action,
       content: Omitted,
       meta: elicitation_test_meta(),
     }
     assert_eq(
-      elicitation_create_result_from_json(
-        elicitation_create_result_to_json(result),
+      @protocol.elicitation_create_result_from_json(
+        @protocol.elicitation_create_result_to_json(result),
       ),
       result,
     )
   }
 
-  let complete : ElicitationCompleteParams = {
+  let complete : @protocol.ElicitationCompleteParams = {
     elicitation_id: "elicitation-1",
     meta: Null,
   }
   assert_eq(
-    elicitation_complete_params_from_json(
-      elicitation_complete_params_to_json(complete),
+    @protocol.elicitation_complete_params_from_json(
+      @protocol.elicitation_complete_params_to_json(complete),
     ),
     complete,
   )
@@ -107,29 +109,29 @@ test "elicitation actions and complete notification round trip" {
 
 ///|
 test "elicitation accept content round trips and non-accept content fails" {
-  let content = protocol_parse_json(
+  let content = @protocol.protocol_parse_json(
     "{\"name\":\"Ada\",\"count\":2,\"ratio\":1.5,\"ok\":true,\"tags\":[\"a\",\"b\"]}",
   )
-  let accepted : ElicitationCreateResult = {
+  let accepted : @protocol.ElicitationCreateResult = {
     action: Accept,
     content: Value(content),
     meta: Omitted,
   }
   assert_eq(
-    elicitation_create_result_from_json(
-      elicitation_create_result_to_json(accepted),
+    @protocol.elicitation_create_result_from_json(
+      @protocol.elicitation_create_result_to_json(accepted),
     ),
     accepted,
   )
 
-  let null_content : ElicitationCreateResult = {
+  let null_content : @protocol.ElicitationCreateResult = {
     action: Accept,
     content: Null,
     meta: Omitted,
   }
   assert_eq(
-    elicitation_create_result_from_json(
-      elicitation_create_result_to_json(null_content),
+    @protocol.elicitation_create_result_from_json(
+      @protocol.elicitation_create_result_to_json(null_content),
     ),
     null_content,
   )
@@ -138,7 +140,11 @@ test "elicitation accept content round trips and non-accept content fails" {
     source in [
       "{\"action\":\"decline\",\"content\":{\"name\":\"Ada\"}}", "{\"action\":\"cancel\",\"content\":null}",
     ] {
-    try elicitation_create_result_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.elicitation_create_result_from_json(
+        @protocol.protocol_parse_json(source),
+      )
+    catch {
       InvalidField(
         path="elicitation/create.content",
         reason="decline and cancel must not carry content"
@@ -149,10 +155,13 @@ test "elicitation accept content round trips and non-accept content fails" {
     }
   }
 
-  let non_accept_actions : Array[ElicitationAction] = [Decline, Cancel]
+  let non_accept_actions : Array[@protocol.ElicitationAction] = [
+    Decline,
+    Cancel,
+  ]
   for action in non_accept_actions {
     try
-      elicitation_create_result_to_json({
+      @protocol.elicitation_create_result_to_json({
         action,
         content: Value(content),
         meta: Omitted,
@@ -181,7 +190,11 @@ test "elicitation accept content round trips and non-accept content fails" {
   ]
   for pair in invalid_values {
     let (source, expected_reason) = pair
-    try elicitation_create_result_from_json(protocol_parse_json(source)) catch {
+    try
+      @protocol.elicitation_create_result_from_json(
+        @protocol.protocol_parse_json(source),
+      )
+    catch {
       InvalidField(path~, reason~) => {
         assert_true(path.contains("content"))
         assert_eq(reason, expected_reason)
@@ -196,8 +209,8 @@ test "elicitation accept content round trips and non-accept content fails" {
 ///|
 test "elicitation validation rejects unknown modes scopes and schema fields" {
   try
-    elicitation_create_params_from_json(
-      protocol_parse_json(
+    @protocol.elicitation_create_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"mode\":\"other\",\"message\":\"m\",\"requestId\":\"r\"}",
       ),
     )
@@ -209,8 +222,8 @@ test "elicitation validation rejects unknown modes scopes and schema fields" {
   }
 
   try
-    elicitation_create_params_from_json(
-      protocol_parse_json(
+    @protocol.elicitation_create_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"mode\":\"form\",\"message\":\"m\",\"requestId\":\"r\",\"sessionId\":\"s\",\"requestedSchema\":{\"type\":\"object\",\"properties\":{}}}",
       ),
     )
@@ -222,8 +235,8 @@ test "elicitation validation rejects unknown modes scopes and schema fields" {
   }
 
   try
-    elicitation_create_params_from_json(
-      protocol_parse_json(
+    @protocol.elicitation_create_params_from_json(
+      @protocol.protocol_parse_json(
         "{\"mode\":\"form\",\"message\":\"m\",\"requestId\":\"r\",\"requestedSchema\":{\"type\":\"object\",\"properties\":{},\"extra\":true}}",
       ),
     )
@@ -235,8 +248,8 @@ test "elicitation validation rejects unknown modes scopes and schema fields" {
   }
 
   try
-    elicitation_create_result_from_json(
-      protocol_parse_json("{\"action\":\"maybe\"}"),
+    @protocol.elicitation_create_result_from_json(
+      @protocol.protocol_parse_json("{\"action\":\"maybe\"}"),
     )
   catch {
     InvalidDiscriminator(path="elicitation/create.action", value="maybe") => ()
@@ -246,8 +259,8 @@ test "elicitation validation rejects unknown modes scopes and schema fields" {
   }
 
   try
-    elicitation_complete_params_from_json(
-      protocol_parse_json("{\"elicitationId\":\"\"}"),
+    @protocol.elicitation_complete_params_from_json(
+      @protocol.protocol_parse_json("{\"elicitationId\":\"\"}"),
     )
   catch {
     InvalidField(path="elicitation/complete.elicitationId", reason=_) => ()
@@ -266,7 +279,7 @@ test "elicitation array integer validators preserve exact JSON numbers" {
   )
   for value in [large, maximum, Json::number(1000.0, repr="1e+3")] {
     let schema = elicitation_test_array_schema_with_min_items(value)
-    let decoded = elicitation_create_params_from_json(
+    let decoded = @protocol.elicitation_create_params_from_json(
       elicitation_test_form_with_schema(schema),
     )
     match decoded {
@@ -283,7 +296,7 @@ test "elicitation array integer validators preserve exact JSON numbers" {
   ]
   for value in invalid_values {
     try
-      elicitation_create_params_from_json(
+      @protocol.elicitation_create_params_from_json(
         elicitation_test_form_with_schema(
           elicitation_test_array_schema_with_min_items(value),
         ),
@@ -303,7 +316,7 @@ test "elicitation array integer validators preserve exact JSON numbers" {
     Json::number(9007199254740992.0),
   )
   try
-    elicitation_create_params_from_json(
+    @protocol.elicitation_create_params_from_json(
       elicitation_test_form_with_schema(repr_less),
     )
   catch {
@@ -319,10 +332,10 @@ test "elicitation array integer validators preserve exact JSON numbers" {
 
 ///|
 test "elicitation signed integer validators preserve exact boundaries" {
-  let schema = protocol_parse_json(
+  let schema = @protocol.protocol_parse_json(
     "{\"type\":\"object\",\"properties\":{\"count\":{\"type\":\"integer\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807}}}",
   )
-  let decoded = elicitation_create_params_from_json(
+  let decoded = @protocol.elicitation_create_params_from_json(
     elicitation_test_form_with_schema(schema),
   )
   match decoded {
@@ -346,7 +359,7 @@ test "elicitation signed integer validators preserve exact boundaries" {
       }),
     })
     try
-      elicitation_create_params_from_json(
+      @protocol.elicitation_create_params_from_json(
         elicitation_test_form_with_schema(invalid_schema),
       )
     catch {

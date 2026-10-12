@@ -1,7 +1,7 @@
 ///|
 fn experimental_v2_client_test_info(
   name : String,
-) -> ExperimentalV2Implementation {
+) -> @experimental.ExperimentalV2Implementation {
   { name, title: None, version: "1", meta: None, }
 }
 
@@ -9,7 +9,7 @@ fn experimental_v2_client_test_info(
 fn experimental_v2_client_test_capabilities(
   form~ : Bool = false,
   url~ : Bool = false,
-) -> ExperimentalV2ClientCapabilities {
+) -> @experimental.ExperimentalV2ClientCapabilities {
   {
     elicitation: MarkerSupported({
       form: if form {
@@ -32,8 +32,8 @@ fn experimental_v2_client_test_capabilities(
 /// One minimal agent advertisement for feeding the Client reducer's
 /// `InitializeResult` event.
 fn experimental_v2_client_test_initialize_result(
-  version~ : Int32 = experimental_v2_protocol_version,
-) -> ExperimentalV2InitializeResult {
+  version~ : Int32 = @experimental.experimental_v2_protocol_version,
+) -> @experimental.ExperimentalV2InitializeResult {
   {
     protocol_version: version,
     info: experimental_v2_client_test_info("agent"),
@@ -58,17 +58,17 @@ fn experimental_v2_client_test_initialize_result(
 /// One Client protocol state that has already accepted the pinned
 /// initialize result, the state every post-initialize admission needs.
 fn experimental_v2_client_test_ready_state(
-  capabilities~ : ExperimentalV2ClientCapabilities = experimental_v2_client_test_capabilities(),
-) -> ExperimentalV2ClientState {
-  let step = try! experimental_v2_client_reduce(
-    experimental_v2_client_state_new(capabilities~),
+  capabilities~ : @experimental.ExperimentalV2ClientCapabilities = experimental_v2_client_test_capabilities(),
+) -> @experimental.ExperimentalV2ClientState {
+  let step = try! @experimental.experimental_v2_client_reduce(
+    @experimental.experimental_v2_client_state_new(capabilities~),
     InitializeResult(experimental_v2_client_test_initialize_result()),
   )
   step.state
 }
 
 ///|
-fn experimental_v2_client_test_permission_request() -> ExperimentalV2RequestPermissionRequest {
+fn experimental_v2_client_test_permission_request() -> @experimental.ExperimentalV2RequestPermissionRequest {
   {
     session_id: "session",
     title: "proceed?",
@@ -87,7 +87,7 @@ fn experimental_v2_client_test_permission_request() -> ExperimentalV2RequestPerm
 }
 
 ///|
-fn experimental_v2_client_test_selected_response() -> ExperimentalV2RequestPermissionResponse {
+fn experimental_v2_client_test_selected_response() -> @experimental.ExperimentalV2RequestPermissionResponse {
   {
     outcome: Known(OutcomeSelected({ option_id: "allow", meta: None, })),
     meta: None,
@@ -95,7 +95,7 @@ fn experimental_v2_client_test_selected_response() -> ExperimentalV2RequestPermi
 }
 
 ///|
-fn experimental_v2_client_test_elicitation_form_request() -> ExperimentalV2ElicitationCreateRequest {
+fn experimental_v2_client_test_elicitation_form_request() -> @experimental.ExperimentalV2ElicitationCreateRequest {
   Known({
     message: "name?",
     mode: ElicitationForm({
@@ -113,14 +113,14 @@ fn experimental_v2_client_test_elicitation_form_request() -> ExperimentalV2Elici
 }
 
 ///|
-fn experimental_v2_client_test_decline_response() -> ExperimentalV2ElicitationCreateResponse {
+fn experimental_v2_client_test_decline_response() -> @experimental.ExperimentalV2ElicitationCreateResponse {
   Known({ action: ActionDecline, meta: None, })
 }
 
 ///|
 fn experimental_v2_client_test_update_notification(
-  update : ExperimentalV2SessionUpdate,
-) -> ExperimentalV2UpdateSessionNotification {
+  update : @experimental.ExperimentalV2SessionUpdate,
+) -> @experimental.ExperimentalV2UpdateSessionNotification {
   { session_id: "session", update, meta: None, }
 }
 
@@ -130,14 +130,14 @@ fn experimental_v2_client_test_update_notification(
 /// paths stay observable without real I/O.
 #warnings("-unused_async")
 fn experimental_v2_client_test_endpoint(
-  updates : Array[ExperimentalV2UpdateSessionNotification],
-  permissions : Array[ExperimentalV2RequestPermissionRequest],
+  updates : Array[@experimental.ExperimentalV2UpdateSessionNotification],
+  permissions : Array[@experimental.ExperimentalV2RequestPermissionRequest],
   form_replies : Array[String],
   with_form~ : Bool = false,
   with_url~ : Bool = false,
   with_complete~ : Bool = false,
-) -> ExperimentalV2ClientEndpoint {
-  let form : ExperimentalV2ClientElicitationFormHandler? = if with_form {
+) -> @experimental.ExperimentalV2ClientEndpoint {
+  let form : @experimental.ExperimentalV2ClientElicitationFormHandler? = if with_form {
     Some(async fn(message, _mode) {
       form_replies.push(message)
       experimental_v2_client_test_decline_response()
@@ -145,29 +145,33 @@ fn experimental_v2_client_test_endpoint(
   } else {
     None
   }
-  let url : ExperimentalV2ClientElicitationUrlHandler? = if with_url {
+  let url : @experimental.ExperimentalV2ClientElicitationUrlHandler? = if with_url {
     Some(async fn(_message, _mode) {
       experimental_v2_client_test_decline_response()
     })
   } else {
     None
   }
-  let complete : ExperimentalV2ClientElicitationCompleteHandler? = if with_complete {
+  let complete : @experimental.ExperimentalV2ClientElicitationCompleteHandler? = if with_complete {
     Some(async fn(_notification) { () })
   } else {
     None
   }
-  let elicitation : ExperimentalV2ClientElicitationService? = match
+  let elicitation : @experimental.ExperimentalV2ClientElicitationService? = match
     (form, url, complete) {
     (None, None, None) => None
     _ =>
       Some(
-        try! experimental_v2_client_elicitation_service(form?, url?, complete?),
+        try! @experimental.experimental_v2_client_elicitation_service(
+          form?,
+          url?,
+          complete?,
+        ),
       )
   }
-  let spec = try! experimental_v2_client_spec(
+  let spec = try! @experimental.experimental_v2_client_spec(
     info=experimental_v2_client_test_info("client"),
-    session=experimental_v2_client_session_service(
+    session=@experimental.experimental_v2_client_session_service(
       session_update=async fn(notification) {
         updates.push(notification)
         ()
@@ -179,14 +183,14 @@ fn experimental_v2_client_test_endpoint(
     ),
     elicitation?,
   )
-  experimental_v2_client_endpoint_from_spec(spec)
+  @experimental.experimental_v2_client_endpoint_from_spec(spec)
 }
 
 ///|
 fn experimental_v2_client_test_adapter_state(
-  endpoint : ExperimentalV2ClientEndpoint,
-) -> ExperimentalV2ClientAdapterState {
-  experimental_v2_client_adapter_state_new(
+  endpoint : @experimental.ExperimentalV2ClientEndpoint,
+) -> @experimental.ExperimentalV2ClientAdapterState {
+  @experimental.experimental_v2_client_adapter_state_new(
     protocol=experimental_v2_client_test_ready_state(
       capabilities=endpoint.capabilities(),
     ),
@@ -195,7 +199,7 @@ fn experimental_v2_client_test_adapter_state(
 
 ///|
 test "v2 client spec rejects empty identity and freezes the baseline" {
-  let session = experimental_v2_client_session_service(
+  let session = @experimental.experimental_v2_client_session_service(
     session_update=async fn(_notification) {
       @async.pause()
       ()
@@ -206,7 +210,7 @@ test "v2 client spec rejects empty identity and freezes the baseline" {
     },
   )
   try
-    experimental_v2_client_spec(
+    @experimental.experimental_v2_client_spec(
       info={ name: "", title: None, version: "1", meta: None, },
       session~,
     )
@@ -218,7 +222,7 @@ test "v2 client spec rejects empty identity and freezes the baseline" {
     _ => fail("an empty client name must fail composition")
   }
   try
-    experimental_v2_client_spec(
+    @experimental.experimental_v2_client_spec(
       info={ name: "client", title: None, version: "", meta: None, },
       session~,
     )
@@ -229,24 +233,27 @@ test "v2 client spec rejects empty identity and freezes the baseline" {
   } noraise {
     _ => fail("an empty client version must fail composition")
   }
-  let spec = try! experimental_v2_client_spec(
+  let spec = try! @experimental.experimental_v2_client_spec(
     info=experimental_v2_client_test_info("client"),
     session~,
   )
-  let endpoint = experimental_v2_client_endpoint_from_spec(spec)
+  let endpoint = @experimental.experimental_v2_client_endpoint_from_spec(spec)
   assert_eq(endpoint.info(), experimental_v2_client_test_info("client"))
 }
 
 ///|
 test "v2 client elicitation service validates its handler shape" {
-  try experimental_v2_client_elicitation_service() catch {
+  try @experimental.experimental_v2_client_elicitation_service() catch {
     MissingElicitationHandler => ()
     _ => fail("expected a missing-handler composition failure")
   } noraise {
     _ => fail("an elicitation service with no handler must fail composition")
   }
   try
-    experimental_v2_client_elicitation_service(url=async fn(_message, _mode) {
+    @experimental.experimental_v2_client_elicitation_service(url=async fn(
+      _message,
+      _mode,
+    ) {
       @async.pause()
       experimental_v2_client_test_decline_response()
     })
@@ -259,13 +266,14 @@ test "v2 client elicitation service validates its handler shape" {
   } noraise {
     _ => fail("url support without the completion sink must fail composition")
   }
-  let complete_only = try! experimental_v2_client_elicitation_service(complete=async fn(
-    _notification,
-  ) {
-    @async.pause()
-    ()
-  })
-  let paired = try! experimental_v2_client_elicitation_service(
+  let complete_only = try! @experimental.experimental_v2_client_elicitation_service(complete=async fn(
+      _notification,
+    ) {
+      @async.pause()
+      ()
+    },
+  )
+  let paired = try! @experimental.experimental_v2_client_elicitation_service(
     url=async fn(_message, _mode) {
       @async.pause()
       experimental_v2_client_test_decline_response()

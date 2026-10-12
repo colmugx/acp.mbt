@@ -238,7 +238,7 @@ fn encode_tool_location(
       if line == 0 {
         raise InvalidField(path="line", reason="line must be 1-based")
       }
-      fields["line"] = line.to_json()
+      fields["line"] = Json(line)
     }
   }
   protocol_put_meta(fields, value.meta)

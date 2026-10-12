@@ -38,9 +38,9 @@ fn experimental_v2_agent_test_initialize_params() -> String {
 
 ///|
 fn experimental_v2_agent_test_initialized(
-  endpoint : ExperimentalV2AgentEndpoint,
-) -> ExperimentalV2AgentAdapterState raise {
-  let admission = try! experimental_v2_agent_adapter_admit(
+  endpoint : @experimental.ExperimentalV2AgentEndpoint,
+) -> @experimental.ExperimentalV2AgentAdapterState raise {
+  let admission = try! @experimental.experimental_v2_agent_adapter_admit(
     experimental_v2_agent_test_adapter_state(endpoint),
     endpoint,
     experimental_v2_agent_test_request(
@@ -57,7 +57,7 @@ fn experimental_v2_agent_test_initialized(
 
 ///|
 fn experimental_v2_agent_test_step_response(
-  step : ExperimentalV2AgentAdapterStep,
+  step : @experimental.ExperimentalV2AgentAdapterStep,
 ) -> @jsonrpc.JsonRpcResponse raise {
   match step.outputs {
     [Response(response)] => response
@@ -67,7 +67,7 @@ fn experimental_v2_agent_test_step_response(
 
 ///|
 fn experimental_v2_agent_test_success_result(
-  step : ExperimentalV2AgentAdapterStep,
+  step : @experimental.ExperimentalV2AgentAdapterStep,
 ) -> Json raise {
   match experimental_v2_agent_test_step_response(step) {
     Success(success) => success.result
@@ -77,7 +77,7 @@ fn experimental_v2_agent_test_success_result(
 
 ///|
 fn experimental_v2_agent_test_error_code(
-  step : ExperimentalV2AgentAdapterStep,
+  step : @experimental.ExperimentalV2AgentAdapterStep,
 ) -> @jsonrpc.JsonRpcErrorCode raise {
   match experimental_v2_agent_test_step_response(step) {
     Error(failure) => failure.error.code
@@ -87,21 +87,23 @@ fn experimental_v2_agent_test_error_code(
 
 ///|
 async fn experimental_v2_agent_test_cycle(
-  endpoint : ExperimentalV2AgentEndpoint,
-  state : ExperimentalV2AgentAdapterState,
+  endpoint : @experimental.ExperimentalV2AgentEndpoint,
+  state : @experimental.ExperimentalV2AgentAdapterState,
   message : @jsonrpc.JsonRpcMessage,
-) -> ExperimentalV2AgentAdapterStep {
-  let context = experimental_v2_agent_fail_fast_context()
-  let admission = try! experimental_v2_agent_adapter_admit(
+) -> @experimental.ExperimentalV2AgentAdapterStep {
+  let context = @experimental.experimental_v2_agent_fail_fast_context()
+  let admission = try! @experimental.experimental_v2_agent_adapter_admit(
     state, endpoint, message,
   )
   match admission {
     Immediate(step) => step
     Invoke(state~, invocation~) =>
-      try! experimental_v2_agent_adapter_complete(
+      try! @experimental.experimental_v2_agent_adapter_complete(
         state,
         invocation,
-        experimental_v2_agent_execute(invocation, endpoint, context),
+        @experimental.experimental_v2_agent_execute(
+          invocation, endpoint, context,
+        ),
       )
   }
 }
@@ -249,9 +251,14 @@ async test "v2 agent adapter completes every baseline session method" {
 
 ///|
 async test "v2 agent adapter maps typed handler failures onto wire errors" {
-  let failing : ExperimentalV2AgentPromptHandler = async fn(_context, _params) {
+  let failing : @experimental.ExperimentalV2AgentPromptHandler = async fn(
+    _context,
+    _params,
+  ) {
     @async.pause()
-    raise ExperimentalV2AgentHandlerError::Application(message="boom")
+    raise @experimental.ExperimentalV2AgentHandlerError::Application(
+      message="boom",
+    )
   }
   let endpoint = experimental_v2_agent_test_endpoint(prompt=failing)
   let state = experimental_v2_agent_test_initialized(endpoint)
@@ -271,8 +278,8 @@ async test "v2 agent adapter maps typed handler failures onto wire errors" {
 async test "v2 agent adapter settles a typed cancellation as request cancelled" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let state = experimental_v2_agent_test_initialized(endpoint)
-  let context = experimental_v2_agent_fail_fast_context()
-  let invocation : ExperimentalV2AgentInvocation = SessionNewInvocation(
+  let context = @experimental.experimental_v2_agent_fail_fast_context()
+  let invocation : @experimental.ExperimentalV2AgentInvocation = SessionNewInvocation(
     id=String("cancel-me"),
     params={
       cwd: "/",
@@ -281,10 +288,10 @@ async test "v2 agent adapter settles a typed cancellation as request cancelled" 
       meta: None,
     },
   )
-  let step = try! experimental_v2_agent_adapter_complete(
+  let step = try! @experimental.experimental_v2_agent_adapter_complete(
     state,
     invocation,
-    experimental_v2_agent_cancel_completion(invocation),
+    @experimental.experimental_v2_agent_cancel_completion(invocation),
   )
   ignore(context)
   assert_eq(try! experimental_v2_agent_test_error_code(step), RequestCancelled)
@@ -294,7 +301,7 @@ async test "v2 agent adapter settles a typed cancellation as request cancelled" 
 async test "v2 agent adapter gates capability-marked methods without invoking" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let state = experimental_v2_agent_test_initialized(endpoint)
-  let denied = try! experimental_v2_agent_adapter_admit(
+  let denied = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -313,7 +320,7 @@ async test "v2 agent adapter gates capability-marked methods without invoking" {
   }
   // Upstream unstable (RFD session-fork, Draft): the unadvertised fork method
   // denies without invoking too.
-  let fork_denied = try! experimental_v2_agent_adapter_admit(
+  let fork_denied = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -330,7 +337,7 @@ async test "v2 agent adapter gates capability-marked methods without invoking" {
       )
     Invoke(..) => fail("a gated method must not invoke")
   }
-  let image = try! experimental_v2_agent_adapter_admit(
+  let image = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -347,7 +354,7 @@ async test "v2 agent adapter gates capability-marked methods without invoking" {
       )
     Invoke(..) => fail("a gated method must not invoke")
   }
-  let directories = try! experimental_v2_agent_adapter_admit(
+  let directories = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -402,7 +409,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
   let endpoint = experimental_v2_agent_test_endpoint(with_auth=true)
   let state = experimental_v2_agent_test_initialized(endpoint)
   assert_true(state.protocol.authentication is AuthPending)
-  let admitted = try! experimental_v2_agent_adapter_admit(
+  let admitted = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -412,8 +419,8 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
     ),
   )
   let (reserved, invocation) : (
-    ExperimentalV2AgentAdapterState,
-    ExperimentalV2AgentInvocation,
+    @experimental.ExperimentalV2AgentAdapterState,
+    @experimental.ExperimentalV2AgentInvocation,
   ) = match admitted {
     Invoke(state~, invocation~) => {
       assert_true(state.reservation is LoginPending(String("login-1")))
@@ -422,7 +429,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
     }
     Immediate(_) => fail("login must invoke the auth handler")
   }
-  let busy = try! experimental_v2_agent_adapter_admit(
+  let busy = try! @experimental.experimental_v2_agent_adapter_admit(
     reserved,
     endpoint,
     experimental_v2_agent_test_request(
@@ -439,7 +446,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
       )
     Invoke(..) => fail("a reserved auth surface must answer busy")
   }
-  let step = try! experimental_v2_agent_adapter_complete(
+  let step = try! @experimental.experimental_v2_agent_adapter_complete(
     reserved,
     invocation,
     AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None, })),
@@ -448,7 +455,7 @@ async test "v2 agent adapter login reserves, completes, and rejects duplicates" 
   assert_true(step.state.protocol.authentication is AuthLoggedIn)
   assert_true(step.state.reservation is Idle)
   try
-    experimental_v2_agent_adapter_complete(
+    @experimental.experimental_v2_agent_adapter_complete(
       step.state,
       invocation,
       AuthLoginCompleted(id=String("login-1"), result=Ok({ meta: None, })),
@@ -466,7 +473,7 @@ async test "v2 agent adapter logout lifecycle gates sessions while pending" {
   let endpoint = experimental_v2_agent_test_endpoint(with_auth=true)
   let state = experimental_v2_agent_test_initialized(endpoint)
   // Logout before login is a typed auth-state failure, not an invoke.
-  let early = try! experimental_v2_agent_adapter_admit(
+  let early = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(
@@ -492,14 +499,14 @@ async test "v2 agent adapter logout lifecycle gates sessions while pending" {
   )
   assert_true(login.state.protocol.authentication is AuthLoggedIn)
   // Logout reserves; session requests answer busy until it settles.
-  let logout = try! experimental_v2_agent_adapter_admit(
+  let logout = try! @experimental.experimental_v2_agent_adapter_admit(
     login.state,
     endpoint,
     experimental_v2_agent_test_request(String("logout-1"), "auth/logout", "{}"),
   )
   let (reserved, _invocation) : (
-    ExperimentalV2AgentAdapterState,
-    ExperimentalV2AgentInvocation,
+    @experimental.ExperimentalV2AgentAdapterState,
+    @experimental.ExperimentalV2AgentInvocation,
   ) = match logout {
     Invoke(state~, invocation~) => {
       assert_true(state.reservation is LogoutPending(String("logout-1")))
@@ -507,7 +514,7 @@ async test "v2 agent adapter logout lifecycle gates sessions while pending" {
     }
     Immediate(_) => fail("logout must invoke the auth handler")
   }
-  let busy = try! experimental_v2_agent_adapter_admit(
+  let busy = try! @experimental.experimental_v2_agent_adapter_admit(
     reserved,
     endpoint,
     experimental_v2_agent_test_request(
@@ -539,14 +546,14 @@ async test "v2 agent adapter completes logout back to pending" {
       "{\"methodId\":\"token\"}",
     ),
   )
-  let admitted = try! experimental_v2_agent_adapter_admit(
+  let admitted = try! @experimental.experimental_v2_agent_adapter_admit(
     login.state,
     endpoint,
     experimental_v2_agent_test_request(String("logout-1"), "auth/logout", "{}"),
   )
   match admitted {
     Invoke(state~, invocation~) => {
-      let step = try! experimental_v2_agent_adapter_complete(
+      let step = try! @experimental.experimental_v2_agent_adapter_complete(
         state,
         invocation,
         AuthLogoutCompleted(id=String("logout-1"), result=Ok({ meta: None, })),
@@ -597,12 +604,13 @@ async test "v2 agent adapter rejects auth calls when auth is not advertised" {
 async test "v2 agent adapter completes late and mismatched typed" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let state = experimental_v2_agent_test_initialized(endpoint)
-  let admitted = try! experimental_v2_agent_adapter_admit(
+  let admitted = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_request(String("list-1"), "session/list", "{}"),
   )
-  let invocation : ExperimentalV2AgentInvocation = match admitted {
+  let invocation : @experimental.ExperimentalV2AgentInvocation = match
+    admitted {
     Invoke(state~, invocation~) => {
       ignore(state)
       invocation
@@ -611,7 +619,7 @@ async test "v2 agent adapter completes late and mismatched typed" {
   }
   // A completion of a different constructor for the same id is a mismatch.
   try
-    experimental_v2_agent_adapter_complete(
+    @experimental.experimental_v2_agent_adapter_complete(
       state,
       invocation,
       SessionNewCompleted(
@@ -628,7 +636,7 @@ async test "v2 agent adapter completes late and mismatched typed" {
   }
   // A completion for a different wire id is late.
   try
-    experimental_v2_agent_adapter_complete(
+    @experimental.experimental_v2_agent_adapter_complete(
       state,
       invocation,
       SessionListCompleted(
@@ -648,7 +656,7 @@ async test "v2 agent adapter completes late and mismatched typed" {
 async test "v2 agent adapter consumes session cancel and forwards cancel request" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let state = experimental_v2_agent_test_initialized(endpoint)
-  let cancel = try! experimental_v2_agent_adapter_admit(
+  let cancel = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_notification(
@@ -662,13 +670,13 @@ async test "v2 agent adapter consumes session cancel and forwards cancel request
     }
     Invoke(..) => fail("session/cancel carries no owner invocation")
   }
-  let cancel_cases : Array[(String, ExperimentalV2RequestId)] = [
+  let cancel_cases : Array[(String, @experimental.ExperimentalV2RequestId)] = [
     ("{\"requestId\":\"victim\"}", RequestIdStr("victim")),
     ("{\"requestId\":7}", RequestIdNumber(7)),
   ]
   for entry in cancel_cases {
     let expected = entry.1
-    let forwarded = try! experimental_v2_agent_adapter_admit(
+    let forwarded = try! @experimental.experimental_v2_agent_adapter_admit(
       state,
       endpoint,
       experimental_v2_agent_test_notification("$/cancel_request", entry.0),
@@ -689,7 +697,7 @@ async test "v2 agent adapter consumes session cancel and forwards cancel request
 async test "v2 agent adapter traces notifications before initialize" {
   let endpoint = experimental_v2_agent_test_endpoint()
   let state = experimental_v2_agent_test_adapter_state(endpoint)
-  let early = try! experimental_v2_agent_adapter_admit(
+  let early = try! @experimental.experimental_v2_agent_adapter_admit(
     state,
     endpoint,
     experimental_v2_agent_test_notification(
@@ -713,8 +721,8 @@ async test "v2 agent adapter traces notifications before initialize" {
 ///|
 async test "v2 agent adapter fail-fast on endpoint drift and responses" {
   let endpoint = experimental_v2_agent_test_endpoint()
-  let other = experimental_v2_agent_endpoint_from_spec(
-    try! experimental_v2_agent_spec(
+  let other = @experimental.experimental_v2_agent_endpoint_from_spec(
+    try! @experimental.experimental_v2_agent_spec(
       info=experimental_v2_agent_test_info("other"),
       capabilities=experimental_v2_agent_test_capabilities(),
       sessions=experimental_v2_agent_test_sessions(false),
@@ -722,7 +730,7 @@ async test "v2 agent adapter fail-fast on endpoint drift and responses" {
   )
   let state = experimental_v2_agent_test_adapter_state(endpoint)
   try
-    experimental_v2_agent_adapter_admit(
+    @experimental.experimental_v2_agent_adapter_admit(
       state,
       other,
       experimental_v2_agent_test_request(
@@ -739,7 +747,7 @@ async test "v2 agent adapter fail-fast on endpoint drift and responses" {
     _ => fail("expected EndpointMismatch")
   }
   try
-    experimental_v2_agent_adapter_admit(
+    @experimental.experimental_v2_agent_adapter_admit(
       state,
       endpoint,
       @jsonrpc.JsonRpcMessage::response(

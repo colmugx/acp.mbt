@@ -245,9 +245,9 @@ implementation; see the *Experimental: ACP v2 Draft baseline* section below.
   "moonbit client drives a moonbit agent process end to end over stdio").
 - Local verification only (not CI-reproducible yet): the
   `docs/implementation-plan/09` gate commands pass at the current HEAD
-  (`rtk moon check --target native --warn-list +73`, `rtk moon test
-  --target native`, `rtk moon info --target native`, `rtk moon fmt
-  --check`, `rtk git diff --check`, `rtk moon coverage analyze`). The
+  (`moon check --target native --warn-list +73`, `moon test
+  --target native`, `moon info --target native`, `moon fmt
+  --check`, `git diff --check`, `moon coverage analyze`). The
   earlier whole-module coverage toolchain quirk (a crash inside
   `moon_cove_report.combine_coverages`) is resolved; the canonical
   whole-module run is recorded in `uncovered.log` (711 uncovered lines
