@@ -88,7 +88,7 @@ pub(all) enum JsonRpcErrorCode {
   RequestCancelled
   AuthRequired
   ResourceNotFound
-  Custom(Int)
+  Custom(Int32)
 } derive(Eq, Debug)
 
 ///|

@@ -183,8 +183,8 @@ pub async fn agent_serve_stdio(
   endpoint~ : AgentEndpoint,
   context~ : AgentContext,
   initial_state~ : AgentAdapterState,
-  options? : RuntimeOptions = runtime_default_options(),
-  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+  options~ : RuntimeOptions = runtime_default_options(),
+  trace~ : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> Unit {
   runtime_validate_options(options)
   agent_runtime_run(
@@ -213,8 +213,8 @@ pub async fn agent_serve_stdio_with_outbound(
   endpoint~ : AgentEndpoint,
   context_factory~ : (RuntimeOutboundChannel[AgentAdapterCompletion]) -> AgentContext,
   initial_state~ : AgentAdapterState,
-  options? : RuntimeOptions = runtime_default_options(),
-  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+  options~ : RuntimeOptions = runtime_default_options(),
+  trace~ : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> Unit {
   runtime_validate_options(options)
   agent_runtime_run_with_outbound(

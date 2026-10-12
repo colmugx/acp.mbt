@@ -212,12 +212,12 @@ pub async fn client_connect_process(
   initial_state~ : ClientAdapterState,
   handlers~ : RuntimeHandlerPort,
   command~ : String,
-  args? : Array[String] = [],
+  args~ : Array[String] = [],
   extra_env? : Map[String, String],
-  inherit_env? : Bool = true,
-  spawned? : (RuntimeProcessPorts) -> Unit = _ => (),
-  options? : RuntimeOptions = runtime_default_options(),
-  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+  inherit_env~ : Bool = true,
+  spawned~ : (RuntimeProcessPorts) -> Unit = _ => (),
+  options~ : RuntimeOptions = runtime_default_options(),
+  trace~ : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> Unit {
   runtime_validate_options(options)
   @async.with_task_group(group => {

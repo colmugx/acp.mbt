@@ -15,7 +15,7 @@ fn core_test_object_fields(
 fn core_test_decode_known(
   tag : String,
   payload : Json,
-) -> (String, Int) raise ExperimentalV2DecodeError {
+) -> (String, Int32) raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(payload, path="update")
   match fields.get("count") {
     Some(Number(count, ..)) =>
@@ -29,7 +29,7 @@ fn core_test_decode_known(
 }
 
 ///|
-fn core_test_encode_known(known : (String, Int)) -> Json {
+fn core_test_encode_known(known : (String, Int32)) -> Json {
   let fields : Map[String, Json] = Map([])
   fields["type"] = Json::string(known.0)
   fields["count"] = Json::number(known.1.to_double())
@@ -274,7 +274,7 @@ test "v2 open union rejects non-object values and malformed tags" {
 
 ///|
 test "v2 open union encode fails fast on an inconsistent raw payload" {
-  let mismatch : ExperimentalV2Open[(String, Int)] = Extension(
+  let mismatch : ExperimentalV2Open[(String, Int32)] = Extension(
     tag="_custom",
     raw=experimental_v2_parse_json("{\"type\":\"alpha\"}"),
   )
@@ -288,7 +288,7 @@ test "v2 open union encode fails fast on an inconsistent raw payload" {
   } noraise {
     _ => fail("expected a typed error for a mismatched raw tag")
   }
-  let untagged : ExperimentalV2Open[(String, Int)] = Future(
+  let untagged : ExperimentalV2Open[(String, Int32)] = Future(
     tag="futureThing",
     raw=experimental_v2_parse_json("{\"count\":2}"),
   )

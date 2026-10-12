@@ -21,9 +21,9 @@ pub(all) suberror RuntimeError {
   ReaderFailed
   ReaderEmptyChunk
   EventQueueClosed
-  EventQueueBackpressure(limit~ : Int)
+  EventQueueBackpressure(limit~ : Int32)
   WriterQueueClosed
-  WriterQueueBackpressure(limit~ : Int)
+  WriterQueueBackpressure(limit~ : Int32)
   WriterFailed
   FramingFailed
   JsonRpcDecodeFailed
@@ -54,7 +54,7 @@ pub(all) struct RuntimeTraceEvent {
 ///|
 /// Caller-owned asynchronous input seam. `None` is the only EOF signal.
 pub(all) struct RuntimeReaderPort {
-  read : async (Int) -> Bytes?
+  read : async (Int32) -> Bytes?
 }
 
 ///|
@@ -132,9 +132,9 @@ pub(all) struct RuntimePorts {
 /// bounded so backpressure is observable instead of becoming unbounded heap
 /// growth.
 pub(all) struct RuntimeOptions {
-  max_frame_bytes : Int
-  queue_capacity : Int
-  read_chunk_bytes : Int
+  max_frame_bytes : Int32
+  queue_capacity : Int32
+  read_chunk_bytes : Int32
 }
 
 ///|

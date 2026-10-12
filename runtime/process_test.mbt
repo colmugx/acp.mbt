@@ -22,7 +22,7 @@ fn runtime_process_test_traces() -> Array[RuntimeTraceEvent] {
 /// before completion, or excess bytes, fail the test instead of guessing.
 async fn runtime_process_test_read_exact(
   reader : RuntimeReaderPort,
-  want : Int,
+  want : Int32,
   expected : Bytes,
 ) -> Unit {
   let received = FixedArray::make(want, b'\x00')
@@ -159,7 +159,7 @@ async test "process ports kill and reap a live child when the scope ends" {
   })
   let cancelled : Array[Unit] = []
   try {
-    let _ : Int = children[0].wait()
+    let _ : Int32 = children[0].wait()
     ()
   } catch {
     _ => cancelled.push(())

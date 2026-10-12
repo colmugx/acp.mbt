@@ -7,8 +7,8 @@ fn experimental_v2_client_test_info(
 
 ///|
 fn experimental_v2_client_test_capabilities(
-  form? : Bool = false,
-  url? : Bool = false,
+  form~ : Bool = false,
+  url~ : Bool = false,
 ) -> ExperimentalV2ClientCapabilities {
   {
     elicitation: MarkerSupported({
@@ -32,7 +32,7 @@ fn experimental_v2_client_test_capabilities(
 /// One minimal agent advertisement for feeding the Client reducer's
 /// `InitializeResult` event.
 fn experimental_v2_client_test_initialize_result(
-  version? : Int = experimental_v2_protocol_version,
+  version~ : Int32 = experimental_v2_protocol_version,
 ) -> ExperimentalV2InitializeResult {
   {
     protocol_version: version,
@@ -58,7 +58,7 @@ fn experimental_v2_client_test_initialize_result(
 /// One Client protocol state that has already accepted the pinned
 /// initialize result, the state every post-initialize admission needs.
 fn experimental_v2_client_test_ready_state(
-  capabilities? : ExperimentalV2ClientCapabilities = experimental_v2_client_test_capabilities(),
+  capabilities~ : ExperimentalV2ClientCapabilities = experimental_v2_client_test_capabilities(),
 ) -> ExperimentalV2ClientState {
   let step = try! experimental_v2_client_reduce(
     experimental_v2_client_state_new(capabilities~),
@@ -133,9 +133,9 @@ fn experimental_v2_client_test_endpoint(
   updates : Array[ExperimentalV2UpdateSessionNotification],
   permissions : Array[ExperimentalV2RequestPermissionRequest],
   form_replies : Array[String],
-  with_form? : Bool = false,
-  with_url? : Bool = false,
-  with_complete? : Bool = false,
+  with_form~ : Bool = false,
+  with_url~ : Bool = false,
+  with_complete~ : Bool = false,
 ) -> ExperimentalV2ClientEndpoint {
   let form : ExperimentalV2ClientElicitationFormHandler? = if with_form {
     Some(async fn(message, _mode) {

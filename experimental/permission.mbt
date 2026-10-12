@@ -13,7 +13,7 @@ pub(all) enum ExperimentalV2PermissionOptionKind {
 ///|
 pub fn experimental_v2_decode_permission_option_kind(
   value : Json,
-  path? : String = "kind",
+  path~ : String = "kind",
 ) -> ExperimentalV2PermissionOptionKind raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -56,7 +56,7 @@ pub(all) struct ExperimentalV2PermissionOption {
 ///|
 pub fn experimental_v2_decode_permission_option(
   value : Json,
-  path? : String = "option",
+  path~ : String = "option",
 ) -> ExperimentalV2PermissionOption raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -105,7 +105,7 @@ pub(all) struct ExperimentalV2SelectedPermissionOutcome {
 ///|
 pub fn experimental_v2_decode_selected_permission_outcome(
   value : Json,
-  path? : String = "outcome",
+  path~ : String = "outcome",
 ) -> ExperimentalV2SelectedPermissionOutcome raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -153,7 +153,7 @@ pub type ExperimentalV2PermissionOutcome = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_permission_outcome(
   value : Json,
-  path? : String = "outcome",
+  path~ : String = "outcome",
 ) -> ExperimentalV2PermissionOutcome raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -206,7 +206,7 @@ pub(all) struct ExperimentalV2ToolCallPermissionSubject {
 ///|
 pub fn experimental_v2_decode_tool_call_permission_subject(
   value : Json,
-  path? : String = "subject",
+  path~ : String = "subject",
 ) -> ExperimentalV2ToolCallPermissionSubject raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["type", "toolCall"], prefix=path)
@@ -239,7 +239,7 @@ pub(all) struct ExperimentalV2CommandPermissionSubject {
 ///|
 pub fn experimental_v2_decode_command_permission_subject(
   value : Json,
-  path? : String = "subject",
+  path~ : String = "subject",
 ) -> ExperimentalV2CommandPermissionSubject raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -321,7 +321,7 @@ pub type ExperimentalV2PermissionSubject = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_permission_subject(
   value : Json,
-  path? : String = "subject",
+  path~ : String = "subject",
 ) -> ExperimentalV2PermissionSubject raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -382,7 +382,7 @@ pub(all) struct ExperimentalV2RequestPermissionRequest {
 ///|
 pub fn experimental_v2_decode_request_permission_request(
   value : Json,
-  path? : String = "session/request_permission",
+  path~ : String = "session/request_permission",
 ) -> ExperimentalV2RequestPermissionRequest raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -464,7 +464,7 @@ pub(all) struct ExperimentalV2RequestPermissionResponse {
 ///|
 pub fn experimental_v2_decode_request_permission_response(
   value : Json,
-  path? : String = "session/request_permission",
+  path~ : String = "session/request_permission",
 ) -> ExperimentalV2RequestPermissionResponse raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["outcome", "_meta"], prefix=path)

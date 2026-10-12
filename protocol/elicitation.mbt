@@ -680,7 +680,7 @@ fn elicitation_validate_content(
 /// Decode the form/URL union for `elicitation/create`.
 pub fn elicitation_create_params_from_json(
   value : Json,
-  path? : String = "elicitation/create",
+  path~ : String = "elicitation/create",
 ) -> ElicitationCreateParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -780,7 +780,7 @@ pub fn elicitation_create_params_to_json(
 /// invalid-params failure, never a silently ignored payload.
 pub fn elicitation_create_result_from_json(
   value : Json,
-  path? : String = "elicitation/create",
+  path~ : String = "elicitation/create",
 ) -> ElicitationCreateResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["action", "content", "_meta"], prefix=path)
@@ -852,7 +852,7 @@ pub fn elicitation_create_result_to_json(
 /// Decode the `elicitation/complete` notification parameters.
 pub fn elicitation_complete_params_from_json(
   value : Json,
-  path? : String = "elicitation/complete",
+  path~ : String = "elicitation/complete",
 ) -> ElicitationCompleteParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["elicitationId", "_meta"], prefix=path)

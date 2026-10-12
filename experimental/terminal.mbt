@@ -10,7 +10,7 @@ pub(all) struct ExperimentalV2Terminal {
 ///|
 pub fn experimental_v2_decode_terminal(
   value : Json,
-  path? : String = "terminal",
+  path~ : String = "terminal",
 ) -> ExperimentalV2Terminal raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -49,7 +49,7 @@ pub(all) struct ExperimentalV2TerminalOutput {
 ///|
 pub fn experimental_v2_decode_terminal_output(
   value : Json,
-  path? : String = "output",
+  path~ : String = "output",
 ) -> ExperimentalV2TerminalOutput raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["data", "_meta"], prefix=path)
@@ -81,7 +81,7 @@ pub fn experimental_v2_encode_terminal_output(
 /// marks the terminal as exited even when neither an exit code nor a signal
 /// is known; omitted and null are equivalent for both fields.
 pub(all) struct ExperimentalV2TerminalExitStatus {
-  exit_code : UInt?
+  exit_code : UInt32?
   signal : String?
   meta : Json?
 } derive(Eq, Debug)
@@ -89,7 +89,7 @@ pub(all) struct ExperimentalV2TerminalExitStatus {
 ///|
 pub fn experimental_v2_decode_terminal_exit_status(
   value : Json,
-  path? : String = "exitStatus",
+  path~ : String = "exitStatus",
 ) -> ExperimentalV2TerminalExitStatus raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -144,7 +144,7 @@ pub(all) struct ExperimentalV2TerminalUpdate {
 ///|
 pub fn experimental_v2_decode_terminal_update(
   value : Json,
-  path? : String = "terminal",
+  path~ : String = "terminal",
 ) -> ExperimentalV2TerminalUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -225,7 +225,7 @@ pub(all) struct ExperimentalV2TerminalOutputChunk {
 ///|
 pub fn experimental_v2_decode_terminal_output_chunk(
   value : Json,
-  path? : String = "terminalOutputChunk",
+  path~ : String = "terminalOutputChunk",
 ) -> ExperimentalV2TerminalOutputChunk raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

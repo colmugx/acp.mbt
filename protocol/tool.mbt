@@ -630,7 +630,7 @@ fn decode_tool_call_fields(
 /// Decode an initial tool call from JSON.
 pub fn tool_call_from_json(
   value : Json,
-  path? : String = "toolCall",
+  path~ : String = "toolCall",
 ) -> ToolCall raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_tool_call_fields(fields, path~)
@@ -712,7 +712,7 @@ fn decode_tool_call_update_fields(
 /// Decode a tool call update from JSON.
 pub fn tool_call_update_from_json(
   value : Json,
-  path? : String = "toolCallUpdate",
+  path~ : String = "toolCallUpdate",
 ) -> ToolCallUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_tool_call_update_fields(fields, path~)
@@ -861,7 +861,7 @@ pub fn request_permission_outcome_to_json(
 /// Decode a permission outcome from JSON.
 pub fn request_permission_outcome_from_json(
   value : Json,
-  path? : String = "outcome",
+  path~ : String = "outcome",
 ) -> RequestPermissionOutcome raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   let outcome = protocol_required_string(
@@ -884,7 +884,7 @@ pub fn request_permission_outcome_from_json(
 /// Decode a permission request payload from JSON.
 pub fn request_permission_request_from_json(
   value : Json,
-  path? : String = "requestPermission",
+  path~ : String = "requestPermission",
 ) -> RequestPermissionRequest raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -932,7 +932,7 @@ pub fn request_permission_request_to_json(
 /// Decode a permission response payload from JSON.
 pub fn request_permission_response_from_json(
   value : Json,
-  path? : String = "requestPermission",
+  path~ : String = "requestPermission",
 ) -> RequestPermissionResponse raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["outcome", "_meta"], prefix=path)
@@ -960,7 +960,7 @@ pub fn request_permission_response_to_json(
 /// Decode a tool-call location from JSON.
 pub fn tool_call_location_from_json(
   value : Json,
-  path? : String = "location",
+  path~ : String = "location",
 ) -> ToolCallLocation raise ProtocolDecodeError {
   decode_tool_location(value, path~)
 }
@@ -977,7 +977,7 @@ pub fn tool_call_location_to_json(
 /// Decode a diff from JSON.
 pub fn diff_from_json(
   value : Json,
-  path? : String = "diff",
+  path~ : String = "diff",
 ) -> Diff raise ProtocolDecodeError {
   decode_diff(value, path~, false)
 }
@@ -992,7 +992,7 @@ pub fn diff_to_json(value : Diff) -> Json raise ProtocolDecodeError {
 /// Decode a terminal reference from JSON.
 pub fn terminal_from_json(
   value : Json,
-  path? : String = "terminal",
+  path~ : String = "terminal",
 ) -> Terminal raise ProtocolDecodeError {
   decode_terminal(value, path~, false)
 }
@@ -1007,7 +1007,7 @@ pub fn terminal_to_json(value : Terminal) -> Json raise ProtocolDecodeError {
 /// Decode tool-call content from JSON.
 pub fn tool_call_content_from_json(
   value : Json,
-  path? : String = "toolContent",
+  path~ : String = "toolContent",
 ) -> ToolCallContent raise ProtocolDecodeError {
   decode_tool_call_content(value, path~)
 }
@@ -1024,7 +1024,7 @@ pub fn tool_call_content_to_json(
 /// Decode a permission option from JSON.
 pub fn permission_option_from_json(
   value : Json,
-  path? : String = "permissionOption",
+  path~ : String = "permissionOption",
 ) -> PermissionOption raise ProtocolDecodeError {
   decode_permission_option(value, path~)
 }
@@ -1041,7 +1041,7 @@ pub fn permission_option_to_json(
 /// Decode a selected permission outcome payload from JSON.
 pub fn selected_permission_outcome_from_json(
   value : Json,
-  path? : String = "selected",
+  path~ : String = "selected",
 ) -> SelectedPermissionOutcome raise ProtocolDecodeError {
   decode_selected_permission_outcome(value, path~, false)
 }

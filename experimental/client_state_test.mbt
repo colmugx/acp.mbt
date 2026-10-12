@@ -37,7 +37,7 @@ fn client_state_test_capabilities(
 
 ///|
 fn client_state_test_initialize_result(
-  protocol_version : Int,
+  protocol_version : Int32,
 ) -> ExperimentalV2InitializeResult raise {
   experimental_v2_decode_initialize_result(
     experimental_v2_parse_json(

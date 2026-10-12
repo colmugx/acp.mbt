@@ -147,8 +147,8 @@ pub fn experimental_v2_agent_session_service(
   close~ : ExperimentalV2AgentCloseSessionHandler,
   prompt~ : ExperimentalV2AgentPromptHandler,
   set_config_option~ : ExperimentalV2AgentSetConfigOptionHandler,
-  delete? : ExperimentalV2AgentDeleteSessionHandler? = None,
-  fork_session? : ExperimentalV2AgentForkSessionHandler? = None,
+  delete~ : ExperimentalV2AgentDeleteSessionHandler? = None,
+  fork_session~ : ExperimentalV2AgentForkSessionHandler? = None,
 ) -> ExperimentalV2AgentSessionService {
   {
     new_handler: new_session,
@@ -244,8 +244,8 @@ pub fn experimental_v2_agent_spec(
   info~ : ExperimentalV2Implementation,
   capabilities~ : ExperimentalV2AgentCapabilities,
   sessions~ : ExperimentalV2AgentSessionService,
-  auth_methods? : Array[ExperimentalV2AuthMethod]? = None,
-  auth? : ExperimentalV2AgentAuthService? = None,
+  auth_methods~ : Array[ExperimentalV2AuthMethod]? = None,
+  auth~ : ExperimentalV2AgentAuthService? = None,
 ) -> ExperimentalV2AgentSpec raise ExperimentalV2AgentCompositionError {
   if info.name == "" {
     raise InvalidImplementation(reason="agent name must not be empty")

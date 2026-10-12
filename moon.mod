@@ -1,6 +1,6 @@
 name = "colmugx/acp"
 
-version = "0.2.1"
+version = "0.3.0"
 
 readme = "README.mbt.md"
 
@@ -15,6 +15,6 @@ preferred_target = "native"
 description = "Type-safe Agent Client Protocol (ACP) SDK for MoonBit."
 
 import {
-  "colmugx/reader@0.3.0",
+  "colmugx/reader@0.4.0",
   "moonbitlang/async@0.21.0",
 }

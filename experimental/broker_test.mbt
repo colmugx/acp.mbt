@@ -175,7 +175,7 @@ async test "v2 client connection over channel round-trips initialize and pins ve
         capabilities=experimental_v2_client_test_capabilities(),
       )
       let accepted = connection.initialize(params)
-      let offers : Array[Int] = []
+      let offers : Array[Int32] = []
       try connection.initialize({ ..params, meta: None, }) catch {
         UnsupportedVersion(method_name~, offered~) => {
           assert_eq(method_name, "initialize")

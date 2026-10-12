@@ -323,7 +323,7 @@ fn jsonrpc_parse_int64_repr(
   } else {
     return Err(Malformed)
   }
-  let decimal_index : Int? = if index < length && chars[index] == '.' {
+  let decimal_index : Int32? = if index < length && chars[index] == '.' {
     let decimal = index
     index += 1
     let fraction_start = index
@@ -337,7 +337,7 @@ fn jsonrpc_parse_int64_repr(
   } else {
     None
   }
-  let exponent_index : Int? = if index < length &&
+  let exponent_index : Int32? = if index < length &&
     (chars[index] == 'e' || chars[index] == 'E') {
     let exponent = index
     index += 1
@@ -411,15 +411,15 @@ fn jsonrpc_parse_int64_text(
 
 ///|
 priv enum JsonRpcDecimalShift {
-  Finite(negative~ : Bool, magnitude~ : Int)
+  Finite(negative~ : Bool, magnitude~ : Int32)
   Huge(negative~ : Bool)
 }
 
 ///|
 fn jsonrpc_decimal_shift(
   chars : Array[Char],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> JsonRpcDecimalShift {
   let negative = chars[start] == '-'
   let digit_start = if negative || chars[start] == '+' {
@@ -467,9 +467,9 @@ fn jsonrpc_trim_leading_zeroes(text : String) -> String {
 ///|
 fn jsonrpc_parse_int64_decimal(
   chars : Array[Char],
-  start : Int,
-  decimal_index : Int?,
-  exponent_index : Int?,
+  start : Int32,
+  decimal_index : Int32?,
+  exponent_index : Int32?,
 ) -> Result[Int64, JsonRpcInt64NumberError] {
   let mantissa_end = match exponent_index {
     Some(index) => index
@@ -565,7 +565,7 @@ pub fn jsonrpc_decode_int64(
 }
 
 ///|
-fn decode_integer(value : Double) -> Int raise JsonRpcCodecError {
+fn decode_integer(value : Double) -> Int32 raise JsonRpcCodecError {
   if value.is_nan() || value.is_inf() {
     raise InvalidId(reason="number must be finite")
   }

@@ -9,7 +9,7 @@ pub(all) struct ExperimentalV2EnvVariable {
 ///|
 pub fn experimental_v2_decode_env_variable(
   value : Json,
-  path? : String = "envVariable",
+  path~ : String = "envVariable",
 ) -> ExperimentalV2EnvVariable raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -51,7 +51,7 @@ pub(all) struct ExperimentalV2HttpHeader {
 ///|
 pub fn experimental_v2_decode_http_header(
   value : Json,
-  path? : String = "httpHeader",
+  path~ : String = "httpHeader",
 ) -> ExperimentalV2HttpHeader raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -95,7 +95,7 @@ pub(all) struct ExperimentalV2McpServerStdio {
 ///|
 pub fn experimental_v2_decode_mcp_server_stdio(
   value : Json,
-  path? : String = "mcpServer",
+  path~ : String = "mcpServer",
 ) -> ExperimentalV2McpServerStdio raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -170,7 +170,7 @@ pub(all) struct ExperimentalV2McpServerHttp {
 ///|
 pub fn experimental_v2_decode_mcp_server_http(
   value : Json,
-  path? : String = "mcpServer",
+  path~ : String = "mcpServer",
 ) -> ExperimentalV2McpServerHttp raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -236,7 +236,7 @@ pub type ExperimentalV2McpServer = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_mcp_server(
   value : Json,
-  path? : String = "mcpServer",
+  path~ : String = "mcpServer",
 ) -> ExperimentalV2McpServer raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,

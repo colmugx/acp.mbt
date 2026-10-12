@@ -97,7 +97,7 @@ pub fn ExperimentalV2ClientForwardNotification::method_name(
 /// negotiation failure: v2 has no downgrade path, so a non-version-2
 /// initialize exchange is a typed failure, never a silent negotiation.
 pub(all) suberror ExperimentalV2ClientConnectionError {
-  UnsupportedVersion(method_name~ : String, offered~ : Int)
+  UnsupportedVersion(method_name~ : String, offered~ : Int32)
   Unavailable(method_name~ : String)
   Cancelled(method_name~ : String)
   BrokerFailure(method_name~ : String)
@@ -180,7 +180,7 @@ fn experimental_v2_client_connection_notification(
 ///|
 fn experimental_v2_client_connection_require_v2(
   method_name : String,
-  version : Int,
+  version : Int32,
 ) -> Unit raise ExperimentalV2ClientConnectionError {
   if version != experimental_v2_protocol_version {
     raise UnsupportedVersion(method_name~, offered=version)

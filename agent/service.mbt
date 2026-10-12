@@ -175,12 +175,12 @@ pub struct AgentSupport {
 
 ///|
 pub fn agent_support(
-  prompt_image? : Bool = false,
-  prompt_audio? : Bool = false,
-  prompt_embedded_context? : Bool = false,
-  mcp_http? : Bool = false,
-  mcp_sse? : Bool = false,
-  additional_directories? : Bool = false,
+  prompt_image~ : Bool = false,
+  prompt_audio~ : Bool = false,
+  prompt_embedded_context~ : Bool = false,
+  mcp_http~ : Bool = false,
+  mcp_sse~ : Bool = false,
+  additional_directories~ : Bool = false,
 ) -> AgentSupport {
   {
     prompt_image,

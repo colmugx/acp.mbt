@@ -12,7 +12,7 @@ fn experimental_v2_client_connection_test_broker(
     ],
   ],
 ) -> ExperimentalV2ClientForwardRequestBroker {
-  let cursor : Ref[Int] = { val: 0, }
+  let cursor : Ref[Int32] = { val: 0, }
   async fn(request) {
     submitted.push(request)
     if cursor.val >= replies.length() {

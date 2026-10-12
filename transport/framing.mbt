@@ -9,7 +9,7 @@ pub(all) suberror FramingError {
   Closed
   EmptyFrame
   InvalidUtf8
-  FrameTooLarge(limit~ : Int, actual~ : Int)
+  FrameTooLarge(limit~ : Int32, actual~ : Int32)
   UnexpectedEof
 } derive(Eq, Debug)
 
@@ -17,7 +17,7 @@ pub(all) suberror FramingError {
 /// Immutable state for a newline-delimited decoder.
 pub(all) struct FramingState {
   pending : Bytes
-  max_frame_bytes : Int
+  max_frame_bytes : Int32
   closed : Bool
 } derive(Eq, Debug)
 
@@ -31,7 +31,9 @@ pub(all) struct FramingStep {
 ///|
 /// Create a decoder with a positive maximum payload size in bytes.
 #warnings("-unused_value")
-pub fn framing_state(max_frame_bytes~ : Int) -> FramingState raise FramingError {
+pub fn framing_state(
+  max_frame_bytes~ : Int32,
+) -> FramingState raise FramingError {
   if max_frame_bytes <= 0 {
     raise InvalidMaxFrameSize
   }

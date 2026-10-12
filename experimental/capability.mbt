@@ -48,7 +48,7 @@ pub(all) struct ExperimentalV2MarkerPayload {
 ///|
 pub fn experimental_v2_decode_marker_payload(
   value : Json,
-  path? : String = "capability",
+  path~ : String = "capability",
 ) -> ExperimentalV2MarkerPayload raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -76,7 +76,7 @@ pub(all) struct ExperimentalV2ElicitationCapabilities {
 ///|
 pub fn experimental_v2_decode_elicitation_capabilities(
   value : Json,
-  path? : String = "elicitation",
+  path~ : String = "elicitation",
 ) -> ExperimentalV2ElicitationCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "form", "url"], prefix=path)
@@ -125,7 +125,7 @@ pub(all) struct ExperimentalV2ClientCapabilities {
 ///|
 pub fn experimental_v2_decode_client_capabilities(
   value : Json,
-  path? : String = "capabilities",
+  path~ : String = "capabilities",
 ) -> ExperimentalV2ClientCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "elicitation"], prefix=path)
@@ -169,7 +169,7 @@ pub(all) struct ExperimentalV2PromptCapabilities {
 ///|
 pub fn experimental_v2_decode_prompt_capabilities(
   value : Json,
-  path? : String = "prompt",
+  path~ : String = "prompt",
 ) -> ExperimentalV2PromptCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -237,7 +237,7 @@ pub(all) struct ExperimentalV2McpCapabilities {
 ///|
 pub fn experimental_v2_decode_mcp_capabilities(
   value : Json,
-  path? : String = "mcp",
+  path~ : String = "mcp",
 ) -> ExperimentalV2McpCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -302,7 +302,7 @@ pub(all) struct ExperimentalV2SessionCapabilities {
 ///|
 pub fn experimental_v2_decode_session_capabilities(
   value : Json,
-  path? : String = "session",
+  path~ : String = "session",
 ) -> ExperimentalV2SessionCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -394,7 +394,7 @@ pub(all) struct ExperimentalV2AgentCapabilities {
 ///|
 pub fn experimental_v2_decode_agent_capabilities(
   value : Json,
-  path? : String = "capabilities",
+  path~ : String = "capabilities",
 ) -> ExperimentalV2AgentCapabilities raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -478,7 +478,7 @@ fn experimental_v2_decode_boolean(
 fn experimental_v2_decode_integer(
   value : Json,
   path~ : String,
-) -> Int raise ExperimentalV2DecodeError {
+) -> Int32 raise ExperimentalV2DecodeError {
   match value {
     Number(number, ..) =>
       if number == number.floor() &&

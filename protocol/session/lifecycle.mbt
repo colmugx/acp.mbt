@@ -125,7 +125,7 @@ fn session_lifecycle_decode_meta_only(
 /// Decode `session/list` parameters.
 pub fn list_sessions_params_from_json(
   value : Json,
-  path? : String = "session/list",
+  path~ : String = "session/list",
 ) -> ListSessionsParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["cwd", "cursor", "_meta"], prefix=path)
@@ -153,7 +153,7 @@ pub fn list_sessions_params_to_json(
 /// Decode the result of `session/list`.
 pub fn list_sessions_result_from_json(
   value : Json,
-  path? : String = "session/list",
+  path~ : String = "session/list",
 ) -> ListSessionsResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -192,7 +192,7 @@ pub fn list_sessions_result_to_json(
 /// Decode `session/delete` parameters.
 pub fn delete_session_params_from_json(
   value : Json,
-  path? : String = "session/delete",
+  path~ : String = "session/delete",
 ) -> DeleteSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "_meta"], prefix=path)
@@ -220,7 +220,7 @@ pub fn delete_session_params_to_json(
 /// Decode the result of `session/delete`.
 pub fn delete_session_result_from_json(
   value : Json,
-  path? : String = "session/delete",
+  path~ : String = "session/delete",
 ) -> DeleteSessionResult raise ProtocolDecodeError {
   { meta: session_lifecycle_decode_meta_only(value, path~), }
 }
@@ -239,7 +239,7 @@ pub fn delete_session_result_to_json(
 /// Decode `session/close` parameters.
 pub fn close_session_params_from_json(
   value : Json,
-  path? : String = "session/close",
+  path~ : String = "session/close",
 ) -> CloseSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "_meta"], prefix=path)
@@ -267,7 +267,7 @@ pub fn close_session_params_to_json(
 /// Decode the result of `session/close`.
 pub fn close_session_result_from_json(
   value : Json,
-  path? : String = "session/close",
+  path~ : String = "session/close",
 ) -> CloseSessionResult raise ProtocolDecodeError {
   { meta: session_lifecycle_decode_meta_only(value, path~), }
 }
@@ -286,7 +286,7 @@ pub fn close_session_result_to_json(
 /// Decode `session/cancel` notification parameters.
 pub fn cancel_params_from_json(
   value : Json,
-  path? : String = "session/cancel",
+  path~ : String = "session/cancel",
 ) -> CancelParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "_meta"], prefix=path)
@@ -314,7 +314,7 @@ pub fn cancel_params_to_json(
 /// Decode `session/update` notification parameters.
 pub fn session_update_params_from_json(
   value : Json,
-  path? : String = "session/update",
+  path~ : String = "session/update",
 ) -> SessionUpdateParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "update", "_meta"], prefix=path)

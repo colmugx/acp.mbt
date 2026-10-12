@@ -294,7 +294,7 @@ fn session_setup_decode_new_params_fields(
 /// Decode `session/new` parameters.
 pub fn new_session_params_from_json(
   value : Json,
-  path? : String = "session/new",
+  path~ : String = "session/new",
 ) -> NewSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_new_params_fields(fields, path~)
@@ -355,7 +355,7 @@ fn session_setup_decode_load_params_fields(
 /// Decode `session/load` parameters.
 pub fn load_session_params_from_json(
   value : Json,
-  path? : String = "session/load",
+  path~ : String = "session/load",
 ) -> LoadSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_load_params_fields(fields, path~)
@@ -424,7 +424,7 @@ fn session_setup_decode_resume_params_fields(
 /// Decode `session/resume` parameters.
 pub fn resume_session_params_from_json(
   value : Json,
-  path? : String = "session/resume",
+  path~ : String = "session/resume",
 ) -> ResumeSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_resume_params_fields(fields, path~)
@@ -502,7 +502,7 @@ fn session_setup_decode_fork_params_fields(
 /// Decode `session/fork` parameters.
 pub fn fork_session_params_from_json(
   value : Json,
-  path? : String = "session/fork",
+  path~ : String = "session/fork",
 ) -> ForkSessionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_fork_params_fields(fields, path~)
@@ -565,7 +565,7 @@ fn session_setup_decode_new_result_fields(
 /// Decode the result of `session/new`.
 pub fn new_session_result_from_json(
   value : Json,
-  path? : String = "session/new",
+  path~ : String = "session/new",
 ) -> NewSessionResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_new_result_fields(fields, path~)
@@ -614,7 +614,7 @@ fn session_setup_decode_load_result_fields(
 /// Decode the result of `session/load`.
 pub fn load_session_result_from_json(
   value : Json,
-  path? : String = "session/load",
+  path~ : String = "session/load",
 ) -> LoadSessionResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   session_setup_decode_load_result_fields(fields, path~)
@@ -640,7 +640,7 @@ pub fn load_session_result_to_json(
 /// Decode the result of `session/resume`.
 pub fn resume_session_result_from_json(
   value : Json,
-  path? : String = "session/resume",
+  path~ : String = "session/resume",
 ) -> ResumeSessionResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -678,7 +678,7 @@ pub fn resume_session_result_to_json(
 /// Decode the result of `session/fork`.
 pub fn fork_session_result_from_json(
   value : Json,
-  path? : String = "session/fork",
+  path~ : String = "session/fork",
 ) -> ForkSessionResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(

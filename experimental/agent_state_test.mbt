@@ -27,7 +27,7 @@ fn agent_state_test_session_capabilities(
   mcp : ExperimentalV2Marker[ExperimentalV2McpCapabilities],
   delete : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
   additional_directories : ExperimentalV2Marker[ExperimentalV2MarkerPayload],
-  fork? : ExperimentalV2Marker[ExperimentalV2MarkerPayload] = MarkerUnsupported,
+  fork~ : ExperimentalV2Marker[ExperimentalV2MarkerPayload] = MarkerUnsupported,
 ) -> ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
@@ -72,7 +72,7 @@ fn agent_state_test_gate_capabilities(
   additional_directories : Bool,
   mcp_stdio : Bool,
   mcp_http : Bool,
-  fork? : Bool = false,
+  fork~ : Bool = false,
 ) -> ExperimentalV2AgentCapabilities {
   fn marker(
     supported : Bool,
@@ -114,7 +114,7 @@ fn agent_state_test_state(
 ///|
 fn agent_state_test_initialize(
   state : ExperimentalV2AgentState,
-  protocol_version : Int,
+  protocol_version : Int32,
 ) -> ExperimentalV2AgentStep raise ExperimentalV2AgentProtocolError {
   let params : ExperimentalV2InitializeParams = {
     protocol_version,

@@ -53,8 +53,8 @@ pub(all) enum RuntimeOwnerNotificationAdmission[S, I, E] {
 /// contains only its owner token, correlation id (for requests), and typed
 /// completion. It cannot carry or mutate connection state.
 pub(all) enum RuntimeOwnerEvent[C] {
-  RuntimeOwnerRequestCompleted(token~ : Int, id~ : RequestId, completion~ : C)
-  RuntimeOwnerNotificationCompleted(token~ : Int, completion~ : C)
+  RuntimeOwnerRequestCompleted(token~ : Int32, id~ : RequestId, completion~ : C)
+  RuntimeOwnerNotificationCompleted(token~ : Int32, completion~ : C)
 }
 
 ///|
@@ -62,7 +62,7 @@ pub(all) enum RuntimeOwnerEvent[C] {
 /// invocation is caller-defined typed data; no queue, task group, or mutable
 /// state is stored here.
 pub struct RuntimeOwnerTask[I] {
-  task_token : Int
+  task_token : Int32
   request_id : RequestId?
   invocation : I
   notification : Bool
@@ -192,18 +192,18 @@ pub(all) struct RuntimeOwnerPort[S, I, C, E] {
 pub struct RuntimeOwner[S, I] {
   state : S
   tasks : Array[RuntimeOwnerTask[I]]
-  next_task_token : Int
+  next_task_token : Int32
   closed : Bool
 }
 
 ///|
 pub(all) enum RuntimeOwnerIgnore {
   Closed
-  UnknownTask(token~ : Int)
+  UnknownTask(token~ : Int32)
   UnknownRequest(id~ : RequestId)
   AlreadyCancelled(id~ : RequestId)
   RequestIdMismatch(expected~ : RequestId, actual~ : RequestId)
-  TaskKindMismatch(token~ : Int)
+  TaskKindMismatch(token~ : Int32)
 } derive(Eq, Debug)
 
 ///|
@@ -267,7 +267,7 @@ pub fn[S, I] RuntimeOwner::state(self : RuntimeOwner[S, I]) -> S {
 }
 
 ///|
-pub fn[S, I] RuntimeOwner::task_count(self : RuntimeOwner[S, I]) -> Int {
+pub fn[S, I] RuntimeOwner::task_count(self : RuntimeOwner[S, I]) -> Int32 {
   self.tasks.length()
 }
 
@@ -277,7 +277,7 @@ pub fn[S, I] RuntimeOwner::is_closed(self : RuntimeOwner[S, I]) -> Bool {
 }
 
 ///|
-pub fn[I] RuntimeOwnerTask::task_token(self : RuntimeOwnerTask[I]) -> Int {
+pub fn[I] RuntimeOwnerTask::task_token(self : RuntimeOwnerTask[I]) -> Int32 {
   self.task_token
 }
 
@@ -315,7 +315,7 @@ fn[I] runtime_owner_cancelled_task(
 ///|
 fn[S, I] runtime_owner_find_task(
   owner : RuntimeOwner[S, I],
-  token : Int,
+  token : Int32,
 ) -> RuntimeOwnerTask[I]? {
   for task in owner.tasks {
     if task.task_token == token {
@@ -344,7 +344,7 @@ fn[S, I] runtime_owner_replace_task(
 ///|
 fn[S, I] runtime_owner_remove_task(
   owner : RuntimeOwner[S, I],
-  token : Int,
+  token : Int32,
 ) -> RuntimeOwner[S, I] {
   let tasks : Array[RuntimeOwnerTask[I]] = []
   for task in owner.tasks {
@@ -505,7 +505,7 @@ async fn[S, I, C, E] runtime_owner_task_loop(
   port : RuntimeOwnerPort[S, I, C, E],
   events : @aqueue.Queue[RuntimeEventOf[C]],
   shutdown : Ref[Bool],
-  limit : Int,
+  limit : Int32,
 ) -> Unit {
   let event = runtime_owner_execute_task(task, port)
   // Async tasks are cooperatively scheduled.  There is no yield between the
@@ -701,11 +701,11 @@ priv enum RuntimeEventOf[C] {
   /// submission's acceptance was already reported synchronously by the
   /// event-queue offer, so no parked ack queue exists to release.
   RuntimeOutboundNotificationEnqueued(method_name~ : String, params~ : Json)
-  RuntimeHandlerCompleted(Int, RequestId, C)
-  RuntimeHandlerFailed(Int, RequestId)
-  RuntimeNotificationCompleted(Int)
-  RuntimeNotificationFailed(Int)
-  RuntimeNotificationCancelled(Int)
+  RuntimeHandlerCompleted(Int32, RequestId, C)
+  RuntimeHandlerFailed(Int32, RequestId)
+  RuntimeNotificationCompleted(Int32)
+  RuntimeNotificationFailed(Int32)
+  RuntimeNotificationCancelled(Int32)
 }
 
 ///|
@@ -744,7 +744,7 @@ priv struct RuntimeOutboundWaiter {
 /// can release waiters in place without introducing a second owner or
 /// engine-lifetime mutable state.
 priv struct RuntimeOutboundRegistry {
-  next_outbound_id : Int
+  next_outbound_id : Int32
   waiters : Array[RuntimeOutboundWaiter]
 }
 
@@ -933,7 +933,7 @@ async fn[C] runtime_outbound_drain_stranded(
 priv enum RuntimeOwnerTaskEventOf[C] {
   RuntimeOwnerTaskCompleted(event~ : RuntimeOwnerEvent[C])
   RuntimeOwnerTaskFailed(
-    token~ : Int,
+    token~ : Int32,
     request_id~ : RequestId?,
     notification~ : Bool
   )
@@ -954,7 +954,7 @@ fn runtime_identity_handler_result(
 /// notification. The closure captures only the task returned by the current
 /// task group; no task is stored globally.
 priv struct RuntimeTaskControl {
-  task_token : Int
+  task_token : Int32
   request_id : RequestId?
   cancel : () -> Unit
 }
@@ -965,7 +965,7 @@ priv struct RuntimeLegacySpawnContext[C] {
   handlers : RuntimeHandlerPort
   events : @aqueue.Queue[RuntimeEventOf[C]]
   result_to_event : (RuntimeHandlerResult) -> C
-  limit : Int
+  limit : Int32
 }
 
 ///|
@@ -979,7 +979,7 @@ priv enum RuntimeDispatchAction[D] {
   RuntimeDispatchSpawned(
     context~ : D,
     task~ : RuntimeTaskControl,
-    next_task_token~ : Int
+    next_task_token~ : Int32
   )
   RuntimeDispatchRequestImmediate(
     context~ : D,
@@ -1000,10 +1000,10 @@ priv enum RuntimeDispatchCancelResult[D] {
 
 ///|
 priv struct RuntimeDispatchPort[G, D] {
-  request : (@async.TaskGroup[G], Int, JsonRpcRequest, D) -> RuntimeDispatchAction[
+  request : (@async.TaskGroup[G], Int32, JsonRpcRequest, D) -> RuntimeDispatchAction[
     D,
   ] raise RuntimeError
-  notification : (@async.TaskGroup[G], Int, JsonRpcNotification, D) -> RuntimeDispatchAction[
+  notification : (@async.TaskGroup[G], Int32, JsonRpcNotification, D) -> RuntimeDispatchAction[
     D,
   ] raise RuntimeError
   cancel_inbound : (D, RequestId, Array[RuntimeTaskControl]) -> RuntimeDispatchCancelResult[
@@ -1018,26 +1018,26 @@ priv struct RuntimeOwnerDispatchContext[S, I, C, E] {
   port : RuntimeOwnerPort[S, I, C, E]
   events : @aqueue.Queue[RuntimeEventOf[C]]
   shutdown : Ref[Bool]
-  limit : Int
+  limit : Int32
 }
 
 ///|
 priv enum RuntimeOwnerTaskApply[D] {
   RuntimeOwnerRequestCompletion(
     context~ : D,
-    task_token~ : Int,
+    task_token~ : Int32,
     id~ : RequestId,
     result~ : RuntimeHandlerResult,
     commands~ : Array[RuntimeOwnerCommand]
   )
   RuntimeOwnerNotificationCompletion(
     context~ : D,
-    task_token~ : Int,
+    task_token~ : Int32,
     commands~ : Array[RuntimeOwnerCommand]
   )
   RuntimeOwnerEventIgnored(
     context~ : D,
-    task_token~ : Int,
+    task_token~ : Int32,
     request_id~ : RequestId?,
     reason~ : RuntimeOwnerIgnore
   )
@@ -1173,7 +1173,7 @@ fn[G, S, I, C, E] runtime_owner_dispatch_port() -> RuntimeDispatchPort[
 ///|
 fn[S, I, C, E] runtime_owner_task_ignored(
   context : RuntimeOwnerDispatchContext[S, I, C, E],
-  token : Int,
+  token : Int32,
   request_id : RequestId?,
   reason : RuntimeOwnerIgnore,
 ) -> RuntimeOwnerTaskApply[RuntimeOwnerDispatchContext[S, I, C, E]] raise RuntimeError {
@@ -1343,7 +1343,7 @@ fn[C] runtime_owner_handler_result_unavailable(
 ///|
 fn runtime_remove_task(
   tasks : Array[RuntimeTaskControl],
-  task_token : Int,
+  task_token : Int32,
 ) -> Array[RuntimeTaskControl] raise RuntimeError {
   if !tasks.any(task => task.task_token == task_token) {
     raise TaskControlMissing
@@ -1362,7 +1362,7 @@ fn runtime_remove_task(
 /// failure. The second result is `None` for a duplicate/late event.
 fn runtime_take_task(
   tasks : Array[RuntimeTaskControl],
-  task_token : Int,
+  task_token : Int32,
 ) -> (Array[RuntimeTaskControl], RuntimeTaskControl?) raise RuntimeError {
   let result : Array[RuntimeTaskControl] = []
   let mut taken : RuntimeTaskControl? = None
@@ -1385,7 +1385,7 @@ fn runtime_take_task(
 /// malformed completion could settle a different pending request.
 fn runtime_find_task(
   tasks : Array[RuntimeTaskControl],
-  task_token : Int,
+  task_token : Int32,
 ) -> RuntimeTaskControl? {
   for task in tasks {
     if task.task_token == task_token {
@@ -1539,7 +1539,7 @@ fn runtime_close_cleanup_error(
 fn[E] runtime_event_put(
   queue : @aqueue.Queue[E],
   event : E,
-  limit : Int,
+  limit : Int32,
 ) -> Unit raise RuntimeError {
   let accepted = queue.try_put(event) catch { _ => raise EventQueueClosed }
   if !accepted {
@@ -1551,8 +1551,8 @@ fn[E] runtime_event_put(
 async fn[C] runtime_reader_loop(
   port : RuntimeReaderPort,
   events : @aqueue.Queue[RuntimeEventOf[C]],
-  limit : Int,
-  read_chunk_bytes : Int,
+  limit : Int32,
+  read_chunk_bytes : Int32,
 ) -> Unit {
   for ;; {
     let chunk = (port.read)(read_chunk_bytes) catch {
@@ -1590,7 +1590,7 @@ async fn[C] runtime_writer_loop(
   queue : @aqueue.Queue[RuntimeWriterItem],
   trace : (RuntimeTraceEvent) -> Unit,
   events : @aqueue.Queue[RuntimeEventOf[C]],
-  limit : Int,
+  limit : Int32,
   shutdown : Ref[Bool],
 ) -> Unit {
   for ;; {
@@ -1627,13 +1627,13 @@ async fn[C] runtime_writer_loop(
 
 ///|
 async fn[C] runtime_request_task(
-  task_token : Int,
+  task_token : Int32,
   request : JsonRpcRequest,
   shutdown : Ref[Bool],
   handlers : RuntimeHandlerPort,
   events : @aqueue.Queue[RuntimeEventOf[C]],
   result_to_event : (RuntimeHandlerResult) -> C,
-  limit : Int,
+  limit : Int32,
 ) -> Unit {
   let result = (handlers.request)(request) catch {
     error => {
@@ -1672,12 +1672,12 @@ async fn[C] runtime_request_task(
 
 ///|
 async fn[C] runtime_notification_task(
-  task_token : Int,
+  task_token : Int32,
   notification : JsonRpcNotification,
   shutdown : Ref[Bool],
   handlers : RuntimeHandlerPort,
   events : @aqueue.Queue[RuntimeEventOf[C]],
-  limit : Int,
+  limit : Int32,
 ) -> Unit {
   (handlers.notification)(notification) catch {
     error => {
@@ -1705,7 +1705,7 @@ async fn[C] runtime_notification_task(
 ///|
 fn[G, C] runtime_spawn_legacy_request(
   group : @async.TaskGroup[G],
-  next_task_token : Int,
+  next_task_token : Int32,
   request : JsonRpcRequest,
   context : RuntimeLegacySpawnContext[C],
 ) -> RuntimeDispatchAction[RuntimeLegacySpawnContext[C]] {
@@ -1734,7 +1734,7 @@ fn[G, C] runtime_spawn_legacy_request(
 ///|
 fn[G, C] runtime_spawn_legacy_notification(
   group : @async.TaskGroup[G],
-  next_task_token : Int,
+  next_task_token : Int32,
   notification : JsonRpcNotification,
   context : RuntimeLegacySpawnContext[C],
 ) -> RuntimeDispatchAction[RuntimeLegacySpawnContext[C]] {
@@ -1782,7 +1782,7 @@ fn[G, C] runtime_legacy_dispatch_port() -> RuntimeDispatchPort[
 ///|
 fn runtime_writer_offer(
   queue : @aqueue.Queue[RuntimeWriterItem],
-  limit : Int,
+  limit : Int32,
   message : JsonRpcMessage,
 ) -> Unit raise RuntimeError {
   let text = jsonrpc_encode(message) catch { _ => raise JsonRpcEncodeFailed }
@@ -1883,7 +1883,7 @@ fn runtime_cancel_active_tasks(
 async fn[D] runtime_emit_command_of(
   command : ConnectionCommand,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  queue_limit : Int,
+  queue_limit : Int32,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
   dispatch_context : D,
@@ -2028,7 +2028,7 @@ async fn[D] runtime_emit_command_of(
 async fn runtime_emit_command(
   command : ConnectionCommand,
   writer_queue : @aqueue.Queue[RuntimeWriterItem],
-  queue_limit : Int,
+  queue_limit : Int32,
   ports : RuntimePorts,
   tasks : Array[RuntimeTaskControl],
   outbound : Ref[RuntimeOutboundRegistry],
@@ -2062,9 +2062,9 @@ async fn[G, D] runtime_apply_step(
   dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   outbound : Ref[RuntimeOutboundRegistry],
-) -> (Array[RuntimeTaskControl], Int, D, RuntimeApplyControl) raise RuntimeError {
+) -> (Array[RuntimeTaskControl], Int32, D, RuntimeApplyControl) raise RuntimeError {
   let mut next_tasks = Array::copy(tasks)
   let mut next_token = next_task_token
   let mut next_context = dispatch_context
@@ -2239,10 +2239,10 @@ async fn[G, D] runtime_apply_message(
   dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   outbound : Ref[RuntimeOutboundRegistry],
-) -> (ConnectionState, Array[RuntimeTaskControl], Int, D, RuntimeApplyControl) raise RuntimeError {
+) -> (ConnectionState, Array[RuntimeTaskControl], Int32, D, RuntimeApplyControl) raise RuntimeError {
   let message = jsonrpc_decode(frame) catch {
     _ => {
       shutdown.val = true
@@ -2357,7 +2357,7 @@ async fn[G, C, D] runtime_close_connection_of(
   ports : RuntimePorts,
   _events : @aqueue.Queue[RuntimeEventOf[C]],
   tasks : Array[RuntimeTaskControl],
-  _next_task_token : Int,
+  _next_task_token : Int32,
   shutdown : Ref[Bool],
   force_close_writer : Bool,
   dispatch_context : D,
@@ -2414,7 +2414,7 @@ async fn[G, C, D, T] runtime_fail_and_close_of(
   ports : RuntimePorts,
   events : @aqueue.Queue[RuntimeEventOf[C]],
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   force_close_writer : Bool,
   dispatch_context : D,
@@ -2447,7 +2447,7 @@ priv struct RuntimeEventStep {
   state : ConnectionState
   decoder : FramingState
   tasks : Array[RuntimeTaskControl]
-  next_task_token : Int
+  next_task_token : Int32
   stop : Bool
 }
 
@@ -2478,7 +2478,7 @@ async fn[G, C, D] runtime_apply_request_completion(
   dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   remaining_tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
@@ -2683,7 +2683,7 @@ async fn[G, C, D] runtime_apply_notification_completion(
   dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   remaining_tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
@@ -2779,7 +2779,7 @@ async fn[G, C, D] runtime_apply_outbound_notification(
   dispatch : RuntimeDispatchPort[G, D],
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
@@ -2944,7 +2944,7 @@ async fn[G, C, D] runtime_apply_event_of(
   ) -> RuntimeOwnerTaskApply[D] raise RuntimeError,
   dispatch_context : D,
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
   outbound : Ref[RuntimeOutboundRegistry],
 ) -> (RuntimeEventStep, D) raise RuntimeError {
@@ -4131,7 +4131,7 @@ pub async fn[S, I, C, E] connection_runtime_run_owner(
 pub struct RuntimeOutboundChannel[C] {
   priv events : @aqueue.Queue[RuntimeEventOf[C]]
   priv shutdown : Ref[Bool]
-  priv limit : Int
+  priv limit : Int32
 }
 
 ///|

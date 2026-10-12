@@ -39,7 +39,7 @@ pub type ExperimentalV2ReplayFrom = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_replay_from(
   value : Json,
-  path? : String = "replayFrom",
+  path~ : String = "replayFrom",
 ) -> ExperimentalV2ReplayFrom raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -79,7 +79,7 @@ pub(all) struct ExperimentalV2NewSessionParams {
 ///|
 pub fn experimental_v2_decode_new_session_params(
   value : Json,
-  path? : String = "session/new",
+  path~ : String = "session/new",
 ) -> ExperimentalV2NewSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -147,7 +147,7 @@ pub(all) struct ExperimentalV2NewSessionResult {
 ///|
 pub fn experimental_v2_decode_new_session_result(
   value : Json,
-  path? : String = "session/new",
+  path~ : String = "session/new",
 ) -> ExperimentalV2NewSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -204,7 +204,7 @@ pub(all) struct ExperimentalV2ResumeSessionParams {
 ///|
 pub fn experimental_v2_decode_resume_session_params(
   value : Json,
-  path? : String = "session/resume",
+  path~ : String = "session/resume",
 ) -> ExperimentalV2ResumeSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -294,7 +294,7 @@ pub(all) struct ExperimentalV2ResumeSessionResult {
 ///|
 pub fn experimental_v2_decode_resume_session_result(
   value : Json,
-  path? : String = "session/resume",
+  path~ : String = "session/resume",
 ) -> ExperimentalV2ResumeSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -345,7 +345,7 @@ pub(all) struct ExperimentalV2ForkSessionParams {
 /// Upstream unstable (RFD session-fork, Draft).
 pub fn experimental_v2_decode_fork_session_params(
   value : Json,
-  path? : String = "session/fork",
+  path~ : String = "session/fork",
 ) -> ExperimentalV2ForkSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -426,7 +426,7 @@ pub(all) struct ExperimentalV2ForkSessionResult {
 /// Upstream unstable (RFD session-fork, Draft).
 pub fn experimental_v2_decode_fork_session_result(
   value : Json,
-  path? : String = "session/fork",
+  path~ : String = "session/fork",
 ) -> ExperimentalV2ForkSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -482,7 +482,7 @@ pub(all) struct ExperimentalV2SessionInfo {
 ///|
 pub fn experimental_v2_decode_session_info(
   value : Json,
-  path? : String = "sessionInfo",
+  path~ : String = "sessionInfo",
 ) -> ExperimentalV2SessionInfo raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -564,7 +564,7 @@ pub(all) struct ExperimentalV2ListSessionsParams {
 ///|
 pub fn experimental_v2_decode_list_sessions_params(
   value : Json,
-  path? : String = "session/list",
+  path~ : String = "session/list",
 ) -> ExperimentalV2ListSessionsParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -617,7 +617,7 @@ pub(all) struct ExperimentalV2ListSessionsResult {
 ///|
 pub fn experimental_v2_decode_list_sessions_result(
   value : Json,
-  path? : String = "session/list",
+  path~ : String = "session/list",
 ) -> ExperimentalV2ListSessionsResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -668,7 +668,7 @@ pub(all) struct ExperimentalV2DeleteSessionParams {
 ///|
 pub fn experimental_v2_decode_delete_session_params(
   value : Json,
-  path? : String = "session/delete",
+  path~ : String = "session/delete",
 ) -> ExperimentalV2DeleteSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "sessionId"], prefix=path)
@@ -702,7 +702,7 @@ pub(all) struct ExperimentalV2DeleteSessionResult {
 ///|
 pub fn experimental_v2_decode_delete_session_result(
   value : Json,
-  path? : String = "session/delete",
+  path~ : String = "session/delete",
 ) -> ExperimentalV2DeleteSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -729,7 +729,7 @@ pub(all) struct ExperimentalV2CloseSessionParams {
 ///|
 pub fn experimental_v2_decode_close_session_params(
   value : Json,
-  path? : String = "session/close",
+  path~ : String = "session/close",
 ) -> ExperimentalV2CloseSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "sessionId"], prefix=path)
@@ -767,7 +767,7 @@ pub(all) struct ExperimentalV2PromptParams {
 ///|
 pub fn experimental_v2_decode_prompt_params(
   value : Json,
-  path? : String = "session/prompt",
+  path~ : String = "session/prompt",
 ) -> ExperimentalV2PromptParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -817,7 +817,7 @@ pub(all) struct ExperimentalV2CancelSessionParams {
 ///|
 pub fn experimental_v2_decode_cancel_session_params(
   value : Json,
-  path? : String = "session/cancel",
+  path~ : String = "session/cancel",
 ) -> ExperimentalV2CancelSessionParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "sessionId"], prefix=path)
@@ -853,7 +853,7 @@ pub(all) struct ExperimentalV2PromptResult {
 ///|
 pub fn experimental_v2_decode_prompt_result(
   value : Json,
-  path? : String = "session/prompt",
+  path~ : String = "session/prompt",
 ) -> ExperimentalV2PromptResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -878,7 +878,7 @@ pub(all) struct ExperimentalV2CloseSessionResult {
 ///|
 pub fn experimental_v2_decode_close_session_result(
   value : Json,
-  path? : String = "session/close",
+  path~ : String = "session/close",
 ) -> ExperimentalV2CloseSessionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)

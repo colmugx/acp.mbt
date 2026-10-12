@@ -260,7 +260,7 @@ fn experimental_v2_decode_finite_number(
 fn experimental_v2_decode_uint32(
   value : Json,
   path~ : String,
-) -> UInt raise ExperimentalV2DecodeError {
+) -> UInt32 raise ExperimentalV2DecodeError {
   match value {
     Number(number, ..) =>
       if number == number.floor() && number >= 0.0 && number <= 4294967295.0 {

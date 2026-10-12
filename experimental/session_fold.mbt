@@ -194,7 +194,7 @@ fn[T] experimental_v2_fold_patch_slot(
 fn experimental_v2_fold_message_index(
   messages : Array[ExperimentalV2FoldedMessage],
   message_id : String,
-) -> Int? {
+) -> Int32? {
   for index, message in messages {
     if message.message_id == message_id {
       return Some(index)
@@ -273,7 +273,7 @@ fn experimental_v2_fold_message_upsert(
 fn experimental_v2_fold_tool_call_index(
   calls : Array[ExperimentalV2FoldedToolCall],
   tool_call_id : String,
-) -> Int? {
+) -> Int32? {
   for index, call in calls {
     if call.tool_call_id == tool_call_id {
       return Some(index)
@@ -381,7 +381,7 @@ fn experimental_v2_fold_tool_call_chunk(
 fn experimental_v2_fold_terminal_index(
   terminals : Array[ExperimentalV2FoldedTerminal],
   terminal_id : String,
-) -> Int? {
+) -> Int32? {
   for index, terminal in terminals {
     if terminal.terminal_id == terminal_id {
       return Some(index)
@@ -481,7 +481,7 @@ fn experimental_v2_fold_terminal_chunk(
 fn experimental_v2_fold_plan_index(
   plans : Array[ExperimentalV2FoldedPlan],
   plan_id : String,
-) -> Int? {
+) -> Int32? {
   for index, plan in plans {
     if plan.plan_id == plan_id {
       return Some(index)

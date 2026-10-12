@@ -10,7 +10,7 @@ pub(all) enum ExperimentalV2RequestId {
 ///|
 pub fn experimental_v2_decode_request_id(
   value : Json,
-  path? : String = "requestId",
+  path~ : String = "requestId",
 ) -> ExperimentalV2RequestId raise ExperimentalV2DecodeError {
   match value {
     Null => RequestIdNull
@@ -48,7 +48,7 @@ pub(all) struct ExperimentalV2EnumOption {
 ///|
 pub fn experimental_v2_decode_enum_option(
   value : Json,
-  path? : String = "enumOption",
+  path~ : String = "enumOption",
 ) -> ExperimentalV2EnumOption raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -102,7 +102,7 @@ pub(all) enum ExperimentalV2StringFormat {
 ///|
 pub fn experimental_v2_decode_string_format(
   value : Json,
-  path? : String = "format",
+  path~ : String = "format",
 ) -> ExperimentalV2StringFormat raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -132,8 +132,8 @@ pub fn experimental_v2_encode_string_format(
 pub(all) struct ExperimentalV2StringProperty {
   title : String?
   description : String?
-  min_length : UInt?
-  max_length : UInt?
+  min_length : UInt32?
+  max_length : UInt32?
   pattern : String?
   format : ExperimentalV2StringFormat?
   default : String?
@@ -145,7 +145,7 @@ pub(all) struct ExperimentalV2StringProperty {
 ///|
 pub fn experimental_v2_decode_string_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2StringProperty raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -287,7 +287,7 @@ pub(all) struct ExperimentalV2NumberProperty {
 ///|
 pub fn experimental_v2_decode_number_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2NumberProperty raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -367,7 +367,7 @@ pub(all) struct ExperimentalV2IntegerProperty {
 ///|
 pub fn experimental_v2_decode_integer_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2IntegerProperty raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -445,7 +445,7 @@ pub(all) struct ExperimentalV2BooleanProperty {
 ///|
 pub fn experimental_v2_decode_boolean_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2BooleanProperty raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -509,7 +509,7 @@ pub(all) struct ExperimentalV2MultiSelectProperty {
 ///|
 pub fn experimental_v2_decode_multi_select_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2MultiSelectProperty raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -617,7 +617,7 @@ pub(all) enum ExperimentalV2MultiSelectItems {
 ///|
 pub fn experimental_v2_decode_multi_select_items(
   value : Json,
-  path? : String = "items",
+  path~ : String = "items",
 ) -> ExperimentalV2MultiSelectItems raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   match fields.get("type") {
@@ -726,7 +726,7 @@ pub type ExperimentalV2ElicitationProperty = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_elicitation_property(
   value : Json,
-  path? : String = "property",
+  path~ : String = "property",
 ) -> ExperimentalV2ElicitationProperty raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -814,7 +814,7 @@ pub(all) struct ExperimentalV2ElicitationSchema {
 ///|
 pub fn experimental_v2_decode_elicitation_schema(
   value : Json,
-  path? : String = "requestedSchema",
+  path~ : String = "requestedSchema",
 ) -> ExperimentalV2ElicitationSchema raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -1026,7 +1026,7 @@ pub type ExperimentalV2ElicitationCreateRequest = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_elicitation_create_request(
   value : Json,
-  path? : String = "elicitation/create",
+  path~ : String = "elicitation/create",
 ) -> ExperimentalV2ElicitationCreateRequest raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -1157,7 +1157,7 @@ pub(all) enum ExperimentalV2ElicitationContentValue {
 ///|
 pub fn experimental_v2_decode_elicitation_content_value(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> ExperimentalV2ElicitationContentValue raise ExperimentalV2DecodeError {
   match value {
     String(text) => ContentString(text)
@@ -1248,7 +1248,7 @@ pub type ExperimentalV2ElicitationCreateResponse = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_elicitation_create_response(
   value : Json,
-  path? : String = "elicitation/create",
+  path~ : String = "elicitation/create",
 ) -> ExperimentalV2ElicitationCreateResponse raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -1368,7 +1368,7 @@ pub(all) struct ExperimentalV2CompleteElicitationNotification {
 ///|
 pub fn experimental_v2_decode_complete_elicitation_notification(
   value : Json,
-  path? : String = "elicitation/complete",
+  path~ : String = "elicitation/complete",
 ) -> ExperimentalV2CompleteElicitationNotification raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

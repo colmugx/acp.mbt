@@ -281,7 +281,7 @@ fn pinned_v2_schema_side(
 fn pinned_v2_schema_def_count(
   rows : Array[(String, String)],
   name : String,
-) -> Int {
+) -> Int32 {
   let mut count = 0
   for row in rows {
     if row.0 == name {
@@ -315,7 +315,7 @@ fn pinned_v2_direction_from_side(
 /// aborts so annotation drift cannot be silently absorbed.
 fn pinned_v2_kind_from_count(
   name : String,
-  count : Int,
+  count : Int32,
 ) -> ExperimentalV2MethodKind {
   match count {
     1 => Notification

@@ -29,7 +29,7 @@ fn agent_state_test_config(
 ///|
 fn agent_state_test_initialize(
   state : AgentProtocolState,
-  protocol_version : Int,
+  protocol_version : Int32,
 ) -> AgentProtocolStep raise AgentProtocolError {
   let params : InitializeParams = {
     protocol_version,
@@ -43,7 +43,7 @@ fn agent_state_test_initialize(
 ///|
 fn agent_state_test_initialize_with_client_capabilities(
   state : AgentProtocolState,
-  protocol_version : Int,
+  protocol_version : Int32,
   client_capabilities : ProtocolNullable[ClientCapabilities],
 ) -> AgentProtocolStep raise AgentProtocolError {
   let params : InitializeParams = {

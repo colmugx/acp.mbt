@@ -14,7 +14,7 @@ pub(all) enum ExperimentalV2ConfigCategory {
 ///|
 pub fn experimental_v2_decode_config_category(
   value : Json,
-  path? : String = "category",
+  path~ : String = "category",
 ) -> ExperimentalV2ConfigCategory raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -57,7 +57,7 @@ pub(all) struct ExperimentalV2ConfigSelectOption {
 ///|
 pub fn experimental_v2_decode_config_select_option(
   value : Json,
-  path? : String = "selectOption",
+  path~ : String = "selectOption",
 ) -> ExperimentalV2ConfigSelectOption raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -112,7 +112,7 @@ pub(all) struct ExperimentalV2ConfigSelectGroup {
 ///|
 pub fn experimental_v2_decode_config_select_group(
   value : Json,
-  path? : String = "selectGroup",
+  path~ : String = "selectGroup",
 ) -> ExperimentalV2ConfigSelectGroup raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -169,7 +169,7 @@ pub(all) enum ExperimentalV2ConfigSelectOptions {
 ///|
 pub fn experimental_v2_decode_config_select_options(
   value : Json,
-  path? : String = "options",
+  path~ : String = "options",
 ) -> ExperimentalV2ConfigSelectOptions raise ExperimentalV2DecodeError {
   let items = experimental_v2_require_array(value, path~)
   if items.length() == 0 {
@@ -266,7 +266,7 @@ pub type ExperimentalV2SessionConfigOption = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_config_option(
   value : Json,
-  path? : String = "configOption",
+  path~ : String = "configOption",
 ) -> ExperimentalV2SessionConfigOption raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -428,7 +428,7 @@ pub type ExperimentalV2SetConfigOptionParams = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_set_config_option(
   value : Json,
-  path? : String = "set_config_option",
+  path~ : String = "set_config_option",
 ) -> ExperimentalV2SetConfigOptionParams raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -518,7 +518,7 @@ pub(all) struct ExperimentalV2SetConfigOptionResult {
 ///|
 pub fn experimental_v2_decode_set_config_option_result(
   value : Json,
-  path? : String = "set_config_option",
+  path~ : String = "set_config_option",
 ) -> ExperimentalV2SetConfigOptionResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

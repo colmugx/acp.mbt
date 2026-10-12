@@ -173,10 +173,10 @@ async fn agent_matrix_test_cancelled_prompt(
 
 ///|
 fn agent_matrix_test_endpoint(
-  new_session? : AgentNewSessionHandler = agent_service_test_new,
-  prompt? : AgentPromptHandler = agent_service_test_prompt,
-  load? : AgentLoadSessionHandler = agent_service_test_load,
-  delete? : AgentDeleteSessionHandler = agent_matrix_test_delete_ok,
+  new_session~ : AgentNewSessionHandler = agent_service_test_new,
+  prompt~ : AgentPromptHandler = agent_service_test_prompt,
+  load~ : AgentLoadSessionHandler = agent_service_test_load,
+  delete~ : AgentDeleteSessionHandler = agent_matrix_test_delete_ok,
 ) -> AgentEndpoint {
   let spec = agent_spec(
     info=agent_service_test_info("matrix"),

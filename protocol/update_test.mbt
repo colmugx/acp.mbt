@@ -361,7 +361,7 @@ test "uint64 numbers accept exact integral exponents and reject invalid values" 
 ///|
 fn update_test_chunk(
   text : String,
-  message_id? : ProtocolNullable[MessageId] = Value("message-1"),
+  message_id~ : ProtocolNullable[MessageId] = Value("message-1"),
 ) -> ContentChunk {
   {
     content: Text({
@@ -382,7 +382,7 @@ fn update_test_fold() -> SessionUpdateFold {
 ///|
 fn update_test_chunk_text(
   blocks : Array[ContentBlock],
-  index : Int,
+  index : Int32,
 ) -> String raise Failure {
   match blocks[index] {
     Text(content) => content.text

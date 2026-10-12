@@ -1,12 +1,10 @@
 .DS_Store
 _build/
-target/
-target
 .mooncakes/
 .moonagent/
 
 .agents
 
-**/pkg.generated.mbti
 /HANDOFF.md
-/docs/implementation-plan/
+/docs/implementation-plan
+spec/LOCK.md

@@ -2,7 +2,7 @@
 /// The protocol version a v2 stable-baseline endpoint speaks and echoes.  A
 /// v2 endpoint is v2-only: it never negotiates down, converts frames, or
 /// serves a v1 peer on the same connection (plan 08 version isolation).
-pub let experimental_v2_protocol_version : Int = 2
+pub let experimental_v2_protocol_version : Int32 = 2
 
 ///|
 /// Client→Agent requests accepted by a v2 Agent endpoint, carrying the

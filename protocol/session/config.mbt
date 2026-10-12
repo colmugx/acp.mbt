@@ -120,7 +120,7 @@ fn session_config_encode_modes(
 /// Decode one session mode.
 pub fn session_mode_from_json(
   value : Json,
-  path? : String = "mode",
+  path~ : String = "mode",
 ) -> SessionMode raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -178,7 +178,7 @@ fn session_config_validate_current_mode(
 /// Decode the mode state returned by session lifecycle methods.
 pub fn session_mode_state_from_json(
   value : Json,
-  path? : String = "modes",
+  path~ : String = "modes",
 ) -> SessionModeState raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -250,7 +250,7 @@ fn session_config_encode_options(
 /// Decode `session/set_mode` parameters.
 pub fn set_session_mode_params_from_json(
   value : Json,
-  path? : String = "session/set_mode",
+  path~ : String = "session/set_mode",
 ) -> SetSessionModeParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "modeId", "_meta"], prefix=path)
@@ -284,7 +284,7 @@ pub fn set_session_mode_params_to_json(
 /// Decode the result of `session/set_mode`.
 pub fn set_session_mode_result_from_json(
   value : Json,
-  path? : String = "session/set_mode",
+  path~ : String = "session/set_mode",
 ) -> SetSessionModeResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["_meta"], prefix=path)
@@ -347,7 +347,7 @@ fn session_config_value_to_fields(
 /// Decode `session/set_config_option` parameters.
 pub fn set_session_config_option_params_from_json(
   value : Json,
-  path? : String = "session/set_config_option",
+  path~ : String = "session/set_config_option",
 ) -> SetSessionConfigOptionParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   let config_value = session_config_value_from_fields(fields, path~)
@@ -387,7 +387,7 @@ pub fn set_session_config_option_params_to_json(
 /// Decode the result of `session/set_config_option`.
 pub fn set_session_config_option_result_from_json(
   value : Json,
-  path? : String = "session/set_config_option",
+  path~ : String = "session/set_config_option",
 ) -> SetSessionConfigOptionResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["configOptions", "_meta"], prefix=path)

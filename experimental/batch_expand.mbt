@@ -37,7 +37,7 @@ priv struct ExperimentalV2BatchExpandingReader {
 /// framing path with the same fail-fast outcome.
 pub fn experimental_v2_batch_expanding_reader(
   reader~ : @runtime.RuntimeReaderPort,
-  max_frame_bytes~ : Int,
+  max_frame_bytes~ : Int32,
 ) -> @runtime.RuntimeReaderPort {
   if max_frame_bytes <= 0 {
     abort("v2 batch expanding reader: max_frame_bytes must be positive")
@@ -72,7 +72,7 @@ pub fn experimental_v2_batch_expanding_ports(
 ///|
 async fn experimental_v2_batch_expanding_read(
   state : ExperimentalV2BatchExpandingReader,
-  count : Int,
+  count : Int32,
 ) -> Bytes? {
   for ;; {
     if state.pending.length() > 0 {

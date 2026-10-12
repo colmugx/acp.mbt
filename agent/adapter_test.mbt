@@ -175,8 +175,8 @@ async fn agent_adapter_test_unknown_new(
 
 ///|
 fn agent_adapter_test_sessions(
-  new_session? : AgentNewSessionHandler = agent_service_test_new,
-  cancel? : AgentCancelHandler = agent_service_test_cancel,
+  new_session~ : AgentNewSessionHandler = agent_service_test_new,
+  cancel~ : AgentCancelHandler = agent_service_test_cancel,
 ) -> AgentSessionService {
   agent_session_service(
     new_session~,
@@ -195,8 +195,8 @@ fn agent_adapter_test_sessions(
 
 ///|
 fn agent_adapter_test_endpoint(
-  new_session? : AgentNewSessionHandler = agent_service_test_new,
-  cancel? : AgentCancelHandler = agent_service_test_cancel,
+  new_session~ : AgentNewSessionHandler = agent_service_test_new,
+  cancel~ : AgentCancelHandler = agent_service_test_cancel,
 ) -> AgentEndpoint {
   let spec = agent_spec(
     info=agent_service_test_info("adapter"),
@@ -220,7 +220,7 @@ fn agent_adapter_test_b09_endpoint(support : AgentSupport) -> AgentEndpoint {
 ///|
 fn agent_adapter_test_auth_endpoint_with(
   authenticate : AgentAuthenticateHandler,
-  logout? : AgentLogoutHandler = agent_service_test_logout,
+  logout~ : AgentLogoutHandler = agent_service_test_logout,
 ) -> AgentEndpoint {
   let auth_method : AuthMethod = {
     id: "token",

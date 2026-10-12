@@ -13,7 +13,7 @@ pub(all) enum ExperimentalV2DiffFileType {
 ///|
 pub fn experimental_v2_decode_diff_file_type(
   value : Json,
-  path? : String = "fileType",
+  path~ : String = "fileType",
 ) -> ExperimentalV2DiffFileType raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -56,7 +56,7 @@ pub(all) enum ExperimentalV2DiffPatchFormat {
 ///|
 pub fn experimental_v2_decode_diff_patch_format(
   value : Json,
-  path? : String = "format",
+  path~ : String = "format",
 ) -> ExperimentalV2DiffPatchFormat raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -91,7 +91,7 @@ pub(all) struct ExperimentalV2DiffPatch {
 ///|
 pub fn experimental_v2_decode_diff_patch(
   value : Json,
-  path? : String = "patch",
+  path~ : String = "patch",
 ) -> ExperimentalV2DiffPatch raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["format", "text"], prefix=path)
@@ -149,7 +149,7 @@ pub(all) struct ExperimentalV2DiffPathChange {
 ///|
 pub fn experimental_v2_decode_diff_path_change(
   value : Json,
-  path? : String = "change",
+  path~ : String = "change",
 ) -> ExperimentalV2DiffPathChange raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -202,7 +202,7 @@ pub(all) struct ExperimentalV2DiffPathPairChange {
 ///|
 pub fn experimental_v2_decode_diff_path_pair_change(
   value : Json,
-  path? : String = "change",
+  path~ : String = "change",
 ) -> ExperimentalV2DiffPathPairChange raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -273,7 +273,7 @@ pub type ExperimentalV2DiffChange = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_diff_change(
   value : Json,
-  path? : String = "change",
+  path~ : String = "change",
 ) -> ExperimentalV2DiffChange raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -358,7 +358,7 @@ pub(all) struct ExperimentalV2Diff {
 ///|
 pub fn experimental_v2_decode_diff(
   value : Json,
-  path? : String = "diff",
+  path~ : String = "diff",
 ) -> ExperimentalV2Diff raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

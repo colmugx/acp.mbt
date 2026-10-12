@@ -1,6 +1,6 @@
 ///|
 /// Return the signed integer represented by an error code.
-pub fn JsonRpcErrorCode::to_int(self : JsonRpcErrorCode) -> Int {
+pub fn JsonRpcErrorCode::to_int(self : JsonRpcErrorCode) -> Int32 {
   match self {
     ParseError => -32700
     InvalidRequest => -32600
@@ -16,7 +16,7 @@ pub fn JsonRpcErrorCode::to_int(self : JsonRpcErrorCode) -> Int {
 
 ///|
 /// Decode a signed integer error code, retaining unknown values as `Custom`.
-pub fn JsonRpcErrorCode::from_int(code : Int) -> JsonRpcErrorCode {
+pub fn JsonRpcErrorCode::from_int(code : Int32) -> JsonRpcErrorCode {
   match code {
     -32700 => ParseError
     -32600 => InvalidRequest

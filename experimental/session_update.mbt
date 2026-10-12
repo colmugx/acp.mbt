@@ -15,7 +15,7 @@ pub(all) enum ExperimentalV2StopReason {
 ///|
 pub fn experimental_v2_decode_stop_reason(
   value : Json,
-  path? : String = "stopReason",
+  path~ : String = "stopReason",
 ) -> ExperimentalV2StopReason raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -58,7 +58,7 @@ pub(all) struct ExperimentalV2RunningState {
 ///|
 pub fn experimental_v2_decode_running_state(
   value : Json,
-  path? : String = "state_update",
+  path~ : String = "state_update",
 ) -> ExperimentalV2RunningState raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -85,7 +85,7 @@ pub(all) struct ExperimentalV2IdleState {
 ///|
 pub fn experimental_v2_decode_idle_state(
   value : Json,
-  path? : String = "state_update",
+  path~ : String = "state_update",
 ) -> ExperimentalV2IdleState raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["stopReason", "_meta"], prefix=path)
@@ -121,7 +121,7 @@ pub(all) struct ExperimentalV2RequiresActionState {
 ///|
 pub fn experimental_v2_decode_requires_action_state(
   value : Json,
-  path? : String = "state_update",
+  path~ : String = "state_update",
 ) -> ExperimentalV2RequiresActionState raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -154,7 +154,7 @@ pub type ExperimentalV2StateUpdate = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_state_update(
   value : Json,
-  path? : String = "state_update",
+  path~ : String = "state_update",
 ) -> ExperimentalV2StateUpdate raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -225,7 +225,7 @@ pub(all) struct ExperimentalV2MessageUpsert {
 ///|
 pub fn experimental_v2_decode_message_upsert(
   value : Json,
-  path? : String = "message",
+  path~ : String = "message",
 ) -> ExperimentalV2MessageUpsert raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -281,7 +281,7 @@ pub(all) enum ExperimentalV2PlanEntryPriority {
 ///|
 pub fn experimental_v2_decode_plan_entry_priority(
   value : Json,
-  path? : String = "priority",
+  path~ : String = "priority",
 ) -> ExperimentalV2PlanEntryPriority raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -325,7 +325,7 @@ pub(all) enum ExperimentalV2PlanEntryStatus {
 ///|
 pub fn experimental_v2_decode_plan_entry_status(
   value : Json,
-  path? : String = "status",
+  path~ : String = "status",
 ) -> ExperimentalV2PlanEntryStatus raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -369,7 +369,7 @@ pub(all) struct ExperimentalV2PlanEntry {
 ///|
 pub fn experimental_v2_decode_plan_entry(
   value : Json,
-  path? : String = "planEntry",
+  path~ : String = "planEntry",
 ) -> ExperimentalV2PlanEntry raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -420,7 +420,7 @@ pub(all) struct ExperimentalV2PlanItems {
 ///|
 pub fn experimental_v2_decode_plan_items(
   value : Json,
-  path? : String = "plan",
+  path~ : String = "plan",
 ) -> ExperimentalV2PlanItems raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -473,7 +473,7 @@ pub type ExperimentalV2PlanUpdateContent = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_plan_update_content(
   value : Json,
-  path? : String = "plan",
+  path~ : String = "plan",
 ) -> ExperimentalV2PlanUpdateContent raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -523,7 +523,7 @@ pub(all) struct ExperimentalV2PlanUpdate {
 ///|
 pub fn experimental_v2_decode_plan_update(
   value : Json,
-  path? : String = "plan_update",
+  path~ : String = "plan_update",
 ) -> ExperimentalV2PlanUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["plan", "_meta"], prefix=path)
@@ -562,7 +562,7 @@ pub(all) struct ExperimentalV2TextCommandInput {
 ///|
 pub fn experimental_v2_decode_text_command_input(
   value : Json,
-  path? : String = "input",
+  path~ : String = "input",
 ) -> ExperimentalV2TextCommandInput raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["hint", "_meta"], prefix=path)
@@ -592,7 +592,7 @@ pub type ExperimentalV2CommandInput = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_command_input(
   value : Json,
-  path? : String = "input",
+  path~ : String = "input",
 ) -> ExperimentalV2CommandInput raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -645,7 +645,7 @@ pub(all) struct ExperimentalV2AvailableCommand {
 ///|
 pub fn experimental_v2_decode_available_command(
   value : Json,
-  path? : String = "availableCommand",
+  path~ : String = "availableCommand",
 ) -> ExperimentalV2AvailableCommand raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -699,7 +699,7 @@ pub(all) struct ExperimentalV2AvailableCommandsUpdate {
 ///|
 pub fn experimental_v2_decode_available_commands_update(
   value : Json,
-  path? : String = "available_commands_update",
+  path~ : String = "available_commands_update",
 ) -> ExperimentalV2AvailableCommandsUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -746,7 +746,7 @@ pub(all) struct ExperimentalV2ConfigOptionUpdate {
 ///|
 pub fn experimental_v2_decode_config_option_update(
   value : Json,
-  path? : String = "config_option_update",
+  path~ : String = "config_option_update",
 ) -> ExperimentalV2ConfigOptionUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -794,7 +794,7 @@ pub(all) struct ExperimentalV2SessionInfoUpdate {
 ///|
 pub fn experimental_v2_decode_session_info_update(
   value : Json,
-  path? : String = "session_info_update",
+  path~ : String = "session_info_update",
 ) -> ExperimentalV2SessionInfoUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -844,7 +844,7 @@ pub(all) struct ExperimentalV2Cost {
 ///|
 pub fn experimental_v2_decode_cost(
   value : Json,
-  path? : String = "cost",
+  path~ : String = "cost",
 ) -> ExperimentalV2Cost raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -917,7 +917,7 @@ pub(all) struct ExperimentalV2UsageUpdate {
 ///|
 pub fn experimental_v2_decode_usage_update(
   value : Json,
-  path? : String = "usage_update",
+  path~ : String = "usage_update",
 ) -> ExperimentalV2UsageUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -988,7 +988,7 @@ pub type ExperimentalV2SessionUpdate = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_session_update(
   value : Json,
-  path? : String = "update",
+  path~ : String = "update",
 ) -> ExperimentalV2SessionUpdate raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -1192,7 +1192,7 @@ pub(all) struct ExperimentalV2UpdateSessionNotification {
 ///|
 pub fn experimental_v2_decode_update_session_notification(
   value : Json,
-  path? : String = "session/update",
+  path~ : String = "session/update",
 ) -> ExperimentalV2UpdateSessionNotification raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

@@ -11,7 +11,7 @@ pub(all) enum ExperimentalV2Role {
 ///|
 pub fn experimental_v2_decode_role(
   value : Json,
-  path? : String = "role",
+  path~ : String = "role",
 ) -> ExperimentalV2Role raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -50,7 +50,7 @@ pub(all) struct ExperimentalV2Annotations {
 ///|
 pub fn experimental_v2_decode_annotations(
   value : Json,
-  path? : String = "annotations",
+  path~ : String = "annotations",
 ) -> ExperimentalV2Annotations raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -163,7 +163,7 @@ pub(all) struct ExperimentalV2TextContent {
 ///|
 pub fn experimental_v2_decode_text_content(
   value : Json,
-  path? : String = "text",
+  path~ : String = "text",
 ) -> ExperimentalV2TextContent raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -204,7 +204,7 @@ pub(all) struct ExperimentalV2ImageContent {
 ///|
 pub fn experimental_v2_decode_image_content(
   value : Json,
-  path? : String = "image",
+  path~ : String = "image",
 ) -> ExperimentalV2ImageContent raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -261,7 +261,7 @@ pub(all) struct ExperimentalV2AudioContent {
 ///|
 pub fn experimental_v2_decode_audio_content(
   value : Json,
-  path? : String = "audio",
+  path~ : String = "audio",
 ) -> ExperimentalV2AudioContent raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -311,7 +311,7 @@ pub(all) enum ExperimentalV2IconTheme {
 ///|
 pub fn experimental_v2_decode_icon_theme(
   value : Json,
-  path? : String = "theme",
+  path~ : String = "theme",
 ) -> ExperimentalV2IconTheme raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -350,7 +350,7 @@ pub(all) struct ExperimentalV2Icon {
 ///|
 pub fn experimental_v2_decode_icon(
   value : Json,
-  path? : String = "icon",
+  path~ : String = "icon",
 ) -> ExperimentalV2Icon raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -423,7 +423,7 @@ pub(all) struct ExperimentalV2ResourceLink {
 ///|
 pub fn experimental_v2_decode_resource_link(
   value : Json,
-  path? : String = "resource_link",
+  path~ : String = "resource_link",
 ) -> ExperimentalV2ResourceLink raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -520,7 +520,7 @@ pub(all) struct ExperimentalV2TextResourceContents {
 ///|
 pub fn experimental_v2_decode_text_resource_contents(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> ExperimentalV2TextResourceContents raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -572,7 +572,7 @@ pub(all) struct ExperimentalV2BlobResourceContents {
 ///|
 pub fn experimental_v2_decode_blob_resource_contents(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> ExperimentalV2BlobResourceContents raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -628,7 +628,7 @@ pub(all) enum ExperimentalV2EmbeddedResourceResource {
 ///|
 pub fn experimental_v2_decode_embedded_resource_resource(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> ExperimentalV2EmbeddedResourceResource raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   let has_text = fields.contains("text")
@@ -672,7 +672,7 @@ pub(all) struct ExperimentalV2EmbeddedResource {
 ///|
 pub fn experimental_v2_decode_embedded_resource(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> ExperimentalV2EmbeddedResource raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -723,7 +723,7 @@ pub type ExperimentalV2ContentBlock = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_content_block(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> ExperimentalV2ContentBlock raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -803,7 +803,7 @@ pub(all) struct ExperimentalV2Content {
 ///|
 pub fn experimental_v2_decode_content(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> ExperimentalV2Content raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -840,7 +840,7 @@ pub(all) struct ExperimentalV2ContentChunk {
 ///|
 pub fn experimental_v2_decode_content_chunk(
   value : Json,
-  path? : String = "contentChunk",
+  path~ : String = "contentChunk",
 ) -> ExperimentalV2ContentChunk raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

@@ -43,7 +43,7 @@ fn experimental_v2_agent_runtime_test_initialize(id : String) -> String {
 ///|
 fn experimental_v2_agent_runtime_test_offer(
   id : String,
-  version : Int,
+  version : Int32,
 ) -> String {
   "{\"jsonrpc\":\"2.0\",\"id\":\"" +
   id +
@@ -209,7 +209,7 @@ async test "v2 agent runtime bridge answers a version-1 offer without initializi
 
 ///|
 async test "v2 agent runtime bridge completes two requests in reverse order exactly once" {
-  let arrivals : Array[Int] = []
+  let arrivals : Array[Int32] = []
   let arrived : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_first : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_second : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
@@ -288,7 +288,7 @@ async test "v2 agent runtime bridge completes two requests in reverse order exac
 
 ///|
 async test "v2 agent runtime bridge cancels one pending request by typed id" {
-  let arrivals : Array[Int] = []
+  let arrivals : Array[Int32] = []
   let arrived : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_victim : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_sibling : @aqueue.Queue[Unit] = Queue(kind=Unbounded)

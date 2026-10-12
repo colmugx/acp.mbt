@@ -1,21 +1,21 @@
 ///|
 struct TypedOwnerTestState {
   phase : String
-  completed : Array[Int]
+  completed : Array[Int32]
   completed_ids : Array[RequestId]
-  completed_invocations : Array[Int]
+  completed_invocations : Array[Int32]
   failed : Array[String]
-  cancelled : Array[Int]
-  cancelled_completions : Int
-  aborted : Array[Int]
-  notification_completed : Int
+  cancelled : Array[Int32]
+  cancelled_completions : Int32
+  aborted : Array[Int32]
+  notification_completed : Int32
   notification_failed : Array[String]
-  notification_cancelled : Int
+  notification_cancelled : Int32
 } derive(Eq, Debug)
 
 ///|
 enum TypedOwnerTestOutcome {
-  TestSucceeded(Int)
+  TestSucceeded(Int32)
   TestFailed(String)
   TestCancelled
 } derive(Eq, Debug)
@@ -41,8 +41,8 @@ fn typed_owner_test_initial() -> TypedOwnerTestState {
 fn typed_owner_test_admit(
   state : TypedOwnerTestState,
   _id : RequestId,
-  value : Int,
-) -> TypedRequestAdmission[TypedOwnerTestState, Int, Int] {
+  value : Int32,
+) -> TypedRequestAdmission[TypedOwnerTestState, Int32, Int32] {
   Invoke(
     state={ ..state, phase: "admitted-" + value.to_string(), },
     invocation=value,
@@ -52,8 +52,8 @@ fn typed_owner_test_admit(
 ///|
 fn typed_owner_test_notification(
   state : TypedOwnerTestState,
-  value : Int,
-) -> TypedNotificationAdmission[TypedOwnerTestState, Int] {
+  value : Int32,
+) -> TypedNotificationAdmission[TypedOwnerTestState, Int32] {
   Invoke(state={ ..state, phase: "notification-admitted", }, invocation=value)
 }
 
@@ -61,9 +61,9 @@ fn typed_owner_test_notification(
 fn typed_owner_test_complete(
   state : TypedOwnerTestState,
   id : RequestId,
-  invocation : Int,
-  completion : Int,
-) -> TypedRequestCompletion[TypedOwnerTestState, Int] {
+  invocation : Int32,
+  completion : Int32,
+) -> TypedRequestCompletion[TypedOwnerTestState, Int32] {
   let completed = Array::copy(state.completed)
   completed.push(completion)
   let completed_ids = Array::copy(state.completed_ids)
@@ -79,8 +79,8 @@ fn typed_owner_test_complete(
 ///|
 fn typed_owner_test_complete_notification(
   state : TypedOwnerTestState,
-  _invocation : Int,
-  _completion : Int,
+  _invocation : Int32,
+  _completion : Int32,
 ) -> TypedNotificationCompletion[TypedOwnerTestState] {
   {
     state: {
@@ -94,7 +94,7 @@ fn typed_owner_test_complete_notification(
 fn typed_owner_test_complete_outcome(
   state : TypedOwnerTestState,
   id : RequestId,
-  invocation : Int,
+  invocation : Int32,
   completion : TypedOwnerTestOutcome,
 ) -> TypedRequestCompletion[TypedOwnerTestState, TypedOwnerTestOutcome] {
   let next = match completion {
@@ -121,7 +121,7 @@ fn typed_owner_test_complete_outcome(
 ///|
 fn typed_owner_test_complete_notification_outcome(
   state : TypedOwnerTestState,
-  _invocation : Int,
+  _invocation : Int32,
   completion : TypedOwnerTestOutcome,
 ) -> TypedNotificationCompletion[TypedOwnerTestState] {
   let next = match completion {
@@ -142,7 +142,7 @@ fn typed_owner_test_complete_notification_outcome(
 fn typed_owner_test_cancel(
   state : TypedOwnerTestState,
   _id : RequestId,
-  invocation : Int,
+  invocation : Int32,
 ) -> TypedOwnerTestState {
   let cancelled = Array::copy(state.cancelled)
   cancelled.push(invocation)
@@ -152,7 +152,7 @@ fn typed_owner_test_cancel(
 ///|
 fn typed_owner_test_abort(
   state : TypedOwnerTestState,
-  task : TypedOwnerTask[Int],
+  task : TypedOwnerTask[Int32],
 ) -> TypedOwnerTestState {
   let aborted = Array::copy(state.aborted)
   aborted.push(task.invocation())
@@ -161,10 +161,10 @@ fn typed_owner_test_abort(
 
 ///|
 fn typed_owner_test_admit_request(
-  owner : TypedOwner[TypedOwnerTestState, Int],
+  owner : TypedOwner[TypedOwnerTestState, Int32],
   id : RequestId,
-  value : Int,
-) -> (TypedOwner[TypedOwnerTestState, Int], TypedRequestAction[Int, Int]) {
+  value : Int32,
+) -> (TypedOwner[TypedOwnerTestState, Int32], TypedRequestAction[Int32, Int32]) {
   typed_owner_admit_request(owner, id, value, typed_owner_test_admit) catch {
     _ => abort("typed owner fixture request admission must not fail")
   }
@@ -783,7 +783,7 @@ async test "typed owner executes two tasks concurrently and applies reverse even
   let second_started : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let first_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let second_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let events : @aqueue.Queue[TypedOwnerEvent[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[TypedOwnerEvent[Int32]] = Queue(kind=Unbounded)
   @async.with_task_group(group => {
     let first_task_run = group.spawn(() => {
       let event = typed_owner_execute(first_task, async fn(value) {

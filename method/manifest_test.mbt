@@ -363,7 +363,7 @@ fn pinned_v1_schema_side(
 fn pinned_v1_schema_def_count(
   rows : Array[(String, String)],
   name : String,
-) -> Int {
+) -> Int32 {
   let mut count = 0
   for row in rows {
     if row.0 == name {
@@ -395,7 +395,7 @@ fn pinned_v1_direction_from_side(
 /// annotated request payload def plus one response payload def, while a
 /// notification carries exactly one annotated payload def.  Any other count
 /// aborts so annotation drift cannot be silently absorbed.
-fn pinned_v1_kind_from_count(name : String, count : Int) -> AcpV1MethodKind {
+fn pinned_v1_kind_from_count(name : String, count : Int32) -> AcpV1MethodKind {
   match count {
     1 => Notification
     2 => Request
@@ -514,7 +514,7 @@ async test "unstable v1 manifest is a session/fork subset of the vendored unstab
 
 ///|
 /// ASCII lowercase code of one character, for case-insensitive scanning.
-fn manifest_boundary_char_code(ch : Char) -> Int {
+fn manifest_boundary_char_code(ch : Char) -> Int32 {
   let code = ch.to_int()
   if code >= 65 && code <= 90 {
     code + 32

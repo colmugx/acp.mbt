@@ -61,7 +61,7 @@ pub struct AgentContext {
 pub fn agent_context(
   request_broker~ : AgentContextRequestBroker,
   notification_broker~ : AgentContextNotificationBroker,
-  client_info? : () -> ProtocolNullable[Implementation] = fn() { Omitted },
+  client_info~ : () -> ProtocolNullable[Implementation] = fn() { Omitted },
 ) -> AgentContext {
   { request_broker, notification_broker, client_info, }
 }

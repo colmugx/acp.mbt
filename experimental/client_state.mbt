@@ -91,7 +91,7 @@ pub(all) struct ExperimentalV2ClientStep {
 pub(all) suberror ExperimentalV2ClientProtocolError {
   NotReady(method_name~ : String)
   AlreadyReady
-  UnsupportedVersion(offered~ : Int)
+  UnsupportedVersion(offered~ : Int32)
   CapabilityDenied(method_name~ : String, capability~ : String)
   UnknownMethod(method_name~ : String)
 } derive(Eq, Debug)

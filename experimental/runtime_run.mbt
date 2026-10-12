@@ -68,9 +68,9 @@ pub async fn experimental_v2_agent_serve_stdio(
   endpoint~ : ExperimentalV2AgentEndpoint,
   context~ : ExperimentalV2AgentContext,
   initial_state~ : ExperimentalV2AgentAdapterState,
-  options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
-  trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
-  batch? : Bool = false,
+  options~ : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
+  trace~ : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch~ : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   experimental_v2_agent_runtime_run(
@@ -106,9 +106,9 @@ pub async fn experimental_v2_agent_serve_stdio_with_outbound(
     @connection.RuntimeOutboundChannel[ExperimentalV2AgentCompletion],
   ) -> ExperimentalV2AgentContext,
   initial_state~ : ExperimentalV2AgentAdapterState,
-  options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
-  trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
-  batch? : Bool = false,
+  options~ : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
+  trace~ : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch~ : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   experimental_v2_agent_runtime_run_with_outbound(
@@ -328,13 +328,13 @@ pub async fn experimental_v2_client_connect_process(
   initial_state~ : ExperimentalV2ClientAdapterState,
   handlers~ : @runtime.RuntimeHandlerPort,
   command~ : String,
-  args? : Array[String] = [],
+  args~ : Array[String] = [],
   extra_env? : Map[String, String],
-  inherit_env? : Bool = true,
-  spawned? : (@runtime.RuntimeProcessPorts) -> Unit = _ => (),
-  options? : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
-  trace? : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
-  batch? : Bool = false,
+  inherit_env~ : Bool = true,
+  spawned~ : (@runtime.RuntimeProcessPorts) -> Unit = _ => (),
+  options~ : @runtime.RuntimeOptions = @runtime.runtime_default_options(),
+  trace~ : (@runtime.RuntimeTraceEvent) -> Unit = @runtime.runtime_stderr_trace,
+  batch~ : Bool = false,
 ) -> Unit {
   @runtime.runtime_validate_options(options)
   @async.with_task_group(group => {

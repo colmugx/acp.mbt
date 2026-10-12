@@ -301,7 +301,7 @@ fn mcp_encode_sse(value : McpServerSse) -> Json raise ProtocolDecodeError {
 /// produced before this fix.
 pub fn mcp_server_from_json(
   value : Json,
-  path? : String = "mcpServer",
+  path~ : String = "mcpServer",
 ) -> McpServer raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   let tag : String? = match protocol_field(fields, "type") {

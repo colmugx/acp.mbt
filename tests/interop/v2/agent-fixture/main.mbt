@@ -46,7 +46,7 @@ async fn main {
 /// stdout or stderr.  `abort` is deliberately not used: the native runtime
 /// prints panic output on stdout, which would corrupt the ACP frame stream
 /// the interop test is proving pure.
-extern "c" fn interop_v2_fixture_exit(code : Int) = "exit"
+extern "c" fn interop_v2_fixture_exit(code : Int32) = "exit"
 
 ///|
 fn interop_v2_fixture_mode() -> String {

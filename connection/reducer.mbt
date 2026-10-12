@@ -12,7 +12,7 @@ fn connection_require_open(
 fn connection_outbound_index(
   pending : Array[PendingOutbound],
   id : RequestId,
-) -> Int? {
+) -> Int32? {
   for index, value in pending.iter2() {
     if value.id == id {
       return Some(index)
@@ -25,7 +25,7 @@ fn connection_outbound_index(
 fn connection_inbound_index(
   pending : Array[PendingInbound],
   id : RequestId,
-) -> Int? {
+) -> Int32? {
   for index, value in pending.iter2() {
     if value.id == id {
       return Some(index)

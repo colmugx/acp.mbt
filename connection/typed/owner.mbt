@@ -23,7 +23,7 @@ pub(all) enum TypedNotificationAdmission[S, I] {
 /// a request id of `Null` remains distinct from a notification's omitted id.
 /// The task carries no mutable state or connection queue.
 pub struct TypedOwnerTask[I] {
-  token : Int
+  token : Int32
   request_id : RequestId?
   invocation : I
   is_notification : Bool
@@ -34,8 +34,8 @@ pub struct TypedOwnerTask[I] {
 /// The event produced by an immutable async execution task. It contains no
 /// owner state; only the owner loop may apply it.
 pub(all) enum TypedOwnerEvent[C] {
-  RequestCompleted(token~ : Int, id~ : RequestId, completion~ : C)
-  NotificationCompleted(token~ : Int, completion~ : C)
+  RequestCompleted(token~ : Int32, id~ : RequestId, completion~ : C)
+  NotificationCompleted(token~ : Int32, completion~ : C)
 }
 
 ///|
@@ -45,18 +45,18 @@ pub(all) enum TypedOwnerEvent[C] {
 pub struct TypedOwner[S, I] {
   state : S
   tasks : Array[TypedOwnerTask[I]]
-  next_token : Int
+  next_token : Int32
   closed : Bool
 }
 
 ///|
 pub(all) enum TypedOwnerIgnore {
   Closed
-  UnknownTask(token~ : Int)
+  UnknownTask(token~ : Int32)
   UnknownRequest(id~ : RequestId)
   AlreadyCancelled(id~ : RequestId)
   RequestIdMismatch(expected~ : RequestId, actual~ : RequestId)
-  TaskKindMismatch(token~ : Int)
+  TaskKindMismatch(token~ : Int32)
 } derive(Eq, Debug)
 
 ///|
@@ -117,7 +117,7 @@ pub fn[S, I] TypedOwner::state(self : TypedOwner[S, I]) -> S {
 }
 
 ///|
-pub fn[S, I] TypedOwner::task_count(self : TypedOwner[S, I]) -> Int {
+pub fn[S, I] TypedOwner::task_count(self : TypedOwner[S, I]) -> Int32 {
   self.tasks.length()
 }
 
@@ -127,7 +127,7 @@ pub fn[S, I] TypedOwner::is_closed(self : TypedOwner[S, I]) -> Bool {
 }
 
 ///|
-pub fn[I] TypedOwnerTask::token(self : TypedOwnerTask[I]) -> Int {
+pub fn[I] TypedOwnerTask::token(self : TypedOwnerTask[I]) -> Int32 {
   self.token
 }
 
@@ -159,7 +159,7 @@ fn[I] typed_owner_task_cancelled(task : TypedOwnerTask[I]) -> TypedOwnerTask[I] 
 ///|
 fn[S, I] typed_owner_find_task(
   owner : TypedOwner[S, I],
-  token : Int,
+  token : Int32,
 ) -> TypedOwnerTask[I]? {
   for task in owner.tasks {
     if task.token == token {
@@ -188,7 +188,7 @@ fn[S, I] typed_owner_replace_task(
 ///|
 fn[S, I] typed_owner_remove_task(
   owner : TypedOwner[S, I],
-  token : Int,
+  token : Int32,
 ) -> TypedOwner[S, I] {
   let tasks : Array[TypedOwnerTask[I]] = []
   for task in owner.tasks {

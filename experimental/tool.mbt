@@ -20,7 +20,7 @@ pub(all) enum ExperimentalV2ToolKind {
 ///|
 pub fn experimental_v2_decode_tool_kind(
   value : Json,
-  path? : String = "kind",
+  path~ : String = "kind",
 ) -> ExperimentalV2ToolKind raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -76,7 +76,7 @@ pub(all) enum ExperimentalV2ToolCallStatus {
 ///|
 pub fn experimental_v2_decode_tool_call_status(
   value : Json,
-  path? : String = "status",
+  path~ : String = "status",
 ) -> ExperimentalV2ToolCallStatus raise ExperimentalV2DecodeError {
   let tag = experimental_v2_decode_string(value, path~)
   match tag {
@@ -113,14 +113,14 @@ pub fn experimental_v2_encode_tool_call_status(
 /// A file location being accessed or modified by a tool.
 pub(all) struct ExperimentalV2ToolCallLocation {
   path : String
-  line : UInt?
+  line : UInt32?
   meta : Json?
 } derive(Eq, Debug)
 
 ///|
 pub fn experimental_v2_decode_tool_call_location(
   value : Json,
-  path? : String = "location",
+  path~ : String = "location",
 ) -> ExperimentalV2ToolCallLocation raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["path", "line", "_meta"], prefix=path)
@@ -175,7 +175,7 @@ pub type ExperimentalV2ToolCallContent = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_tool_call_content(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> ExperimentalV2ToolCallContent raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -248,7 +248,7 @@ pub(all) struct ExperimentalV2ToolCallUpdate {
 ///|
 pub fn experimental_v2_decode_tool_call_update(
   value : Json,
-  path? : String = "toolCall",
+  path~ : String = "toolCall",
 ) -> ExperimentalV2ToolCallUpdate raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -361,7 +361,7 @@ pub(all) struct ExperimentalV2ToolCallContentChunk {
 ///|
 pub fn experimental_v2_decode_tool_call_content_chunk(
   value : Json,
-  path? : String = "toolCallContentChunk",
+  path~ : String = "toolCallContentChunk",
 ) -> ExperimentalV2ToolCallContentChunk raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

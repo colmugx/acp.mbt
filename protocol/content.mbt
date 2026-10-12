@@ -208,7 +208,7 @@ fn decode_annotations_fields(
 /// Decode annotations from a JSON value.
 pub fn annotations_from_json(
   value : Json,
-  path? : String = "annotations",
+  path~ : String = "annotations",
 ) -> Annotations raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_annotations_fields(fields, path~)
@@ -262,7 +262,7 @@ fn decode_text_content_fields(
 /// Decode text content from a JSON value.
 pub fn text_content_from_json(
   value : Json,
-  path? : String = "text",
+  path~ : String = "text",
 ) -> TextContent raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_text_content_fields(fields, path~, false)
@@ -309,7 +309,7 @@ fn decode_image_content_fields(
 /// Decode image content from a JSON value.
 pub fn image_content_from_json(
   value : Json,
-  path? : String = "image",
+  path~ : String = "image",
 ) -> ImageContent raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_image_content_fields(fields, path~, false)
@@ -359,7 +359,7 @@ fn decode_audio_content_fields(
 /// Decode audio content from a JSON value.
 pub fn audio_content_from_json(
   value : Json,
-  path? : String = "audio",
+  path~ : String = "audio",
 ) -> AudioContent raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_audio_content_fields(fields, path~, false)
@@ -424,7 +424,7 @@ fn decode_resource_link_fields(
 /// Decode a resource link from a JSON value.
 pub fn resource_link_from_json(
   value : Json,
-  path? : String = "resource_link",
+  path~ : String = "resource_link",
 ) -> ResourceLink raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_resource_link_fields(fields, path~, false)
@@ -482,7 +482,7 @@ fn decode_text_resource_contents_fields(
 /// Decode text resource contents from a JSON value.
 pub fn text_resource_contents_from_json(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> TextResourceContents raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_text_resource_contents_fields(fields, path~)
@@ -529,7 +529,7 @@ fn decode_blob_resource_contents_fields(
 /// Decode binary resource contents from a JSON value.
 pub fn blob_resource_contents_from_json(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> BlobResourceContents raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_blob_resource_contents_fields(fields, path~)
@@ -556,7 +556,7 @@ pub fn blob_resource_contents_to_json(
 /// Decode an embedded resource payload from a JSON value.
 pub fn embedded_resource_resource_from_json(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> EmbeddedResourceResource raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   let has_text = fields.contains("text")
@@ -616,7 +616,7 @@ fn decode_embedded_resource_fields(
 /// Decode an embedded resource from a JSON value.
 pub fn embedded_resource_from_json(
   value : Json,
-  path? : String = "resource",
+  path~ : String = "resource",
 ) -> EmbeddedResource raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_embedded_resource_fields(fields, path~, false)
@@ -685,7 +685,7 @@ fn content_block_from_fields(
 /// Decode one of the five stable ACP content block variants.
 pub fn content_block_from_json(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> ContentBlock raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   content_block_from_fields(fields, path~)
@@ -715,7 +715,7 @@ fn content_from_fields(
 ///|
 pub fn content_from_json(
   value : Json,
-  path? : String = "content",
+  path~ : String = "content",
 ) -> Content raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   content_from_fields(fields, path~, false)
@@ -759,7 +759,7 @@ fn content_chunk_from_fields(
 ///|
 pub fn content_chunk_from_json(
   value : Json,
-  path? : String = "contentChunk",
+  path~ : String = "contentChunk",
 ) -> ContentChunk raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   content_chunk_from_fields(fields, path~, false)

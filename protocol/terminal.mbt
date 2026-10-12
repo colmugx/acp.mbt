@@ -354,7 +354,7 @@ fn terminal_encode_empty_result(
 /// Decode `terminal/create` parameters.
 pub fn terminal_create_params_from_json(
   value : Json,
-  path? : String = "terminal/create",
+  path~ : String = "terminal/create",
 ) -> TerminalCreateParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -429,7 +429,7 @@ pub fn terminal_create_params_to_json(
 /// Decode the result of `terminal/create`.
 pub fn terminal_create_result_from_json(
   value : Json,
-  path? : String = "terminal/create",
+  path~ : String = "terminal/create",
 ) -> TerminalCreateResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["terminalId", "_meta"], prefix=path)
@@ -458,7 +458,7 @@ pub fn terminal_create_result_to_json(
 /// Decode `terminal/output` parameters.
 pub fn terminal_output_params_from_json(
   value : Json,
-  path? : String = "terminal/output",
+  path~ : String = "terminal/output",
 ) -> TerminalOutputParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -489,7 +489,7 @@ pub fn terminal_output_params_to_json(
 /// Decode the result of `terminal/output`.
 pub fn terminal_output_result_from_json(
   value : Json,
-  path? : String = "terminal/output",
+  path~ : String = "terminal/output",
 ) -> TerminalOutputResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -565,7 +565,7 @@ fn terminal_encode_wait_params(
 /// Decode `terminal/wait_for_exit` parameters.
 pub fn terminal_wait_for_exit_params_from_json(
   value : Json,
-  path? : String = "terminal/wait_for_exit",
+  path~ : String = "terminal/wait_for_exit",
 ) -> TerminalWaitForExitParams raise ProtocolDecodeError {
   let (session_id, terminal_id, meta) = terminal_decode_wait_params(
     value,
@@ -620,7 +620,7 @@ fn terminal_encode_exit_result(
 /// Decode the result of `terminal/wait_for_exit`.
 pub fn terminal_wait_for_exit_result_from_json(
   value : Json,
-  path? : String = "terminal/wait_for_exit",
+  path~ : String = "terminal/wait_for_exit",
 ) -> TerminalWaitForExitResult raise ProtocolDecodeError {
   let (exit_code, signal, meta) = terminal_decode_exit_result_fields(
     value,
@@ -658,7 +658,7 @@ fn terminal_encode_control_params(
 /// Decode `terminal/kill` parameters.
 pub fn terminal_kill_params_from_json(
   value : Json,
-  path? : String = "terminal/kill",
+  path~ : String = "terminal/kill",
 ) -> TerminalKillParams raise ProtocolDecodeError {
   let (session_id, terminal_id, meta) = terminal_decode_control_params(
     value,
@@ -683,7 +683,7 @@ pub fn terminal_kill_params_to_json(
 /// Decode the result of `terminal/kill`.
 pub fn terminal_kill_result_from_json(
   value : Json,
-  path? : String = "terminal/kill",
+  path~ : String = "terminal/kill",
 ) -> TerminalKillResult raise ProtocolDecodeError {
   { meta: terminal_decode_empty_result(value, path~), }
 }
@@ -700,7 +700,7 @@ pub fn terminal_kill_result_to_json(
 /// Decode `terminal/release` parameters.
 pub fn terminal_release_params_from_json(
   value : Json,
-  path? : String = "terminal/release",
+  path~ : String = "terminal/release",
 ) -> TerminalReleaseParams raise ProtocolDecodeError {
   let (session_id, terminal_id, meta) = terminal_decode_control_params(
     value,
@@ -725,7 +725,7 @@ pub fn terminal_release_params_to_json(
 /// Decode the result of `terminal/release`.
 pub fn terminal_release_result_from_json(
   value : Json,
-  path? : String = "terminal/release",
+  path~ : String = "terminal/release",
 ) -> TerminalReleaseResult raise ProtocolDecodeError {
   { meta: terminal_decode_empty_result(value, path~), }
 }

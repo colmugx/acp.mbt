@@ -82,7 +82,7 @@ fn session_prompt_encode_stop_reason(value : StopReason) -> Json {
 /// Decode `session/prompt` parameters.
 pub fn prompt_params_from_json(
   value : Json,
-  path? : String = "session/prompt",
+  path~ : String = "session/prompt",
 ) -> PromptParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["sessionId", "prompt", "_meta"], prefix=path)
@@ -115,7 +115,7 @@ pub fn prompt_params_to_json(
 /// Decode the result of `session/prompt`.
 pub fn prompt_result_from_json(
   value : Json,
-  path? : String = "session/prompt",
+  path~ : String = "session/prompt",
 ) -> PromptResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["stopReason", "_meta"], prefix=path)

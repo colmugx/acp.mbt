@@ -18,7 +18,7 @@ pub type ExperimentalV2AuthMethod = ExperimentalV2Open[
 ///|
 pub fn experimental_v2_decode_auth_method(
   value : Json,
-  path? : String = "authMethod",
+  path~ : String = "authMethod",
 ) -> ExperimentalV2AuthMethod raise ExperimentalV2DecodeError {
   experimental_v2_decode_open(
     value,
@@ -99,7 +99,7 @@ pub(all) struct ExperimentalV2LoginParams {
 ///|
 pub fn experimental_v2_decode_login_params(
   value : Json,
-  path? : String = "auth/login",
+  path~ : String = "auth/login",
 ) -> ExperimentalV2LoginParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta", "methodId"], prefix=path)
@@ -133,7 +133,7 @@ pub(all) struct ExperimentalV2LoginResult {
 ///|
 pub fn experimental_v2_decode_login_result(
   value : Json,
-  path? : String = "auth/login",
+  path~ : String = "auth/login",
 ) -> ExperimentalV2LoginResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -158,7 +158,7 @@ pub(all) struct ExperimentalV2LogoutParams {
 ///|
 pub fn experimental_v2_decode_logout_params(
   value : Json,
-  path? : String = "auth/logout",
+  path~ : String = "auth/logout",
 ) -> ExperimentalV2LogoutParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)
@@ -183,7 +183,7 @@ pub(all) struct ExperimentalV2LogoutResult {
 ///|
 pub fn experimental_v2_decode_logout_result(
   value : Json,
-  path? : String = "auth/logout",
+  path~ : String = "auth/logout",
 ) -> ExperimentalV2LogoutResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(fields, ["_meta"], prefix=path)

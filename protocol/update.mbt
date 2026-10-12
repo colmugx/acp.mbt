@@ -305,7 +305,7 @@ fn decode_plan_entries(
 /// Decode a plan update from JSON.
 pub fn plan_from_json(
   value : Json,
-  path? : String = "plan",
+  path~ : String = "plan",
 ) -> Plan raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["entries", "_meta"], prefix=path)
@@ -368,7 +368,7 @@ fn put_nullable_cost(
 /// Decode a usage update from JSON.
 pub fn usage_update_from_json(
   value : Json,
-  path? : String = "usage",
+  path~ : String = "usage",
 ) -> UsageUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -507,7 +507,7 @@ fn decode_commands(
 /// Decode an available-commands update from JSON.
 pub fn available_commands_update_from_json(
   value : Json,
-  path? : String = "availableCommands",
+  path~ : String = "availableCommands",
 ) -> AvailableCommandsUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["availableCommands", "_meta"], prefix=path)
@@ -827,7 +827,7 @@ fn decode_config_options(
 /// Decode a current-mode update from JSON.
 pub fn current_mode_update_from_json(
   value : Json,
-  path? : String = "currentMode",
+  path~ : String = "currentMode",
 ) -> CurrentModeUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["currentModeId", "_meta"], prefix=path)
@@ -855,7 +855,7 @@ pub fn current_mode_update_to_json(
 /// Decode a configuration-options update from JSON.
 pub fn config_option_update_from_json(
   value : Json,
-  path? : String = "configOptions",
+  path~ : String = "configOptions",
 ) -> ConfigOptionUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["configOptions", "_meta"], prefix=path)
@@ -882,7 +882,7 @@ pub fn config_option_update_to_json(
 /// Decode a session-information update from JSON.
 pub fn session_info_update_from_json(
   value : Json,
-  path? : String = "sessionInfo",
+  path~ : String = "sessionInfo",
 ) -> SessionInfoUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["title", "updatedAt", "_meta"], prefix=path)
@@ -916,7 +916,7 @@ pub fn session_info_update_to_json(
 /// Decode session metadata from JSON.
 pub fn session_info_from_json(
   value : Json,
-  path? : String = "sessionInfo",
+  path~ : String = "sessionInfo",
 ) -> SessionInfo raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -1105,7 +1105,7 @@ pub fn session_update_to_json(
 /// Decode one stable v1 session update variant.
 pub fn session_update_from_json(
   value : Json,
-  path? : String = "sessionUpdate",
+  path~ : String = "sessionUpdate",
 ) -> SessionUpdate raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   let kind = protocol_required_string(
@@ -1144,7 +1144,7 @@ pub fn session_update_from_json(
 /// Decode a plan entry from JSON.
 pub fn plan_entry_from_json(
   value : Json,
-  path? : String = "planEntry",
+  path~ : String = "planEntry",
 ) -> PlanEntry raise ProtocolDecodeError {
   decode_plan_entry(value, path~)
 }
@@ -1159,7 +1159,7 @@ pub fn plan_entry_to_json(value : PlanEntry) -> Json raise ProtocolDecodeError {
 /// Decode cost information from JSON.
 pub fn cost_from_json(
   value : Json,
-  path? : String = "cost",
+  path~ : String = "cost",
 ) -> Cost raise ProtocolDecodeError {
   decode_cost(value, path~)
 }
@@ -1174,7 +1174,7 @@ pub fn cost_to_json(value : Cost) -> Json raise ProtocolDecodeError {
 /// Decode unstructured command input from JSON.
 pub fn unstructured_command_input_from_json(
   value : Json,
-  path? : String = "input",
+  path~ : String = "input",
 ) -> UnstructuredCommandInput raise ProtocolDecodeError {
   decode_unstructured_input(value, path~)
 }
@@ -1191,7 +1191,7 @@ pub fn unstructured_command_input_to_json(
 /// Decode a command input from JSON.
 pub fn available_command_input_from_json(
   value : Json,
-  path? : String = "input",
+  path~ : String = "input",
 ) -> AvailableCommandInput raise ProtocolDecodeError {
   decode_command_input(value, path~)
 }
@@ -1208,7 +1208,7 @@ pub fn available_command_input_to_json(
 /// Decode a session configuration category from JSON.
 pub fn session_config_option_category_from_json(
   value : Json,
-  path? : String = "category",
+  path~ : String = "category",
 ) -> SessionConfigOptionCategory raise ProtocolDecodeError {
   decode_config_category(value, path~)
 }
@@ -1225,7 +1225,7 @@ pub fn session_config_option_category_to_json(
 /// Decode a selectable configuration option from JSON.
 pub fn session_config_select_option_from_json(
   value : Json,
-  path? : String = "option",
+  path~ : String = "option",
 ) -> SessionConfigSelectOption raise ProtocolDecodeError {
   decode_select_option(value, path~)
 }
@@ -1242,7 +1242,7 @@ pub fn session_config_select_option_to_json(
 /// Decode a selectable configuration group from JSON.
 pub fn session_config_select_group_from_json(
   value : Json,
-  path? : String = "group",
+  path~ : String = "group",
 ) -> SessionConfigSelectGroup raise ProtocolDecodeError {
   decode_select_group(value, path~)
 }
@@ -1259,7 +1259,7 @@ pub fn session_config_select_group_to_json(
 /// Decode selectable configuration values from JSON.
 pub fn session_config_select_options_from_json(
   value : Json,
-  path? : String = "options",
+  path~ : String = "options",
 ) -> SessionConfigSelectOptions raise ProtocolDecodeError {
   decode_select_options(value, path~)
 }
@@ -1276,7 +1276,7 @@ pub fn session_config_select_options_to_json(
 /// Decode one complete configuration option from JSON.
 pub fn session_config_option_from_json(
   value : Json,
-  path? : String = "configOption",
+  path~ : String = "configOption",
 ) -> SessionConfigOption raise ProtocolDecodeError {
   decode_config_option(value, path~)
 }
@@ -1455,7 +1455,7 @@ fn session_update_patch_tool_call(
 fn session_update_message_index(
   messages : Array[SessionUpdateMessage],
   message_id : MessageId,
-) -> Int? {
+) -> Int32? {
   for index, message in messages {
     match message.message_id {
       Value(id) => if id == message_id { return Some(index) }
@@ -1505,7 +1505,7 @@ fn session_update_append_chunk(
 fn session_update_tool_call_index(
   calls : Array[ToolCall],
   tool_call_id : ToolCallId,
-) -> Int? {
+) -> Int32? {
   for index, call in calls {
     if call.tool_call_id == tool_call_id {
       return Some(index)
@@ -1533,7 +1533,7 @@ fn session_update_mode_known(
 ///|
 /// Read one ASCII digit at `index`, or `None` when out of range or not a
 /// digit.
-fn session_update_timestamp_digit(chars : Array[Char], index : Int) -> Int? {
+fn session_update_timestamp_digit(chars : Array[Char], index : Int32) -> Int32? {
   if index >= chars.length() {
     None
   } else if protocol_is_digit(chars[index]) {
@@ -1545,7 +1545,7 @@ fn session_update_timestamp_digit(chars : Array[Char], index : Int) -> Int? {
 
 ///|
 /// Read a two-digit zero-padded number at `index`.
-fn session_update_timestamp_pair(chars : Array[Char], index : Int) -> Int? {
+fn session_update_timestamp_pair(chars : Array[Char], index : Int32) -> Int32? {
   match
     (
       session_update_timestamp_digit(chars, index),
@@ -1558,7 +1558,7 @@ fn session_update_timestamp_pair(chars : Array[Char], index : Int) -> Int? {
 
 ///|
 /// Read the four-digit year at the start of a timestamp.
-fn session_update_timestamp_year(chars : Array[Char]) -> Int? {
+fn session_update_timestamp_year(chars : Array[Char]) -> Int32? {
   match
     (
       session_update_timestamp_digit(chars, 0),
@@ -1574,14 +1574,14 @@ fn session_update_timestamp_year(chars : Array[Char]) -> Int? {
 
 ///|
 /// Proleptic Gregorian leap-year test for day-of-month validation.
-fn session_update_is_leap_year(year : Int) -> Bool {
+fn session_update_is_leap_year(year : Int32) -> Bool {
   (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 ///|
 /// Days in one month; an out-of-range month yields 0 so the caller's day
 /// check fails.
-fn session_update_days_in_month(year : Int, month : Int) -> Int {
+fn session_update_days_in_month(year : Int32, month : Int32) -> Int32 {
   match month {
     1 | 3 | 5 | 7 | 8 | 10 | 12 => 31
     4 | 6 | 9 | 11 => 30
@@ -1595,7 +1595,7 @@ fn session_update_days_in_month(year : Int, month : Int) -> Int {
 /// numeric offset `±HH:MM` within range.  The timestamp must end there.
 fn session_update_timestamp_offset_valid(
   chars : Array[Char],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   let length = chars.length()
   if start >= length {

@@ -43,7 +43,7 @@ pub fn ClientReply::method_name(self : ClientReply) -> String {
 /// Runtime adapters may return these values from negotiated capability gates
 /// or transport cancellation; the facade never converts them into success.
 pub(all) suberror ClientConnectionError {
-  ClientConnectionUnsupportedVersion(method_name~ : String, version~ : Int)
+  ClientConnectionUnsupportedVersion(method_name~ : String, version~ : Int32)
   ClientConnectionUnavailable(method_name~ : String)
   ClientConnectionCancelled(method_name~ : String)
   ClientConnectionBrokerFailure(method_name~ : String)
@@ -60,7 +60,7 @@ pub(all) suberror ClientConnectionError {
 /// version this facade cannot implement.
 fn client_connection_require_v1(
   method_name : String,
-  version : Int,
+  version : Int32,
 ) -> Unit raise ClientConnectionError {
   if version != 1 {
     raise ClientConnectionUnsupportedVersion(method_name~, version~)

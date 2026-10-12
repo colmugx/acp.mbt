@@ -112,7 +112,7 @@ fn fs_decode_read_text_file_params_fields(
 /// Decode `fs/read_text_file` parameters.
 pub fn read_text_file_params_from_json(
   value : Json,
-  path? : String = "fs/read_text_file",
+  path~ : String = "fs/read_text_file",
 ) -> ReadTextFileParams raise ProtocolDecodeError {
   fs_decode_read_text_file_params_fields(
     protocol_require_object(value, path~),
@@ -146,7 +146,7 @@ pub fn read_text_file_params_to_json(
 /// Decode the result of `fs/read_text_file`.
 pub fn read_text_file_result_from_json(
   value : Json,
-  path? : String = "fs/read_text_file",
+  path~ : String = "fs/read_text_file",
 ) -> ReadTextFileResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["content", "_meta"], prefix=path)
@@ -174,7 +174,7 @@ pub fn read_text_file_result_to_json(
 /// Decode `fs/write_text_file` parameters.
 pub fn write_text_file_params_from_json(
   value : Json,
-  path? : String = "fs/write_text_file",
+  path~ : String = "fs/write_text_file",
 ) -> WriteTextFileParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -226,7 +226,7 @@ pub fn write_text_file_params_to_json(
 /// Decode the result of `fs/write_text_file`.
 pub fn write_text_file_result_from_json(
   value : Json,
-  path? : String = "fs/write_text_file",
+  path~ : String = "fs/write_text_file",
 ) -> WriteTextFileResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["_meta"], prefix=path)

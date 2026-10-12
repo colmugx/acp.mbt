@@ -115,7 +115,7 @@ async test "agent runtime bridge initialize round-trips and advances protocol st
 
 ///|
 async test "agent runtime bridge completes two requests in reverse order exactly once" {
-  let arrivals : Array[Int] = []
+  let arrivals : Array[Int32] = []
   let arrived : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_first : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_second : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
@@ -177,7 +177,7 @@ async test "agent runtime bridge completes two requests in reverse order exactly
 
 ///|
 async test "agent runtime bridge cancels one pending request by typed id" {
-  let arrivals : Array[Int] = []
+  let arrivals : Array[Int32] = []
   let arrived : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_victim : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let gate_sibling : @aqueue.Queue[Unit] = Queue(kind=Unbounded)

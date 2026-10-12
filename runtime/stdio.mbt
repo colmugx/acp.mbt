@@ -6,22 +6,22 @@
 /// is borrowed: `write(2)` reads it during the call and never stores it.
 #borrow(buffer)
 extern "C" fn runtime_libc_write_ffi(
-  fd : Int,
+  fd : Int32,
   buffer : Bytes,
-  count : Int,
-) -> Int = "write"
+  count : Int32,
+) -> Int32 = "write"
 
 ///|
 /// Public wrapper over the raw diagnostics writer so the blackbox suite can
 /// prove the byte path against a real pipe.  Not exported through the stable
 /// facade.
-pub fn runtime_libc_write(fd : Int, buffer : Bytes, count : Int) -> Int {
+pub fn runtime_libc_write(fd : Int32, buffer : Bytes, count : Int32) -> Int32 {
   runtime_libc_write_ffi(fd, buffer, count)
 }
 
 ///|
 /// File descriptor of the standard error stream on every POSIX target.
-let runtime_stderr_fd : Int = 2
+let runtime_stderr_fd : Int32 = 2
 
 ///|
 /// Reduce one trace field to printable ASCII.  Any control character,
@@ -85,7 +85,7 @@ fn runtime_outbound_failure_kind_text(
 /// descriptor.  Returns the number of bytes accepted by the OS.  The sink has
 /// no failure channel by type, so the raw result stays observable for tests
 /// instead of being swallowed.
-fn runtime_trace_write_line(fd : Int, line : String) -> Int {
+fn runtime_trace_write_line(fd : Int32, line : String) -> Int32 {
   let data = @utf8.encode(line)
   runtime_libc_write(fd, data, data.length())
 }
@@ -129,7 +129,7 @@ pub let runtime_stderr_trace : (RuntimeTraceEvent) -> Unit = event => {
 /// constructor writes to stdout, and it performs no I/O at all beyond binding
 /// the process file descriptors.
 pub fn runtime_stdio_ports(
-  trace? : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
+  trace~ : (RuntimeTraceEvent) -> Unit = runtime_stderr_trace,
 ) -> RuntimePorts {
   {
     reader: { read: max_len => @stdio.stdin.read_some(max_len~), },

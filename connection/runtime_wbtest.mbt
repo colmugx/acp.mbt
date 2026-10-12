@@ -54,7 +54,7 @@ async fn[G] runtime_apply_event(
   ports : RuntimePorts,
   events : @aqueue.Queue[RuntimeEvent],
   tasks : Array[RuntimeTaskControl],
-  next_task_token : Int,
+  next_task_token : Int32,
   shutdown : Ref[Bool],
 ) -> RuntimeEventStep raise RuntimeError {
   let dispatch_context : RuntimeLegacySpawnContext[RuntimeHandlerResult] = {
@@ -537,7 +537,7 @@ async test "notification completion events remove exact tokens in reverse" {
 
 ///|
 test "runtime close cancels only active task controls" {
-  let cancelled : Array[Int] = []
+  let cancelled : Array[Int32] = []
   let tasks : Array[RuntimeTaskControl] = [
     { task_token: 1, request_id: None, cancel: () => cancelled.push(1), },
     { task_token: 2, request_id: None, cancel: () => cancelled.push(2), },
@@ -1646,10 +1646,10 @@ async test "runtime traces only unwritten inbound failures after bounded writer 
 ///|
 struct RuntimeOwnerTestState {
   admitted : Array[RequestId]
-  completed : Array[Int]
+  completed : Array[Int32]
   cancelled : Array[RequestId]
-  aborted : Array[Int]
-  notifications : Array[Int]
+  aborted : Array[Int32]
+  notifications : Array[Int32]
 } derive(Eq, Debug)
 
 ///|
@@ -1674,7 +1674,10 @@ fn runtime_owner_test_push_id(
 }
 
 ///|
-fn runtime_owner_test_push_int(values : Array[Int], value : Int) -> Array[Int] {
+fn runtime_owner_test_push_int(
+  values : Array[Int32],
+  value : Int32,
+) -> Array[Int32] {
   let next = Array::copy(values)
   next.push(value)
   next
@@ -1683,8 +1686,8 @@ fn runtime_owner_test_push_int(values : Array[Int], value : Int) -> Array[Int] {
 ///|
 fn runtime_owner_test_port() -> RuntimeOwnerPort[
   RuntimeOwnerTestState,
-  Int,
-  Int,
+  Int32,
+  Int32,
   Unit,
 ] {
   {
@@ -2090,15 +2093,15 @@ async test "runtime owner runner emits notification effect without response" {
 ///|
 async test "runtime owner runner completes concurrent requests in reverse order once" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
-  let start_order : Array[Int] = []
+  let start_order : Array[Int32] = []
   let base = runtime_owner_test_port()
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..base,
     execute: value => {
       started.put(value)
@@ -2158,7 +2161,7 @@ async test "runtime owner execute failure becomes one typed error response" {
   let traces : Array[RuntimeTraceEvent] = []
   let error = JsonRpcError::internal_error()
   let base = runtime_owner_test_port()
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..base,
     execute: _ => {
       raise @jsonrpc.JsonRpcCodecError::ParseError(
@@ -2209,7 +2212,7 @@ async test "runtime owner notification invoke applies effects without a response
   let traces : Array[RuntimeTraceEvent] = []
   let notification = runtime_owner_effect_test_notification()
   let base = runtime_owner_effect_test_port()
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, String] = {
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, String] = {
     ..base,
     complete_notification: (state, _, completion) => {
       state: {
@@ -2251,10 +2254,10 @@ async test "runtime owner notification invoke applies effects without a response
 
 ///|
 async test "runtime owner task publication failure propagates from a closed queue" {
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   events.close()
   let shutdown = Ref::Ref(false)
-  let task : RuntimeOwnerTask[Int] = {
+  let task : RuntimeOwnerTask[Int32] = {
     task_token: 0,
     request_id: Some(Number(1)),
     invocation: 1,
@@ -2286,10 +2289,10 @@ async test "runtime owner task publication failure propagates from a closed queu
 
 ///|
 async test "runtime owner task publication backpressure propagates without hang" {
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Blocking(1))
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Blocking(1))
   events.put(RuntimeChunk(@utf8.encode("occupied")))
   let shutdown = Ref::Ref(false)
-  let task : RuntimeOwnerTask[Int] = {
+  let task : RuntimeOwnerTask[Int32] = {
     task_token: 0,
     request_id: Some(Number(1)),
     invocation: 1,
@@ -2323,7 +2326,7 @@ async test "runtime owner task publication backpressure propagates without hang"
 ///|
 async test "runtime owner runtime rejects token and id mismatch fail-fast" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let cancelled : Array[Unit] = []
   let ports : RuntimePorts = {
@@ -2350,8 +2353,8 @@ async test "runtime owner runtime rejects token and id mismatch fail-fast" {
   }
   let context : RuntimeOwnerDispatchContext[
     RuntimeOwnerTestState,
-    Int,
-    Int,
+    Int32,
+    Int32,
     Unit,
   ] = {
     owner,
@@ -2363,7 +2366,7 @@ async test "runtime owner runtime rejects token and id mismatch fail-fast" {
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
   let dispatch : RuntimeDispatchPort[
     _,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   @async.with_task_group(group => {
     let mut raised = false
@@ -2414,7 +2417,7 @@ async test "runtime owner runtime rejects token and id mismatch fail-fast" {
 ///|
 async test "runtime owner runtime ignores a duplicate completion after settling" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
   let ports : RuntimePorts = {
@@ -2444,8 +2447,8 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
   }
   let context : RuntimeOwnerDispatchContext[
     RuntimeOwnerTestState,
-    Int,
-    Int,
+    Int32,
+    Int32,
     Unit,
   ] = {
     owner,
@@ -2457,7 +2460,7 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
   let dispatch : RuntimeDispatchPort[
     _,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   let event = RuntimeOwnerTaskEvent(
     RuntimeOwnerTaskCompleted(
@@ -2533,8 +2536,8 @@ async test "runtime owner runtime ignores a duplicate completion after settling"
 ///|
 fn runtime_owner_effect_test_port() -> RuntimeOwnerPort[
   RuntimeOwnerTestState,
-  Int,
-  Int,
+  Int32,
+  Int32,
   String,
 ] {
   {
@@ -2750,10 +2753,10 @@ test "runtime owner admits two requests before completion" {
 
 ///|
 async test "runtime owner executes overlapping requests and completes reverse order" {
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let first_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let second_gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_test_port(),
     execute: async fn(value) {
       started.put(value)
@@ -2955,9 +2958,9 @@ test "runtime owner close aborts pending work once and ignores late events" {
 
 ///|
 async test "runtime owner notification overlap has no response or request id" {
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let gate : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_test_port(),
     execute: async fn(value) {
       started.put(value)
@@ -3060,7 +3063,7 @@ test "runtime owner rejects admission after close" {
 
 ///|
 test "runtime owner immediate admission stays on owner loop" {
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_test_port(),
     admit_request: (state, id, _) => {
       RuntimeOwnerRequestImmediate(completion={
@@ -3115,7 +3118,7 @@ test "runtime owner immediate admission stays on owner loop" {
 
 ///|
 test "runtime owner immediate notification commits effects without response" {
-  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, String] = {
+  let port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, String] = {
     ..runtime_owner_effect_test_port(),
     admit_notification: (state, _) => {
       RuntimeOwnerNotificationImmediate(completion={
@@ -3182,7 +3185,7 @@ async test "runtime dispatch threads updated context across events" {
     trace: _ => (),
   }
   @async.with_task_group(group => {
-    let dispatch : RuntimeDispatchPort[_, Int] = {
+    let dispatch : RuntimeDispatchPort[_, Int32] = {
       request: (group, token, request, context) => {
         let task = group.spawn(() => ())
         RuntimeDispatchSpawned(
@@ -3264,7 +3267,7 @@ async test "runtime applies immediate request completion before owner commands" 
     _ => abort("immediate request fixture must reduce")
   }
   @async.with_task_group(group => {
-    let dispatch : RuntimeDispatchPort[_, Int] = {
+    let dispatch : RuntimeDispatchPort[_, Int32] = {
       request: (_group, _token, request, context) => {
         RuntimeDispatchRequestImmediate(
           context=context + 1,
@@ -3365,7 +3368,7 @@ async test "runtime engine returns generic dispatch state after close" {
       ports,
       runtime_test_options(),
       (_events, _shutdown) => {
-        let dispatch : RuntimeDispatchPort[_, Int] = {
+        let dispatch : RuntimeDispatchPort[_, Int32] = {
           request: (_group, token, request, context) => {
             RuntimeDispatchSpawned(
               context=context + 1,
@@ -3430,11 +3433,11 @@ fn runtime_wbtest_trace_ports(
 ///|
 /// Build the real owner dispatch context around one admitted owner.
 fn runtime_wbtest_owner_context(
-  owner : RuntimeOwner[RuntimeOwnerTestState, Int],
-  port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit],
-  events : @aqueue.Queue[RuntimeEventOf[Int]],
+  owner : RuntimeOwner[RuntimeOwnerTestState, Int32],
+  port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit],
+  events : @aqueue.Queue[RuntimeEventOf[Int32]],
   shutdown : Ref[Bool],
-) -> RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit] {
+) -> RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit] {
   {
     owner,
     port,
@@ -3449,10 +3452,10 @@ fn runtime_wbtest_owner_context(
 /// close aborts are also pushed into caller-owned arrays so engine-internal
 /// owner state stays observable without escaping the loop.
 fn runtime_owner_recording_port(
-  completed : Array[Int],
+  completed : Array[Int32],
   cancelled : Array[RequestId],
-  aborted : Array[Int],
-) -> RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] {
+  aborted : Array[Int32],
+) -> RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] {
   {
     ..runtime_owner_test_port(),
     complete_request: (state, _, _, completion) => {
@@ -3485,17 +3488,17 @@ fn runtime_owner_recording_port(
 ///|
 async test "runtime owner inbound cancel releases one task and keeps its sibling" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
-  let start_order : Array[Int] = []
-  let completed : Array[Int] = []
+  let start_order : Array[Int32] = []
+  let completed : Array[Int32] = []
   let cancelled : Array[RequestId] = []
-  let aborted : Array[Int] = []
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let aborted : Array[Int32] = []
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_recording_port(completed, cancelled, aborted),
     execute: value => {
       started.put(value)
@@ -3576,10 +3579,10 @@ async test "runtime owner inbound cancel releases one task and keeps its sibling
 
 ///|
 async test "runtime owner dispatch cancel applies exactly one typed cancel event" {
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
+  let cancelled : Array[Int32] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let owner_port = runtime_owner_test_port()
   let (owner, action) = runtime_owner_admit_request(
@@ -3600,7 +3603,7 @@ async test "runtime owner dispatch cancel applies exactly one typed cancel event
   // pinned explicitly instead of leaking an unresolved type variable.
   let dispatch : RuntimeDispatchPort[
     Unit,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   let controls : Array[RuntimeTaskControl] = [
     {
@@ -3650,10 +3653,10 @@ async test "runtime owner dispatch cancel applies exactly one typed cancel event
 
 ///|
 async test "runtime owner dispatch cancel fails fast on unknown or settled ids" {
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
+  let cancelled : Array[Int32] = []
   let cancelled_ids : Array[RequestId] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let owner_port = runtime_owner_recording_port([], cancelled_ids, [])
@@ -3661,7 +3664,7 @@ async test "runtime owner dispatch cancel fails fast on unknown or settled ids" 
   // pinned explicitly instead of leaking an unresolved type variable.
   let dispatch : RuntimeDispatchPort[
     Unit,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
 
   // Unknown id: no runtime task control carries the request id, so the
@@ -3842,13 +3845,13 @@ async test "runtime owner dispatch cancel fails fast on unknown or settled ids" 
 /// separately by the TaskControlMissing pins above.
 async test "runtime owner tolerates benign wire cancels and keeps serving requests" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let release_one : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_test_port(),
     execute: value => {
       started.put(value)
@@ -3947,13 +3950,13 @@ async test "runtime owner tolerates benign wire cancels and keeps serving reques
 ///|
 async test "runtime owner eof close stops admission and empties pending work" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
-  let completed : Array[Int] = []
+  let cancelled : Array[Int32] = []
+  let completed : Array[Int32] = []
   let cancelled_ids : Array[RequestId] = []
-  let aborted : Array[Int] = []
+  let aborted : Array[Int32] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let owner_port = runtime_owner_recording_port(
     completed, cancelled_ids, aborted,
@@ -3986,7 +3989,7 @@ async test "runtime owner eof close stops admission and empties pending work" {
   )
   let dispatch : RuntimeDispatchPort[
     _,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
   let controls : Array[RuntimeTaskControl] = [
@@ -4085,9 +4088,9 @@ async test "runtime owner eof close stops admission and empties pending work" {
 
 ///|
 async test "runtime owner task loop drops its completion after shutdown begins" {
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(true)
-  let task : RuntimeOwnerTask[Int] = {
+  let task : RuntimeOwnerTask[Int32] = {
     task_token: 4,
     request_id: Some(Number(4)),
     invocation: 4,
@@ -4117,7 +4120,7 @@ async test "runtime owner task loop drops its completion after shutdown begins" 
 ///|
 async test "runtime owner late completion after close is traced and ignored" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
   let ports = runtime_wbtest_trace_ports(traces)
@@ -4139,10 +4142,10 @@ async test "runtime owner late completion after close is traced and ignored" {
   )
   let dispatch : RuntimeDispatchPort[
     _,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
-  let late_event : RuntimeEventOf[Int] = RuntimeOwnerTaskEvent(
+  let late_event : RuntimeEventOf[Int32] = RuntimeOwnerTaskEvent(
     RuntimeOwnerTaskCompleted(
       event=RuntimeOwnerRequestCompleted(
         token=task.task_token(),
@@ -4227,7 +4230,7 @@ async test "runtime dispatch admission failure leaves no task or pending leak" {
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
+  let cancelled : Array[Int32] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let state = connection_reduce(
       connection_state(),
@@ -4321,7 +4324,7 @@ async test "runtime typed cancel failure settles its pending without leaks" {
   let events : @aqueue.Queue[RuntimeEvent] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
+  let cancelled : Array[Int32] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let request = runtime_wbtest_request(Number(1))
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
@@ -4402,17 +4405,17 @@ async test "runtime typed cancel failure settles its pending without leaks" {
 ///|
 async test "runtime owner handler failure cleans its task without leaking siblings" {
   let input : @aqueue.Queue[Bytes?] = Queue(kind=Unbounded)
-  let started : @aqueue.Queue[Int] = Queue(kind=Unbounded)
+  let started : @aqueue.Queue[Int32] = Queue(kind=Unbounded)
   let release_two : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let output : Array[Bytes] = []
   let written : @aqueue.Queue[Unit] = Queue(kind=Unbounded)
   let traces : Array[RuntimeTraceEvent] = []
-  let start_order : Array[Int] = []
-  let completed : Array[Int] = []
+  let start_order : Array[Int32] = []
+  let completed : Array[Int32] = []
   let cancelled : Array[RequestId] = []
-  let aborted : Array[Int] = []
+  let aborted : Array[Int32] = []
   let failure = JsonRpcError::internal_error()
-  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int, Int, Unit] = {
+  let owner_port : RuntimeOwnerPort[RuntimeOwnerTestState, Int32, Int32, Unit] = {
     ..runtime_owner_recording_port(completed, cancelled, aborted),
     execute: value => {
       started.put(value)
@@ -4500,11 +4503,11 @@ async test "runtime owner handler failure cleans its task without leaking siblin
 async test "runtime owner close cleanup failure still cancels tasks and settles pending" {
   let writer_queue : @aqueue.Queue[RuntimeWriterItem] = Queue(kind=Unbounded)
   writer_queue.close()
-  let events : @aqueue.Queue[RuntimeEventOf[Int]] = Queue(kind=Unbounded)
+  let events : @aqueue.Queue[RuntimeEventOf[Int32]] = Queue(kind=Unbounded)
   let shutdown = Ref::Ref(false)
   let traces : Array[RuntimeTraceEvent] = []
-  let cancelled : Array[Int] = []
-  let aborted : Array[Int] = []
+  let cancelled : Array[Int32] = []
+  let aborted : Array[Int32] = []
   let ports = runtime_wbtest_trace_ports(traces)
   let owner_port = runtime_owner_recording_port([], [], aborted)
   let request = runtime_owner_test_request(Number(1))
@@ -4524,7 +4527,7 @@ async test "runtime owner close cleanup failure still cancels tasks and settles 
   )
   let dispatch : RuntimeDispatchPort[
     _,
-    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int, Int, Unit],
+    RuntimeOwnerDispatchContext[RuntimeOwnerTestState, Int32, Int32, Unit],
   ] = runtime_owner_dispatch_port()
   let state = connection_reduce(connection_state(), IncomingRequest(request)).state
   let controls : Array[RuntimeTaskControl] = [

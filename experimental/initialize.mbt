@@ -10,7 +10,7 @@ pub(all) struct ExperimentalV2Implementation {
 ///|
 pub fn experimental_v2_decode_implementation(
   value : Json,
-  path? : String = "info",
+  path~ : String = "info",
 ) -> ExperimentalV2Implementation raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -54,7 +54,7 @@ pub fn experimental_v2_encode_implementation(
 fn experimental_v2_decode_protocol_version(
   value : Json,
   path~ : String,
-) -> Int raise ExperimentalV2DecodeError {
+) -> Int32 raise ExperimentalV2DecodeError {
   let version = experimental_v2_decode_integer(value, path~)
   if version < 0 || version > 65535 {
     raise InvalidField(
@@ -70,7 +70,7 @@ fn experimental_v2_decode_protocol_version(
 /// with the schema default: an omitted field is the empty object, while any
 /// present value must be a valid object.
 pub(all) struct ExperimentalV2InitializeParams {
-  protocol_version : Int
+  protocol_version : Int32
   info : ExperimentalV2Implementation
   capabilities : ExperimentalV2ClientCapabilities
   meta : Json?
@@ -79,7 +79,7 @@ pub(all) struct ExperimentalV2InitializeParams {
 ///|
 pub fn experimental_v2_decode_initialize_params(
   value : Json,
-  path? : String = "initialize",
+  path~ : String = "initialize",
 ) -> ExperimentalV2InitializeParams raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(
@@ -130,7 +130,7 @@ pub fn experimental_v2_encode_initialize_params(
 /// Result of `initialize`, returned by the Agent.  A non-empty `auth_methods`
 /// advertises that the Agent supports both `auth/login` and `auth/logout`.
 pub(all) struct ExperimentalV2InitializeResult {
-  protocol_version : Int
+  protocol_version : Int32
   info : ExperimentalV2Implementation
   capabilities : ExperimentalV2AgentCapabilities
   auth_methods : Array[ExperimentalV2AuthMethod]?
@@ -140,7 +140,7 @@ pub(all) struct ExperimentalV2InitializeResult {
 ///|
 pub fn experimental_v2_decode_initialize_result(
   value : Json,
-  path? : String = "initialize",
+  path~ : String = "initialize",
 ) -> ExperimentalV2InitializeResult raise ExperimentalV2DecodeError {
   let fields = experimental_v2_require_object(value, path~)
   experimental_v2_reject_unknown(

@@ -7,8 +7,8 @@ fn experimental_v2_agent_test_info(
 
 ///|
 fn experimental_v2_agent_test_capabilities(
-  delete? : Bool = false,
-  fork? : Bool = false,
+  delete~ : Bool = false,
+  fork~ : Bool = false,
 ) -> ExperimentalV2AgentCapabilities {
   {
     session: MarkerSupported({
@@ -130,9 +130,9 @@ async fn experimental_v2_agent_test_logout(
 ///|
 fn experimental_v2_agent_test_sessions(
   with_delete : Bool,
-  prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
-  fork_session? : ExperimentalV2AgentForkSessionHandler? = None,
+  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  fork_session~ : ExperimentalV2AgentForkSessionHandler? = None,
 ) -> ExperimentalV2AgentSessionService {
   experimental_v2_agent_session_service(
     new_session~,
@@ -152,11 +152,11 @@ fn experimental_v2_agent_test_sessions(
 
 ///|
 fn experimental_v2_agent_test_spec(
-  with_delete? : Bool = false,
-  with_auth? : Bool = false,
-  prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
-  with_fork? : Bool = false,
+  with_delete~ : Bool = false,
+  with_auth~ : Bool = false,
+  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  with_fork~ : Bool = false,
 ) -> ExperimentalV2AgentSpec {
   try! experimental_v2_agent_spec(
     info=experimental_v2_agent_test_info("agent"),
@@ -194,11 +194,11 @@ fn experimental_v2_agent_test_spec(
 
 ///|
 fn experimental_v2_agent_test_endpoint(
-  with_delete? : Bool = false,
-  with_auth? : Bool = false,
-  prompt? : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
-  new_session? : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
-  with_fork? : Bool = false,
+  with_delete~ : Bool = false,
+  with_auth~ : Bool = false,
+  prompt~ : ExperimentalV2AgentPromptHandler = experimental_v2_agent_test_prompt,
+  new_session~ : ExperimentalV2AgentNewSessionHandler = experimental_v2_agent_test_new,
+  with_fork~ : Bool = false,
 ) -> ExperimentalV2AgentEndpoint {
   experimental_v2_agent_endpoint_from_spec(
     experimental_v2_agent_test_spec(

@@ -50,7 +50,7 @@ pub(all) struct AgentProtocolConfig {
 /// Immutable Agent-side protocol state.
 pub(all) struct AgentProtocolState {
   phase : AgentProtocolPhase
-  protocol_version : ProtocolNullable[Int]
+  protocol_version : ProtocolNullable[Int32]
   client_capabilities : ProtocolNullable[ClientCapabilities]
   client_info : ProtocolNullable[Implementation]
   authentication : AgentAuthenticationState

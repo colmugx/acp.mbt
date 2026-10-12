@@ -120,7 +120,7 @@ pub(all) struct AgentCapabilities {
 ///|
 /// Initialize request parameters sent by a Client.
 pub(all) struct InitializeParams {
-  protocol_version : Int
+  protocol_version : Int32
   client_capabilities : ProtocolNullable[ClientCapabilities]
   client_info : ProtocolNullable[Implementation]
   meta : ProtocolNullable[Json]
@@ -129,7 +129,7 @@ pub(all) struct InitializeParams {
 ///|
 /// Initialize response returned by an Agent.
 pub(all) struct InitializeResult {
-  protocol_version : Int
+  protocol_version : Int32
   agent_capabilities : ProtocolNullable[AgentCapabilities]
   auth_methods : ProtocolNullable[Array[AuthMethod]]
   agent_info : ProtocolNullable[Implementation]
@@ -186,7 +186,7 @@ fn init_decode_bool(
 fn init_decode_int(
   value : Json,
   path~ : String,
-) -> Int raise ProtocolDecodeError {
+) -> Int32 raise ProtocolDecodeError {
   @json.from_json(value) catch {
     _ => raise InvalidField(path~, reason="expected an integer")
   }
@@ -210,7 +210,7 @@ fn[T] init_put_nullable(
 fn init_decode_protocol_version(
   value : Json,
   path~ : String,
-) -> Int raise ProtocolDecodeError {
+) -> Int32 raise ProtocolDecodeError {
   let version = init_decode_int(value, path~)
   if version < 0 || version > 65535 {
     raise InvalidField(path~, reason="protocol version must fit uint16")
@@ -432,7 +432,7 @@ fn init_encode_auth_methods(
 /// Decode a capability marker object.
 pub fn capability_marker_from_json(
   value : Json,
-  path? : String = "capability",
+  path~ : String = "capability",
 ) -> CapabilityMarker raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["_meta"], prefix=path)
@@ -454,7 +454,7 @@ pub fn capability_marker_to_json(
 /// Decode implementation information.
 pub fn implementation_from_json(
   value : Json,
-  path? : String = "implementation",
+  path~ : String = "implementation",
 ) -> Implementation raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -516,7 +516,7 @@ fn decode_client_file_system_fields(
 /// Decode Client file-system capabilities.
 pub fn client_file_system_capabilities_from_json(
   value : Json,
-  path? : String = "fs",
+  path~ : String = "fs",
 ) -> ClientFileSystemCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_client_file_system_fields(fields, path~)
@@ -554,7 +554,7 @@ fn decode_client_elicitation_fields(
 /// Decode Client elicitation capabilities.
 pub fn client_elicitation_capabilities_from_json(
   value : Json,
-  path? : String = "elicitation",
+  path~ : String = "elicitation",
 ) -> ClientElicitationCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_client_elicitation_fields(fields, path~)
@@ -587,7 +587,7 @@ fn decode_client_config_option_fields(
 /// Decode Client config-option capabilities.
 pub fn client_config_option_capabilities_from_json(
   value : Json,
-  path? : String = "configOptions",
+  path~ : String = "configOptions",
 ) -> ClientConfigOptionCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_client_config_option_fields(fields, path~)
@@ -623,7 +623,7 @@ fn decode_client_session_fields(
 /// Decode Client session capabilities.
 pub fn client_session_capabilities_from_json(
   value : Json,
-  path? : String = "session",
+  path~ : String = "session",
 ) -> ClientSessionCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_client_session_fields(fields, path~)
@@ -649,7 +649,7 @@ pub fn client_session_capabilities_to_json(
 /// Decode Client authentication capabilities.
 pub fn client_auth_capabilities_from_json(
   value : Json,
-  path? : String = "auth",
+  path~ : String = "auth",
 ) -> ClientAuthCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["_meta", "terminal"], prefix=path)
@@ -703,7 +703,7 @@ fn decode_client_capabilities_fields(
 /// Decode Client capabilities.
 pub fn client_capabilities_from_json(
   value : Json,
-  path? : String = "clientCapabilities",
+  path~ : String = "clientCapabilities",
 ) -> ClientCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_client_capabilities_fields(fields, path~)
@@ -772,7 +772,7 @@ fn decode_agent_prompt_fields(
 /// Decode Agent prompt capabilities.
 pub fn agent_prompt_capabilities_from_json(
   value : Json,
-  path? : String = "promptCapabilities",
+  path~ : String = "promptCapabilities",
 ) -> AgentPromptCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_agent_prompt_fields(fields, path~)
@@ -809,7 +809,7 @@ fn decode_agent_mcp_fields(
 /// Decode Agent MCP capabilities.
 pub fn agent_mcp_capabilities_from_json(
   value : Json,
-  path? : String = "mcpCapabilities",
+  path~ : String = "mcpCapabilities",
 ) -> AgentMcpCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_agent_mcp_fields(fields, path~)
@@ -842,7 +842,7 @@ fn decode_agent_auth_fields(
 /// Decode Agent authentication capabilities.
 pub fn agent_auth_capabilities_from_json(
   value : Json,
-  path? : String = "auth",
+  path~ : String = "auth",
 ) -> AgentAuthCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_agent_auth_fields(fields, path~)
@@ -901,7 +901,7 @@ fn decode_agent_session_fields(
 /// Decode Agent session capabilities.
 pub fn agent_session_capabilities_from_json(
   value : Json,
-  path? : String = "sessionCapabilities",
+  path~ : String = "sessionCapabilities",
 ) -> AgentSessionCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_agent_session_fields(fields, path~)
@@ -985,7 +985,7 @@ fn decode_agent_capabilities_fields(
 /// Decode Agent capabilities.
 pub fn agent_capabilities_from_json(
   value : Json,
-  path? : String = "agentCapabilities",
+  path~ : String = "agentCapabilities",
 ) -> AgentCapabilities raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   decode_agent_capabilities_fields(fields, path~)
@@ -1027,7 +1027,7 @@ pub fn agent_capabilities_to_json(
 /// Decode initialization request parameters.
 pub fn initialize_params_from_json(
   value : Json,
-  path? : String = "initialize",
+  path~ : String = "initialize",
 ) -> InitializeParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -1083,7 +1083,7 @@ pub fn initialize_params_to_json(
 /// Decode initialization response data.
 pub fn initialize_result_from_json(
   value : Json,
-  path? : String = "initialize",
+  path~ : String = "initialize",
 ) -> InitializeResult raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -1150,7 +1150,7 @@ pub fn initialize_result_to_json(
 /// Decode one authentication method.
 pub fn auth_method_from_json(
   value : Json,
-  path? : String = "authMethod",
+  path~ : String = "authMethod",
 ) -> AuthMethod raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(
@@ -1194,7 +1194,7 @@ pub fn auth_method_to_json(
 /// Decode authenticate request parameters.
 pub fn authenticate_params_from_json(
   value : Json,
-  path? : String = "authenticate",
+  path~ : String = "authenticate",
 ) -> AuthenticateParams raise ProtocolDecodeError {
   let fields = protocol_require_object(value, path~)
   protocol_reject_unknown(fields, ["_meta", "methodId"], prefix=path)
@@ -1231,7 +1231,7 @@ fn decode_meta_only(
 /// Decode authenticate response data.
 pub fn authenticate_result_from_json(
   value : Json,
-  path? : String = "authenticate",
+  path~ : String = "authenticate",
 ) -> AuthenticateResult raise ProtocolDecodeError {
   { meta: decode_meta_only(value, path~), }
 }
@@ -1250,7 +1250,7 @@ pub fn authenticate_result_to_json(
 /// Decode logout request parameters.
 pub fn logout_params_from_json(
   value : Json,
-  path? : String = "logout",
+  path~ : String = "logout",
 ) -> LogoutParams raise ProtocolDecodeError {
   { meta: decode_meta_only(value, path~), }
 }
@@ -1269,7 +1269,7 @@ pub fn logout_params_to_json(
 /// Decode logout response data.
 pub fn logout_result_from_json(
   value : Json,
-  path? : String = "logout",
+  path~ : String = "logout",
 ) -> LogoutResult raise ProtocolDecodeError {
   { meta: decode_meta_only(value, path~), }
 }

@@ -51,11 +51,11 @@ pub(all) suberror ExperimentalV2BatchDecodeError {
 pub(all) suberror ExperimentalV2BatchEncodeError {
   EmptyBatchInput
   EmptyResponsesInput
-  ItemEncodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
-  ResponseEncodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
+  ItemEncodeFailed(index~ : Int32, cause~ : @jsonrpc.JsonRpcCodecError)
+  ResponseEncodeFailed(index~ : Int32, cause~ : @jsonrpc.JsonRpcCodecError)
   /// Frame-level reply collection: one input frame is not a lone decodable
   /// response (index in input order plus the codec cause).
-  ReplyFrameDecodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
+  ReplyFrameDecodeFailed(index~ : Int32, cause~ : @jsonrpc.JsonRpcCodecError)
 } derive(Eq, Debug)
 
 ///|
