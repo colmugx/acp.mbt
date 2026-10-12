@@ -22,6 +22,12 @@ pub(all) enum AgentAdapterInvocation {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentAdapterInvocation with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterInvocation with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The result of one typed handler invocation.  No wire response is produced
 /// here: the owner loop serializes this completion through
 /// `agent_adapter_complete`.
@@ -73,6 +79,12 @@ pub(all) enum AgentAdapterCompletion {
   )
   SessionCancelCompleted(result~ : Result[Unit, HandlerError])
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAdapterCompletion with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterCompletion with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Execute one already-admitted typed operation.  This function has no

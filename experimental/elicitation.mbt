@@ -8,6 +8,12 @@ pub(all) enum ExperimentalV2RequestId {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2RequestId with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2RequestId with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_request_id(
   value : Json,
   path~ : String = "requestId",
@@ -44,6 +50,14 @@ pub(all) struct ExperimentalV2EnumOption {
   description : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2EnumOption with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2EnumOption with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_enum_option(
@@ -100,6 +114,14 @@ pub(all) enum ExperimentalV2StringFormat {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2StringFormat with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2StringFormat with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_string_format(
   value : Json,
   path~ : String = "format",
@@ -141,6 +163,14 @@ pub(all) struct ExperimentalV2StringProperty {
   one_of : Array[ExperimentalV2EnumOption]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2StringProperty with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2StringProperty with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_string_property(
@@ -285,6 +315,14 @@ pub(all) struct ExperimentalV2NumberProperty {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2NumberProperty with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2NumberProperty with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_number_property(
   value : Json,
   path~ : String = "property",
@@ -365,6 +403,14 @@ pub(all) struct ExperimentalV2IntegerProperty {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2IntegerProperty with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2IntegerProperty with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_integer_property(
   value : Json,
   path~ : String = "property",
@@ -443,6 +489,14 @@ pub(all) struct ExperimentalV2BooleanProperty {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2BooleanProperty with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BooleanProperty with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_boolean_property(
   value : Json,
   path~ : String = "property",
@@ -505,6 +559,14 @@ pub(all) struct ExperimentalV2MultiSelectProperty {
   default : Array[String]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2MultiSelectProperty with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MultiSelectProperty with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_multi_select_property(
@@ -595,12 +657,28 @@ pub(all) struct ExperimentalV2StringMultiSelectItems {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2StringMultiSelectItems with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2StringMultiSelectItems with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Titled multi-select items: a non-empty list of titled options, carried
 /// under the `anyOf` key with no `type` discriminator.
 pub(all) struct ExperimentalV2TitledMultiSelectItems {
   any_of : Array[ExperimentalV2EnumOption]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TitledMultiSelectItems with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TitledMultiSelectItems with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Items of a multi-select property.  Typed `string` items and titled
@@ -613,6 +691,14 @@ pub(all) enum ExperimentalV2MultiSelectItems {
   MultiSelectItemsExtension(tag~ : String, raw~ : Json)
   MultiSelectItemsFuture(tag~ : String, raw~ : Json)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2MultiSelectItems with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MultiSelectItems with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_multi_select_items(
@@ -718,6 +804,14 @@ pub(all) enum ExperimentalV2ElicitationPropertyKnown {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationPropertyKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationPropertyKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One elicitation form field definition.
 pub type ExperimentalV2ElicitationProperty = ExperimentalV2Open[
   ExperimentalV2ElicitationPropertyKnown,
@@ -812,6 +906,14 @@ pub(all) struct ExperimentalV2ElicitationSchema {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationSchema with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationSchema with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_elicitation_schema(
   value : Json,
   path~ : String = "requestedSchema",
@@ -902,11 +1004,27 @@ pub(all) struct ExperimentalV2ElicitationSessionScope {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationSessionScope with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationSessionScope with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Request scope: the elicitation is tied to one JSON-RPC request outside
 /// any session.
 pub(all) struct ExperimentalV2ElicitationRequestScope {
   request_id : ExperimentalV2RequestId
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationRequestScope with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationRequestScope with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// The scope an elicitation is tied to; discriminated by which scope key the
@@ -915,6 +1033,14 @@ pub(all) enum ExperimentalV2ElicitationScope {
   ScopeSession(ExperimentalV2ElicitationSessionScope)
   ScopeRequest(ExperimentalV2ElicitationRequestScope)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationScope with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationScope with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Read one scope from the flattened fields of an elicitation request.
@@ -992,6 +1118,14 @@ pub(all) struct ExperimentalV2ElicitationFormMode {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationFormMode with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationFormMode with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// URL mode: the client directs the user to `url` and later receives the
 /// matching `elicitation/complete` notification.
 pub(all) struct ExperimentalV2ElicitationUrlMode {
@@ -1001,11 +1135,27 @@ pub(all) struct ExperimentalV2ElicitationUrlMode {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationUrlMode with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationUrlMode with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The known `mode` payloads of an `elicitation/create` request.
 pub(all) enum ExperimentalV2ElicitationKnownMode {
   ElicitationForm(ExperimentalV2ElicitationFormMode)
   ElicitationUrl(ExperimentalV2ElicitationUrlMode)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationKnownMode with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationKnownMode with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Parameters of `elicitation/create`: one human-readable `message` plus a
@@ -1017,6 +1167,17 @@ pub(all) struct ExperimentalV2ElicitationCreateRequestKnown {
   mode : ExperimentalV2ElicitationKnownMode
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationCreateRequestKnown with Eq::{
+  not_equal,
+  equal,
+}
+
+///|
+pub extend ExperimentalV2ElicitationCreateRequestKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub type ExperimentalV2ElicitationCreateRequest = ExperimentalV2Open[
@@ -1155,6 +1316,14 @@ pub(all) enum ExperimentalV2ElicitationContentValue {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationContentValue with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationContentValue with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_elicitation_content_value(
   value : Json,
   path~ : String = "content",
@@ -1223,6 +1392,14 @@ pub(all) struct ExperimentalV2ElicitationAcceptAction {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationAcceptAction with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationAcceptAction with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The known `action` payloads of an `elicitation/create` result.  Decline
 /// and cancel carry no fields of their own.
 pub(all) enum ExperimentalV2ElicitationAction {
@@ -1232,6 +1409,14 @@ pub(all) enum ExperimentalV2ElicitationAction {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ElicitationAction with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationAction with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Result of `elicitation/create`: an `action`-discriminated payload.  The
 /// discriminator is an open union, so custom or future actions keep their
 /// whole raw result object for byte-faithful replay.
@@ -1239,6 +1424,17 @@ pub(all) struct ExperimentalV2ElicitationCreateResponseKnown {
   action : ExperimentalV2ElicitationAction
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationCreateResponseKnown with Eq::{
+  not_equal,
+  equal,
+}
+
+///|
+pub extend ExperimentalV2ElicitationCreateResponseKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub type ExperimentalV2ElicitationCreateResponse = ExperimentalV2Open[
@@ -1364,6 +1560,17 @@ pub(all) struct ExperimentalV2CompleteElicitationNotification {
   elicitation_id : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2CompleteElicitationNotification with Eq::{
+  not_equal,
+  equal,
+}
+
+///|
+pub extend ExperimentalV2CompleteElicitationNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_complete_elicitation_notification(

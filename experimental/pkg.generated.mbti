@@ -662,6 +662,9 @@ pub(all) suberror ExperimentalV2AgentAdapterError {
   LateCompletion(request_id~ : @jsonrpc.RequestId)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentCompositionError {
   InvalidImplementation(reason~ : String)
@@ -672,6 +675,9 @@ pub(all) suberror ExperimentalV2AgentCompositionError {
   ForkServiceMismatch(reason~ : String)
   SessionMarkerMissing
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentCompositionError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCompositionError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCompositionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentContextError {
   ContextUnavailable(method_name~ : String)
@@ -679,6 +685,9 @@ pub(all) suberror ExperimentalV2AgentContextError {
   ContextBrokerFailure(method_name~ : String)
   ContextReplyMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentContextError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentContextError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentContextError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentHandlerError {
   Application(message~ : String)
@@ -686,11 +695,17 @@ pub(all) suberror ExperimentalV2AgentHandlerError {
   Cancelled
   UnavailableOperation(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentHandlerError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentHandlerError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentHandlerError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentMessageError {
   UnknownMethod(method_name~ : String)
   InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentMessageError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentMessageError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentMessageError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentProtocolError {
   NotInitialized(method_name~ : String)
@@ -702,17 +717,26 @@ pub(all) suberror ExperimentalV2AgentProtocolError {
   CapabilityDenied(method_name~ : String, capability~ : String)
   UnknownMethod(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentProtocolError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentProtocolError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentProtocolError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2AgentStateError {
   EmptyAuthMethods
   DuplicateAuthMethodId(method_id~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentStateError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentStateError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentStateError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2BatchDecodeError {
   BatchParseFailed(message~ : String, response~ : @jsonrpc.JsonRpcResponse)
   EmptyBatch(response~ : @jsonrpc.JsonRpcResponse)
   NotABatch(value~ : Json)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BatchDecodeError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchDecodeError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchDecodeError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2BatchEncodeError {
   EmptyBatchInput
@@ -721,6 +745,9 @@ pub(all) suberror ExperimentalV2BatchEncodeError {
   ResponseEncodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
   ReplyFrameDecodeFailed(index~ : Int, cause~ : @jsonrpc.JsonRpcCodecError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BatchEncodeError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchEncodeError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchEncodeError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientAdapterError {
   EndpointMismatch(reason~ : String)
@@ -728,12 +755,18 @@ pub(all) suberror ExperimentalV2ClientAdapterError {
   LateCompletion(request_id~ : @jsonrpc.RequestId)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientCompositionError {
   InvalidImplementation(reason~ : String)
   MissingElicitationHandler
   ElicitationUrlRequiresComplete(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientCompositionError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCompositionError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCompositionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientConnectionError {
   UnsupportedVersion(method_name~ : String, offered~ : Int)
@@ -742,6 +775,9 @@ pub(all) suberror ExperimentalV2ClientConnectionError {
   BrokerFailure(method_name~ : String)
   ReplyMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientConnectionError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientConnectionError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientConnectionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientHandlerError {
   Application(message~ : String)
@@ -749,11 +785,17 @@ pub(all) suberror ExperimentalV2ClientHandlerError {
   Cancelled
   UnavailableOperation(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientHandlerError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientHandlerError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientHandlerError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientMessageError {
   UnknownMethod(method_name~ : String)
   InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientMessageError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientMessageError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientMessageError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2ClientProtocolError {
   NotReady(method_name~ : String)
@@ -762,6 +804,9 @@ pub(all) suberror ExperimentalV2ClientProtocolError {
   CapabilityDenied(method_name~ : String, capability~ : String)
   UnknownMethod(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientProtocolError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientProtocolError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientProtocolError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2DecodeError {
   JsonParse(message~ : String)
@@ -777,36 +822,54 @@ pub(all) suberror ExperimentalV2DecodeError {
   InvalidPath(path~ : String, value~ : String)
   InvalidBase64(path~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DecodeError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DecodeError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DecodeError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ExperimentalV2SessionFoldError {
   ChunkForUnknownToolCall(tool_call_id~ : String)
   IllegalStateTransition(from~ : ExperimentalV2TurnPhase, to~ : ExperimentalV2TurnPhase)
   PlanVariantMissingPlanId
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionFoldError::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionFoldError::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionFoldError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum ExperimentalV2AgentAdapterCommand {
   CancelRequest(request_id~ : ExperimentalV2RequestId)
   TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterCommand::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterCommand::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentAdapterOutput {
   Response(@jsonrpc.JsonRpcResponse)
   Notification(@jsonrpc.JsonRpcNotification)
   Command(ExperimentalV2AgentAdapterCommand)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterOutput::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterOutput::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterOutput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AgentAdapterState {
   protocol : ExperimentalV2AgentState
   reservation : ExperimentalV2AgentReservation
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterState::not_equal(Self, Self) -> Bool
 pub fn ExperimentalV2AgentAdapterState::protocol(Self) -> ExperimentalV2AgentState
 pub fn ExperimentalV2AgentAdapterState::reservation(Self) -> ExperimentalV2AgentReservation
+pub fn ExperimentalV2AgentAdapterState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AgentAdapterStep {
   state : ExperimentalV2AgentAdapterState
   outputs : Array[ExperimentalV2AgentAdapterOutput]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAdapterStep::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterStep::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAdapterStep::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentAdmission {
   Immediate(ExperimentalV2AgentAdapterStep)
@@ -823,12 +886,18 @@ pub(all) enum ExperimentalV2AgentAuthentication {
   AuthPending
   AuthLoggedIn
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentAuthentication::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAuthentication::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentAuthentication::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AgentCapabilities {
   session : ExperimentalV2Marker[ExperimentalV2SessionCapabilities]
   auth : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentCommand {
   SendInitialize(result~ : ExperimentalV2InitializeResult, accepted~ : Bool)
@@ -838,6 +907,9 @@ pub(all) enum ExperimentalV2AgentCommand {
   CancelSession(session_id~ : String)
   CancelRequest(request_id~ : ExperimentalV2RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentCommand::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCommand::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentCompletion {
   AuthLoginCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2LoginResult, ExperimentalV2AgentHandlerError])
@@ -851,6 +923,9 @@ pub(all) enum ExperimentalV2AgentCompletion {
   SessionDeleteCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2DeleteSessionResult, ExperimentalV2AgentHandlerError])
   SessionForkCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2ForkSessionResult, ExperimentalV2AgentHandlerError])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentCompletion::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCompletion::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentCompletion::to_repr(Self) -> @debug.Repr
 
 pub struct ExperimentalV2AgentContext {
   request_broker : async (ExperimentalV2AgentOutboundRequest) -> Result[ExperimentalV2AgentOutboundReply, ExperimentalV2AgentContextError]
@@ -888,6 +963,9 @@ pub(all) struct ExperimentalV2AgentEndpointConfig {
   capabilities : ExperimentalV2AgentCapabilities
   auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentEndpointConfig::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentEndpointConfig::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentEndpointConfig::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentEvent {
   ClientRequest(ExperimentalV2AgentRequest)
@@ -896,6 +974,9 @@ pub(all) enum ExperimentalV2AgentEvent {
   LoginSucceeded(method_id~ : String)
   LoggedOut
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentEvent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentEvent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentInvocation {
   AuthLoginInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2LoginParams)
@@ -909,34 +990,52 @@ pub(all) enum ExperimentalV2AgentInvocation {
   SessionDeleteInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2DeleteSessionParams)
   SessionForkInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2ForkSessionParams)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentInvocation::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentInvocation::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentInvocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentNotification {
   SessionCancel(ExperimentalV2CancelSessionParams)
   CancelRequest(ExperimentalV2RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentNotification::equal(Self, Self) -> Bool
 pub fn ExperimentalV2AgentNotification::method_name(Self) -> String
+pub fn ExperimentalV2AgentNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentOutboundNotification {
   SessionUpdate(ExperimentalV2UpdateSessionNotification)
   ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentOutboundNotification::equal(Self, Self) -> Bool
 pub fn ExperimentalV2AgentOutboundNotification::method_name(Self) -> String
+pub fn ExperimentalV2AgentOutboundNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentOutboundNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentOutboundReply {
   ReplyRequestPermission(ExperimentalV2RequestPermissionResponse)
   ReplyElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateResponseKnown])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentOutboundReply::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentOutboundReply::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentOutboundReply::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentOutboundRequest {
   RequestPermission(ExperimentalV2RequestPermissionRequest)
   ElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentOutboundRequest::equal(Self, Self) -> Bool
 pub fn ExperimentalV2AgentOutboundRequest::method_name(Self) -> String
+pub fn ExperimentalV2AgentOutboundRequest::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentOutboundRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentPhase {
   AgentAwaitingInitialize
   AgentInitialized
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentPhase::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentPhase::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentPhase::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentRequest {
   Initialize(ExperimentalV2InitializeParams)
@@ -951,13 +1050,19 @@ pub(all) enum ExperimentalV2AgentRequest {
   SessionClose(ExperimentalV2CloseSessionParams)
   SessionSetConfigOption(ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentRequest::equal(Self, Self) -> Bool
 pub fn ExperimentalV2AgentRequest::method_name(Self) -> String
+pub fn ExperimentalV2AgentRequest::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2AgentReservation {
   Idle
   LoginPending(@jsonrpc.RequestId)
   LogoutPending(@jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentReservation::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentReservation::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentReservation::to_repr(Self) -> @debug.Repr
 
 pub struct ExperimentalV2AgentSessionService {
   new_handler : async (ExperimentalV2AgentContext, ExperimentalV2NewSessionParams) -> ExperimentalV2NewSessionResult
@@ -985,11 +1090,17 @@ pub(all) struct ExperimentalV2AgentState {
   client_info : ExperimentalV2Implementation?
   config : ExperimentalV2AgentEndpointConfig
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentState::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AgentStep {
   state : ExperimentalV2AgentState
   commands : Array[ExperimentalV2AgentCommand]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AgentStep::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentStep::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AgentStep::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Annotations {
   audience : Array[ExperimentalV2Role]?
@@ -997,6 +1108,9 @@ pub(all) struct ExperimentalV2Annotations {
   priority : Double?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Annotations::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Annotations::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Annotations::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AudioContent {
   data : String
@@ -1004,6 +1118,9 @@ pub(all) struct ExperimentalV2AudioContent {
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AudioContent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AudioContent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AudioContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AuthMethodAgent {
   method_id : String
@@ -1011,6 +1128,9 @@ pub(all) struct ExperimentalV2AuthMethodAgent {
   description : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AuthMethodAgent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AuthMethodAgent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AuthMethodAgent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AvailableCommand {
   name : String
@@ -1018,22 +1138,34 @@ pub(all) struct ExperimentalV2AvailableCommand {
   input : ExperimentalV2Open[ExperimentalV2CommandInputKnown]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AvailableCommand::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AvailableCommand::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AvailableCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2AvailableCommandsUpdate {
   available_commands : Array[ExperimentalV2AvailableCommand]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2AvailableCommandsUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2AvailableCommandsUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2AvailableCommandsUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2BatchInvalidItem {
   cause : @jsonrpc.JsonRpcCodecError
   response : @jsonrpc.JsonRpcResponse
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BatchInvalidItem::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchInvalidItem::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchInvalidItem::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2BatchItem {
   Request(@jsonrpc.JsonRpcRequest)
   Notification(@jsonrpc.JsonRpcNotification)
   InvalidItem(ExperimentalV2BatchInvalidItem)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BatchItem::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchItem::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BatchItem::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2BlobResourceContents {
   blob : String
@@ -1041,6 +1173,9 @@ pub(all) struct ExperimentalV2BlobResourceContents {
   mime_type : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BlobResourceContents::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BlobResourceContents::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BlobResourceContents::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2BooleanProperty {
   title : String?
@@ -1048,31 +1183,49 @@ pub(all) struct ExperimentalV2BooleanProperty {
   default : Bool?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2BooleanProperty::equal(Self, Self) -> Bool
+pub fn ExperimentalV2BooleanProperty::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2BooleanProperty::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2CancelSessionParams {
   session_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CancelSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CancelSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CancelSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientAdapterCommand {
   CancelRequest(request_id~ : ExperimentalV2RequestId)
   TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterCommand::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterCommand::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientAdapterOutput {
   Response(@jsonrpc.JsonRpcResponse)
   Command(ExperimentalV2ClientAdapterCommand)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterOutput::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterOutput::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterOutput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ClientAdapterState {
   protocol : ExperimentalV2ClientState
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterState::not_equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientAdapterState::protocol(Self) -> ExperimentalV2ClientState
+pub fn ExperimentalV2ClientAdapterState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ClientAdapterStep {
   state : ExperimentalV2ClientAdapterState
   outputs : Array[ExperimentalV2ClientAdapterOutput]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientAdapterStep::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterStep::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientAdapterStep::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientAdmission {
   Immediate(ExperimentalV2ClientAdapterStep)
@@ -1083,6 +1236,9 @@ pub(all) struct ExperimentalV2ClientCapabilities {
   elicitation : ExperimentalV2Marker[ExperimentalV2ElicitationCapabilities]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientCommand {
   DispatchRequest(ExperimentalV2ClientRequest)
@@ -1090,6 +1246,9 @@ pub(all) enum ExperimentalV2ClientCommand {
   CancelRequest(request_id~ : ExperimentalV2RequestId)
   CloseConnection
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientCommand::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCommand::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientCompletion {
   RequestPermissionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[ExperimentalV2RequestPermissionResponse, ExperimentalV2ClientHandlerError])
@@ -1097,6 +1256,9 @@ pub(all) enum ExperimentalV2ClientCompletion {
   SessionUpdateCompleted(result~ : Result[Unit, ExperimentalV2ClientHandlerError])
   ElicitationCompleteCompleted(result~ : Result[Unit, ExperimentalV2ClientHandlerError])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientCompletion::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCompletion::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientCompletion::to_repr(Self) -> @debug.Repr
 
 pub struct ExperimentalV2ClientConnection {
   request_broker : async (ExperimentalV2ClientForwardRequest) -> Result[ExperimentalV2ClientForwardReply, ExperimentalV2ClientConnectionError]
@@ -1141,12 +1303,18 @@ pub(all) enum ExperimentalV2ClientEvent {
   AgentNotification(ExperimentalV2ClientNotification)
   UnknownAgentMethod(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientEvent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientEvent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientForwardNotification {
   SessionCancel(ExperimentalV2CancelSessionParams)
   CancelRequest(ExperimentalV2RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardNotification::equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientForwardNotification::method_name(Self) -> String
+pub fn ExperimentalV2ClientForwardNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientForwardNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientForwardReply {
   ReplyInitialize(ExperimentalV2InitializeResult)
@@ -1161,7 +1329,10 @@ pub(all) enum ExperimentalV2ClientForwardReply {
   ReplyPrompt(ExperimentalV2PromptResult)
   ReplySetConfigOption(ExperimentalV2SetConfigOptionResult)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardReply::equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientForwardReply::method_name(Self) -> String
+pub fn ExperimentalV2ClientForwardReply::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientForwardReply::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientForwardRequest {
   Initialize(ExperimentalV2InitializeParams)
@@ -1176,7 +1347,10 @@ pub(all) enum ExperimentalV2ClientForwardRequest {
   SessionPrompt(ExperimentalV2PromptParams)
   SessionSetConfigOption(ExperimentalV2Open[ExperimentalV2SetConfigOptionKnown])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientForwardRequest::equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientForwardRequest::method_name(Self) -> String
+pub fn ExperimentalV2ClientForwardRequest::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientForwardRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientInvocation {
   RequestPermissionInvocation(id~ : @jsonrpc.RequestId, params~ : ExperimentalV2RequestPermissionRequest)
@@ -1184,25 +1358,37 @@ pub(all) enum ExperimentalV2ClientInvocation {
   SessionUpdateInvocation(params~ : ExperimentalV2UpdateSessionNotification)
   ElicitationCompleteInvocation(params~ : ExperimentalV2CompleteElicitationNotification)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientInvocation::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientInvocation::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientInvocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientNotification {
   SessionUpdate(ExperimentalV2UpdateSessionNotification)
   ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
   CancelRequest(ExperimentalV2RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientNotification::equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientNotification::method_name(Self) -> String
+pub fn ExperimentalV2ClientNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientPhase {
   ClientAwaitingInitialize
   ClientReady
   ClientFailed(ExperimentalV2ClientProtocolError)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientPhase::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientPhase::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientPhase::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ClientRequest {
   SessionRequestPermission(ExperimentalV2RequestPermissionRequest)
   ElicitationCreate(ExperimentalV2Open[ExperimentalV2ElicitationCreateRequestKnown])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientRequest::equal(Self, Self) -> Bool
 pub fn ExperimentalV2ClientRequest::method_name(Self) -> String
+pub fn ExperimentalV2ClientRequest::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientRequest::to_repr(Self) -> @debug.Repr
 
 pub struct ExperimentalV2ClientSessionService {
   session_update_handler : async (ExperimentalV2UpdateSessionNotification) -> Unit
@@ -1220,24 +1406,39 @@ pub(all) struct ExperimentalV2ClientState {
   capabilities : ExperimentalV2ClientCapabilities
   agent : ExperimentalV2InitializeResult?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientState::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ClientStep {
   state : ExperimentalV2ClientState
   commands : Array[ExperimentalV2ClientCommand]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ClientStep::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientStep::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ClientStep::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2CloseSessionParams {
   session_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CloseSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CloseSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CloseSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2CloseSessionResult {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CloseSessionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CloseSessionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CloseSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2CommandInputKnown {
   CommandInputText(ExperimentalV2TextCommandInput)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CommandInputKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CommandInputKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CommandInputKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2CommandPermissionSubject {
   command : String
@@ -1246,15 +1447,24 @@ pub(all) struct ExperimentalV2CommandPermissionSubject {
   terminal_id : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CommandPermissionSubject::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CommandPermissionSubject::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CommandPermissionSubject::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2CompleteElicitationNotification {
   elicitation_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2CompleteElicitationNotification::equal(Self, Self) -> Bool
+pub fn ExperimentalV2CompleteElicitationNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2CompleteElicitationNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ConfigBoolean {
   current_value : Bool
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigBoolean::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigBoolean::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigBoolean::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ConfigCategory {
   CategoryMode
@@ -1264,21 +1474,33 @@ pub(all) enum ExperimentalV2ConfigCategory {
   CategoryExtension(tag~ : String)
   CategoryFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigCategory::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigCategory::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigCategory::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ConfigOptionUpdate {
   config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigOptionUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigOptionUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigOptionUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ConfigPayload {
   PayloadSelect(ExperimentalV2ConfigSelect)
   PayloadBoolean(ExperimentalV2ConfigBoolean)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigPayload::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigPayload::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigPayload::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ConfigSelect {
   current_value : String
   options : ExperimentalV2ConfigSelectOptions
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigSelect::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelect::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelect::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ConfigSelectGroup {
   group_id : String
@@ -1286,6 +1508,9 @@ pub(all) struct ExperimentalV2ConfigSelectGroup {
   options : Array[ExperimentalV2ConfigSelectOption]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigSelectGroup::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectGroup::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectGroup::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ConfigSelectOption {
   value : String
@@ -1293,21 +1518,33 @@ pub(all) struct ExperimentalV2ConfigSelectOption {
   description : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigSelectOption::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectOption::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectOption::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ConfigSelectOptions {
   OptionsUngrouped(Array[ExperimentalV2ConfigSelectOption])
   OptionsGrouped(Array[ExperimentalV2ConfigSelectGroup])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigSelectOptions::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectOptions::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigSelectOptions::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ConfigValue {
   ConfigValueId(String)
   ConfigValueBoolean(Bool)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ConfigValue::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigValue::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ConfigValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Content {
   content : ExperimentalV2Open[ExperimentalV2ContentBlockKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Content::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Content::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Content::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ContentBlockKnown {
   BlockText(ExperimentalV2TextContent)
@@ -1316,33 +1553,51 @@ pub(all) enum ExperimentalV2ContentBlockKnown {
   BlockResourceLink(ExperimentalV2ResourceLink)
   BlockResource(ExperimentalV2EmbeddedResource)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ContentBlockKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ContentBlockKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ContentBlockKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ContentChunk {
   message_id : String
   content : ExperimentalV2Open[ExperimentalV2ContentBlockKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ContentChunk::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ContentChunk::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ContentChunk::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Cost {
   amount : Double
   currency : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Cost::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Cost::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Cost::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2DeleteSessionParams {
   session_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DeleteSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DeleteSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DeleteSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2DeleteSessionResult {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DeleteSessionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DeleteSessionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DeleteSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Diff {
   changes : Array[ExperimentalV2Open[ExperimentalV2DiffChangeKnown]]
   patch : ExperimentalV2DiffPatch?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Diff::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Diff::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Diff::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2DiffChangeKnown {
   ChangeAdd(ExperimentalV2DiffPathChange)
@@ -1351,6 +1606,9 @@ pub(all) enum ExperimentalV2DiffChangeKnown {
   ChangeMove(ExperimentalV2DiffPathPairChange)
   ChangeCopy(ExperimentalV2DiffPathPairChange)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffChangeKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffChangeKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffChangeKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2DiffFileType {
   DiffFileTypeText
@@ -1360,17 +1618,26 @@ pub(all) enum ExperimentalV2DiffFileType {
   DiffFileTypeExtension(tag~ : String)
   DiffFileTypeFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffFileType::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffFileType::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffFileType::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2DiffPatch {
   format : ExperimentalV2DiffPatchFormat
   text : String
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffPatch::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPatch::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPatch::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2DiffPatchFormat {
   DiffPatchFormatGitPatch
   DiffPatchFormatExtension(tag~ : String)
   DiffPatchFormatFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffPatchFormat::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPatchFormat::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPatchFormat::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2DiffPathChange {
   path : String
@@ -1378,6 +1645,9 @@ pub(all) struct ExperimentalV2DiffPathChange {
   mime_type : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffPathChange::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPathChange::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPathChange::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2DiffPathPairChange {
   old_path : String
@@ -1386,22 +1656,34 @@ pub(all) struct ExperimentalV2DiffPathPairChange {
   mime_type : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2DiffPathPairChange::equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPathPairChange::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2DiffPathPairChange::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationAcceptAction {
   content : Map[String, ExperimentalV2ElicitationContentValue]?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationAcceptAction::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationAcceptAction::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationAcceptAction::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ElicitationAction {
   ActionAccept(ExperimentalV2ElicitationAcceptAction)
   ActionDecline
   ActionCancel
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationAction::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationAction::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationAction::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationCapabilities {
   form : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   url : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ElicitationContentValue {
   ContentString(String)
@@ -1410,27 +1692,42 @@ pub(all) enum ExperimentalV2ElicitationContentValue {
   ContentBoolean(Bool)
   ContentStringArray(Array[String])
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationContentValue::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationContentValue::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationContentValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationCreateRequestKnown {
   message : String
   mode : ExperimentalV2ElicitationKnownMode
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationCreateRequestKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCreateRequestKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCreateRequestKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationCreateResponseKnown {
   action : ExperimentalV2ElicitationAction
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationCreateResponseKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCreateResponseKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationCreateResponseKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationFormMode {
   requested_schema : ExperimentalV2ElicitationSchema
   scope : ExperimentalV2ElicitationScope
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationFormMode::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationFormMode::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationFormMode::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ElicitationKnownMode {
   ElicitationForm(ExperimentalV2ElicitationFormMode)
   ElicitationUrl(ExperimentalV2ElicitationUrlMode)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationKnownMode::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationKnownMode::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationKnownMode::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ElicitationPropertyKnown {
   PropertyString(ExperimentalV2StringProperty)
@@ -1439,10 +1736,16 @@ pub(all) enum ExperimentalV2ElicitationPropertyKnown {
   PropertyBoolean(ExperimentalV2BooleanProperty)
   PropertyMultiSelect(ExperimentalV2MultiSelectProperty)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationPropertyKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationPropertyKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationPropertyKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationRequestScope {
   request_id : ExperimentalV2RequestId
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationRequestScope::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationRequestScope::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationRequestScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationSchema {
   title : String?
@@ -1451,33 +1754,51 @@ pub(all) struct ExperimentalV2ElicitationSchema {
   description : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationSchema::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationSchema::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationSchema::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ElicitationScope {
   ScopeSession(ExperimentalV2ElicitationSessionScope)
   ScopeRequest(ExperimentalV2ElicitationRequestScope)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationScope::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationScope::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationSessionScope {
   session_id : String
   tool_call_id : String?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationSessionScope::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationSessionScope::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationSessionScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ElicitationUrlMode {
   elicitation_id : String
   url : String
   scope : ExperimentalV2ElicitationScope
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ElicitationUrlMode::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationUrlMode::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ElicitationUrlMode::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2EmbeddedResource {
   resource : ExperimentalV2EmbeddedResourceResource
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2EmbeddedResource::equal(Self, Self) -> Bool
+pub fn ExperimentalV2EmbeddedResource::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2EmbeddedResource::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2EmbeddedResourceResource {
   ResourceText(ExperimentalV2TextResourceContents)
   ResourceBlob(ExperimentalV2BlobResourceContents)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2EmbeddedResourceResource::equal(Self, Self) -> Bool
+pub fn ExperimentalV2EmbeddedResourceResource::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2EmbeddedResourceResource::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2EnumOption {
   value : String
@@ -1485,24 +1806,36 @@ pub(all) struct ExperimentalV2EnumOption {
   description : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2EnumOption::equal(Self, Self) -> Bool
+pub fn ExperimentalV2EnumOption::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2EnumOption::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2EnvVariable {
   name : String
   value : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2EnvVariable::equal(Self, Self) -> Bool
+pub fn ExperimentalV2EnvVariable::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2EnvVariable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2FoldedMessage {
   message_id : String
   blocks : Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2FoldedMessage::equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedMessage::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedMessage::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2FoldedPlan {
   plan_id : String
   content : ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2FoldedPlan::equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedPlan::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2FoldedTerminal {
   terminal_id : String
@@ -1513,6 +1846,9 @@ pub(all) struct ExperimentalV2FoldedTerminal {
   meta : ExperimentalV2Patch[Json]
   output_chunks : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2FoldedTerminal::equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedTerminal::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedTerminal::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2FoldedToolCall {
   tool_call_id : String
@@ -1525,6 +1861,9 @@ pub(all) struct ExperimentalV2FoldedToolCall {
   raw_output : ExperimentalV2Patch[Json]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2FoldedToolCall::equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedToolCall::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2FoldedToolCall::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ForkSessionParams {
   session_id : String
@@ -1533,18 +1872,27 @@ pub(all) struct ExperimentalV2ForkSessionParams {
   mcp_servers : Array[ExperimentalV2Open[ExperimentalV2McpServerTransport]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ForkSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ForkSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ForkSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ForkSessionResult {
   session_id : String
   config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ForkSessionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ForkSessionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ForkSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2HttpHeader {
   name : String
   value : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2HttpHeader::equal(Self, Self) -> Bool
+pub fn ExperimentalV2HttpHeader::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2HttpHeader::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Icon {
   src : String
@@ -1552,6 +1900,9 @@ pub(all) struct ExperimentalV2Icon {
   sizes : Array[String]?
   theme : ExperimentalV2IconTheme?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Icon::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Icon::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Icon::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2IconTheme {
   IconThemeLight
@@ -1559,11 +1910,17 @@ pub(all) enum ExperimentalV2IconTheme {
   IconThemeExtension(tag~ : String)
   IconThemeFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2IconTheme::equal(Self, Self) -> Bool
+pub fn ExperimentalV2IconTheme::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2IconTheme::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2IdleState {
   stop_reason : ExperimentalV2StopReason?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2IdleState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2IdleState::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2IdleState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ImageContent {
   data : String
@@ -1572,6 +1929,9 @@ pub(all) struct ExperimentalV2ImageContent {
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ImageContent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ImageContent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ImageContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Implementation {
   name : String
@@ -1579,6 +1939,9 @@ pub(all) struct ExperimentalV2Implementation {
   version : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Implementation::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Implementation::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Implementation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2InitializeParams {
   protocol_version : Int
@@ -1586,6 +1949,9 @@ pub(all) struct ExperimentalV2InitializeParams {
   capabilities : ExperimentalV2ClientCapabilities
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2InitializeParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2InitializeParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2InitializeParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2InitializeResult {
   protocol_version : Int
@@ -1594,6 +1960,9 @@ pub(all) struct ExperimentalV2InitializeResult {
   auth_methods : Array[ExperimentalV2Open[ExperimentalV2AuthMethodAgent]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2InitializeResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2InitializeResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2InitializeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2IntegerProperty {
   title : String?
@@ -1603,50 +1972,80 @@ pub(all) struct ExperimentalV2IntegerProperty {
   default : Int64?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2IntegerProperty::equal(Self, Self) -> Bool
+pub fn ExperimentalV2IntegerProperty::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2IntegerProperty::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ListSessionsParams {
   cwd : String?
   cursor : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ListSessionsParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ListSessionsParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ListSessionsParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ListSessionsResult {
   sessions : Array[ExperimentalV2SessionInfo]
   next_cursor : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ListSessionsResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ListSessionsResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ListSessionsResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2LoginParams {
   method_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2LoginParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2LoginParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2LoginParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2LoginResult {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2LoginResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2LoginResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2LoginResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2LogoutParams {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2LogoutParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2LogoutParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2LogoutParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2LogoutResult {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2LogoutResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2LogoutResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2LogoutResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2Marker[T] {
   MarkerUnsupported
   MarkerSupported(T)
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] ExperimentalV2Marker::equal(Self[T], Self[T]) -> Bool
+pub fn[T : Eq] ExperimentalV2Marker::not_equal(Self[T], Self[T]) -> Bool
+pub fn[T : @debug.Debug] ExperimentalV2Marker::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct ExperimentalV2MarkerPayload {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MarkerPayload::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MarkerPayload::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MarkerPayload::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2McpCapabilities {
   stdio : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   http : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2McpCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2McpServerHttp {
   name : String
@@ -1654,6 +2053,9 @@ pub(all) struct ExperimentalV2McpServerHttp {
   headers : Array[ExperimentalV2HttpHeader]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2McpServerHttp::equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerHttp::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerHttp::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2McpServerStdio {
   name : String
@@ -1662,34 +2064,52 @@ pub(all) struct ExperimentalV2McpServerStdio {
   env : Array[ExperimentalV2EnvVariable]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2McpServerStdio::equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerStdio::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerStdio::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2McpServerTransport {
   TransportStdio(ExperimentalV2McpServerStdio)
   TransportHttp(ExperimentalV2McpServerHttp)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2McpServerTransport::equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerTransport::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2McpServerTransport::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2MessageUpsert {
   message_id : String
   content : ExperimentalV2Patch[Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MessageUpsert::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MessageUpsert::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MessageUpsert::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Method {
   method_name : String
   direction : ExperimentalV2MethodDirection
   kind : ExperimentalV2MethodKind
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Method::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Method::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Method::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2MethodDirection {
   ClientToAgent
   AgentToClient
   Bidirectional
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MethodDirection::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MethodDirection::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MethodDirection::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2MethodKind {
   Request
   Notification
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MethodKind::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MethodKind::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MethodKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2MultiSelectItems {
   MultiSelectItemsString(ExperimentalV2StringMultiSelectItems)
@@ -1697,6 +2117,9 @@ pub(all) enum ExperimentalV2MultiSelectItems {
   MultiSelectItemsExtension(tag~ : String, raw~ : Json)
   MultiSelectItemsFuture(tag~ : String, raw~ : Json)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MultiSelectItems::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MultiSelectItems::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MultiSelectItems::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2MultiSelectProperty {
   title : String?
@@ -1707,6 +2130,9 @@ pub(all) struct ExperimentalV2MultiSelectProperty {
   default : Array[String]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2MultiSelectProperty::equal(Self, Self) -> Bool
+pub fn ExperimentalV2MultiSelectProperty::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2MultiSelectProperty::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2NewSessionParams {
   cwd : String
@@ -1714,12 +2140,18 @@ pub(all) struct ExperimentalV2NewSessionParams {
   mcp_servers : Array[ExperimentalV2Open[ExperimentalV2McpServerTransport]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2NewSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2NewSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2NewSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2NewSessionResult {
   session_id : String
   config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2NewSessionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2NewSessionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2NewSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2NumberProperty {
   title : String?
@@ -1729,18 +2161,27 @@ pub(all) struct ExperimentalV2NumberProperty {
   default : Double?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2NumberProperty::equal(Self, Self) -> Bool
+pub fn ExperimentalV2NumberProperty::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2NumberProperty::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2Open[T] {
   Known(T)
   Extension(tag~ : String, raw~ : Json)
   Future(tag~ : String, raw~ : Json)
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] ExperimentalV2Open::equal(Self[T], Self[T]) -> Bool
+pub fn[T : Eq] ExperimentalV2Open::not_equal(Self[T], Self[T]) -> Bool
+pub fn[T : @debug.Debug] ExperimentalV2Open::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) enum ExperimentalV2Patch[T] {
   PatchOmitted
   PatchNull
   PatchValue(T)
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] ExperimentalV2Patch::equal(Self[T], Self[T]) -> Bool
+pub fn[T : Eq] ExperimentalV2Patch::not_equal(Self[T], Self[T]) -> Bool
+pub fn[T : @debug.Debug] ExperimentalV2Patch::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PermissionOption {
   option_id : String
@@ -1748,6 +2189,9 @@ pub(all) struct ExperimentalV2PermissionOption {
   kind : ExperimentalV2PermissionOptionKind
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PermissionOption::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOption::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOption::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PermissionOptionKind {
   OptionKindAllowOnce
@@ -1757,16 +2201,25 @@ pub(all) enum ExperimentalV2PermissionOptionKind {
   OptionKindExtension(tag~ : String)
   OptionKindFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PermissionOptionKind::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOptionKind::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOptionKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PermissionOutcomeKnown {
   OutcomeCancelled
   OutcomeSelected(ExperimentalV2SelectedPermissionOutcome)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PermissionOutcomeKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOutcomeKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionOutcomeKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PermissionSubjectKnown {
   SubjectToolCall(ExperimentalV2ToolCallPermissionSubject)
   SubjectCommand(ExperimentalV2CommandPermissionSubject)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PermissionSubjectKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionSubjectKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PermissionSubjectKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PlanEntry {
   content : String
@@ -1774,6 +2227,9 @@ pub(all) struct ExperimentalV2PlanEntry {
   status : ExperimentalV2PlanEntryStatus
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanEntry::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntry::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntry::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PlanEntryPriority {
   PlanPriorityHigh
@@ -1782,6 +2238,9 @@ pub(all) enum ExperimentalV2PlanEntryPriority {
   PlanPriorityExtension(tag~ : String)
   PlanPriorityFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanEntryPriority::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntryPriority::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntryPriority::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PlanEntryStatus {
   PlanStatusPending
@@ -1791,21 +2250,33 @@ pub(all) enum ExperimentalV2PlanEntryStatus {
   PlanStatusExtension(tag~ : String)
   PlanStatusFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanEntryStatus::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntryStatus::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanEntryStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PlanItems {
   plan_id : String
   entries : Array[ExperimentalV2PlanEntry]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanItems::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanItems::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanItems::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PlanUpdate {
   plan : ExperimentalV2Open[ExperimentalV2PlanUpdateContentKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2PlanUpdateContentKnown {
   PlanItemsContent(ExperimentalV2PlanItems)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PlanUpdateContentKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanUpdateContentKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PlanUpdateContentKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PromptCapabilities {
   image : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
@@ -1813,26 +2284,41 @@ pub(all) struct ExperimentalV2PromptCapabilities {
   embedded_context : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PromptCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PromptParams {
   session_id : String
   prompt : Array[ExperimentalV2Open[ExperimentalV2ContentBlockKnown]]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PromptParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2PromptResult {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2PromptResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2PromptResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ReplayFromStart {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ReplayFromStart::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ReplayFromStart::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ReplayFromStart::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2RequestId {
   RequestIdNull
   RequestIdNumber(Int64)
   RequestIdStr(String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2RequestId::equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestId::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestId::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2RequestPermissionRequest {
   session_id : String
@@ -1842,15 +2328,24 @@ pub(all) struct ExperimentalV2RequestPermissionRequest {
   options : Array[ExperimentalV2PermissionOption]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2RequestPermissionRequest::equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestPermissionRequest::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestPermissionRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2RequestPermissionResponse {
   outcome : ExperimentalV2Open[ExperimentalV2PermissionOutcomeKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2RequestPermissionResponse::equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestPermissionResponse::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequestPermissionResponse::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2RequiresActionState {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2RequiresActionState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequiresActionState::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2RequiresActionState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ResourceLink {
   name : String
@@ -1863,6 +2358,9 @@ pub(all) struct ExperimentalV2ResourceLink {
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ResourceLink::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResourceLink::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResourceLink::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ResumeSessionParams {
   session_id : String
@@ -1872,11 +2370,17 @@ pub(all) struct ExperimentalV2ResumeSessionParams {
   replay_from : ExperimentalV2Open[ExperimentalV2ReplayFromStart]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ResumeSessionParams::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResumeSessionParams::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResumeSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ResumeSessionResult {
   config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ResumeSessionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResumeSessionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ResumeSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2Role {
   RoleUser
@@ -1884,15 +2388,24 @@ pub(all) enum ExperimentalV2Role {
   RoleExtension(tag~ : String)
   RoleFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Role::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Role::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Role::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2RunningState {
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2RunningState::equal(Self, Self) -> Bool
+pub fn ExperimentalV2RunningState::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2RunningState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SelectedPermissionOutcome {
   option_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SelectedPermissionOutcome::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SelectedPermissionOutcome::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SelectedPermissionOutcome::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SessionCapabilities {
   prompt : ExperimentalV2Marker[ExperimentalV2PromptCapabilities]
@@ -1902,6 +2415,9 @@ pub(all) struct ExperimentalV2SessionCapabilities {
   fork : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionCapabilities::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionCapabilities::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SessionConfigOptionKnown {
   config_id : String
@@ -1911,6 +2427,9 @@ pub(all) struct ExperimentalV2SessionConfigOptionKnown {
   payload : ExperimentalV2ConfigPayload
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionConfigOptionKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionConfigOptionKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionConfigOptionKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SessionFold {
   phase : ExperimentalV2TurnPhase
@@ -1929,6 +2448,9 @@ pub(all) struct ExperimentalV2SessionFold {
   usage : ExperimentalV2UsageUpdate?
   preserved : Array[ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionFold::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionFold::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionFold::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SessionInfo {
   session_id : String
@@ -1938,12 +2460,18 @@ pub(all) struct ExperimentalV2SessionInfo {
   updated_at : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionInfo::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionInfo::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SessionInfoUpdate {
   title : ExperimentalV2Patch[String]
   updated_at : ExperimentalV2Patch[String]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionInfoUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionInfoUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionInfoUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2SessionUpdateKnown {
   UpdateUserMessageChunk(ExperimentalV2ContentChunk)
@@ -1963,6 +2491,9 @@ pub(all) enum ExperimentalV2SessionUpdateKnown {
   UpdateSessionInfo(ExperimentalV2SessionInfoUpdate)
   UpdateUsage(ExperimentalV2UsageUpdate)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SessionUpdateKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionUpdateKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SessionUpdateKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SetConfigOptionKnown {
   session_id : String
@@ -1970,17 +2501,26 @@ pub(all) struct ExperimentalV2SetConfigOptionKnown {
   value : ExperimentalV2ConfigValue
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SetConfigOptionKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SetConfigOptionKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SetConfigOptionKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2SetConfigOptionResult {
   config_options : Array[ExperimentalV2Open[ExperimentalV2SessionConfigOptionKnown]]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2SetConfigOptionResult::equal(Self, Self) -> Bool
+pub fn ExperimentalV2SetConfigOptionResult::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2SetConfigOptionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2StateUpdateKnown {
   StateRunning(ExperimentalV2RunningState)
   StateIdle(ExperimentalV2IdleState)
   StateRequiresAction(ExperimentalV2RequiresActionState)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2StateUpdateKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2StateUpdateKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2StateUpdateKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2StopReason {
   StopReasonEndTurn
@@ -1991,6 +2531,9 @@ pub(all) enum ExperimentalV2StopReason {
   StopReasonExtension(tag~ : String)
   StopReasonFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2StopReason::equal(Self, Self) -> Bool
+pub fn ExperimentalV2StopReason::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2StopReason::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2StringFormat {
   FormatEmail
@@ -1999,11 +2542,17 @@ pub(all) enum ExperimentalV2StringFormat {
   FormatDateTime
   FormatOther(String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2StringFormat::equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringFormat::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringFormat::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2StringMultiSelectItems {
   enum_values : Array[String]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2StringMultiSelectItems::equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringMultiSelectItems::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringMultiSelectItems::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2StringProperty {
   title : String?
@@ -2017,28 +2566,43 @@ pub(all) struct ExperimentalV2StringProperty {
   one_of : Array[ExperimentalV2EnumOption]?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2StringProperty::equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringProperty::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2StringProperty::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2Terminal {
   terminal_id : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2Terminal::equal(Self, Self) -> Bool
+pub fn ExperimentalV2Terminal::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2Terminal::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TerminalExitStatus {
   exit_code : UInt?
   signal : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TerminalExitStatus::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalExitStatus::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalExitStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TerminalOutput {
   data : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TerminalOutput::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalOutput::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalOutput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TerminalOutputChunk {
   terminal_id : String
   data : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TerminalOutputChunk::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalOutputChunk::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalOutputChunk::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TerminalUpdate {
   terminal_id : String
@@ -2048,17 +2612,26 @@ pub(all) struct ExperimentalV2TerminalUpdate {
   exit_status : ExperimentalV2Patch[ExperimentalV2TerminalExitStatus]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TerminalUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TerminalUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TextCommandInput {
   hint : String
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TextCommandInput::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextCommandInput::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextCommandInput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TextContent {
   text : String
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TextContent::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextContent::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TextResourceContents {
   text : String
@@ -2066,33 +2639,51 @@ pub(all) struct ExperimentalV2TextResourceContents {
   mime_type : String?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TextResourceContents::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextResourceContents::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TextResourceContents::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2TitledMultiSelectItems {
   any_of : Array[ExperimentalV2EnumOption]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TitledMultiSelectItems::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TitledMultiSelectItems::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TitledMultiSelectItems::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ToolCallContentChunk {
   tool_call_id : String
   content : ExperimentalV2Open[ExperimentalV2ToolCallContentKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallContentChunk::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallContentChunk::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallContentChunk::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ToolCallContentKnown {
   ToolCallContentBlock(ExperimentalV2Content)
   ToolCallContentDiff(ExperimentalV2Diff)
   ToolCallContentTerminal(ExperimentalV2Terminal)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallContentKnown::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallContentKnown::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallContentKnown::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ToolCallLocation {
   path : String
   line : UInt?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallLocation::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallLocation::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallLocation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ToolCallPermissionSubject {
   tool_call : ExperimentalV2ToolCallUpdate
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallPermissionSubject::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallPermissionSubject::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallPermissionSubject::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ToolCallStatus {
   ToolCallStatusPending
@@ -2103,6 +2694,9 @@ pub(all) enum ExperimentalV2ToolCallStatus {
   ToolCallStatusExtension(tag~ : String)
   ToolCallStatusFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallStatus::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallStatus::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2ToolCallUpdate {
   tool_call_id : String
@@ -2115,6 +2709,9 @@ pub(all) struct ExperimentalV2ToolCallUpdate {
   raw_output : ExperimentalV2Patch[Json]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolCallUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolCallUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2ToolKind {
   ToolKindRead
@@ -2130,18 +2727,27 @@ pub(all) enum ExperimentalV2ToolKind {
   ToolKindExtension(tag~ : String)
   ToolKindFuture(raw~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2ToolKind::equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolKind::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2ToolKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2TurnPhase {
   TurnIdle
   TurnRunning
   TurnRequiresAction
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2TurnPhase::equal(Self, Self) -> Bool
+pub fn ExperimentalV2TurnPhase::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2TurnPhase::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2UpdateSessionNotification {
   session_id : String
   update : ExperimentalV2Open[ExperimentalV2SessionUpdateKnown]
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2UpdateSessionNotification::equal(Self, Self) -> Bool
+pub fn ExperimentalV2UpdateSessionNotification::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2UpdateSessionNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ExperimentalV2UsageUpdate {
   used : UInt64
@@ -2149,12 +2755,18 @@ pub(all) struct ExperimentalV2UsageUpdate {
   cost : ExperimentalV2Cost?
   meta : Json?
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2UsageUpdate::equal(Self, Self) -> Bool
+pub fn ExperimentalV2UsageUpdate::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2UsageUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ExperimentalV2WireFrameSplit {
   SplitLoneObject(value~ : Json)
   SplitSingleErrorReply(frame~ : String)
   SplitBatchFrames(frames~ : Array[String], intact~ : Bool)
 } derive(Eq, @debug.Debug)
+pub fn ExperimentalV2WireFrameSplit::equal(Self, Self) -> Bool
+pub fn ExperimentalV2WireFrameSplit::not_equal(Self, Self) -> Bool
+pub fn ExperimentalV2WireFrameSplit::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type ExperimentalV2AgentCloseSessionHandler = async (ExperimentalV2AgentContext, ExperimentalV2CloseSessionParams) -> ExperimentalV2CloseSessionResult

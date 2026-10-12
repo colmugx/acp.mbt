@@ -14,6 +14,12 @@ pub(all) enum ToolKind {
 } derive(Eq, Debug)
 
 ///|
+pub extend ToolKind with Eq::{not_equal, equal}
+
+///|
+pub extend ToolKind with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Lifecycle status of a tool call.
 pub(all) enum ToolCallStatus {
   Pending
@@ -23,12 +29,24 @@ pub(all) enum ToolCallStatus {
 } derive(Eq, Debug)
 
 ///|
+pub extend ToolCallStatus with Eq::{not_equal, equal}
+
+///|
+pub extend ToolCallStatus with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A file location affected by a tool call.
 pub(all) struct ToolCallLocation {
   path : String
   line : ProtocolNullable[UInt64]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ToolCallLocation with Eq::{not_equal, equal}
+
+///|
+pub extend ToolCallLocation with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// A file modification shown in a tool call.
@@ -40,11 +58,23 @@ pub(all) struct Diff {
 } derive(Eq, Debug)
 
 ///|
+pub extend Diff with Eq::{not_equal, equal}
+
+///|
+pub extend Diff with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A terminal created by the client and referenced by a tool call.
 pub(all) struct Terminal {
   terminal_id : TerminalId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend Terminal with Eq::{not_equal, equal}
+
+///|
+pub extend Terminal with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Content produced by a tool call.
@@ -53,6 +83,12 @@ pub(all) enum ToolCallContent {
   Diff(Diff)
   Terminal(Terminal)
 } derive(Eq, Debug)
+
+///|
+pub extend ToolCallContent with Eq::{not_equal, equal}
+
+///|
+pub extend ToolCallContent with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Initial description of a tool call.
@@ -69,6 +105,12 @@ pub(all) struct ToolCall {
 } derive(Eq, Debug)
 
 ///|
+pub extend ToolCall with Eq::{not_equal, equal}
+
+///|
+pub extend ToolCall with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Partial replacement update for an existing tool call.
 pub(all) struct ToolCallUpdate {
   tool_call_id : ToolCallId
@@ -83,6 +125,12 @@ pub(all) struct ToolCallUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend ToolCallUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ToolCallUpdate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Permission option kinds presented to a user.
 pub(all) enum PermissionOptionKind {
   AllowOnce
@@ -90,6 +138,12 @@ pub(all) enum PermissionOptionKind {
   RejectOnce
   RejectAlways
 } derive(Eq, Debug)
+
+///|
+pub extend PermissionOptionKind with Eq::{not_equal, equal}
+
+///|
+pub extend PermissionOptionKind with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One selectable permission option.
@@ -101,6 +155,12 @@ pub(all) struct PermissionOption {
 } derive(Eq, Debug)
 
 ///|
+pub extend PermissionOption with Eq::{not_equal, equal}
+
+///|
+pub extend PermissionOption with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The selected permission outcome payload.
 pub(all) struct SelectedPermissionOutcome {
   option_id : PermissionOptionId
@@ -108,11 +168,27 @@ pub(all) struct SelectedPermissionOutcome {
 } derive(Eq, Debug)
 
 ///|
+pub extend SelectedPermissionOutcome with Eq::{not_equal, equal}
+
+///|
+pub extend SelectedPermissionOutcome with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The two stable permission outcomes.
 pub(all) enum RequestPermissionOutcome {
   Cancelled
   Selected(SelectedPermissionOutcome)
 } derive(Eq, Debug)
+
+///|
+pub extend RequestPermissionOutcome with Eq::{not_equal, equal}
+
+///|
+pub extend RequestPermissionOutcome with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Agent request for client permission to execute a tool call.
@@ -124,11 +200,27 @@ pub(all) struct RequestPermissionRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend RequestPermissionRequest with Eq::{not_equal, equal}
+
+///|
+pub extend RequestPermissionRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Client response to a permission request.
 pub(all) struct RequestPermissionResponse {
   outcome : RequestPermissionOutcome
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend RequestPermissionResponse with Eq::{not_equal, equal}
+
+///|
+pub extend RequestPermissionResponse with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn encode_tool_kind(value : ToolKind) -> Json {

@@ -8,6 +8,12 @@ pub(all) enum AgentAdapterCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentAdapterCommand with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Typed adapter output.  Responses and notifications are wire values that
 /// the owner loop serializes; commands are interpreted by the native runtime.
 pub(all) enum AgentAdapterOutput {
@@ -15,6 +21,12 @@ pub(all) enum AgentAdapterOutput {
   Notification(JsonRpcNotification)
   Command(AgentAdapterCommand)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAdapterOutput with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterOutput with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Authentication/lifecycle reservations are immutable protocol state.  A
@@ -27,12 +39,24 @@ pub(all) enum AgentAdapterReservation {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentAdapterReservation with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterReservation with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// State owned by the connection/reducer loop.  Handler tasks receive a copy
 /// of this value only through an admission result; they never mutate it.
 pub(all) struct AgentAdapterState {
   protocol : AgentProtocolState
   reservation : AgentAdapterReservation
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAdapterState with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterState with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn agent_adapter_state_new(
@@ -63,6 +87,12 @@ pub(all) struct AgentAdapterStep {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentAdapterStep with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterStep with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Admission is synchronous and owner-loop controlled.  Initialize and
 /// protocol errors are immediate; only typed invocations cross the async task
 /// boundary.
@@ -80,6 +110,12 @@ pub(all) suberror AgentAdapterError {
   LateCompletion(request_id~ : RequestId)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAdapterError with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAdapterError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn agent_adapter_response_id(id : RequestId) -> JsonRpcId {

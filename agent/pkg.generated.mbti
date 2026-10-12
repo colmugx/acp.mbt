@@ -55,6 +55,9 @@ pub(all) suberror AgentAdapterError {
   LateCompletion(request_id~ : @jsonrpc.RequestId)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterError::equal(Self, Self) -> Bool
+pub fn AgentAdapterError::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror AgentContextError {
   AgentContextUnavailable(method_name~ : String)
@@ -62,6 +65,9 @@ pub(all) suberror AgentContextError {
   AgentContextBrokerFailure(method_name~ : String)
   AgentContextReplyMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentContextError::equal(Self, Self) -> Bool
+pub fn AgentContextError::not_equal(Self, Self) -> Bool
+pub fn AgentContextError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum AgentAdapterAdmission {
@@ -74,6 +80,9 @@ pub(all) enum AgentAdapterCommand {
   TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
   CloseConnection(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterCommand::equal(Self, Self) -> Bool
+pub fn AgentAdapterCommand::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentAdapterCompletion {
   AuthenticateCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.AuthenticateResult, @error.HandlerError])
@@ -90,6 +99,9 @@ pub(all) enum AgentAdapterCompletion {
   SessionPromptCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@session.PromptResult, @error.HandlerError])
   SessionCancelCompleted(result~ : Result[Unit, @error.HandlerError])
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterCompletion::equal(Self, Self) -> Bool
+pub fn AgentAdapterCompletion::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterCompletion::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentAdapterInvocation {
   AuthenticateInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.AuthenticateParams)
@@ -106,30 +118,45 @@ pub(all) enum AgentAdapterInvocation {
   SessionPromptInvocation(id~ : @jsonrpc.RequestId, params~ : @session.PromptParams)
   SessionCancelInvocation(params~ : @session.CancelParams)
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterInvocation::equal(Self, Self) -> Bool
+pub fn AgentAdapterInvocation::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterInvocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentAdapterOutput {
   Response(@jsonrpc.JsonRpcResponse)
   Notification(@jsonrpc.JsonRpcNotification)
   Command(AgentAdapterCommand)
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterOutput::equal(Self, Self) -> Bool
+pub fn AgentAdapterOutput::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterOutput::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentAdapterReservation {
   Idle
   AuthenticatePending(@jsonrpc.RequestId)
   LogoutPending(@jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterReservation::equal(Self, Self) -> Bool
+pub fn AgentAdapterReservation::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterReservation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentAdapterState {
   protocol : @colmugx/acp/agent/protocol.AgentProtocolState
   reservation : AgentAdapterReservation
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterState::equal(Self, Self) -> Bool
+pub fn AgentAdapterState::not_equal(Self, Self) -> Bool
 pub fn AgentAdapterState::protocol(Self) -> @colmugx/acp/agent/protocol.AgentProtocolState
 pub fn AgentAdapterState::reservation(Self) -> AgentAdapterReservation
+pub fn AgentAdapterState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentAdapterStep {
   state : AgentAdapterState
   outputs : Array[AgentAdapterOutput]
 } derive(Eq, @debug.Debug)
+pub fn AgentAdapterStep::equal(Self, Self) -> Bool
+pub fn AgentAdapterStep::not_equal(Self, Self) -> Bool
+pub fn AgentAdapterStep::to_repr(Self) -> @debug.Repr
 
 pub struct AgentAuthService {
   methods : Array[@colmugx/acp/protocol.AuthMethod]
@@ -190,6 +217,9 @@ pub(all) enum AgentOutboundReply {
   AgentReplyTerminalRelease(@colmugx/acp/protocol.TerminalReleaseResult)
   AgentReplyElicitationCreate(@colmugx/acp/protocol.ElicitationCreateResult)
 } derive(Eq, @debug.Debug)
+pub fn AgentOutboundReply::equal(Self, Self) -> Bool
+pub fn AgentOutboundReply::not_equal(Self, Self) -> Bool
+pub fn AgentOutboundReply::to_repr(Self) -> @debug.Repr
 
 pub struct AgentSessionService {
   new_handler : async (AgentContext, @session.NewSessionParams) -> @session.NewSessionResult

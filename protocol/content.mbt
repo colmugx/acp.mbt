@@ -8,12 +8,24 @@ pub(all) struct Annotations {
 } derive(Eq, Debug)
 
 ///|
+pub extend Annotations with Eq::{not_equal, equal}
+
+///|
+pub extend Annotations with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Text provided to or from an LLM.
 pub(all) struct TextContent {
   annotations : ProtocolNullable[Annotations]
   text : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TextContent with Eq::{not_equal, equal}
+
+///|
+pub extend TextContent with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// An image provided to or from an LLM.
@@ -26,6 +38,12 @@ pub(all) struct ImageContent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ImageContent with Eq::{not_equal, equal}
+
+///|
+pub extend ImageContent with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Audio provided to or from an LLM.
 pub(all) struct AudioContent {
   annotations : ProtocolNullable[Annotations]
@@ -33,6 +51,12 @@ pub(all) struct AudioContent {
   mime_type : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend AudioContent with Eq::{not_equal, equal}
+
+///|
+pub extend AudioContent with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// A resource that the server can read.
@@ -48,6 +72,12 @@ pub(all) struct ResourceLink {
 } derive(Eq, Debug)
 
 ///|
+pub extend ResourceLink with Eq::{not_equal, equal}
+
+///|
+pub extend ResourceLink with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Text-based resource contents embedded directly in a message.
 pub(all) struct TextResourceContents {
   mime_type : ProtocolNullable[String]
@@ -55,6 +85,12 @@ pub(all) struct TextResourceContents {
   uri : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TextResourceContents with Eq::{not_equal, equal}
+
+///|
+pub extend TextResourceContents with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Binary resource contents embedded directly in a message.
@@ -66,11 +102,25 @@ pub(all) struct BlobResourceContents {
 } derive(Eq, Debug)
 
 ///|
+pub extend BlobResourceContents with Eq::{not_equal, equal}
+
+///|
+pub extend BlobResourceContents with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The two resource payloads accepted by an embedded resource.
 pub(all) enum EmbeddedResourceResource {
   Text(TextResourceContents)
   Blob(BlobResourceContents)
 } derive(Eq, Debug)
+
+///|
+pub extend EmbeddedResourceResource with Eq::{not_equal, equal}
+
+///|
+pub extend EmbeddedResourceResource with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Complete resource contents embedded directly in a message.
@@ -79,6 +129,12 @@ pub(all) struct EmbeddedResource {
   resource : EmbeddedResourceResource
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend EmbeddedResource with Eq::{not_equal, equal}
+
+///|
+pub extend EmbeddedResource with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The five stable ACP content block variants.
@@ -91,11 +147,23 @@ pub(all) enum ContentBlock {
 } derive(Eq, Debug)
 
 ///|
+pub extend ContentBlock with Eq::{not_equal, equal}
+
+///|
+pub extend ContentBlock with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A standard content wrapper.
 pub(all) struct Content {
   content : ContentBlock
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend Content with Eq::{not_equal, equal}
+
+///|
+pub extend Content with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One streamed content item.
@@ -104,6 +172,12 @@ pub(all) struct ContentChunk {
   message_id : ProtocolNullable[MessageId]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ContentChunk with Eq::{not_equal, equal}
+
+///|
+pub extend ContentChunk with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn decode_role_array(

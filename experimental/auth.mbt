@@ -9,6 +9,14 @@ pub(all) struct ExperimentalV2AuthMethodAgent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AuthMethodAgent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AuthMethodAgent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One advertised authentication method.  The schema has an open fallback:
 /// `_`-prefixed and unknown types stay as `Extension`/`Future` raw payloads.
 pub type ExperimentalV2AuthMethod = ExperimentalV2Open[
@@ -97,6 +105,14 @@ pub(all) struct ExperimentalV2LoginParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2LoginParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2LoginParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_login_params(
   value : Json,
   path~ : String = "auth/login",
@@ -131,6 +147,14 @@ pub(all) struct ExperimentalV2LoginResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2LoginResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2LoginResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_login_result(
   value : Json,
   path~ : String = "auth/login",
@@ -156,6 +180,14 @@ pub(all) struct ExperimentalV2LogoutParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2LogoutParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2LogoutParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_logout_params(
   value : Json,
   path~ : String = "auth/logout",
@@ -179,6 +211,14 @@ pub fn experimental_v2_encode_logout_params(
 pub(all) struct ExperimentalV2LogoutResult {
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2LogoutResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2LogoutResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_logout_result(

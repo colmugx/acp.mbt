@@ -11,6 +11,12 @@ pub(all) enum ExperimentalV2Open[T] {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Open with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Open with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Decode one open-union value.  `tag_key` names the discriminator field.
 /// A known tag decodes through `decode_known` (which must raise on illegal
 /// payloads); a `_`-prefixed unknown tag becomes `Extension`; any other

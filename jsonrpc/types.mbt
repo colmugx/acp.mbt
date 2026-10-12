@@ -15,6 +15,12 @@ pub(all) enum JsonRpcId {
 } derive(Eq, Debug)
 
 ///|
+pub extend JsonRpcId with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcId with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A request identifier that can be correlated to a request.
 ///
 /// ACP's pinned v1 schema permits JSON null as a request identifier.  It is a
@@ -25,6 +31,12 @@ pub(all) enum RequestId {
   Number(Int64)
   Null
 } derive(Eq, Debug)
+
+///|
+pub extend RequestId with Eq::{not_equal, equal}
+
+///|
+pub extend RequestId with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The conventional name for a JSON-RPC response identifier.
@@ -39,11 +51,23 @@ pub struct JsonRpcRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend JsonRpcRequest with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcRequest with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A JSON-RPC notification envelope.
 pub struct JsonRpcNotification {
   method_name : String
   params : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend JsonRpcNotification with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcNotification with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// A successful JSON-RPC response envelope.
@@ -53,11 +77,23 @@ pub struct JsonRpcSuccess {
 } derive(Eq, Debug)
 
 ///|
+pub extend JsonRpcSuccess with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcSuccess with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// An error JSON-RPC response envelope.
 pub struct JsonRpcFailure {
   id : JsonRpcId
   error : JsonRpcError
 } derive(Eq, Debug)
+
+///|
+pub extend JsonRpcFailure with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcFailure with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The two mutually exclusive JSON-RPC response forms.
@@ -67,12 +103,24 @@ pub(all) enum JsonRpcResponse {
 } derive(Eq, Debug)
 
 ///|
+pub extend JsonRpcResponse with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcResponse with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A decoded JSON-RPC message.
 pub(all) enum JsonRpcMessage {
   Request(JsonRpcRequest)
   Notification(JsonRpcNotification)
   Response(JsonRpcResponse)
 } derive(Eq, Debug)
+
+///|
+pub extend JsonRpcMessage with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcMessage with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Standard JSON-RPC and ACP error codes.
@@ -92,12 +140,24 @@ pub(all) enum JsonRpcErrorCode {
 } derive(Eq, Debug)
 
 ///|
+pub extend JsonRpcErrorCode with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcErrorCode with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The structured error object carried by an error response.
 pub struct JsonRpcError {
   code : JsonRpcErrorCode
   message : String
   data : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend JsonRpcError with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Errors raised while parsing or validating a JSON-RPC envelope.
@@ -117,6 +177,12 @@ pub(all) suberror JsonRpcCodecError {
   InvalidField(path~ : String, reason~ : String)
   InvalidInteger(path~ : String, reason~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend JsonRpcCodecError with Eq::{not_equal, equal}
+
+///|
+pub extend JsonRpcCodecError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Construct a request envelope.  `params` is omitted when it is `None`.

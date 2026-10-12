@@ -24,6 +24,9 @@ pub(all) suberror AgentProtocolError {
   NotAuthenticated
   InvalidEvent(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolError::equal(Self, Self) -> Bool
+pub fn AgentProtocolError::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum AgentAuthenticationState {
@@ -31,6 +34,9 @@ pub(all) enum AgentAuthenticationState {
   AwaitingAuthentication
   Authenticated
 } derive(Eq, @debug.Debug)
+pub fn AgentAuthenticationState::equal(Self, Self) -> Bool
+pub fn AgentAuthenticationState::not_equal(Self, Self) -> Bool
+pub fn AgentAuthenticationState::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentProtocolCommand {
   SendInitialize(result~ : @colmugx/acp/protocol.InitializeResult, accepted~ : Bool)
@@ -41,12 +47,18 @@ pub(all) enum AgentProtocolCommand {
   CancelSession(session_id~ : String)
   CancelRequest(request_id~ : @jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolCommand::equal(Self, Self) -> Bool
+pub fn AgentProtocolCommand::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentProtocolConfig {
   agent_capabilities : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.AgentCapabilities]
   auth_methods : @colmugx/acp/protocol.ProtocolNullable[Array[@colmugx/acp/protocol.AuthMethod]]
   agent_info : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.Implementation]
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolConfig::equal(Self, Self) -> Bool
+pub fn AgentProtocolConfig::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolConfig::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentProtocolEvent {
   Request(@message.AgentRequest)
@@ -54,11 +66,17 @@ pub(all) enum AgentProtocolEvent {
   AuthenticationSucceeded(method_id~ : String)
   LoggedOut
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolEvent::equal(Self, Self) -> Bool
+pub fn AgentProtocolEvent::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentProtocolPhase {
   AwaitingInitialize
   Initialized
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolPhase::equal(Self, Self) -> Bool
+pub fn AgentProtocolPhase::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolPhase::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentProtocolState {
   phase : AgentProtocolPhase
@@ -68,11 +86,17 @@ pub(all) struct AgentProtocolState {
   authentication : AgentAuthenticationState
   config : AgentProtocolConfig
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolState::equal(Self, Self) -> Bool
+pub fn AgentProtocolState::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentProtocolStep {
   state : AgentProtocolState
   commands : Array[AgentProtocolCommand]
 } derive(Eq, @debug.Debug)
+pub fn AgentProtocolStep::equal(Self, Self) -> Bool
+pub fn AgentProtocolStep::not_equal(Self, Self) -> Bool
+pub fn AgentProtocolStep::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

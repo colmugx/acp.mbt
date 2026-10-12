@@ -6,6 +6,14 @@ pub(all) enum ExperimentalV2AgentOutboundRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentOutboundRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentOutboundRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn ExperimentalV2AgentOutboundRequest::method_name(
   self : ExperimentalV2AgentOutboundRequest,
 ) -> String {
@@ -23,11 +31,27 @@ pub(all) enum ExperimentalV2AgentOutboundReply {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentOutboundReply with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentOutboundReply with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The typed Agent-to-Client notifications a v2 Agent context can issue.
 pub(all) enum ExperimentalV2AgentOutboundNotification {
   SessionUpdate(ExperimentalV2UpdateSessionNotification)
   ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentOutboundNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentOutboundNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn ExperimentalV2AgentOutboundNotification::method_name(
@@ -49,6 +73,14 @@ pub(all) suberror ExperimentalV2AgentContextError {
   ContextBrokerFailure(method_name~ : String)
   ContextReplyMismatch(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentContextError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentContextError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// The request-side composition seam: a one-shot typed broker, not a queue or

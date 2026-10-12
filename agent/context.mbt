@@ -16,6 +16,12 @@ pub(all) enum AgentOutboundReply {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentOutboundReply with Eq::{not_equal, equal}
+
+///|
+pub extend AgentOutboundReply with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Failures crossing an Agent-to-Client context port.  Runtime adapters may
 /// construct these values from negotiated capability gates or transport
 /// cancellation, while application code never handles untyped JSON here.
@@ -25,6 +31,12 @@ pub(all) suberror AgentContextError {
   AgentContextBrokerFailure(method_name~ : String)
   AgentContextReplyMismatch(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentContextError with Eq::{not_equal, equal}
+
+///|
+pub extend AgentContextError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The request-side composition seam.  It is a one-shot broker, not a queue

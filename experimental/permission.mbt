@@ -11,6 +11,14 @@ pub(all) enum ExperimentalV2PermissionOptionKind {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PermissionOptionKind with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PermissionOptionKind with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_permission_option_kind(
   value : Json,
   path~ : String = "kind",
@@ -52,6 +60,14 @@ pub(all) struct ExperimentalV2PermissionOption {
   kind : ExperimentalV2PermissionOptionKind
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PermissionOption with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PermissionOption with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_permission_option(
@@ -103,6 +119,14 @@ pub(all) struct ExperimentalV2SelectedPermissionOutcome {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2SelectedPermissionOutcome with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SelectedPermissionOutcome with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_selected_permission_outcome(
   value : Json,
   path~ : String = "outcome",
@@ -140,6 +164,14 @@ pub(all) enum ExperimentalV2PermissionOutcomeKnown {
   OutcomeCancelled
   OutcomeSelected(ExperimentalV2SelectedPermissionOutcome)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PermissionOutcomeKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PermissionOutcomeKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// The outcome of a permission request.  The schema has an open fallback:
@@ -204,6 +236,14 @@ pub(all) struct ExperimentalV2ToolCallPermissionSubject {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ToolCallPermissionSubject with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallPermissionSubject with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_tool_call_permission_subject(
   value : Json,
   path~ : String = "subject",
@@ -235,6 +275,14 @@ pub(all) struct ExperimentalV2CommandPermissionSubject {
   terminal_id : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2CommandPermissionSubject with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2CommandPermissionSubject with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_command_permission_subject(
@@ -311,6 +359,14 @@ pub(all) enum ExperimentalV2PermissionSubjectKnown {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PermissionSubjectKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PermissionSubjectKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The operation requiring permission.  The schema has an open fallback:
 /// `_`-prefixed subject types are implementation extensions and other unknown
 /// types are future values; both keep their raw object.
@@ -378,6 +434,14 @@ pub(all) struct ExperimentalV2RequestPermissionRequest {
   options : Array[ExperimentalV2PermissionOption]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2RequestPermissionRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2RequestPermissionRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_request_permission_request(
@@ -460,6 +524,14 @@ pub(all) struct ExperimentalV2RequestPermissionResponse {
   outcome : ExperimentalV2PermissionOutcome
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2RequestPermissionResponse with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2RequestPermissionResponse with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_request_permission_response(

@@ -12,6 +12,14 @@ pub(all) suberror ExperimentalV2ClientHandlerError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientHandlerError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientHandlerError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Normalize one raw handler failure once at the v2 Client endpoint boundary:
 /// cancellation and typed failures keep their shape (the method name is added
 /// as context), anything else names itself as an application failure.
@@ -133,6 +141,14 @@ pub(all) suberror ExperimentalV2ClientCompositionError {
   /// completion.
   ElicitationUrlRequiresComplete(reason~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientCompositionError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientCompositionError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Compose the optional v2 Client elicitation service.  At least one handler

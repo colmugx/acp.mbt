@@ -20,6 +20,9 @@ pub(all) suberror ClientProtocolError {
   AlreadyReady
   CapabilityDenied(method_name~ : String, capability~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolError::equal(Self, Self) -> Bool
+pub fn ClientProtocolError::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum ClientProtocolCommand {
@@ -27,27 +30,42 @@ pub(all) enum ClientProtocolCommand {
   DispatchNotification(@message.ClientNotification)
   CancelRequest(request_id~ : @jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolCommand::equal(Self, Self) -> Bool
+pub fn ClientProtocolCommand::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientProtocolEvent {
   Ready
   Request(@message.ClientRequest)
   Notification(@message.ClientNotification)
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolEvent::equal(Self, Self) -> Bool
+pub fn ClientProtocolEvent::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientProtocolPhase {
   AwaitingReady
   Ready
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolPhase::equal(Self, Self) -> Bool
+pub fn ClientProtocolPhase::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolPhase::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientProtocolState {
   phase : ClientProtocolPhase
   capabilities : @colmugx/acp/protocol.ProtocolNullable[@colmugx/acp/protocol.ClientCapabilities]
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolState::equal(Self, Self) -> Bool
+pub fn ClientProtocolState::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientProtocolStep {
   state : ClientProtocolState
   commands : Array[ClientProtocolCommand]
 } derive(Eq, @debug.Debug)
+pub fn ClientProtocolStep::equal(Self, Self) -> Bool
+pub fn ClientProtocolStep::not_equal(Self, Self) -> Bool
+pub fn ClientProtocolStep::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

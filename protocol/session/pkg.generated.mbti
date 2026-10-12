@@ -110,24 +110,39 @@ pub(all) struct CancelParams {
   session_id : String
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn CancelParams::equal(Self, Self) -> Bool
+pub fn CancelParams::not_equal(Self, Self) -> Bool
+pub fn CancelParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CloseSessionParams {
   session_id : String
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn CloseSessionParams::equal(Self, Self) -> Bool
+pub fn CloseSessionParams::not_equal(Self, Self) -> Bool
+pub fn CloseSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CloseSessionResult {
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn CloseSessionResult::equal(Self, Self) -> Bool
+pub fn CloseSessionResult::not_equal(Self, Self) -> Bool
+pub fn CloseSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DeleteSessionParams {
   session_id : String
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn DeleteSessionParams::equal(Self, Self) -> Bool
+pub fn DeleteSessionParams::not_equal(Self, Self) -> Bool
+pub fn DeleteSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DeleteSessionResult {
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn DeleteSessionResult::equal(Self, Self) -> Bool
+pub fn DeleteSessionResult::not_equal(Self, Self) -> Bool
+pub fn DeleteSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ForkSessionParams {
   cwd : String
@@ -136,6 +151,9 @@ pub(all) struct ForkSessionParams {
   mcp_servers : @protocol.ProtocolNullable[Array[@protocol.McpServer]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ForkSessionParams::equal(Self, Self) -> Bool
+pub fn ForkSessionParams::not_equal(Self, Self) -> Bool
+pub fn ForkSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ForkSessionResult {
   session_id : String
@@ -143,18 +161,27 @@ pub(all) struct ForkSessionResult {
   config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ForkSessionResult::equal(Self, Self) -> Bool
+pub fn ForkSessionResult::not_equal(Self, Self) -> Bool
+pub fn ForkSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ListSessionsParams {
   cwd : @protocol.ProtocolNullable[String]
   cursor : @protocol.ProtocolNullable[String]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ListSessionsParams::equal(Self, Self) -> Bool
+pub fn ListSessionsParams::not_equal(Self, Self) -> Bool
+pub fn ListSessionsParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ListSessionsResult {
   sessions : Array[@protocol.SessionInfo]
   next_cursor : @protocol.ProtocolNullable[String]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ListSessionsResult::equal(Self, Self) -> Bool
+pub fn ListSessionsResult::not_equal(Self, Self) -> Bool
+pub fn ListSessionsResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LoadSessionParams {
   mcp_servers : Array[@protocol.McpServer]
@@ -163,12 +190,18 @@ pub(all) struct LoadSessionParams {
   session_id : String
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn LoadSessionParams::equal(Self, Self) -> Bool
+pub fn LoadSessionParams::not_equal(Self, Self) -> Bool
+pub fn LoadSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LoadSessionResult {
   modes : @protocol.ProtocolNullable[SessionModeState]
   config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn LoadSessionResult::equal(Self, Self) -> Bool
+pub fn LoadSessionResult::not_equal(Self, Self) -> Bool
+pub fn LoadSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NewSessionParams {
   cwd : String
@@ -176,6 +209,9 @@ pub(all) struct NewSessionParams {
   mcp_servers : Array[@protocol.McpServer]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn NewSessionParams::equal(Self, Self) -> Bool
+pub fn NewSessionParams::not_equal(Self, Self) -> Bool
+pub fn NewSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NewSessionResult {
   session_id : String
@@ -183,17 +219,26 @@ pub(all) struct NewSessionResult {
   config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn NewSessionResult::equal(Self, Self) -> Bool
+pub fn NewSessionResult::not_equal(Self, Self) -> Bool
+pub fn NewSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PromptParams {
   session_id : String
   prompt : Array[@protocol.ContentBlock]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn PromptParams::equal(Self, Self) -> Bool
+pub fn PromptParams::not_equal(Self, Self) -> Bool
+pub fn PromptParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PromptResult {
   stop_reason : StopReason
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn PromptResult::equal(Self, Self) -> Bool
+pub fn PromptResult::not_equal(Self, Self) -> Bool
+pub fn PromptResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ResumeSessionParams {
   session_id : String
@@ -202,17 +247,26 @@ pub(all) struct ResumeSessionParams {
   mcp_servers : @protocol.ProtocolNullable[Array[@protocol.McpServer]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ResumeSessionParams::equal(Self, Self) -> Bool
+pub fn ResumeSessionParams::not_equal(Self, Self) -> Bool
+pub fn ResumeSessionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ResumeSessionResult {
   modes : @protocol.ProtocolNullable[SessionModeState]
   config_options : @protocol.ProtocolNullable[Array[@protocol.SessionConfigOption]]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ResumeSessionResult::equal(Self, Self) -> Bool
+pub fn ResumeSessionResult::not_equal(Self, Self) -> Bool
+pub fn ResumeSessionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SessionConfigValue {
   Boolean(Bool)
   ValueId(String)
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigValue::equal(Self, Self) -> Bool
+pub fn SessionConfigValue::not_equal(Self, Self) -> Bool
+pub fn SessionConfigValue::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionMode {
   id : String
@@ -220,18 +274,27 @@ pub(all) struct SessionMode {
   description : @protocol.ProtocolNullable[String]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionMode::equal(Self, Self) -> Bool
+pub fn SessionMode::not_equal(Self, Self) -> Bool
+pub fn SessionMode::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionModeState {
   current_mode_id : String
   available_modes : Array[SessionMode]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionModeState::equal(Self, Self) -> Bool
+pub fn SessionModeState::not_equal(Self, Self) -> Bool
+pub fn SessionModeState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionUpdateParams {
   session_id : String
   update : @protocol.SessionUpdate
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionUpdateParams::equal(Self, Self) -> Bool
+pub fn SessionUpdateParams::not_equal(Self, Self) -> Bool
+pub fn SessionUpdateParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SetSessionConfigOptionParams {
   session_id : String
@@ -239,21 +302,33 @@ pub(all) struct SetSessionConfigOptionParams {
   value : SessionConfigValue
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SetSessionConfigOptionParams::equal(Self, Self) -> Bool
+pub fn SetSessionConfigOptionParams::not_equal(Self, Self) -> Bool
+pub fn SetSessionConfigOptionParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SetSessionConfigOptionResult {
   config_options : Array[@protocol.SessionConfigOption]
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SetSessionConfigOptionResult::equal(Self, Self) -> Bool
+pub fn SetSessionConfigOptionResult::not_equal(Self, Self) -> Bool
+pub fn SetSessionConfigOptionResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SetSessionModeParams {
   session_id : String
   mode_id : String
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SetSessionModeParams::equal(Self, Self) -> Bool
+pub fn SetSessionModeParams::not_equal(Self, Self) -> Bool
+pub fn SetSessionModeParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SetSessionModeResult {
   meta : @protocol.ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SetSessionModeResult::equal(Self, Self) -> Bool
+pub fn SetSessionModeResult::not_equal(Self, Self) -> Bool
+pub fn SetSessionModeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum StopReason {
   EndTurn
@@ -262,6 +337,9 @@ pub(all) enum StopReason {
   Refusal
   Cancelled
 } derive(Eq, @debug.Debug)
+pub fn StopReason::equal(Self, Self) -> Bool
+pub fn StopReason::not_equal(Self, Self) -> Bool
+pub fn StopReason::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

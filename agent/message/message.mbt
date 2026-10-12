@@ -17,11 +17,23 @@ pub(all) enum AgentRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentRequest with Eq::{not_equal, equal}
+
+///|
+pub extend AgentRequest with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Stable v1 notifications accepted by an Agent.
 pub(all) enum AgentNotification {
   SessionCancel(@session_protocol.CancelParams)
   CancelRequest(@jsonrpc.RequestId)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentNotification with Eq::{not_equal, equal}
+
+///|
+pub extend AgentNotification with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Errors raised while mapping a JSON-RPC method and params value to the
@@ -32,6 +44,12 @@ pub(all) suberror AgentMessageError {
   WrongDirection(method_name~ : String)
   WrongKind(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentMessageError with Eq::{not_equal, equal}
+
+///|
+pub extend AgentMessageError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn AgentRequest::method_name(self : AgentRequest) -> String {

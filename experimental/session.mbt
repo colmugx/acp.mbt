@@ -29,6 +29,14 @@ pub(all) struct ExperimentalV2ReplayFromStart {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ReplayFromStart with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ReplayFromStart with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Inclusive replay cursor of `session/resume`.  The schema has an open
 /// fallback: unknown cursors stay as `Extension`/`Future` raw payloads so a
 /// receiver can reject rather than guess.
@@ -75,6 +83,14 @@ pub(all) struct ExperimentalV2NewSessionParams {
   mcp_servers : Array[ExperimentalV2McpServer]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2NewSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2NewSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_new_session_params(
@@ -145,6 +161,14 @@ pub(all) struct ExperimentalV2NewSessionResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2NewSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2NewSessionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_new_session_result(
   value : Json,
   path~ : String = "session/new",
@@ -200,6 +224,14 @@ pub(all) struct ExperimentalV2ResumeSessionParams {
   replay_from : ExperimentalV2ReplayFrom?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ResumeSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ResumeSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_resume_session_params(
@@ -292,6 +324,14 @@ pub(all) struct ExperimentalV2ResumeSessionResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ResumeSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ResumeSessionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_resume_session_result(
   value : Json,
   path~ : String = "session/resume",
@@ -340,6 +380,14 @@ pub(all) struct ExperimentalV2ForkSessionParams {
   mcp_servers : Array[ExperimentalV2McpServer]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ForkSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ForkSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Upstream unstable (RFD session-fork, Draft).
@@ -423,6 +471,14 @@ pub(all) struct ExperimentalV2ForkSessionResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ForkSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ForkSessionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Upstream unstable (RFD session-fork, Draft).
 pub fn experimental_v2_decode_fork_session_result(
   value : Json,
@@ -478,6 +534,14 @@ pub(all) struct ExperimentalV2SessionInfo {
   updated_at : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SessionInfo with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionInfo with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_session_info(
@@ -562,6 +626,14 @@ pub(all) struct ExperimentalV2ListSessionsParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ListSessionsParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ListSessionsParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_list_sessions_params(
   value : Json,
   path~ : String = "session/list",
@@ -615,6 +687,14 @@ pub(all) struct ExperimentalV2ListSessionsResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ListSessionsResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ListSessionsResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_list_sessions_result(
   value : Json,
   path~ : String = "session/list",
@@ -666,6 +746,14 @@ pub(all) struct ExperimentalV2DeleteSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DeleteSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DeleteSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_delete_session_params(
   value : Json,
   path~ : String = "session/delete",
@@ -700,6 +788,14 @@ pub(all) struct ExperimentalV2DeleteSessionResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DeleteSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DeleteSessionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_delete_session_result(
   value : Json,
   path~ : String = "session/delete",
@@ -725,6 +821,14 @@ pub(all) struct ExperimentalV2CloseSessionParams {
   session_id : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2CloseSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2CloseSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_close_session_params(
@@ -763,6 +867,14 @@ pub(all) struct ExperimentalV2PromptParams {
   prompt : Array[ExperimentalV2ContentBlock]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PromptParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PromptParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_prompt_params(
@@ -815,6 +927,14 @@ pub(all) struct ExperimentalV2CancelSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2CancelSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2CancelSessionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_cancel_session_params(
   value : Json,
   path~ : String = "session/cancel",
@@ -851,6 +971,14 @@ pub(all) struct ExperimentalV2PromptResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PromptResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PromptResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_prompt_result(
   value : Json,
   path~ : String = "session/prompt",
@@ -874,6 +1002,14 @@ pub fn experimental_v2_encode_prompt_result(
 pub(all) struct ExperimentalV2CloseSessionResult {
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2CloseSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2CloseSessionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_close_session_result(

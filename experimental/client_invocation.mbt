@@ -20,6 +20,14 @@ pub(all) enum ExperimentalV2ClientInvocation {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientInvocation with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientInvocation with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The typed result of one executed invocation.  No wire response is produced
 /// here; the owner loop serializes this completion through
 /// `experimental_v2_client_adapter_complete`.
@@ -45,6 +53,14 @@ pub(all) enum ExperimentalV2ClientCompletion {
     result~ : Result[Unit, ExperimentalV2ClientHandlerError]
   )
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientCompletion with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientCompletion with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// The stable wire method name of one typed invocation.  Runtime bridges use

@@ -7,6 +7,12 @@ pub(all) struct TerminalEnvVariable {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalEnvVariable with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalEnvVariable with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Parameters for `terminal/create`.
 pub(all) struct TerminalCreateParams {
   session_id : SessionId
@@ -19,11 +25,23 @@ pub(all) struct TerminalCreateParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalCreateParams with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalCreateParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `terminal/create`.
 pub(all) struct TerminalCreateResult {
   terminal_id : TerminalId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalCreateResult with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalCreateResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `terminal/output`.
@@ -32,6 +50,12 @@ pub(all) struct TerminalOutputParams {
   terminal_id : TerminalId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalOutputParams with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalOutputParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Exit status shared by terminal output and runtime-independent terminal
@@ -45,6 +69,12 @@ pub(all) struct TerminalExitStatus {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalExitStatus with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalExitStatus with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `terminal/output`.
 pub(all) struct TerminalOutputResult {
   output : String
@@ -52,6 +82,12 @@ pub(all) struct TerminalOutputResult {
   exit_status : ProtocolNullable[TerminalExitStatus]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalOutputResult with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalOutputResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `terminal/wait_for_exit`.
@@ -62,12 +98,28 @@ pub(all) struct TerminalWaitForExitParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalWaitForExitParams with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalWaitForExitParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Result of `terminal/wait_for_exit`.
 pub(all) struct TerminalWaitForExitResult {
   exit_code : ProtocolNullable[UInt64]
   signal : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalWaitForExitResult with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalWaitForExitResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Parameters for `terminal/kill`.
@@ -78,10 +130,22 @@ pub(all) struct TerminalKillParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalKillParams with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalKillParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `terminal/kill`.
 pub(all) struct TerminalKillResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalKillResult with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalKillResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `terminal/release`.
@@ -92,10 +156,22 @@ pub(all) struct TerminalReleaseParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend TerminalReleaseParams with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalReleaseParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `terminal/release`.
 pub(all) struct TerminalReleaseResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend TerminalReleaseResult with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalReleaseResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn terminal_require_non_empty(

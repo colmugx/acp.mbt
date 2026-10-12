@@ -7,11 +7,23 @@ pub(all) enum AcpV1MethodDirection {
 } derive(Eq, Debug)
 
 ///|
+pub extend AcpV1MethodDirection with Eq::{not_equal, equal}
+
+///|
+pub extend AcpV1MethodDirection with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Whether a stable ACP v1 method expects a response.
 pub(all) enum AcpV1MethodKind {
   Request
   Notification
 } derive(Eq, Debug)
+
+///|
+pub extend AcpV1MethodKind with Eq::{not_equal, equal}
+
+///|
+pub extend AcpV1MethodKind with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One entry in the stable ACP v1 method manifest.
@@ -24,6 +36,12 @@ pub(all) struct AcpV1Method {
   direction : AcpV1MethodDirection
   kind : AcpV1MethodKind
 } derive(Eq, Debug)
+
+///|
+pub extend AcpV1Method with Eq::{not_equal, equal}
+
+///|
+pub extend AcpV1Method with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Return a fresh, exact manifest for the stable ACP v1 method surface.

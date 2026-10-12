@@ -18,6 +18,12 @@ pub(all) enum ExperimentalV2ToolKind {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ToolKind with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolKind with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_tool_kind(
   value : Json,
   path~ : String = "kind",
@@ -74,6 +80,14 @@ pub(all) enum ExperimentalV2ToolCallStatus {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ToolCallStatus with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallStatus with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_tool_call_status(
   value : Json,
   path~ : String = "status",
@@ -116,6 +130,14 @@ pub(all) struct ExperimentalV2ToolCallLocation {
   line : UInt32?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ToolCallLocation with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallLocation with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_tool_call_location(
@@ -163,6 +185,14 @@ pub(all) enum ExperimentalV2ToolCallContentKnown {
   ToolCallContentDiff(ExperimentalV2Diff)
   ToolCallContentTerminal(ExperimentalV2Terminal)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ToolCallContentKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallContentKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Content produced by a tool call.  The schema has an open fallback:
@@ -244,6 +274,14 @@ pub(all) struct ExperimentalV2ToolCallUpdate {
   raw_output : ExperimentalV2Patch[Json]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ToolCallUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_tool_call_update(
@@ -357,6 +395,14 @@ pub(all) struct ExperimentalV2ToolCallContentChunk {
   content : ExperimentalV2ToolCallContent
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ToolCallContentChunk with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ToolCallContentChunk with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_tool_call_content_chunk(

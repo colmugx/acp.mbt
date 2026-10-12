@@ -8,6 +8,14 @@ pub(all) struct ExperimentalV2Implementation {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Implementation with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Implementation with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_implementation(
   value : Json,
   path~ : String = "info",
@@ -77,6 +85,14 @@ pub(all) struct ExperimentalV2InitializeParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2InitializeParams with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2InitializeParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_initialize_params(
   value : Json,
   path~ : String = "initialize",
@@ -136,6 +152,14 @@ pub(all) struct ExperimentalV2InitializeResult {
   auth_methods : Array[ExperimentalV2AuthMethod]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2InitializeResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2InitializeResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_initialize_result(

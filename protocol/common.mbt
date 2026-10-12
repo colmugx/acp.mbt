@@ -8,11 +8,23 @@ pub(all) enum ProtocolNullable[T] {
 } derive(Eq, Debug)
 
 ///|
+pub extend ProtocolNullable with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolNullable with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Roles used by ACP annotations.
 pub(all) enum Role {
   User
   Assistant
 } derive(Eq, Debug)
+
+///|
+pub extend Role with Eq::{not_equal, equal}
+
+///|
+pub extend Role with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Stable ACP identifiers are strings on the wire.
@@ -62,6 +74,12 @@ pub(all) suberror ProtocolDecodeError {
   InvalidPath(path~ : String, value~ : String)
   InvalidBase64(path~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ProtocolDecodeError with Eq::{not_equal, equal}
+
+///|
+pub extend ProtocolDecodeError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parse one JSON value for the protocol data-model codecs.

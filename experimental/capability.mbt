@@ -9,6 +9,12 @@ pub(all) enum ExperimentalV2Marker[T] {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Marker with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Marker with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn[T] experimental_v2_decode_marker(
   fields : Map[String, Json],
   key : String,
@@ -46,6 +52,14 @@ pub(all) struct ExperimentalV2MarkerPayload {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2MarkerPayload with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MarkerPayload with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_marker_payload(
   value : Json,
   path~ : String = "capability",
@@ -72,6 +86,14 @@ pub(all) struct ExperimentalV2ElicitationCapabilities {
   url : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ElicitationCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ElicitationCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_elicitation_capabilities(
@@ -123,6 +145,14 @@ pub(all) struct ExperimentalV2ClientCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_client_capabilities(
   value : Json,
   path~ : String = "capabilities",
@@ -165,6 +195,14 @@ pub(all) struct ExperimentalV2PromptCapabilities {
   embedded_context : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PromptCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PromptCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_prompt_capabilities(
@@ -235,6 +273,14 @@ pub(all) struct ExperimentalV2McpCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2McpCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2McpCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_mcp_capabilities(
   value : Json,
   path~ : String = "mcp",
@@ -298,6 +344,14 @@ pub(all) struct ExperimentalV2SessionCapabilities {
   fork : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SessionCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_session_capabilities(
@@ -390,6 +444,14 @@ pub(all) struct ExperimentalV2AgentCapabilities {
   auth : ExperimentalV2Marker[ExperimentalV2MarkerPayload]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_agent_capabilities(

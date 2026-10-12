@@ -20,6 +20,9 @@ pub(all) suberror ClientMessageError {
   WrongDirection(method_name~ : String)
   WrongKind(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ClientMessageError::equal(Self, Self) -> Bool
+pub fn ClientMessageError::not_equal(Self, Self) -> Bool
+pub fn ClientMessageError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum ClientNotification {
@@ -27,7 +30,10 @@ pub(all) enum ClientNotification {
   ElicitationComplete(@protocol.ElicitationCompleteParams)
   CancelRequest(@jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn ClientNotification::equal(Self, Self) -> Bool
 pub fn ClientNotification::method_name(Self) -> String
+pub fn ClientNotification::not_equal(Self, Self) -> Bool
+pub fn ClientNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientRequest {
   SessionRequestPermission(@protocol.RequestPermissionRequest)
@@ -40,7 +46,10 @@ pub(all) enum ClientRequest {
   TerminalRelease(@protocol.TerminalReleaseParams)
   ElicitationCreate(@protocol.ElicitationCreateParams)
 } derive(Eq, @debug.Debug)
+pub fn ClientRequest::equal(Self, Self) -> Bool
 pub fn ClientRequest::method_name(Self) -> String
+pub fn ClientRequest::not_equal(Self, Self) -> Bool
+pub fn ClientRequest::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

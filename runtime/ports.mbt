@@ -89,6 +89,14 @@ pub(all) enum RuntimeOutboundFailureKind {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeOutboundFailureKind with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOutboundFailureKind with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Result returned by an inbound request handler. A handler failure is raised
 /// through the async port and becomes `RuntimeError::HandlerFailed`.
 pub(all) enum RuntimeHandlerResult {

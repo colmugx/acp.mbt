@@ -9,8 +9,8 @@ import {
   "colmugx/acp/protocol/session" @session_protocol,
   "colmugx/acp/runtime",
   "moonbitlang/async",
-  "moonbitlang/core/json",
   "colmugx/reader",
+  "moonbitlang/core/debug",
 }
 
 supported_targets = "native"

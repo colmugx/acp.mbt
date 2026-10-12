@@ -7,11 +7,27 @@ pub(all) enum ExperimentalV2MethodDirection {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2MethodDirection with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MethodDirection with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Whether an ACP v2 stable-baseline method expects a response.
 pub(all) enum ExperimentalV2MethodKind {
   Request
   Notification
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2MethodKind with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MethodKind with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// One entry in the ACP v2 stable-baseline method manifest.
@@ -24,6 +40,12 @@ pub(all) struct ExperimentalV2Method {
   direction : ExperimentalV2MethodDirection
   kind : ExperimentalV2MethodKind
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Method with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Method with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Return a fresh, exact manifest for the v2 stable-baseline method surface.

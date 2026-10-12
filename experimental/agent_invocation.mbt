@@ -47,6 +47,14 @@ pub(all) enum ExperimentalV2AgentInvocation {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentInvocation with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentInvocation with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// The typed result of one executed invocation.  No wire response is produced
 /// here; the owner loop serializes this completion through
 /// `experimental_v2_agent_adapter_complete`.
@@ -119,6 +127,14 @@ pub(all) enum ExperimentalV2AgentCompletion {
     ]
   )
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentCompletion with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentCompletion with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Convert one executed handler's outcome into the typed completion result

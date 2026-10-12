@@ -9,6 +9,12 @@ pub(all) enum ExperimentalV2Role {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Role with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Role with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_role(
   value : Json,
   path~ : String = "role",
@@ -46,6 +52,14 @@ pub(all) struct ExperimentalV2Annotations {
   priority : Double?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Annotations with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Annotations with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_annotations(
@@ -161,6 +175,14 @@ pub(all) struct ExperimentalV2TextContent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2TextContent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TextContent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_text_content(
   value : Json,
   path~ : String = "text",
@@ -200,6 +222,14 @@ pub(all) struct ExperimentalV2ImageContent {
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ImageContent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ImageContent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_image_content(
@@ -259,6 +289,14 @@ pub(all) struct ExperimentalV2AudioContent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AudioContent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AudioContent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_audio_content(
   value : Json,
   path~ : String = "audio",
@@ -309,6 +347,12 @@ pub(all) enum ExperimentalV2IconTheme {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2IconTheme with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2IconTheme with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_icon_theme(
   value : Json,
   path~ : String = "theme",
@@ -346,6 +390,12 @@ pub(all) struct ExperimentalV2Icon {
   sizes : Array[String]?
   theme : ExperimentalV2IconTheme?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Icon with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Icon with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_icon(
@@ -419,6 +469,14 @@ pub(all) struct ExperimentalV2ResourceLink {
   annotations : ExperimentalV2Annotations?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ResourceLink with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ResourceLink with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_resource_link(
@@ -518,6 +576,14 @@ pub(all) struct ExperimentalV2TextResourceContents {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2TextResourceContents with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TextResourceContents with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_text_resource_contents(
   value : Json,
   path~ : String = "resource",
@@ -568,6 +634,14 @@ pub(all) struct ExperimentalV2BlobResourceContents {
   mime_type : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2BlobResourceContents with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BlobResourceContents with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_blob_resource_contents(
@@ -626,6 +700,14 @@ pub(all) enum ExperimentalV2EmbeddedResourceResource {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2EmbeddedResourceResource with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2EmbeddedResourceResource with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_embedded_resource_resource(
   value : Json,
   path~ : String = "resource",
@@ -670,6 +752,14 @@ pub(all) struct ExperimentalV2EmbeddedResource {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2EmbeddedResource with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2EmbeddedResource with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_embedded_resource(
   value : Json,
   path~ : String = "resource",
@@ -711,6 +801,14 @@ pub(all) enum ExperimentalV2ContentBlockKnown {
   BlockResourceLink(ExperimentalV2ResourceLink)
   BlockResource(ExperimentalV2EmbeddedResource)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ContentBlockKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ContentBlockKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// A v2 content block.  The schema has an open fallback: `_`-prefixed block
@@ -801,6 +899,12 @@ pub(all) struct ExperimentalV2Content {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Content with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Content with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_content(
   value : Json,
   path~ : String = "content",
@@ -836,6 +940,14 @@ pub(all) struct ExperimentalV2ContentChunk {
   content : ExperimentalV2ContentBlock
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ContentChunk with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ContentChunk with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_content_chunk(

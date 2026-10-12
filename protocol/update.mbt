@@ -7,12 +7,24 @@ pub(all) enum PlanEntryPriority {
 } derive(Eq, Debug)
 
 ///|
+pub extend PlanEntryPriority with Eq::{not_equal, equal}
+
+///|
+pub extend PlanEntryPriority with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Lifecycle status of a plan entry.
 pub(all) enum PlanEntryStatus {
   Pending
   InProgress
   Completed
 } derive(Eq, Debug)
+
+///|
+pub extend PlanEntryStatus with Eq::{not_equal, equal}
+
+///|
+pub extend PlanEntryStatus with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One item in an execution plan.
@@ -24,11 +36,23 @@ pub(all) struct PlanEntry {
 } derive(Eq, Debug)
 
 ///|
+pub extend PlanEntry with Eq::{not_equal, equal}
+
+///|
+pub extend PlanEntry with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A complete replacement execution plan.
 pub(all) struct Plan {
   entries : Array[PlanEntry]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend Plan with Eq::{not_equal, equal}
+
+///|
+pub extend Plan with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Cumulative cost information.
@@ -37,6 +61,12 @@ pub(all) struct Cost {
   currency : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend Cost with Eq::{not_equal, equal}
+
+///|
+pub extend Cost with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Current context-window usage.
@@ -48,6 +78,12 @@ pub(all) struct UsageUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend UsageUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend UsageUpdate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The unstructured command input form.
 pub(all) struct UnstructuredCommandInput {
   hint : String
@@ -55,10 +91,24 @@ pub(all) struct UnstructuredCommandInput {
 } derive(Eq, Debug)
 
 ///|
+pub extend UnstructuredCommandInput with Eq::{not_equal, equal}
+
+///|
+pub extend UnstructuredCommandInput with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Available command input variants.
 pub(all) enum AvailableCommandInput {
   Unstructured(UnstructuredCommandInput)
 } derive(Eq, Debug)
+
+///|
+pub extend AvailableCommandInput with Eq::{not_equal, equal}
+
+///|
+pub extend AvailableCommandInput with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One command exposed by an agent.
@@ -70,6 +120,12 @@ pub(all) struct AvailableCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend AvailableCommand with Eq::{not_equal, equal}
+
+///|
+pub extend AvailableCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Complete replacement list of available commands.
 pub(all) struct AvailableCommandsUpdate {
   available_commands : Array[AvailableCommand]
@@ -77,11 +133,23 @@ pub(all) struct AvailableCommandsUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend AvailableCommandsUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend AvailableCommandsUpdate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Current mode selected for a session.
 pub(all) struct CurrentModeUpdate {
   current_mode_id : SessionModeId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend CurrentModeUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend CurrentModeUpdate with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Semantic categories for configuration selectors.
@@ -94,6 +162,14 @@ pub(all) enum SessionConfigOptionCategory {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionConfigOptionCategory with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigOptionCategory with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One selectable configuration value.
 pub(all) struct SessionConfigSelectOption {
   value : SessionConfigValueId
@@ -101,6 +177,14 @@ pub(all) struct SessionConfigSelectOption {
   description : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SessionConfigSelectOption with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigSelectOption with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// A grouped set of selectable configuration values.
@@ -112,11 +196,27 @@ pub(all) struct SessionConfigSelectGroup {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionConfigSelectGroup with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigSelectGroup with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Flat or grouped selectable values.
 pub(all) enum SessionConfigSelectOptions {
   Ungrouped(Array[SessionConfigSelectOption])
   Grouped(Array[SessionConfigSelectGroup])
 } derive(Eq, Debug)
+
+///|
+pub extend SessionConfigSelectOptions with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigSelectOptions with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Selector-specific configuration payload.
@@ -126,10 +226,22 @@ pub(all) struct SessionConfigSelect {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionConfigSelect with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigSelect with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Boolean-specific configuration payload.
 pub(all) struct SessionConfigBoolean {
   current_value : Bool
 } derive(Eq, Debug)
+
+///|
+pub extend SessionConfigBoolean with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigBoolean with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Configuration option payload variants.
@@ -137,6 +249,12 @@ pub(all) enum SessionConfigOptionKind {
   Select(SessionConfigSelect)
   Boolean(SessionConfigBoolean)
 } derive(Eq, Debug)
+
+///|
+pub extend SessionConfigOptionKind with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigOptionKind with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// One complete session configuration option.
@@ -150,11 +268,23 @@ pub(all) struct SessionConfigOption {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionConfigOption with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigOption with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Complete replacement configuration option list.
 pub(all) struct ConfigOptionUpdate {
   config_options : Array[SessionConfigOption]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ConfigOptionUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ConfigOptionUpdate with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Partial session metadata update.
@@ -163,6 +293,12 @@ pub(all) struct SessionInfoUpdate {
   updated_at : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SessionInfoUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend SessionInfoUpdate with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Session metadata used by session listing.
@@ -174,6 +310,12 @@ pub(all) struct SessionInfo {
   updated_at : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SessionInfo with Eq::{not_equal, equal}
+
+///|
+pub extend SessionInfo with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// All stable v1 session update variants.
@@ -190,6 +332,12 @@ pub(all) enum SessionUpdate {
   SessionInfoUpdate(SessionInfoUpdate)
   UsageUpdate(UsageUpdate)
 } derive(Eq, Debug)
+
+///|
+pub extend SessionUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend SessionUpdate with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn encode_plan_priority(value : PlanEntryPriority) -> Json {
@@ -1304,6 +1452,12 @@ pub(all) suberror SessionUpdateFoldError {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionUpdateFoldError with Eq::{not_equal, equal}
+
+///|
+pub extend SessionUpdateFoldError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// One message aggregated from streamed content chunks.
 ///
 /// Chunks that carry the same `messageId` value fold into one message, in
@@ -1316,6 +1470,12 @@ pub(all) struct SessionUpdateMessage {
   message_id : ProtocolNullable[MessageId]
   blocks : Array[ContentBlock]
 } derive(Eq, Debug)
+
+///|
+pub extend SessionUpdateMessage with Eq::{not_equal, equal}
+
+///|
+pub extend SessionUpdateMessage with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Pure per-session consumer state for a stream of typed session updates.
@@ -1367,6 +1527,12 @@ pub(all) struct SessionUpdateFold {
   session_updated_at : ProtocolNullable[String]
   usage : UsageUpdate?
 } derive(Eq, Debug)
+
+///|
+pub extend SessionUpdateFold with Eq::{not_equal, equal}
+
+///|
+pub extend SessionUpdateFold with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Create the initial consumer state for one session.

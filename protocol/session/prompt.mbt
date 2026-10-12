@@ -9,6 +9,12 @@ pub(all) enum StopReason {
 } derive(Eq, Debug)
 
 ///|
+pub extend StopReason with Eq::{not_equal, equal}
+
+///|
+pub extend StopReason with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Parameters for `session/prompt`.
 pub(all) struct PromptParams {
   session_id : SessionId
@@ -17,11 +23,23 @@ pub(all) struct PromptParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend PromptParams with Eq::{not_equal, equal}
+
+///|
+pub extend PromptParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/prompt`.
 pub(all) struct PromptResult {
   stop_reason : StopReason
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend PromptResult with Eq::{not_equal, equal}
+
+///|
+pub extend PromptResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn session_prompt_decode_blocks(

@@ -1,5 +1,6 @@
 import {
   "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
 }
 
 supported_targets = "native"
@@ -11,5 +12,4 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/aqueue",
   "moonbitlang/core/encoding/utf8",
-  "moonbitlang/core/json",
 } for "wbtest"

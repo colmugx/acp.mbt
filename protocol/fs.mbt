@@ -9,11 +9,23 @@ pub(all) struct ReadTextFileParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ReadTextFileParams with Eq::{not_equal, equal}
+
+///|
+pub extend ReadTextFileParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of the Agent -> Client `fs/read_text_file` request.
 pub(all) struct ReadTextFileResult {
   content : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ReadTextFileResult with Eq::{not_equal, equal}
+
+///|
+pub extend ReadTextFileResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for the Agent -> Client `fs/write_text_file` request.
@@ -25,10 +37,22 @@ pub(all) struct WriteTextFileParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend WriteTextFileParams with Eq::{not_equal, equal}
+
+///|
+pub extend WriteTextFileParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of the Agent -> Client `fs/write_text_file` request.
 pub(all) struct WriteTextFileResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend WriteTextFileResult with Eq::{not_equal, equal}
+
+///|
+pub extend WriteTextFileResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn fs_require_non_empty(

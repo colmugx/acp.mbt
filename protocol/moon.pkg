@@ -1,5 +1,6 @@
 import {
   "colmugx/acp/jsonrpc",
+  "moonbitlang/core/debug",
   "moonbitlang/core/encoding/base64",
   "moonbitlang/core/json",
 }

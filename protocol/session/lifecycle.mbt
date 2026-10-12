@@ -7,12 +7,24 @@ pub(all) struct ListSessionsParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ListSessionsParams with Eq::{not_equal, equal}
+
+///|
+pub extend ListSessionsParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/list`.
 pub(all) struct ListSessionsResult {
   sessions : Array[SessionInfo]
   next_cursor : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ListSessionsResult with Eq::{not_equal, equal}
+
+///|
+pub extend ListSessionsResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/delete`.
@@ -22,10 +34,22 @@ pub(all) struct DeleteSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend DeleteSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend DeleteSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/delete`.
 pub(all) struct DeleteSessionResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend DeleteSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend DeleteSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/close`.
@@ -35,10 +59,22 @@ pub(all) struct CloseSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend CloseSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend CloseSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/close`.
 pub(all) struct CloseSessionResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend CloseSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend CloseSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for the `session/cancel` notification.
@@ -48,12 +84,24 @@ pub(all) struct CancelParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend CancelParams with Eq::{not_equal, equal}
+
+///|
+pub extend CancelParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Parameters for the `session/update` notification.
 pub(all) struct SessionUpdateParams {
   session_id : SessionId
   update : SessionUpdate
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SessionUpdateParams with Eq::{not_equal, equal}
+
+///|
+pub extend SessionUpdateParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn session_lifecycle_decode_nullable_cwd(

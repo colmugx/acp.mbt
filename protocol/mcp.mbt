@@ -7,12 +7,24 @@ pub(all) struct McpEnvVariable {
 } derive(Eq, Debug)
 
 ///|
+pub extend McpEnvVariable with Eq::{not_equal, equal}
+
+///|
+pub extend McpEnvVariable with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// One HTTP header passed to an HTTP or SSE MCP server.
 pub(all) struct McpHttpHeader {
   name : String
   value : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend McpHttpHeader with Eq::{not_equal, equal}
+
+///|
+pub extend McpHttpHeader with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Stdio MCP transport configuration.
@@ -25,6 +37,12 @@ pub(all) struct McpServerStdio {
 } derive(Eq, Debug)
 
 ///|
+pub extend McpServerStdio with Eq::{not_equal, equal}
+
+///|
+pub extend McpServerStdio with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// HTTP MCP transport configuration.
 pub(all) struct McpServerHttp {
   name : String
@@ -32,6 +50,12 @@ pub(all) struct McpServerHttp {
   headers : Array[McpHttpHeader]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend McpServerHttp with Eq::{not_equal, equal}
+
+///|
+pub extend McpServerHttp with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Server-sent-events MCP transport configuration.
@@ -43,12 +67,24 @@ pub(all) struct McpServerSse {
 } derive(Eq, Debug)
 
 ///|
+pub extend McpServerSse with Eq::{not_equal, equal}
+
+///|
+pub extend McpServerSse with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// MCP server transport union.  The wire discriminator is `type`.
 pub(all) enum McpServer {
   Stdio(McpServerStdio)
   Http(McpServerHttp)
   Sse(McpServerSse)
 } derive(Eq, Debug)
+
+///|
+pub extend McpServer with Eq::{not_equal, equal}
+
+///|
+pub extend McpServer with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn mcp_decode_string(

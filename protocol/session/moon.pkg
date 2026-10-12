@@ -1,6 +1,6 @@
 import {
   "colmugx/acp/protocol",
-  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
 }
 
 supported_targets = "native"

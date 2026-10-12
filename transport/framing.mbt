@@ -14,6 +14,12 @@ pub(all) suberror FramingError {
 } derive(Eq, Debug)
 
 ///|
+pub extend FramingError with Eq::{not_equal, equal}
+
+///|
+pub extend FramingError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Immutable state for a newline-delimited decoder.
 pub(all) struct FramingState {
   pending : Bytes
@@ -22,11 +28,23 @@ pub(all) struct FramingState {
 } derive(Eq, Debug)
 
 ///|
+pub extend FramingState with Eq::{not_equal, equal}
+
+///|
+pub extend FramingState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Frames emitted by one feed operation and the state for the next operation.
 pub(all) struct FramingStep {
   state : FramingState
   frames : Array[String]
 } derive(Eq, Debug)
+
+///|
+pub extend FramingStep with Eq::{not_equal, equal}
+
+///|
+pub extend FramingStep with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Create a decoder with a positive maximum payload size in bytes.

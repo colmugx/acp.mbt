@@ -10,6 +10,12 @@ pub(all) struct NewSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend NewSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend NewSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/new`.
 pub(all) struct NewSessionResult {
   session_id : SessionId
@@ -17,6 +23,12 @@ pub(all) struct NewSessionResult {
   config_options : ProtocolNullable[Array[SessionConfigOption]]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend NewSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend NewSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/load`.
@@ -27,6 +39,12 @@ pub(all) struct LoadSessionParams {
   session_id : SessionId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend LoadSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend LoadSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Result of `session/load`.
@@ -40,6 +58,12 @@ pub(all) struct LoadSessionResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend LoadSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend LoadSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Parameters for `session/resume`.
 pub(all) struct ResumeSessionParams {
   session_id : SessionId
@@ -48,6 +72,12 @@ pub(all) struct ResumeSessionParams {
   mcp_servers : ProtocolNullable[Array[McpServer]]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ResumeSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ResumeSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Result of `session/resume`.
@@ -59,6 +89,12 @@ pub(all) struct ResumeSessionResult {
   config_options : ProtocolNullable[Array[SessionConfigOption]]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ResumeSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ResumeSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/fork`.
@@ -73,6 +109,12 @@ pub(all) struct ForkSessionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ForkSessionParams with Eq::{not_equal, equal}
+
+///|
+pub extend ForkSessionParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/fork`.  Same shape as `NewSessionResult`; the new
 /// session id addresses the fork.
 ///
@@ -83,6 +125,12 @@ pub(all) struct ForkSessionResult {
   config_options : ProtocolNullable[Array[SessionConfigOption]]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ForkSessionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ForkSessionResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Validate the session id of a `session/new` result in both directions.

@@ -9,13 +9,13 @@ import {
   "colmugx/acp/protocol/session" @session_protocol,
   "colmugx/acp/runtime",
   "moonbitlang/async",
-  "moonbitlang/core/json",
-  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/debug",
 }
 
 import {
   "colmugx/acp/connection/broker",
   "moonbitlang/async/aqueue",
+  "moonbitlang/core/encoding/utf8",
 } for "test"
 
 supported_targets = "native"

@@ -20,13 +20,19 @@ pub(all) suberror AgentMessageError {
   WrongDirection(method_name~ : String)
   WrongKind(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentMessageError::equal(Self, Self) -> Bool
+pub fn AgentMessageError::not_equal(Self, Self) -> Bool
+pub fn AgentMessageError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum AgentNotification {
   SessionCancel(@session.CancelParams)
   CancelRequest(@jsonrpc.RequestId)
 } derive(Eq, @debug.Debug)
+pub fn AgentNotification::equal(Self, Self) -> Bool
 pub fn AgentNotification::method_name(Self) -> String
+pub fn AgentNotification::not_equal(Self, Self) -> Bool
+pub fn AgentNotification::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AgentRequest {
   Initialize(@protocol.InitializeParams)
@@ -43,7 +49,10 @@ pub(all) enum AgentRequest {
   SessionSetConfigOption(@session.SetSessionConfigOptionParams)
   SessionPrompt(@session.PromptParams)
 } derive(Eq, @debug.Debug)
+pub fn AgentRequest::equal(Self, Self) -> Bool
 pub fn AgentRequest::method_name(Self) -> String
+pub fn AgentRequest::not_equal(Self, Self) -> Bool
+pub fn AgentRequest::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

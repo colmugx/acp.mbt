@@ -8,6 +8,12 @@ pub(all) struct Implementation {
 } derive(Eq, Debug)
 
 ///|
+pub extend Implementation with Eq::{not_equal, equal}
+
+///|
+pub extend Implementation with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// An empty object used as a capability support marker.
 ///
 /// The marker is distinct from an omitted or null capability.  `_meta` is the
@@ -15,6 +21,12 @@ pub(all) struct Implementation {
 pub(all) struct CapabilityMarker {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend CapabilityMarker with Eq::{not_equal, equal}
+
+///|
+pub extend CapabilityMarker with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Client file-system capabilities.  Read and write are independent gates.
@@ -25,6 +37,14 @@ pub(all) struct ClientFileSystemCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientFileSystemCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientFileSystemCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Client elicitation modes.  An empty outer object supports neither mode.
 pub(all) struct ClientElicitationCapabilities {
   form : ProtocolNullable[CapabilityMarker]
@@ -33,11 +53,27 @@ pub(all) struct ClientElicitationCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientElicitationCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientElicitationCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Client-side config-option capabilities.
 pub(all) struct ClientConfigOptionCapabilities {
   boolean : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ClientConfigOptionCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientConfigOptionCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Client authentication capabilities (upstream unstable `auth` field): which
@@ -49,11 +85,25 @@ pub(all) struct ClientAuthCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientAuthCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAuthCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Client session capabilities advertised during initialization.
 pub(all) struct ClientSessionCapabilities {
   config_options : ProtocolNullable[ClientConfigOptionCapabilities]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ClientSessionCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientSessionCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Capabilities advertised by the Client.
@@ -70,6 +120,12 @@ pub(all) struct ClientCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend ClientCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Agent prompt content capabilities.
 pub(all) struct AgentPromptCapabilities {
   image : ProtocolNullable[Bool]
@@ -77,6 +133,12 @@ pub(all) struct AgentPromptCapabilities {
   embedded_context : ProtocolNullable[Bool]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend AgentPromptCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend AgentPromptCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// MCP transports supported by the Agent.
@@ -87,11 +149,23 @@ pub(all) struct AgentMcpCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentMcpCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend AgentMcpCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Agent authentication capabilities.
 pub(all) struct AgentAuthCapabilities {
   logout : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAuthCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAuthCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Optional Agent session methods and workspace-root support.
@@ -107,6 +181,14 @@ pub(all) struct AgentSessionCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentSessionCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend AgentSessionCapabilities with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Capabilities advertised by the Agent.
 pub(all) struct AgentCapabilities {
   load_session : ProtocolNullable[Bool]
@@ -118,6 +200,12 @@ pub(all) struct AgentCapabilities {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentCapabilities with Eq::{not_equal, equal}
+
+///|
+pub extend AgentCapabilities with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Initialize request parameters sent by a Client.
 pub(all) struct InitializeParams {
   protocol_version : Int32
@@ -125,6 +213,12 @@ pub(all) struct InitializeParams {
   client_info : ProtocolNullable[Implementation]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend InitializeParams with Eq::{not_equal, equal}
+
+///|
+pub extend InitializeParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Initialize response returned by an Agent.
@@ -137,6 +231,12 @@ pub(all) struct InitializeResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend InitializeResult with Eq::{not_equal, equal}
+
+///|
+pub extend InitializeResult with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// One authentication method advertised by an Agent.
 pub(all) struct AuthMethod {
   id : String
@@ -146,11 +246,23 @@ pub(all) struct AuthMethod {
 } derive(Eq, Debug)
 
 ///|
+pub extend AuthMethod with Eq::{not_equal, equal}
+
+///|
+pub extend AuthMethod with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Authenticate request parameters.
 pub(all) struct AuthenticateParams {
   method_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend AuthenticateParams with Eq::{not_equal, equal}
+
+///|
+pub extend AuthenticateParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Authenticate response.  It carries only optional protocol metadata.
@@ -159,16 +271,34 @@ pub(all) struct AuthenticateResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend AuthenticateResult with Eq::{not_equal, equal}
+
+///|
+pub extend AuthenticateResult with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Logout request parameters.
 pub(all) struct LogoutParams {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
 
 ///|
+pub extend LogoutParams with Eq::{not_equal, equal}
+
+///|
+pub extend LogoutParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Logout response.
 pub(all) struct LogoutResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend LogoutResult with Eq::{not_equal, equal}
+
+///|
+pub extend LogoutResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn init_decode_bool(

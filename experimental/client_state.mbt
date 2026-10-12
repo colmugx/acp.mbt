@@ -6,6 +6,14 @@ pub(all) enum ExperimentalV2ClientRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn ExperimentalV2ClientRequest::method_name(
   self : ExperimentalV2ClientRequest,
 ) -> String {
@@ -22,6 +30,14 @@ pub(all) enum ExperimentalV2ClientNotification {
   ElicitationComplete(ExperimentalV2CompleteElicitationNotification)
   CancelRequest(ExperimentalV2RequestId)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn ExperimentalV2ClientNotification::method_name(
@@ -46,6 +62,14 @@ pub(all) enum ExperimentalV2ClientPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientPhase with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientPhase with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Immutable Client-side v2 state.  `capabilities` is this client's own
 /// advertised surface, fixed at construction; `agent` is the negotiated
 /// agent advertisement once ready.
@@ -54,6 +78,14 @@ pub(all) struct ExperimentalV2ClientState {
   capabilities : ExperimentalV2ClientCapabilities
   agent : ExperimentalV2InitializeResult?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Inputs accepted by the pure Client-side v2 reducer.  The initialize
@@ -68,6 +100,14 @@ pub(all) enum ExperimentalV2ClientEvent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientEvent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientEvent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Commands emitted for the runtime or endpoint adapter.  They are data
 /// only; no async operation, task, or side effect is started by this
 /// reducer.
@@ -79,11 +119,27 @@ pub(all) enum ExperimentalV2ClientCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientCommand with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// State and commands produced by one v2 Client reducer step.
 pub(all) struct ExperimentalV2ClientStep {
   state : ExperimentalV2ClientState
   commands : Array[ExperimentalV2ClientCommand]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientStep with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientStep with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Explicit failures from Client-side v2 readiness, negotiation, and
@@ -95,6 +151,14 @@ pub(all) suberror ExperimentalV2ClientProtocolError {
   CapabilityDenied(method_name~ : String, capability~ : String)
   UnknownMethod(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientProtocolError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientProtocolError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Construct a fresh v2 Client state advertising `capabilities`; it stays

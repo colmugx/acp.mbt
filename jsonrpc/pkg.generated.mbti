@@ -31,6 +31,9 @@ pub(all) suberror JsonRpcCodecError {
   InvalidField(path~ : String, reason~ : String)
   InvalidInteger(path~ : String, reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcCodecError::equal(Self, Self) -> Bool
+pub fn JsonRpcCodecError::not_equal(Self, Self) -> Bool
+pub fn JsonRpcCodecError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct JsonRpcError {
@@ -39,14 +42,17 @@ pub struct JsonRpcError {
   data : Json?
 } derive(Eq, @debug.Debug)
 pub fn JsonRpcError::auth_required(data? : Json) -> Self
+pub fn JsonRpcError::equal(Self, Self) -> Bool
 pub fn JsonRpcError::internal_error(data? : Json) -> Self
 pub fn JsonRpcError::invalid_params(data? : Json) -> Self
 pub fn JsonRpcError::invalid_request(data? : Json) -> Self
 pub fn JsonRpcError::method_not_found(data? : Json) -> Self
 pub fn JsonRpcError::new(code~ : JsonRpcErrorCode, message~ : String, data? : Json) -> Self
+pub fn JsonRpcError::not_equal(Self, Self) -> Bool
 pub fn JsonRpcError::parse_error(data? : Json) -> Self
 pub fn JsonRpcError::request_cancelled(data? : Json) -> Self
 pub fn JsonRpcError::resource_not_found(data? : Json) -> Self
+pub fn JsonRpcError::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonRpcErrorCode {
   ParseError
@@ -60,13 +66,19 @@ pub(all) enum JsonRpcErrorCode {
   Custom(Int)
 } derive(Eq, @debug.Debug)
 pub fn JsonRpcErrorCode::default_message(Self) -> String
+pub fn JsonRpcErrorCode::equal(Self, Self) -> Bool
 pub fn JsonRpcErrorCode::from_int(Int) -> Self
+pub fn JsonRpcErrorCode::not_equal(Self, Self) -> Bool
 pub fn JsonRpcErrorCode::to_int(Self) -> Int
+pub fn JsonRpcErrorCode::to_repr(Self) -> @debug.Repr
 
 pub struct JsonRpcFailure {
   id : JsonRpcId
   error : JsonRpcError
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcFailure::equal(Self, Self) -> Bool
+pub fn JsonRpcFailure::not_equal(Self, Self) -> Bool
+pub fn JsonRpcFailure::to_repr(Self) -> @debug.Repr
 
 #alias(ResponseId)
 pub(all) enum JsonRpcId {
@@ -74,46 +86,67 @@ pub(all) enum JsonRpcId {
   Number(Int64)
   Null
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcId::equal(Self, Self) -> Bool
+pub fn JsonRpcId::not_equal(Self, Self) -> Bool
+pub fn JsonRpcId::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonRpcMessage {
   Request(JsonRpcRequest)
   Notification(JsonRpcNotification)
   Response(JsonRpcResponse)
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcMessage::equal(Self, Self) -> Bool
+pub fn JsonRpcMessage::not_equal(Self, Self) -> Bool
 pub fn JsonRpcMessage::notification(JsonRpcNotification) -> Self
 pub fn JsonRpcMessage::request(JsonRpcRequest) -> Self
 pub fn JsonRpcMessage::response(JsonRpcResponse) -> Self
+pub fn JsonRpcMessage::to_repr(Self) -> @debug.Repr
 
 pub struct JsonRpcNotification {
   method_name : String
   params : Json?
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcNotification::equal(Self, Self) -> Bool
 pub fn JsonRpcNotification::new(method_name~ : String, params? : Json) -> Self raise JsonRpcCodecError
+pub fn JsonRpcNotification::not_equal(Self, Self) -> Bool
+pub fn JsonRpcNotification::to_repr(Self) -> @debug.Repr
 
 pub struct JsonRpcRequest {
   id : RequestId
   method_name : String
   params : Json?
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcRequest::equal(Self, Self) -> Bool
 pub fn JsonRpcRequest::new(id~ : RequestId, method_name~ : String, params? : Json) -> Self raise JsonRpcCodecError
+pub fn JsonRpcRequest::not_equal(Self, Self) -> Bool
+pub fn JsonRpcRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) enum JsonRpcResponse {
   Success(JsonRpcSuccess)
   Error(JsonRpcFailure)
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcResponse::equal(Self, Self) -> Bool
 pub fn JsonRpcResponse::error(id~ : JsonRpcId, error~ : JsonRpcError) -> Self
+pub fn JsonRpcResponse::not_equal(Self, Self) -> Bool
 pub fn JsonRpcResponse::success(id~ : RequestId, result~ : Json) -> Self
+pub fn JsonRpcResponse::to_repr(Self) -> @debug.Repr
 
 pub struct JsonRpcSuccess {
   id : RequestId
   result : Json
 } derive(Eq, @debug.Debug)
+pub fn JsonRpcSuccess::equal(Self, Self) -> Bool
+pub fn JsonRpcSuccess::not_equal(Self, Self) -> Bool
+pub fn JsonRpcSuccess::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RequestId {
   String(String)
   Number(Int64)
   Null
 } derive(Eq, @debug.Debug)
+pub fn RequestId::equal(Self, Self) -> Bool
+pub fn RequestId::not_equal(Self, Self) -> Bool
+pub fn RequestId::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

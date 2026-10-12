@@ -7,6 +7,14 @@ pub(all) struct ExperimentalV2EnvVariable {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2EnvVariable with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2EnvVariable with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_env_variable(
   value : Json,
   path~ : String = "envVariable",
@@ -47,6 +55,14 @@ pub(all) struct ExperimentalV2HttpHeader {
   value : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2HttpHeader with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2HttpHeader with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_http_header(
@@ -91,6 +107,14 @@ pub(all) struct ExperimentalV2McpServerStdio {
   env : Array[ExperimentalV2EnvVariable]?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2McpServerStdio with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2McpServerStdio with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_mcp_server_stdio(
@@ -168,6 +192,14 @@ pub(all) struct ExperimentalV2McpServerHttp {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2McpServerHttp with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2McpServerHttp with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_mcp_server_http(
   value : Json,
   path~ : String = "mcpServer",
@@ -223,6 +255,14 @@ pub(all) enum ExperimentalV2McpServerTransport {
   TransportStdio(ExperimentalV2McpServerStdio)
   TransportHttp(ExperimentalV2McpServerHttp)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2McpServerTransport with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2McpServerTransport with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Configuration for connecting to one MCP server.  The schema has an open

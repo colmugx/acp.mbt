@@ -27,12 +27,26 @@ pub(all) enum AgentProtocolPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentProtocolPhase with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolPhase with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Authentication is explicit state, not an implicit capability fallback.
 pub(all) enum AgentAuthenticationState {
   NotRequired
   AwaitingAuthentication
   Authenticated
 } derive(Eq, Debug)
+
+///|
+pub extend AgentAuthenticationState with Eq::{not_equal, equal}
+
+///|
+pub extend AgentAuthenticationState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Immutable information an Agent endpoint advertises during initialization.
@@ -47,6 +61,12 @@ pub(all) struct AgentProtocolConfig {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentProtocolConfig with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolConfig with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Immutable Agent-side protocol state.
 pub(all) struct AgentProtocolState {
   phase : AgentProtocolPhase
@@ -58,6 +78,12 @@ pub(all) struct AgentProtocolState {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentProtocolState with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Inputs accepted by the pure protocol reducer.  Runtime effects are
 /// represented by commands and completion events; this type performs no I/O.
 pub(all) enum AgentProtocolEvent {
@@ -66,6 +92,12 @@ pub(all) enum AgentProtocolEvent {
   AuthenticationSucceeded(method_id~ : String)
   LoggedOut
 } derive(Eq, Debug)
+
+///|
+pub extend AgentProtocolEvent with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolEvent with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Commands emitted by the pure reducer for a runtime or endpoint adapter.
@@ -81,11 +113,23 @@ pub(all) enum AgentProtocolCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentProtocolCommand with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// State and commands produced by one reducer step.
 pub(all) struct AgentProtocolStep {
   state : AgentProtocolState
   commands : Array[AgentProtocolCommand]
 } derive(Eq, Debug)
+
+///|
+pub extend AgentProtocolStep with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolStep with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Explicit failures from protocol phase and capability gates.
@@ -100,6 +144,12 @@ pub(all) suberror AgentProtocolError {
   NotAuthenticated
   InvalidEvent(reason~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend AgentProtocolError with Eq::{not_equal, equal}
+
+///|
+pub extend AgentProtocolError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Construct a fresh state for one Agent endpoint.

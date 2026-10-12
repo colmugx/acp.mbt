@@ -24,6 +24,14 @@ pub(all) struct ExperimentalV2BatchInvalidItem {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2BatchInvalidItem with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BatchInvalidItem with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One decoded batch entry.  Ids reuse `@jsonrpc.RequestId` because the batch
 /// codec composes the shared jsonrpc envelope types; the model-scoped
 /// `ExperimentalV2RequestId` in elicitation.mbt serves elicitation payloads
@@ -33,6 +41,12 @@ pub(all) enum ExperimentalV2BatchItem {
   Notification(@jsonrpc.JsonRpcNotification)
   InvalidItem(ExperimentalV2BatchInvalidItem)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2BatchItem with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BatchItem with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Batch-level decode failures.  `BatchParseFailed` and `EmptyBatch` carry the
@@ -46,6 +60,14 @@ pub(all) suberror ExperimentalV2BatchDecodeError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2BatchDecodeError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BatchDecodeError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Batch-level encode failures.  Empty inputs are caller errors: an empty
 /// batch or an empty response array is never a valid frame to send.
 pub(all) suberror ExperimentalV2BatchEncodeError {
@@ -57,6 +79,14 @@ pub(all) suberror ExperimentalV2BatchEncodeError {
   /// response (index in input order plus the codec cause).
   ReplyFrameDecodeFailed(index~ : Int32, cause~ : @jsonrpc.JsonRpcCodecError)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2BatchEncodeError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2BatchEncodeError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Decode one v2 batch frame.  Invalid batch JSON raises `BatchParseFailed`

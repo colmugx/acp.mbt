@@ -79,6 +79,12 @@ pub(all) enum RuntimeOwnerEffect[E] {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeOwnerEffect with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerEffect with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Connection-owned pure commands compiled from owner effects. These values
 /// are intents only; the runtime does not execute or interpret them here.
 /// The `RuntimeOwner` prefix keeps their constructors distinct from the
@@ -91,6 +97,12 @@ pub(all) enum RuntimeOwnerCommand {
   RuntimeOwnerTrace(method_name~ : String)
   RuntimeOwnerClose(reason~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend RuntimeOwnerCommand with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerCommand with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 priv enum RuntimeOwnerCommandResult {
@@ -107,6 +119,12 @@ pub(all) enum RuntimeOwnerLocalPlan {
   RuntimeOwnerNoCommands
   RuntimeOwnerCommands(Array[RuntimeOwnerCommand])
 } derive(Eq, Debug)
+
+///|
+pub extend RuntimeOwnerLocalPlan with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerLocalPlan with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Compile every owner effect in order without changing owner state. A local
@@ -207,6 +225,12 @@ pub(all) enum RuntimeOwnerIgnore {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeOwnerIgnore with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerIgnore with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub(all) enum RuntimeOwnerRequestAction[S, I, E] {
   RuntimeOwnerImmediate(completion~ : RuntimeOwnerRequestCompletion[S, E])
   RuntimeOwnerInvoke(task~ : RuntimeOwnerTask[I])
@@ -253,6 +277,12 @@ pub(all) enum RuntimeOwnerCloseResult[S, I] {
 pub(all) suberror RuntimeOwnerError {
   Closed
 } derive(Eq, Debug)
+
+///|
+pub extend RuntimeOwnerError with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn[S, I, C, E] runtime_owner_new(

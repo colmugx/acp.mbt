@@ -14,12 +14,18 @@ pub(all) suberror AgentCompositionError {
   InvalidAuthMethods(reason~ : String)
   ConflictingSupport(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn AgentCompositionError::equal(Self, Self) -> Bool
+pub fn AgentCompositionError::not_equal(Self, Self) -> Bool
+pub fn AgentCompositionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ClientCompositionError {
   InvalidImplementation(reason~ : String)
   MissingRequiredService(service_name~ : String)
   ConflictingSupport(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ClientCompositionError::equal(Self, Self) -> Bool
+pub fn ClientCompositionError::not_equal(Self, Self) -> Bool
+pub fn ClientCompositionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror HandlerError {
   Application(message~ : String)
@@ -27,6 +33,9 @@ pub(all) suberror HandlerError {
   Cancelled
   UnavailableOperation(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn HandlerError::equal(Self, Self) -> Bool
+pub fn HandlerError::not_equal(Self, Self) -> Bool
+pub fn HandlerError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 

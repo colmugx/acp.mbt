@@ -16,6 +16,14 @@ pub(all) enum ExperimentalV2ClientForwardRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientForwardRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientForwardRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Return the forward wire method name of one typed request.
 pub fn ExperimentalV2ClientForwardRequest::method_name(
   self : ExperimentalV2ClientForwardRequest,
@@ -54,6 +62,14 @@ pub(all) enum ExperimentalV2ClientForwardReply {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientForwardReply with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientForwardReply with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Return the forward wire method name that owns one typed reply.
 pub fn ExperimentalV2ClientForwardReply::method_name(
   self : ExperimentalV2ClientForwardReply,
@@ -82,6 +98,14 @@ pub(all) enum ExperimentalV2ClientForwardNotification {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientForwardNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientForwardNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn ExperimentalV2ClientForwardNotification::method_name(
   self : ExperimentalV2ClientForwardNotification,
 ) -> String {
@@ -103,6 +127,14 @@ pub(all) suberror ExperimentalV2ClientConnectionError {
   BrokerFailure(method_name~ : String)
   ReplyMismatch(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientConnectionError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientConnectionError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// A one-shot typed forward-request transport.  It owns no request

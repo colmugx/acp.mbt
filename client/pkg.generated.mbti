@@ -57,6 +57,9 @@ pub(all) suberror ClientAdapterError {
   UnexpectedMessage(kind~ : String)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterError::equal(Self, Self) -> Bool
+pub fn ClientAdapterError::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror ClientConnectionError {
   ClientConnectionUnsupportedVersion(method_name~ : String, version~ : Int)
@@ -65,6 +68,9 @@ pub(all) suberror ClientConnectionError {
   ClientConnectionBrokerFailure(method_name~ : String)
   ClientConnectionReplyMismatch(method_name~ : String, expected~ : String, actual~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ClientConnectionError::equal(Self, Self) -> Bool
+pub fn ClientConnectionError::not_equal(Self, Self) -> Bool
+pub fn ClientConnectionError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum ClientAdapterAdmission {
@@ -76,6 +82,9 @@ pub(all) enum ClientAdapterCommand {
   CancelRequest(request_id~ : @jsonrpc.RequestId)
   TraceError(method_name~ : String, error~ : @jsonrpc.JsonRpcError)
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterCommand::equal(Self, Self) -> Bool
+pub fn ClientAdapterCommand::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientAdapterCompletion {
   RequestPermissionCompleted(id~ : @jsonrpc.RequestId, result~ : Result[@colmugx/acp/protocol.RequestPermissionResponse, @error.HandlerError])
@@ -90,6 +99,9 @@ pub(all) enum ClientAdapterCompletion {
   SessionUpdateCompleted(result~ : Result[Unit, @error.HandlerError])
   ElicitationCompleteCompleted(result~ : Result[Unit, @error.HandlerError])
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterCompletion::equal(Self, Self) -> Bool
+pub fn ClientAdapterCompletion::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterCompletion::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientAdapterInvocation {
   RequestPermissionInvocation(id~ : @jsonrpc.RequestId, params~ : @colmugx/acp/protocol.RequestPermissionRequest)
@@ -104,21 +116,33 @@ pub(all) enum ClientAdapterInvocation {
   SessionUpdateInvocation(params~ : @session.SessionUpdateParams)
   ElicitationCompleteInvocation(params~ : @colmugx/acp/protocol.ElicitationCompleteParams)
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterInvocation::equal(Self, Self) -> Bool
+pub fn ClientAdapterInvocation::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterInvocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClientAdapterOutput {
   Response(@jsonrpc.JsonRpcResponse)
   Command(ClientAdapterCommand)
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterOutput::equal(Self, Self) -> Bool
+pub fn ClientAdapterOutput::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterOutput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientAdapterState {
   protocol : @colmugx/acp/client/protocol.ClientProtocolState
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterState::equal(Self, Self) -> Bool
+pub fn ClientAdapterState::not_equal(Self, Self) -> Bool
 pub fn ClientAdapterState::protocol(Self) -> @colmugx/acp/client/protocol.ClientProtocolState
+pub fn ClientAdapterState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientAdapterStep {
   state : ClientAdapterState
   outputs : Array[ClientAdapterOutput]
 } derive(Eq, @debug.Debug)
+pub fn ClientAdapterStep::equal(Self, Self) -> Bool
+pub fn ClientAdapterStep::not_equal(Self, Self) -> Bool
+pub fn ClientAdapterStep::to_repr(Self) -> @debug.Repr
 
 pub struct ClientConnection {
   request_broker : async (@message.AgentRequest) -> Result[ClientReply, ClientConnectionError]
@@ -189,7 +213,10 @@ pub(all) enum ClientReply {
   ClientReplySetConfigOption(@session.SetSessionConfigOptionResult)
   ClientReplyPrompt(@session.PromptResult)
 } derive(Eq, @debug.Debug)
+pub fn ClientReply::equal(Self, Self) -> Bool
 pub fn ClientReply::method_name(Self) -> String
+pub fn ClientReply::not_equal(Self, Self) -> Bool
+pub fn ClientReply::to_repr(Self) -> @debug.Repr
 
 pub struct ClientSessionService {
   session_update_handler : async (@session.SessionUpdateParams) -> Unit

@@ -37,27 +37,57 @@ pub fn[G, S, I, C, E] runtime_owner_spawn(@async.TaskGroup[G], RuntimeOwnerTask[
 
 // Errors
 type ConnectionError derive(Eq, @debug.Debug)
+pub fn ConnectionError::equal(Self, Self) -> Bool
+pub fn ConnectionError::not_equal(Self, Self) -> Bool
+pub fn ConnectionError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror RuntimeOwnerError {
   Closed
 } derive(Eq, @debug.Debug)
+pub fn RuntimeOwnerError::equal(Self, Self) -> Bool
+pub fn RuntimeOwnerError::not_equal(Self, Self) -> Bool
+pub fn RuntimeOwnerError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 type ConnectionCancelIgnoreReason derive(Eq, @debug.Debug)
+pub fn ConnectionCancelIgnoreReason::equal(Self, Self) -> Bool
+pub fn ConnectionCancelIgnoreReason::not_equal(Self, Self) -> Bool
+pub fn ConnectionCancelIgnoreReason::to_repr(Self) -> @debug.Repr
 
 type ConnectionCommand derive(Eq, @debug.Debug)
+pub fn ConnectionCommand::equal(Self, Self) -> Bool
+pub fn ConnectionCommand::not_equal(Self, Self) -> Bool
+pub fn ConnectionCommand::to_repr(Self) -> @debug.Repr
 
 type ConnectionEvent derive(Eq, @debug.Debug)
+pub fn ConnectionEvent::equal(Self, Self) -> Bool
+pub fn ConnectionEvent::not_equal(Self, Self) -> Bool
+pub fn ConnectionEvent::to_repr(Self) -> @debug.Repr
 
 type ConnectionPhase derive(Eq, @debug.Debug)
+pub fn ConnectionPhase::equal(Self, Self) -> Bool
+pub fn ConnectionPhase::not_equal(Self, Self) -> Bool
+pub fn ConnectionPhase::to_repr(Self) -> @debug.Repr
 
 type ConnectionState derive(Eq, @debug.Debug)
+pub fn ConnectionState::equal(Self, Self) -> Bool
+pub fn ConnectionState::not_equal(Self, Self) -> Bool
+pub fn ConnectionState::to_repr(Self) -> @debug.Repr
 
 type ConnectionStep derive(Eq, @debug.Debug)
+pub fn ConnectionStep::equal(Self, Self) -> Bool
+pub fn ConnectionStep::not_equal(Self, Self) -> Bool
+pub fn ConnectionStep::to_repr(Self) -> @debug.Repr
 
 type PendingInbound derive(Eq, @debug.Debug)
+pub fn PendingInbound::equal(Self, Self) -> Bool
+pub fn PendingInbound::not_equal(Self, Self) -> Bool
+pub fn PendingInbound::to_repr(Self) -> @debug.Repr
 
 type PendingOutbound derive(Eq, @debug.Debug)
+pub fn PendingOutbound::equal(Self, Self) -> Bool
+pub fn PendingOutbound::not_equal(Self, Self) -> Bool
+pub fn PendingOutbound::to_repr(Self) -> @debug.Repr
 
 pub struct RuntimeOutboundChannel[C] {
   // private fields
@@ -92,6 +122,9 @@ pub(all) enum RuntimeOwnerCommand {
   RuntimeOwnerTrace(method_name~ : String)
   RuntimeOwnerClose(reason~ : String)
 } derive(Eq, @debug.Debug)
+pub fn RuntimeOwnerCommand::equal(Self, Self) -> Bool
+pub fn RuntimeOwnerCommand::not_equal(Self, Self) -> Bool
+pub fn RuntimeOwnerCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RuntimeOwnerCompletionResult[S, I, O] {
   RuntimeOwnerCompletionApplied(owner~ : RuntimeOwner[S, I], completion~ : O)
@@ -102,6 +135,9 @@ pub(all) enum RuntimeOwnerEffect[E] {
   WireNotification(notification~ : @jsonrpc.JsonRpcNotification)
   Local(effect~ : E)
 } derive(Eq, @debug.Debug)
+pub fn[E : Eq] RuntimeOwnerEffect::equal(Self[E], Self[E]) -> Bool
+pub fn[E : Eq] RuntimeOwnerEffect::not_equal(Self[E], Self[E]) -> Bool
+pub fn[E : @debug.Debug] RuntimeOwnerEffect::to_repr(Self[E]) -> @debug.Repr
 
 pub(all) enum RuntimeOwnerEvent[C] {
   RuntimeOwnerRequestCompleted(token~ : Int, id~ : @jsonrpc.RequestId, completion~ : C)
@@ -116,11 +152,17 @@ pub(all) enum RuntimeOwnerIgnore {
   RequestIdMismatch(expected~ : @jsonrpc.RequestId, actual~ : @jsonrpc.RequestId)
   TaskKindMismatch(token~ : Int)
 } derive(Eq, @debug.Debug)
+pub fn RuntimeOwnerIgnore::equal(Self, Self) -> Bool
+pub fn RuntimeOwnerIgnore::not_equal(Self, Self) -> Bool
+pub fn RuntimeOwnerIgnore::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RuntimeOwnerLocalPlan {
   RuntimeOwnerNoCommands
   RuntimeOwnerCommands(Array[RuntimeOwnerCommand])
 } derive(Eq, @debug.Debug)
+pub fn RuntimeOwnerLocalPlan::equal(Self, Self) -> Bool
+pub fn RuntimeOwnerLocalPlan::not_equal(Self, Self) -> Bool
+pub fn RuntimeOwnerLocalPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RuntimeOwnerNotificationAction[S, I, E] {
   RuntimeOwnerNotificationImmediate(completion~ : RuntimeOwnerNotificationCompletion[S, E])

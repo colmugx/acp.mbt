@@ -25,6 +25,14 @@ pub(all) enum ExperimentalV2WireFrameSplit {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2WireFrameSplit with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2WireFrameSplit with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Split one v2 wire frame into single-object frames a per-object engine can
 /// admit.  Pure and total: unparseable frames and empty arrays return their
 /// single error-reply frame, invalid array entries return their per-entry

@@ -60,6 +60,12 @@ pub(all) enum TypedOwnerIgnore {
 } derive(Eq, Debug)
 
 ///|
+pub extend TypedOwnerIgnore with Eq::{not_equal, equal}
+
+///|
+pub extend TypedOwnerIgnore with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub(all) enum TypedRequestAction[I, R] {
   ImmediateResult(result~ : R)
   InvokeTask(task~ : TypedOwnerTask[I])
@@ -421,3 +427,9 @@ pub fn[S, I] typed_owner_close(
 pub(all) suberror TypedOwnerError {
   Closed
 } derive(Eq, Debug)
+
+///|
+pub extend TypedOwnerError with Eq::{not_equal, equal}
+
+///|
+pub extend TypedOwnerError with @moonbitlang/core/debug.Debug::{to_repr}

@@ -10,6 +10,14 @@ pub(all) enum ExperimentalV2AgentAdapterCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentAdapterCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAdapterCommand with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Typed adapter output.  Responses are wire values the owner loop
 /// serializes; commands are interpreted by the runtime.
 pub(all) enum ExperimentalV2AgentAdapterOutput {
@@ -17,6 +25,14 @@ pub(all) enum ExperimentalV2AgentAdapterOutput {
   Notification(@jsonrpc.JsonRpcNotification)
   Command(ExperimentalV2AgentAdapterCommand)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentAdapterOutput with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAdapterOutput with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Single-flight reservation for the two v2 state-changing auth requests.  A
@@ -29,12 +45,28 @@ pub(all) enum ExperimentalV2AgentReservation {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentReservation with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentReservation with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// State owned by the connection owner loop.  Handler tasks receive this
 /// value only through an admission result; they never mutate it.
 pub(all) struct ExperimentalV2AgentAdapterState {
   protocol : ExperimentalV2AgentState
   reservation : ExperimentalV2AgentReservation
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentAdapterState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAdapterState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_agent_adapter_state_new(
@@ -65,6 +97,14 @@ pub(all) struct ExperimentalV2AgentAdapterStep {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentAdapterStep with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAdapterStep with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Admission is synchronous and owner-loop controlled.  Initialize answers
 /// and protocol failures are immediate; only typed invocations cross the
 /// async task boundary.
@@ -87,12 +127,28 @@ pub(all) suberror ExperimentalV2AgentAdapterError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentAdapterError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAdapterError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Failures raised while decoding one inbound v2 Agent message into the
 /// typed request/notification set.
 pub(all) suberror ExperimentalV2AgentMessageError {
   UnknownMethod(method_name~ : String)
   InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentMessageError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentMessageError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn experimental_v2_agent_response_id(

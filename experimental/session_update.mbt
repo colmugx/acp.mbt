@@ -13,6 +13,14 @@ pub(all) enum ExperimentalV2StopReason {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2StopReason with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2StopReason with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_stop_reason(
   value : Json,
   path~ : String = "stopReason",
@@ -56,6 +64,14 @@ pub(all) struct ExperimentalV2RunningState {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2RunningState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2RunningState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_running_state(
   value : Json,
   path~ : String = "state_update",
@@ -81,6 +97,12 @@ pub(all) struct ExperimentalV2IdleState {
   stop_reason : ExperimentalV2StopReason?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2IdleState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2IdleState with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_idle_state(
@@ -119,6 +141,14 @@ pub(all) struct ExperimentalV2RequiresActionState {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2RequiresActionState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2RequiresActionState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_requires_action_state(
   value : Json,
   path~ : String = "state_update",
@@ -145,6 +175,14 @@ pub(all) enum ExperimentalV2StateUpdateKnown {
   StateIdle(ExperimentalV2IdleState)
   StateRequiresAction(ExperimentalV2RequiresActionState)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2StateUpdateKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2StateUpdateKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub type ExperimentalV2StateUpdate = ExperimentalV2Open[
@@ -223,6 +261,14 @@ pub(all) struct ExperimentalV2MessageUpsert {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2MessageUpsert with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2MessageUpsert with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_message_upsert(
   value : Json,
   path~ : String = "message",
@@ -279,6 +325,14 @@ pub(all) enum ExperimentalV2PlanEntryPriority {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PlanEntryPriority with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanEntryPriority with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_plan_entry_priority(
   value : Json,
   path~ : String = "priority",
@@ -323,6 +377,14 @@ pub(all) enum ExperimentalV2PlanEntryStatus {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PlanEntryStatus with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanEntryStatus with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_plan_entry_status(
   value : Json,
   path~ : String = "status",
@@ -365,6 +427,12 @@ pub(all) struct ExperimentalV2PlanEntry {
   status : ExperimentalV2PlanEntryStatus
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PlanEntry with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanEntry with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_plan_entry(
@@ -418,6 +486,12 @@ pub(all) struct ExperimentalV2PlanItems {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PlanItems with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanItems with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_plan_items(
   value : Json,
   path~ : String = "plan",
@@ -464,6 +538,14 @@ pub fn experimental_v2_encode_plan_items(
 pub(all) enum ExperimentalV2PlanUpdateContentKnown {
   PlanItemsContent(ExperimentalV2PlanItems)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2PlanUpdateContentKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanUpdateContentKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub type ExperimentalV2PlanUpdateContent = ExperimentalV2Open[
@@ -521,6 +603,14 @@ pub(all) struct ExperimentalV2PlanUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2PlanUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2PlanUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_plan_update(
   value : Json,
   path~ : String = "plan_update",
@@ -553,11 +643,27 @@ pub(all) enum ExperimentalV2CommandInputKnown {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2CommandInputKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2CommandInputKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Text input for a command: everything typed after the command name.
 pub(all) struct ExperimentalV2TextCommandInput {
   hint : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TextCommandInput with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TextCommandInput with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_text_command_input(
@@ -643,6 +749,14 @@ pub(all) struct ExperimentalV2AvailableCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AvailableCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AvailableCommand with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_available_command(
   value : Json,
   path~ : String = "availableCommand",
@@ -697,6 +811,14 @@ pub(all) struct ExperimentalV2AvailableCommandsUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AvailableCommandsUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AvailableCommandsUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_available_commands_update(
   value : Json,
   path~ : String = "available_commands_update",
@@ -742,6 +864,14 @@ pub(all) struct ExperimentalV2ConfigOptionUpdate {
   config_options : Array[ExperimentalV2SessionConfigOption]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ConfigOptionUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigOptionUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_config_option_update(
@@ -792,6 +922,14 @@ pub(all) struct ExperimentalV2SessionInfoUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2SessionInfoUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionInfoUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_session_info_update(
   value : Json,
   path~ : String = "session_info_update",
@@ -840,6 +978,12 @@ pub(all) struct ExperimentalV2Cost {
   currency : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Cost with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Cost with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_cost(
@@ -915,6 +1059,14 @@ pub(all) struct ExperimentalV2UsageUpdate {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2UsageUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2UsageUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_usage_update(
   value : Json,
   path~ : String = "usage_update",
@@ -979,6 +1131,14 @@ pub(all) enum ExperimentalV2SessionUpdateKnown {
   UpdateSessionInfo(ExperimentalV2SessionInfoUpdate)
   UpdateUsage(ExperimentalV2UsageUpdate)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SessionUpdateKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionUpdateKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub type ExperimentalV2SessionUpdate = ExperimentalV2Open[
@@ -1188,6 +1348,14 @@ pub(all) struct ExperimentalV2UpdateSessionNotification {
   update : ExperimentalV2SessionUpdate
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2UpdateSessionNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2UpdateSessionNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_update_session_notification(

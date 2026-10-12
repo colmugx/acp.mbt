@@ -11,6 +11,14 @@ pub(all) enum ExperimentalV2DiffFileType {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DiffFileType with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffFileType with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_diff_file_type(
   value : Json,
   path~ : String = "fileType",
@@ -54,6 +62,14 @@ pub(all) enum ExperimentalV2DiffPatchFormat {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DiffPatchFormat with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffPatchFormat with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_diff_patch_format(
   value : Json,
   path~ : String = "format",
@@ -87,6 +103,12 @@ pub(all) struct ExperimentalV2DiffPatch {
   format : ExperimentalV2DiffPatchFormat
   text : String
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2DiffPatch with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffPatch with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_diff_patch(
@@ -147,6 +169,14 @@ pub(all) struct ExperimentalV2DiffPathChange {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DiffPathChange with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffPathChange with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_diff_path_change(
   value : Json,
   path~ : String = "change",
@@ -198,6 +228,14 @@ pub(all) struct ExperimentalV2DiffPathPairChange {
   mime_type : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2DiffPathPairChange with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffPathPairChange with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_diff_path_pair_change(
@@ -261,6 +299,14 @@ pub(all) enum ExperimentalV2DiffChangeKnown {
   ChangeMove(ExperimentalV2DiffPathPairChange)
   ChangeCopy(ExperimentalV2DiffPathPairChange)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2DiffChangeKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DiffChangeKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// One file-level change described by a diff.  The schema has an open
@@ -354,6 +400,12 @@ pub(all) struct ExperimentalV2Diff {
   patch : ExperimentalV2DiffPatch?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Diff with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Diff with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn experimental_v2_decode_diff(

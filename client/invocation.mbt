@@ -26,6 +26,12 @@ pub(all) enum ClientAdapterInvocation {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientAdapterInvocation with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterInvocation with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Typed completion returned by the async handler phase.  No state update or
 /// response is produced until the owner loop passes this value to
 /// `client_adapter_complete`.
@@ -69,6 +75,12 @@ pub(all) enum ClientAdapterCompletion {
   SessionUpdateCompleted(result~ : Result[Unit, HandlerError])
   ElicitationCompleteCompleted(result~ : Result[Unit, HandlerError])
 } derive(Eq, Debug)
+
+///|
+pub extend ClientAdapterCompletion with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterCompletion with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The stable wire method name of one typed invocation.  Runtime bridges use

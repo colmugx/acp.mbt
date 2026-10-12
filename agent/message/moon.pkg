@@ -2,7 +2,7 @@ import {
   "colmugx/acp/jsonrpc",
   "colmugx/acp/protocol",
   "colmugx/acp/protocol/session" @session_protocol,
-  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
 }
 
 supported_targets = "native"

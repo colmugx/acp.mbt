@@ -14,11 +14,23 @@ struct TypedOwnerTestState {
 } derive(Eq, Debug)
 
 ///|
+pub extend TypedOwnerTestState with Eq::{not_equal, equal}
+
+///|
+pub extend TypedOwnerTestState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 enum TypedOwnerTestOutcome {
   TestSucceeded(Int32)
   TestFailed(String)
   TestCancelled
 } derive(Eq, Debug)
+
+///|
+pub extend TypedOwnerTestOutcome with Eq::{not_equal, equal}
+
+///|
+pub extend TypedOwnerTestOutcome with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn typed_owner_test_initial() -> TypedOwnerTestState {

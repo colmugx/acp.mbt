@@ -109,11 +109,23 @@ pub(all) enum ClientAdapterCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientAdapterCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Wire responses and runtime trace intents produced by one adapter step.
 pub(all) enum ClientAdapterOutput {
   Response(JsonRpcResponse)
   Command(ClientAdapterCommand)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientAdapterOutput with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterOutput with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Adapter state contains only the protocol lifecycle and negotiated
@@ -122,6 +134,12 @@ pub(all) enum ClientAdapterOutput {
 pub(all) struct ClientAdapterState {
   protocol : ClientProtocolState
 } derive(Eq, Debug)
+
+///|
+pub extend ClientAdapterState with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterState with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 pub fn client_adapter_state_new(
@@ -145,6 +163,12 @@ pub(all) struct ClientAdapterStep {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientAdapterStep with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterStep with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Admission is synchronous and pure.  Only `Invoke` crosses the async
 /// handler boundary; `Immediate` already contains its complete owner-loop
 /// state transition and output.
@@ -162,6 +186,12 @@ pub(all) suberror ClientAdapterError {
   UnexpectedMessage(kind~ : String)
   CompletionMismatch(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientAdapterError with Eq::{not_equal, equal}
+
+///|
+pub extend ClientAdapterError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 fn client_adapter_response_id(id : RequestId) -> JsonRpcId {

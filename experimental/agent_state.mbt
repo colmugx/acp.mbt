@@ -22,6 +22,14 @@ pub(all) enum ExperimentalV2AgentRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentRequest with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn ExperimentalV2AgentRequest::method_name(
   self : ExperimentalV2AgentRequest,
 ) -> String {
@@ -48,6 +56,14 @@ pub(all) enum ExperimentalV2AgentNotification {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentNotification with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn ExperimentalV2AgentNotification::method_name(
   self : ExperimentalV2AgentNotification,
 ) -> String {
@@ -65,6 +81,14 @@ pub(all) enum ExperimentalV2AgentPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentPhase with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentPhase with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Agent-side authentication state.  A non-empty advertised `authMethods`
 /// activates the surface as `AuthPending` after `initialize`; v2 does not
 /// gate session methods on authentication.
@@ -73,6 +97,14 @@ pub(all) enum ExperimentalV2AgentAuthentication {
   AuthPending
   AuthLoggedIn
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentAuthentication with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentAuthentication with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Immutable advertisement of one v2 Agent endpoint: what its `initialize`
@@ -86,6 +118,14 @@ pub(all) struct ExperimentalV2AgentEndpointConfig {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentEndpointConfig with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentEndpointConfig with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Immutable Agent-side v2 endpoint state.
 pub(all) struct ExperimentalV2AgentState {
   phase : ExperimentalV2AgentPhase
@@ -94,6 +134,14 @@ pub(all) struct ExperimentalV2AgentState {
   client_info : ExperimentalV2Implementation?
   config : ExperimentalV2AgentEndpointConfig
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Inputs accepted by the pure Agent-side v2 reducer.  Runtime effects are
@@ -105,6 +153,14 @@ pub(all) enum ExperimentalV2AgentEvent {
   LoginSucceeded(method_id~ : String)
   LoggedOut
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentEvent with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentEvent with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Commands emitted by the pure v2 Agent reducer for a runtime or endpoint
@@ -119,11 +175,25 @@ pub(all) enum ExperimentalV2AgentCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentCommand with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// State and commands produced by one v2 Agent reducer step.
 pub(all) struct ExperimentalV2AgentStep {
   state : ExperimentalV2AgentState
   commands : Array[ExperimentalV2AgentCommand]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentStep with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentStep with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Explicit failures from v2 Agent phase, negotiation, and capability gates.
@@ -139,11 +209,27 @@ pub(all) suberror ExperimentalV2AgentProtocolError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentProtocolError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentProtocolError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Fail-fast construction failures of the advertised v2 Agent method set.
 pub(all) suberror ExperimentalV2AgentStateError {
   EmptyAuthMethods
   DuplicateAuthMethodId(method_id~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentStateError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentStateError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Construct a fresh v2 Agent endpoint state, validating the advertised

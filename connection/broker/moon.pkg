@@ -8,7 +8,6 @@ import {
   "colmugx/acp/protocol" @protocol_data,
   "colmugx/acp/protocol/session" @session_protocol,
   "moonbitlang/async",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "native"

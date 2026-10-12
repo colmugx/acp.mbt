@@ -14,6 +14,12 @@ pub(all) enum ElicitationScope {
 } derive(Eq, Debug)
 
 ///|
+pub extend ElicitationScope with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationScope with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Form-mode elicitation parameters.
 pub(all) struct ElicitationFormParams {
   scope : ElicitationScope
@@ -21,6 +27,12 @@ pub(all) struct ElicitationFormParams {
   requested_schema : Json
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ElicitationFormParams with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationFormParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// URL-mode elicitation parameters.
@@ -33,11 +45,23 @@ pub(all) struct ElicitationUrlParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend ElicitationUrlParams with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationUrlParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The form/URL union for `elicitation/create`.
 pub(all) enum ElicitationCreateParams {
   Form(ElicitationFormParams)
   Url(ElicitationUrlParams)
 } derive(Eq, Debug)
+
+///|
+pub extend ElicitationCreateParams with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationCreateParams with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The action returned by the client for `elicitation/create`.
@@ -46,6 +70,12 @@ pub(all) enum ElicitationAction {
   Decline
   Cancel
 } derive(Eq, Debug)
+
+///|
+pub extend ElicitationAction with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationAction with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Result of `elicitation/create`.
@@ -60,11 +90,25 @@ pub(all) struct ElicitationCreateResult {
 } derive(Eq, Debug)
 
 ///|
+pub extend ElicitationCreateResult with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationCreateResult with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Parameters for the `elicitation/complete` notification.
 pub(all) struct ElicitationCompleteParams {
   elicitation_id : ElicitationId
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ElicitationCompleteParams with Eq::{not_equal, equal}
+
+///|
+pub extend ElicitationCompleteParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn elicitation_require_non_empty(

@@ -46,6 +46,12 @@ pub(all) struct SessionMode {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionMode with Eq::{not_equal, equal}
+
+///|
+pub extend SessionMode with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The current mode and the complete set of modes available to a session.
 pub(all) struct SessionModeState {
   current_mode_id : SessionModeId
@@ -54,11 +60,23 @@ pub(all) struct SessionModeState {
 } derive(Eq, Debug)
 
 ///|
+pub extend SessionModeState with Eq::{not_equal, equal}
+
+///|
+pub extend SessionModeState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A value accepted by `session/set_config_option`.
 pub(all) enum SessionConfigValue {
   Boolean(Bool)
   ValueId(SessionConfigValueId)
 } derive(Eq, Debug)
+
+///|
+pub extend SessionConfigValue with Eq::{not_equal, equal}
+
+///|
+pub extend SessionConfigValue with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/set_mode`.
@@ -69,10 +87,22 @@ pub(all) struct SetSessionModeParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend SetSessionModeParams with Eq::{not_equal, equal}
+
+///|
+pub extend SetSessionModeParams with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Result of `session/set_mode`.
 pub(all) struct SetSessionModeResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SetSessionModeResult with Eq::{not_equal, equal}
+
+///|
+pub extend SetSessionModeResult with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Parameters for `session/set_config_option`.
@@ -84,11 +114,27 @@ pub(all) struct SetSessionConfigOptionParams {
 } derive(Eq, Debug)
 
 ///|
+pub extend SetSessionConfigOptionParams with Eq::{not_equal, equal}
+
+///|
+pub extend SetSessionConfigOptionParams with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Result of `session/set_config_option`.
 pub(all) struct SetSessionConfigOptionResult {
   config_options : Array[SessionConfigOption]
   meta : ProtocolNullable[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend SetSessionConfigOptionResult with Eq::{not_equal, equal}
+
+///|
+pub extend SetSessionConfigOptionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn session_config_decode_modes(

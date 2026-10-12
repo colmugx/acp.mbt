@@ -25,6 +25,9 @@ pub(all) suberror FramingError {
   FrameTooLarge(limit~ : Int, actual~ : Int)
   UnexpectedEof
 } derive(Eq, @debug.Debug)
+pub fn FramingError::equal(Self, Self) -> Bool
+pub fn FramingError::not_equal(Self, Self) -> Bool
+pub fn FramingError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) struct FramingState {
@@ -32,11 +35,17 @@ pub(all) struct FramingState {
   max_frame_bytes : Int
   closed : Bool
 } derive(Eq, @debug.Debug)
+pub fn FramingState::equal(Self, Self) -> Bool
+pub fn FramingState::not_equal(Self, Self) -> Bool
+pub fn FramingState::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FramingStep {
   state : FramingState
   frames : Array[String]
 } derive(Eq, @debug.Debug)
+pub fn FramingStep::equal(Self, Self) -> Bool
+pub fn FramingStep::not_equal(Self, Self) -> Bool
+pub fn FramingStep::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

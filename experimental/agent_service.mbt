@@ -12,6 +12,14 @@ pub(all) suberror ExperimentalV2AgentHandlerError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2AgentHandlerError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentHandlerError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Normalize one raw handler failure once at the v2 endpoint boundary:
 /// cancellation and typed failures keep their shape (the method name is added
 /// as context), anything else names itself as an application failure.
@@ -197,6 +205,14 @@ pub(all) suberror ExperimentalV2AgentCompositionError {
   /// capability marker.
   SessionMarkerMissing
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2AgentCompositionError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2AgentCompositionError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Immutable v2 Agent specification: advertised identity and capabilities

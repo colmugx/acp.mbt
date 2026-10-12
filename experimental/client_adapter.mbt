@@ -10,6 +10,14 @@ pub(all) enum ExperimentalV2ClientAdapterCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientAdapterCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientAdapterCommand with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Typed adapter output.  Responses are wire values the owner loop
 /// serializes; commands are interpreted by the runtime.
 pub(all) enum ExperimentalV2ClientAdapterOutput {
@@ -18,11 +26,27 @@ pub(all) enum ExperimentalV2ClientAdapterOutput {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientAdapterOutput with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientAdapterOutput with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// State owned by the connection owner loop.  Handler tasks receive this
 /// value only through an admission result; they never mutate it.
 pub(all) struct ExperimentalV2ClientAdapterState {
   protocol : ExperimentalV2ClientState
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientAdapterState with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientAdapterState with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_client_adapter_state_new(
@@ -46,6 +70,14 @@ pub(all) struct ExperimentalV2ClientAdapterStep {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientAdapterStep with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientAdapterStep with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Admission is synchronous and owner-loop controlled.  Protocol failures are
 /// immediate; only typed invocations cross the async task boundary.
 pub(all) enum ExperimentalV2ClientAdmission {
@@ -67,12 +99,28 @@ pub(all) suberror ExperimentalV2ClientAdapterError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ClientAdapterError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientAdapterError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Failures raised while decoding one inbound v2 Client message into the
 /// typed request/notification set.
 pub(all) suberror ExperimentalV2ClientMessageError {
   UnknownMethod(method_name~ : String)
   InvalidParams(method_name~ : String, cause~ : ExperimentalV2DecodeError)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ClientMessageError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ClientMessageError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn experimental_v2_client_response_id(

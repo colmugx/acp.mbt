@@ -19,6 +19,14 @@ pub(all) suberror ExperimentalV2DecodeError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2DecodeError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2DecodeError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Parse one JSON value for the v2 data-model codecs.
 pub fn experimental_v2_parse_json(
   source : String,
@@ -44,6 +52,12 @@ pub(all) enum ExperimentalV2Patch[T] {
   PatchNull
   PatchValue(T)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2Patch with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Patch with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Read one field as a raw patch tri-state.

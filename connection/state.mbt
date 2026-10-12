@@ -17,6 +17,12 @@ enum ConnectionPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend ConnectionPhase with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionPhase with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A request initiated by the local endpoint and awaiting its peer.
 struct PendingOutbound {
   id : RequestId
@@ -25,12 +31,24 @@ struct PendingOutbound {
 } derive(Eq, Debug)
 
 ///|
+pub extend PendingOutbound with Eq::{not_equal, equal}
+
+///|
+pub extend PendingOutbound with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A request initiated by the peer and awaiting local handler completion.
 struct PendingInbound {
   id : RequestId
   method_name : String
   cancel_requested : Bool
 } derive(Eq, Debug)
+
+///|
+pub extend PendingInbound with Eq::{not_equal, equal}
+
+///|
+pub extend PendingInbound with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// All mutable-looking connection data is carried explicitly in this value.
@@ -43,6 +61,12 @@ struct ConnectionState {
   settled_outbound : Array[RequestId]
   settled_inbound : Array[RequestId]
 } derive(Eq, Debug)
+
+///|
+pub extend ConnectionState with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionState with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// The initial open state.
@@ -76,6 +100,12 @@ enum ConnectionEvent {
 } derive(Eq, Debug)
 
 ///|
+pub extend ConnectionEvent with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionEvent with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// The precise, closed reason set for one tolerated inbound wire
 /// cancellation. An ACP `$/cancel_request` is best-effort by wire contract:
 /// the receiver MAY cancel the matching activity, the only obligation is
@@ -89,6 +119,14 @@ enum ConnectionCancelIgnoreReason {
   CancelAlreadySettled
   CancelAlreadyCancelled
 } derive(Eq, Debug)
+
+///|
+pub extend ConnectionCancelIgnoreReason with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionCancelIgnoreReason with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Intent-only commands.  No command owns an async task, queue, callback, or
@@ -109,11 +147,23 @@ enum ConnectionCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ConnectionCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// A pure transition result.
 struct ConnectionStep {
   state : ConnectionState
   commands : Array[ConnectionCommand]
 } derive(Eq, Debug)
+
+///|
+pub extend ConnectionStep with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionStep with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Reducer failures are structured and never converted into silent defaults.
@@ -131,3 +181,9 @@ suberror ConnectionError {
   UnknownInboundCompletion(id~ : RequestId)
   LateInboundCompletion(id~ : RequestId)
 } derive(Eq, Debug)
+
+///|
+pub extend ConnectionError with Eq::{not_equal, equal}
+
+///|
+pub extend ConnectionError with @moonbitlang/core/debug.Debug::{to_repr}

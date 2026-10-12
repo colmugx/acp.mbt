@@ -368,6 +368,9 @@ pub(all) suberror ProtocolDecodeError {
   InvalidPath(path~ : String, value~ : String)
   InvalidBase64(path~ : String)
 } derive(Eq, @debug.Debug)
+pub fn ProtocolDecodeError::equal(Self, Self) -> Bool
+pub fn ProtocolDecodeError::not_equal(Self, Self) -> Bool
+pub fn ProtocolDecodeError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror SessionUpdateFoldError {
   DuplicateToolCall(tool_call_id~ : String)
@@ -375,12 +378,18 @@ pub(all) suberror SessionUpdateFoldError {
   UnknownMode(mode_id~ : String)
   InvalidTimestamp(field~ : String, value~ : String)
 } derive(Eq, @debug.Debug)
+pub fn SessionUpdateFoldError::equal(Self, Self) -> Bool
+pub fn SessionUpdateFoldError::not_equal(Self, Self) -> Bool
+pub fn SessionUpdateFoldError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) struct AgentAuthCapabilities {
   logout : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AgentAuthCapabilities::equal(Self, Self) -> Bool
+pub fn AgentAuthCapabilities::not_equal(Self, Self) -> Bool
+pub fn AgentAuthCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentCapabilities {
   load_session : ProtocolNullable[Bool]
@@ -390,12 +399,18 @@ pub(all) struct AgentCapabilities {
   session_capabilities : ProtocolNullable[AgentSessionCapabilities]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AgentCapabilities::equal(Self, Self) -> Bool
+pub fn AgentCapabilities::not_equal(Self, Self) -> Bool
+pub fn AgentCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentMcpCapabilities {
   http : ProtocolNullable[Bool]
   sse : ProtocolNullable[Bool]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AgentMcpCapabilities::equal(Self, Self) -> Bool
+pub fn AgentMcpCapabilities::not_equal(Self, Self) -> Bool
+pub fn AgentMcpCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentPromptCapabilities {
   image : ProtocolNullable[Bool]
@@ -403,6 +418,9 @@ pub(all) struct AgentPromptCapabilities {
   embedded_context : ProtocolNullable[Bool]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AgentPromptCapabilities::equal(Self, Self) -> Bool
+pub fn AgentPromptCapabilities::not_equal(Self, Self) -> Bool
+pub fn AgentPromptCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AgentSessionCapabilities {
   list : ProtocolNullable[CapabilityMarker]
@@ -413,6 +431,9 @@ pub(all) struct AgentSessionCapabilities {
   fork : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AgentSessionCapabilities::equal(Self, Self) -> Bool
+pub fn AgentSessionCapabilities::not_equal(Self, Self) -> Bool
+pub fn AgentSessionCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Annotations {
   audience : ProtocolNullable[Array[Role]]
@@ -420,6 +441,9 @@ pub(all) struct Annotations {
   priority : ProtocolNullable[Double]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Annotations::equal(Self, Self) -> Bool
+pub fn Annotations::not_equal(Self, Self) -> Bool
+pub fn Annotations::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AudioContent {
   annotations : ProtocolNullable[Annotations]
@@ -427,6 +451,9 @@ pub(all) struct AudioContent {
   mime_type : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AudioContent::equal(Self, Self) -> Bool
+pub fn AudioContent::not_equal(Self, Self) -> Bool
+pub fn AudioContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AuthMethod {
   id : String
@@ -434,15 +461,24 @@ pub(all) struct AuthMethod {
   description : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AuthMethod::equal(Self, Self) -> Bool
+pub fn AuthMethod::not_equal(Self, Self) -> Bool
+pub fn AuthMethod::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AuthenticateParams {
   method_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AuthenticateParams::equal(Self, Self) -> Bool
+pub fn AuthenticateParams::not_equal(Self, Self) -> Bool
+pub fn AuthenticateParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AuthenticateResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AuthenticateResult::equal(Self, Self) -> Bool
+pub fn AuthenticateResult::not_equal(Self, Self) -> Bool
+pub fn AuthenticateResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AvailableCommand {
   name : String
@@ -450,15 +486,24 @@ pub(all) struct AvailableCommand {
   input : ProtocolNullable[AvailableCommandInput]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AvailableCommand::equal(Self, Self) -> Bool
+pub fn AvailableCommand::not_equal(Self, Self) -> Bool
+pub fn AvailableCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AvailableCommandInput {
   Unstructured(UnstructuredCommandInput)
 } derive(Eq, @debug.Debug)
+pub fn AvailableCommandInput::equal(Self, Self) -> Bool
+pub fn AvailableCommandInput::not_equal(Self, Self) -> Bool
+pub fn AvailableCommandInput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AvailableCommandsUpdate {
   available_commands : Array[AvailableCommand]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn AvailableCommandsUpdate::equal(Self, Self) -> Bool
+pub fn AvailableCommandsUpdate::not_equal(Self, Self) -> Bool
+pub fn AvailableCommandsUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct BlobResourceContents {
   blob : String
@@ -466,15 +511,24 @@ pub(all) struct BlobResourceContents {
   uri : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn BlobResourceContents::equal(Self, Self) -> Bool
+pub fn BlobResourceContents::not_equal(Self, Self) -> Bool
+pub fn BlobResourceContents::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CapabilityMarker {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn CapabilityMarker::equal(Self, Self) -> Bool
+pub fn CapabilityMarker::not_equal(Self, Self) -> Bool
+pub fn CapabilityMarker::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientAuthCapabilities {
   terminal : ProtocolNullable[Bool]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientAuthCapabilities::equal(Self, Self) -> Bool
+pub fn ClientAuthCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientAuthCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientCapabilities {
   fs : ProtocolNullable[ClientFileSystemCapabilities]
@@ -485,38 +539,59 @@ pub(all) struct ClientCapabilities {
   auth : ProtocolNullable[ClientAuthCapabilities]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientCapabilities::equal(Self, Self) -> Bool
+pub fn ClientCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientConfigOptionCapabilities {
   boolean : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientConfigOptionCapabilities::equal(Self, Self) -> Bool
+pub fn ClientConfigOptionCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientConfigOptionCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientElicitationCapabilities {
   form : ProtocolNullable[CapabilityMarker]
   url : ProtocolNullable[CapabilityMarker]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientElicitationCapabilities::equal(Self, Self) -> Bool
+pub fn ClientElicitationCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientElicitationCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientFileSystemCapabilities {
   read_text_file : ProtocolNullable[Bool]
   write_text_file : ProtocolNullable[Bool]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientFileSystemCapabilities::equal(Self, Self) -> Bool
+pub fn ClientFileSystemCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientFileSystemCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ClientSessionCapabilities {
   config_options : ProtocolNullable[ClientConfigOptionCapabilities]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ClientSessionCapabilities::equal(Self, Self) -> Bool
+pub fn ClientSessionCapabilities::not_equal(Self, Self) -> Bool
+pub fn ClientSessionCapabilities::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ConfigOptionUpdate {
   config_options : Array[SessionConfigOption]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ConfigOptionUpdate::equal(Self, Self) -> Bool
+pub fn ConfigOptionUpdate::not_equal(Self, Self) -> Bool
+pub fn ConfigOptionUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Content {
   content : ContentBlock
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Content::equal(Self, Self) -> Bool
+pub fn Content::not_equal(Self, Self) -> Bool
+pub fn Content::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContentBlock {
   Text(TextContent)
@@ -525,23 +600,35 @@ pub(all) enum ContentBlock {
   ResourceLink(ResourceLink)
   Resource(EmbeddedResource)
 } derive(Eq, @debug.Debug)
+pub fn ContentBlock::equal(Self, Self) -> Bool
+pub fn ContentBlock::not_equal(Self, Self) -> Bool
+pub fn ContentBlock::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ContentChunk {
   content : ContentBlock
   message_id : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ContentChunk::equal(Self, Self) -> Bool
+pub fn ContentChunk::not_equal(Self, Self) -> Bool
+pub fn ContentChunk::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Cost {
   amount : Double
   currency : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Cost::equal(Self, Self) -> Bool
+pub fn Cost::not_equal(Self, Self) -> Bool
+pub fn Cost::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CurrentModeUpdate {
   current_mode_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn CurrentModeUpdate::equal(Self, Self) -> Bool
+pub fn CurrentModeUpdate::not_equal(Self, Self) -> Bool
+pub fn CurrentModeUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Diff {
   path : String
@@ -549,28 +636,43 @@ pub(all) struct Diff {
   new_text : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Diff::equal(Self, Self) -> Bool
+pub fn Diff::not_equal(Self, Self) -> Bool
+pub fn Diff::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ElicitationAction {
   Accept
   Decline
   Cancel
 } derive(Eq, @debug.Debug)
+pub fn ElicitationAction::equal(Self, Self) -> Bool
+pub fn ElicitationAction::not_equal(Self, Self) -> Bool
+pub fn ElicitationAction::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElicitationCompleteParams {
   elicitation_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ElicitationCompleteParams::equal(Self, Self) -> Bool
+pub fn ElicitationCompleteParams::not_equal(Self, Self) -> Bool
+pub fn ElicitationCompleteParams::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ElicitationCreateParams {
   Form(ElicitationFormParams)
   Url(ElicitationUrlParams)
 } derive(Eq, @debug.Debug)
+pub fn ElicitationCreateParams::equal(Self, Self) -> Bool
+pub fn ElicitationCreateParams::not_equal(Self, Self) -> Bool
+pub fn ElicitationCreateParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElicitationCreateResult {
   action : ElicitationAction
   content : ProtocolNullable[Json]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ElicitationCreateResult::equal(Self, Self) -> Bool
+pub fn ElicitationCreateResult::not_equal(Self, Self) -> Bool
+pub fn ElicitationCreateResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElicitationFormParams {
   scope : ElicitationScope
@@ -578,11 +680,17 @@ pub(all) struct ElicitationFormParams {
   requested_schema : Json
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ElicitationFormParams::equal(Self, Self) -> Bool
+pub fn ElicitationFormParams::not_equal(Self, Self) -> Bool
+pub fn ElicitationFormParams::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ElicitationScope {
   Request(@jsonrpc.RequestId)
   Session(session_id~ : String, tool_call_id~ : ProtocolNullable[String])
 } derive(Eq, @debug.Debug)
+pub fn ElicitationScope::equal(Self, Self) -> Bool
+pub fn ElicitationScope::not_equal(Self, Self) -> Bool
+pub fn ElicitationScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ElicitationUrlParams {
   scope : ElicitationScope
@@ -591,17 +699,26 @@ pub(all) struct ElicitationUrlParams {
   url : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ElicitationUrlParams::equal(Self, Self) -> Bool
+pub fn ElicitationUrlParams::not_equal(Self, Self) -> Bool
+pub fn ElicitationUrlParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EmbeddedResource {
   annotations : ProtocolNullable[Annotations]
   resource : EmbeddedResourceResource
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn EmbeddedResource::equal(Self, Self) -> Bool
+pub fn EmbeddedResource::not_equal(Self, Self) -> Bool
+pub fn EmbeddedResource::to_repr(Self) -> @debug.Repr
 
 pub(all) enum EmbeddedResourceResource {
   Text(TextResourceContents)
   Blob(BlobResourceContents)
 } derive(Eq, @debug.Debug)
+pub fn EmbeddedResourceResource::equal(Self, Self) -> Bool
+pub fn EmbeddedResourceResource::not_equal(Self, Self) -> Bool
+pub fn EmbeddedResourceResource::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ImageContent {
   annotations : ProtocolNullable[Annotations]
@@ -610,6 +727,9 @@ pub(all) struct ImageContent {
   uri : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ImageContent::equal(Self, Self) -> Bool
+pub fn ImageContent::not_equal(Self, Self) -> Bool
+pub fn ImageContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Implementation {
   name : String
@@ -617,6 +737,9 @@ pub(all) struct Implementation {
   version : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Implementation::equal(Self, Self) -> Bool
+pub fn Implementation::not_equal(Self, Self) -> Bool
+pub fn Implementation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct InitializeParams {
   protocol_version : Int
@@ -624,6 +747,9 @@ pub(all) struct InitializeParams {
   client_info : ProtocolNullable[Implementation]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn InitializeParams::equal(Self, Self) -> Bool
+pub fn InitializeParams::not_equal(Self, Self) -> Bool
+pub fn InitializeParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct InitializeResult {
   protocol_version : Int
@@ -632,32 +758,50 @@ pub(all) struct InitializeResult {
   agent_info : ProtocolNullable[Implementation]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn InitializeResult::equal(Self, Self) -> Bool
+pub fn InitializeResult::not_equal(Self, Self) -> Bool
+pub fn InitializeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LogoutParams {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn LogoutParams::equal(Self, Self) -> Bool
+pub fn LogoutParams::not_equal(Self, Self) -> Bool
+pub fn LogoutParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LogoutResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn LogoutResult::equal(Self, Self) -> Bool
+pub fn LogoutResult::not_equal(Self, Self) -> Bool
+pub fn LogoutResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct McpEnvVariable {
   name : String
   value : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn McpEnvVariable::equal(Self, Self) -> Bool
+pub fn McpEnvVariable::not_equal(Self, Self) -> Bool
+pub fn McpEnvVariable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct McpHttpHeader {
   name : String
   value : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn McpHttpHeader::equal(Self, Self) -> Bool
+pub fn McpHttpHeader::not_equal(Self, Self) -> Bool
+pub fn McpHttpHeader::to_repr(Self) -> @debug.Repr
 
 pub(all) enum McpServer {
   Stdio(McpServerStdio)
   Http(McpServerHttp)
   Sse(McpServerSse)
 } derive(Eq, @debug.Debug)
+pub fn McpServer::equal(Self, Self) -> Bool
+pub fn McpServer::not_equal(Self, Self) -> Bool
+pub fn McpServer::to_repr(Self) -> @debug.Repr
 
 pub(all) struct McpServerHttp {
   name : String
@@ -665,6 +809,9 @@ pub(all) struct McpServerHttp {
   headers : Array[McpHttpHeader]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn McpServerHttp::equal(Self, Self) -> Bool
+pub fn McpServerHttp::not_equal(Self, Self) -> Bool
+pub fn McpServerHttp::to_repr(Self) -> @debug.Repr
 
 pub(all) struct McpServerSse {
   name : String
@@ -672,6 +819,9 @@ pub(all) struct McpServerSse {
   headers : Array[McpHttpHeader]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn McpServerSse::equal(Self, Self) -> Bool
+pub fn McpServerSse::not_equal(Self, Self) -> Bool
+pub fn McpServerSse::to_repr(Self) -> @debug.Repr
 
 pub(all) struct McpServerStdio {
   name : String
@@ -680,6 +830,9 @@ pub(all) struct McpServerStdio {
   env : Array[McpEnvVariable]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn McpServerStdio::equal(Self, Self) -> Bool
+pub fn McpServerStdio::not_equal(Self, Self) -> Bool
+pub fn McpServerStdio::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PermissionOption {
   option_id : String
@@ -687,6 +840,9 @@ pub(all) struct PermissionOption {
   kind : PermissionOptionKind
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn PermissionOption::equal(Self, Self) -> Bool
+pub fn PermissionOption::not_equal(Self, Self) -> Bool
+pub fn PermissionOption::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PermissionOptionKind {
   AllowOnce
@@ -694,11 +850,17 @@ pub(all) enum PermissionOptionKind {
   RejectOnce
   RejectAlways
 } derive(Eq, @debug.Debug)
+pub fn PermissionOptionKind::equal(Self, Self) -> Bool
+pub fn PermissionOptionKind::not_equal(Self, Self) -> Bool
+pub fn PermissionOptionKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Plan {
   entries : Array[PlanEntry]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Plan::equal(Self, Self) -> Bool
+pub fn Plan::not_equal(Self, Self) -> Bool
+pub fn Plan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PlanEntry {
   content : String
@@ -706,24 +868,36 @@ pub(all) struct PlanEntry {
   status : PlanEntryStatus
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn PlanEntry::equal(Self, Self) -> Bool
+pub fn PlanEntry::not_equal(Self, Self) -> Bool
+pub fn PlanEntry::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PlanEntryPriority {
   High
   Medium
   Low
 } derive(Eq, @debug.Debug)
+pub fn PlanEntryPriority::equal(Self, Self) -> Bool
+pub fn PlanEntryPriority::not_equal(Self, Self) -> Bool
+pub fn PlanEntryPriority::to_repr(Self) -> @debug.Repr
 
 pub(all) enum PlanEntryStatus {
   Pending
   InProgress
   Completed
 } derive(Eq, @debug.Debug)
+pub fn PlanEntryStatus::equal(Self, Self) -> Bool
+pub fn PlanEntryStatus::not_equal(Self, Self) -> Bool
+pub fn PlanEntryStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ProtocolNullable[T] {
   Omitted
   Null
   Value(T)
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] ProtocolNullable::equal(Self[T], Self[T]) -> Bool
+pub fn[T : Eq] ProtocolNullable::not_equal(Self[T], Self[T]) -> Bool
+pub fn[T : @debug.Debug] ProtocolNullable::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct ReadTextFileParams {
   session_id : String
@@ -732,16 +906,25 @@ pub(all) struct ReadTextFileParams {
   limit : ProtocolNullable[UInt64]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ReadTextFileParams::equal(Self, Self) -> Bool
+pub fn ReadTextFileParams::not_equal(Self, Self) -> Bool
+pub fn ReadTextFileParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ReadTextFileResult {
   content : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ReadTextFileResult::equal(Self, Self) -> Bool
+pub fn ReadTextFileResult::not_equal(Self, Self) -> Bool
+pub fn ReadTextFileResult::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RequestPermissionOutcome {
   Cancelled
   Selected(SelectedPermissionOutcome)
 } derive(Eq, @debug.Debug)
+pub fn RequestPermissionOutcome::equal(Self, Self) -> Bool
+pub fn RequestPermissionOutcome::not_equal(Self, Self) -> Bool
+pub fn RequestPermissionOutcome::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RequestPermissionRequest {
   session_id : String
@@ -749,11 +932,17 @@ pub(all) struct RequestPermissionRequest {
   options : Array[PermissionOption]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn RequestPermissionRequest::equal(Self, Self) -> Bool
+pub fn RequestPermissionRequest::not_equal(Self, Self) -> Bool
+pub fn RequestPermissionRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RequestPermissionResponse {
   outcome : RequestPermissionOutcome
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn RequestPermissionResponse::equal(Self, Self) -> Bool
+pub fn RequestPermissionResponse::not_equal(Self, Self) -> Bool
+pub fn RequestPermissionResponse::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ResourceLink {
   annotations : ProtocolNullable[Annotations]
@@ -765,20 +954,32 @@ pub(all) struct ResourceLink {
   uri : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ResourceLink::equal(Self, Self) -> Bool
+pub fn ResourceLink::not_equal(Self, Self) -> Bool
+pub fn ResourceLink::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Role {
   User
   Assistant
 } derive(Eq, @debug.Debug)
+pub fn Role::equal(Self, Self) -> Bool
+pub fn Role::not_equal(Self, Self) -> Bool
+pub fn Role::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SelectedPermissionOutcome {
   option_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SelectedPermissionOutcome::equal(Self, Self) -> Bool
+pub fn SelectedPermissionOutcome::not_equal(Self, Self) -> Bool
+pub fn SelectedPermissionOutcome::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionConfigBoolean {
   current_value : Bool
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigBoolean::equal(Self, Self) -> Bool
+pub fn SessionConfigBoolean::not_equal(Self, Self) -> Bool
+pub fn SessionConfigBoolean::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionConfigOption {
   id : String
@@ -788,6 +989,9 @@ pub(all) struct SessionConfigOption {
   kind : SessionConfigOptionKind
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigOption::equal(Self, Self) -> Bool
+pub fn SessionConfigOption::not_equal(Self, Self) -> Bool
+pub fn SessionConfigOption::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SessionConfigOptionCategory {
   Mode
@@ -796,16 +1000,25 @@ pub(all) enum SessionConfigOptionCategory {
   ThoughtLevel
   Other(String)
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigOptionCategory::equal(Self, Self) -> Bool
+pub fn SessionConfigOptionCategory::not_equal(Self, Self) -> Bool
+pub fn SessionConfigOptionCategory::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SessionConfigOptionKind {
   Select(SessionConfigSelect)
   Boolean(SessionConfigBoolean)
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigOptionKind::equal(Self, Self) -> Bool
+pub fn SessionConfigOptionKind::not_equal(Self, Self) -> Bool
+pub fn SessionConfigOptionKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionConfigSelect {
   current_value : String
   options : SessionConfigSelectOptions
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigSelect::equal(Self, Self) -> Bool
+pub fn SessionConfigSelect::not_equal(Self, Self) -> Bool
+pub fn SessionConfigSelect::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionConfigSelectGroup {
   group : String
@@ -813,6 +1026,9 @@ pub(all) struct SessionConfigSelectGroup {
   options : Array[SessionConfigSelectOption]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigSelectGroup::equal(Self, Self) -> Bool
+pub fn SessionConfigSelectGroup::not_equal(Self, Self) -> Bool
+pub fn SessionConfigSelectGroup::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionConfigSelectOption {
   value : String
@@ -820,11 +1036,17 @@ pub(all) struct SessionConfigSelectOption {
   description : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigSelectOption::equal(Self, Self) -> Bool
+pub fn SessionConfigSelectOption::not_equal(Self, Self) -> Bool
+pub fn SessionConfigSelectOption::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SessionConfigSelectOptions {
   Ungrouped(Array[SessionConfigSelectOption])
   Grouped(Array[SessionConfigSelectGroup])
 } derive(Eq, @debug.Debug)
+pub fn SessionConfigSelectOptions::equal(Self, Self) -> Bool
+pub fn SessionConfigSelectOptions::not_equal(Self, Self) -> Bool
+pub fn SessionConfigSelectOptions::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionInfo {
   session_id : String
@@ -834,12 +1056,18 @@ pub(all) struct SessionInfo {
   updated_at : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionInfo::equal(Self, Self) -> Bool
+pub fn SessionInfo::not_equal(Self, Self) -> Bool
+pub fn SessionInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionInfoUpdate {
   title : ProtocolNullable[String]
   updated_at : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn SessionInfoUpdate::equal(Self, Self) -> Bool
+pub fn SessionInfoUpdate::not_equal(Self, Self) -> Bool
+pub fn SessionInfoUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SessionUpdate {
   UserMessageChunk(ContentChunk)
@@ -854,6 +1082,9 @@ pub(all) enum SessionUpdate {
   SessionInfoUpdate(SessionInfoUpdate)
   UsageUpdate(UsageUpdate)
 } derive(Eq, @debug.Debug)
+pub fn SessionUpdate::equal(Self, Self) -> Bool
+pub fn SessionUpdate::not_equal(Self, Self) -> Bool
+pub fn SessionUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionUpdateFold {
   known_modes : Array[String]
@@ -869,16 +1100,25 @@ pub(all) struct SessionUpdateFold {
   session_updated_at : ProtocolNullable[String]
   usage : UsageUpdate?
 } derive(Eq, @debug.Debug)
+pub fn SessionUpdateFold::equal(Self, Self) -> Bool
+pub fn SessionUpdateFold::not_equal(Self, Self) -> Bool
+pub fn SessionUpdateFold::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SessionUpdateMessage {
   message_id : ProtocolNullable[String]
   blocks : Array[ContentBlock]
 } derive(Eq, @debug.Debug)
+pub fn SessionUpdateMessage::equal(Self, Self) -> Bool
+pub fn SessionUpdateMessage::not_equal(Self, Self) -> Bool
+pub fn SessionUpdateMessage::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Terminal {
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn Terminal::equal(Self, Self) -> Bool
+pub fn Terminal::not_equal(Self, Self) -> Bool
+pub fn Terminal::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalCreateParams {
   session_id : String
@@ -889,39 +1129,60 @@ pub(all) struct TerminalCreateParams {
   output_byte_limit : ProtocolNullable[UInt64]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalCreateParams::equal(Self, Self) -> Bool
+pub fn TerminalCreateParams::not_equal(Self, Self) -> Bool
+pub fn TerminalCreateParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalCreateResult {
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalCreateResult::equal(Self, Self) -> Bool
+pub fn TerminalCreateResult::not_equal(Self, Self) -> Bool
+pub fn TerminalCreateResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalEnvVariable {
   name : String
   value : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalEnvVariable::equal(Self, Self) -> Bool
+pub fn TerminalEnvVariable::not_equal(Self, Self) -> Bool
+pub fn TerminalEnvVariable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalExitStatus {
   exit_code : ProtocolNullable[UInt64]
   signal : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalExitStatus::equal(Self, Self) -> Bool
+pub fn TerminalExitStatus::not_equal(Self, Self) -> Bool
+pub fn TerminalExitStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalKillParams {
   session_id : String
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalKillParams::equal(Self, Self) -> Bool
+pub fn TerminalKillParams::not_equal(Self, Self) -> Bool
+pub fn TerminalKillParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalKillResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalKillResult::equal(Self, Self) -> Bool
+pub fn TerminalKillResult::not_equal(Self, Self) -> Bool
+pub fn TerminalKillResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalOutputParams {
   session_id : String
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalOutputParams::equal(Self, Self) -> Bool
+pub fn TerminalOutputParams::not_equal(Self, Self) -> Bool
+pub fn TerminalOutputParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalOutputResult {
   output : String
@@ -929,34 +1190,52 @@ pub(all) struct TerminalOutputResult {
   exit_status : ProtocolNullable[TerminalExitStatus]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalOutputResult::equal(Self, Self) -> Bool
+pub fn TerminalOutputResult::not_equal(Self, Self) -> Bool
+pub fn TerminalOutputResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalReleaseParams {
   session_id : String
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalReleaseParams::equal(Self, Self) -> Bool
+pub fn TerminalReleaseParams::not_equal(Self, Self) -> Bool
+pub fn TerminalReleaseParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalReleaseResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalReleaseResult::equal(Self, Self) -> Bool
+pub fn TerminalReleaseResult::not_equal(Self, Self) -> Bool
+pub fn TerminalReleaseResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalWaitForExitParams {
   session_id : String
   terminal_id : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalWaitForExitParams::equal(Self, Self) -> Bool
+pub fn TerminalWaitForExitParams::not_equal(Self, Self) -> Bool
+pub fn TerminalWaitForExitParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalWaitForExitResult {
   exit_code : ProtocolNullable[UInt64]
   signal : ProtocolNullable[String]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TerminalWaitForExitResult::equal(Self, Self) -> Bool
+pub fn TerminalWaitForExitResult::not_equal(Self, Self) -> Bool
+pub fn TerminalWaitForExitResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TextContent {
   annotations : ProtocolNullable[Annotations]
   text : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TextContent::equal(Self, Self) -> Bool
+pub fn TextContent::not_equal(Self, Self) -> Bool
+pub fn TextContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TextResourceContents {
   mime_type : ProtocolNullable[String]
@@ -964,6 +1243,9 @@ pub(all) struct TextResourceContents {
   uri : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn TextResourceContents::equal(Self, Self) -> Bool
+pub fn TextResourceContents::not_equal(Self, Self) -> Bool
+pub fn TextResourceContents::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ToolCall {
   tool_call_id : String
@@ -976,18 +1258,27 @@ pub(all) struct ToolCall {
   raw_output : ProtocolNullable[Json]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ToolCall::equal(Self, Self) -> Bool
+pub fn ToolCall::not_equal(Self, Self) -> Bool
+pub fn ToolCall::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ToolCallContent {
   Content(Content)
   Diff(Diff)
   Terminal(Terminal)
 } derive(Eq, @debug.Debug)
+pub fn ToolCallContent::equal(Self, Self) -> Bool
+pub fn ToolCallContent::not_equal(Self, Self) -> Bool
+pub fn ToolCallContent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ToolCallLocation {
   path : String
   line : ProtocolNullable[UInt64]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ToolCallLocation::equal(Self, Self) -> Bool
+pub fn ToolCallLocation::not_equal(Self, Self) -> Bool
+pub fn ToolCallLocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ToolCallStatus {
   Pending
@@ -995,6 +1286,9 @@ pub(all) enum ToolCallStatus {
   Completed
   Failed
 } derive(Eq, @debug.Debug)
+pub fn ToolCallStatus::equal(Self, Self) -> Bool
+pub fn ToolCallStatus::not_equal(Self, Self) -> Bool
+pub fn ToolCallStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ToolCallUpdate {
   tool_call_id : String
@@ -1007,6 +1301,9 @@ pub(all) struct ToolCallUpdate {
   raw_output : ProtocolNullable[Json]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn ToolCallUpdate::equal(Self, Self) -> Bool
+pub fn ToolCallUpdate::not_equal(Self, Self) -> Bool
+pub fn ToolCallUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ToolKind {
   Read
@@ -1020,11 +1317,17 @@ pub(all) enum ToolKind {
   SwitchMode
   Other
 } derive(Eq, @debug.Debug)
+pub fn ToolKind::equal(Self, Self) -> Bool
+pub fn ToolKind::not_equal(Self, Self) -> Bool
+pub fn ToolKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UnstructuredCommandInput {
   hint : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn UnstructuredCommandInput::equal(Self, Self) -> Bool
+pub fn UnstructuredCommandInput::not_equal(Self, Self) -> Bool
+pub fn UnstructuredCommandInput::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UsageUpdate {
   used : UInt64
@@ -1032,6 +1335,9 @@ pub(all) struct UsageUpdate {
   cost : ProtocolNullable[Cost]
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn UsageUpdate::equal(Self, Self) -> Bool
+pub fn UsageUpdate::not_equal(Self, Self) -> Bool
+pub fn UsageUpdate::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WriteTextFileParams {
   session_id : String
@@ -1039,10 +1345,16 @@ pub(all) struct WriteTextFileParams {
   content : String
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn WriteTextFileParams::equal(Self, Self) -> Bool
+pub fn WriteTextFileParams::not_equal(Self, Self) -> Bool
+pub fn WriteTextFileParams::to_repr(Self) -> @debug.Repr
 
 pub(all) struct WriteTextFileResult {
   meta : ProtocolNullable[Json]
 } derive(Eq, @debug.Debug)
+pub fn WriteTextFileResult::equal(Self, Self) -> Bool
+pub fn WriteTextFileResult::not_equal(Self, Self) -> Bool
+pub fn WriteTextFileResult::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type ElicitationId = String

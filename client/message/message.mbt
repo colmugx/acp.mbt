@@ -54,6 +54,12 @@ pub(all) enum ClientRequest {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ClientRequest with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Stable v1 notifications delivered to a Client, including the
 /// bidirectional JSON-RPC cancellation notification.
 pub(all) enum ClientNotification {
@@ -61,6 +67,12 @@ pub(all) enum ClientNotification {
   ElicitationComplete(ElicitationCompleteParams)
   CancelRequest(RequestId)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientNotification with Eq::{not_equal, equal}
+
+///|
+pub extend ClientNotification with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Errors raised while mapping a method and params value to the Client-side
@@ -71,6 +83,12 @@ pub(all) suberror ClientMessageError {
   WrongDirection(method_name~ : String)
   WrongKind(method_name~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientMessageError with Eq::{not_equal, equal}
+
+///|
+pub extend ClientMessageError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Return the exact wire method represented by an accepted request.

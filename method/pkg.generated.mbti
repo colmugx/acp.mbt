@@ -18,17 +18,26 @@ pub(all) struct AcpV1Method {
   direction : AcpV1MethodDirection
   kind : AcpV1MethodKind
 } derive(Eq, @debug.Debug)
+pub fn AcpV1Method::equal(Self, Self) -> Bool
+pub fn AcpV1Method::not_equal(Self, Self) -> Bool
+pub fn AcpV1Method::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AcpV1MethodDirection {
   ClientToAgent
   AgentToClient
   Bidirectional
 } derive(Eq, @debug.Debug)
+pub fn AcpV1MethodDirection::equal(Self, Self) -> Bool
+pub fn AcpV1MethodDirection::not_equal(Self, Self) -> Bool
+pub fn AcpV1MethodDirection::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AcpV1MethodKind {
   Request
   Notification
 } derive(Eq, @debug.Debug)
+pub fn AcpV1MethodKind::equal(Self, Self) -> Bool
+pub fn AcpV1MethodKind::not_equal(Self, Self) -> Bool
+pub fn AcpV1MethodKind::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

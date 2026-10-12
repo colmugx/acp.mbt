@@ -19,6 +19,12 @@ pub(all) enum ClientReply {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientReply with Eq::{not_equal, equal}
+
+///|
+pub extend ClientReply with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Return the exact request method associated with a typed reply.
 pub fn ClientReply::method_name(self : ClientReply) -> String {
   match self {
@@ -53,6 +59,12 @@ pub(all) suberror ClientConnectionError {
     actual~ : String
   )
 } derive(Eq, Debug)
+
+///|
+pub extend ClientConnectionError with Eq::{not_equal, equal}
+
+///|
+pub extend ClientConnectionError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Stable v1 exposes only protocol version 1.  Reject an incompatible typed

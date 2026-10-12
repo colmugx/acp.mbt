@@ -27,6 +27,9 @@ pub fn[S, I] typed_owner_new(S) -> TypedOwner[S, I]
 pub(all) suberror TypedOwnerError {
   Closed
 } derive(Eq, @debug.Debug)
+pub fn TypedOwnerError::equal(Self, Self) -> Bool
+pub fn TypedOwnerError::not_equal(Self, Self) -> Bool
+pub fn TypedOwnerError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum TypedCancelResult[S, I] {
@@ -81,6 +84,9 @@ pub(all) enum TypedOwnerIgnore {
   RequestIdMismatch(expected~ : @jsonrpc.RequestId, actual~ : @jsonrpc.RequestId)
   TaskKindMismatch(token~ : Int)
 } derive(Eq, @debug.Debug)
+pub fn TypedOwnerIgnore::equal(Self, Self) -> Bool
+pub fn TypedOwnerIgnore::not_equal(Self, Self) -> Bool
+pub fn TypedOwnerIgnore::to_repr(Self) -> @debug.Repr
 
 pub struct TypedOwnerTask[I] {
   token : Int

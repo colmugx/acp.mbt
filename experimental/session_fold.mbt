@@ -10,6 +10,12 @@ pub(all) enum ExperimentalV2TurnPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2TurnPhase with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TurnPhase with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Structured failures raised while folding typed v2 session updates into
 /// consumer state.  These are consumer-side aggregation failures, not wire
 /// decode failures: a typed update that reaches the fold already decoded
@@ -24,6 +30,14 @@ pub(all) suberror ExperimentalV2SessionFoldError {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2SessionFoldError with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionFoldError with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One message aggregated from content chunks and whole-message upserts.
 /// Chunk `_meta` is chunk-scoped and never folded; only upsert `_meta`
 /// patches the `meta` slot.
@@ -32,6 +46,14 @@ pub(all) struct ExperimentalV2FoldedMessage {
   blocks : Array[ExperimentalV2ContentBlock]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2FoldedMessage with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2FoldedMessage with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// One tool call aggregated from `tool_call_update` upserts and
@@ -50,6 +72,14 @@ pub(all) struct ExperimentalV2FoldedToolCall {
   raw_output : ExperimentalV2Patch[Json]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2FoldedToolCall with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2FoldedToolCall with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// One agent-owned terminal aggregated from `terminal_update` upserts and
@@ -71,6 +101,14 @@ pub(all) struct ExperimentalV2FoldedTerminal {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2FoldedTerminal with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2FoldedTerminal with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// One plan keyed by its `planId`.  Each `plan_update` replaces the whole
 /// folded plan for that id; the spec mandates every plan content variant,
 /// including custom or future ones, carries a `planId`, so even preserved
@@ -80,6 +118,14 @@ pub(all) struct ExperimentalV2FoldedPlan {
   content : ExperimentalV2PlanUpdateContent
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2FoldedPlan with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2FoldedPlan with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Pure per-session consumer state for a stream of typed v2 session
@@ -122,6 +168,14 @@ pub(all) struct ExperimentalV2SessionFold {
   usage : ExperimentalV2UsageUpdate?
   preserved : Array[ExperimentalV2SessionUpdate]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SessionFold with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionFold with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// The initial consumer state for one session: idle, nothing reported yet.

@@ -8,6 +8,12 @@ pub(all) struct ExperimentalV2Terminal {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2Terminal with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2Terminal with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 pub fn experimental_v2_decode_terminal(
   value : Json,
   path~ : String = "terminal",
@@ -45,6 +51,14 @@ pub(all) struct ExperimentalV2TerminalOutput {
   data : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TerminalOutput with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TerminalOutput with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_terminal_output(
@@ -85,6 +99,14 @@ pub(all) struct ExperimentalV2TerminalExitStatus {
   signal : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TerminalExitStatus with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TerminalExitStatus with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_terminal_exit_status(
@@ -140,6 +162,14 @@ pub(all) struct ExperimentalV2TerminalUpdate {
   exit_status : ExperimentalV2Patch[ExperimentalV2TerminalExitStatus]
   meta : ExperimentalV2Patch[Json]
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TerminalUpdate with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TerminalUpdate with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_terminal_update(
@@ -221,6 +251,14 @@ pub(all) struct ExperimentalV2TerminalOutputChunk {
   data : String
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2TerminalOutputChunk with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2TerminalOutputChunk with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_terminal_output_chunk(

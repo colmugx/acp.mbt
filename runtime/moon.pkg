@@ -3,12 +3,13 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/process",
   "moonbitlang/async/stdio",
+  "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "native"
 
 import {
   "moonbitlang/async/pipe" @async_pipe,
+  "moonbitlang/core/json",
 } for "test"

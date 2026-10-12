@@ -15,6 +15,12 @@ pub(all) enum ClientProtocolPhase {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientProtocolPhase with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolPhase with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Immutable Client-side state after capability negotiation data is known.
 ///
 /// The capability field remains nullable so an omitted or explicit null
@@ -25,12 +31,24 @@ pub(all) struct ClientProtocolState {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientProtocolState with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Events accepted by the pure Client-side reducer.
 pub(all) enum ClientProtocolEvent {
   Ready
   Request(ClientRequest)
   Notification(ClientNotification)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientProtocolEvent with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolEvent with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Commands emitted for the runtime or endpoint adapter.  They are data only;
@@ -42,11 +60,23 @@ pub(all) enum ClientProtocolCommand {
 } derive(Eq, Debug)
 
 ///|
+pub extend ClientProtocolCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolCommand with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// State and commands produced by one Client reducer step.
 pub(all) struct ClientProtocolStep {
   state : ClientProtocolState
   commands : Array[ClientProtocolCommand]
 } derive(Eq, Debug)
+
+///|
+pub extend ClientProtocolStep with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolStep with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Explicit failures from Client protocol readiness and capability gates.
@@ -55,6 +85,12 @@ pub(all) suberror ClientProtocolError {
   AlreadyReady
   CapabilityDenied(method_name~ : String, capability~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientProtocolError with Eq::{not_equal, equal}
+
+///|
+pub extend ClientProtocolError with @moonbitlang/core/debug.Debug::{to_repr}
 
 ///|
 /// Construct a Client state that has negotiated capability data but is not yet

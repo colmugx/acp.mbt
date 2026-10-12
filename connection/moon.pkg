@@ -4,7 +4,7 @@ import {
   "colmugx/acp/transport",
   "moonbitlang/async",
   "moonbitlang/async/aqueue",
-  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
 }
 

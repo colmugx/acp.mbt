@@ -18,6 +18,12 @@ pub(all) suberror HandlerError {
 } derive(Eq, Debug)
 
 ///|
+pub extend HandlerError with Eq::{not_equal, equal}
+
+///|
+pub extend HandlerError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Failures found while composing an immutable Agent endpoint.
 pub(all) suberror AgentCompositionError {
   InvalidImplementation(reason~ : String)
@@ -27,9 +33,21 @@ pub(all) suberror AgentCompositionError {
 } derive(Eq, Debug)
 
 ///|
+pub extend AgentCompositionError with Eq::{not_equal, equal}
+
+///|
+pub extend AgentCompositionError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 /// Failures found while composing an immutable Client endpoint.
 pub(all) suberror ClientCompositionError {
   InvalidImplementation(reason~ : String)
   MissingRequiredService(service_name~ : String)
   ConflictingSupport(reason~ : String)
 } derive(Eq, Debug)
+
+///|
+pub extend ClientCompositionError with Eq::{not_equal, equal}
+
+///|
+pub extend ClientCompositionError with @moonbitlang/core/debug.Debug::{to_repr}

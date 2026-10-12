@@ -1653,6 +1653,12 @@ struct RuntimeOwnerTestState {
 } derive(Eq, Debug)
 
 ///|
+pub extend RuntimeOwnerTestState with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerTestState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
 fn runtime_owner_test_state() -> RuntimeOwnerTestState {
   {
     admitted: [],
@@ -1997,6 +2003,14 @@ enum RuntimeOwnerPlanTestEffect {
   Expand
   Close
 } derive(Eq, Debug)
+
+///|
+pub extend RuntimeOwnerPlanTestEffect with Eq::{not_equal, equal}
+
+///|
+pub extend RuntimeOwnerPlanTestEffect with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 fn runtime_owner_plan_test_local(

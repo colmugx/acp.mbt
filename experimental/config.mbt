@@ -12,6 +12,14 @@ pub(all) enum ExperimentalV2ConfigCategory {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ConfigCategory with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigCategory with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_config_category(
   value : Json,
   path~ : String = "category",
@@ -53,6 +61,14 @@ pub(all) struct ExperimentalV2ConfigSelectOption {
   description : String?
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ConfigSelectOption with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigSelectOption with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_config_select_option(
@@ -110,6 +126,14 @@ pub(all) struct ExperimentalV2ConfigSelectGroup {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ConfigSelectGroup with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigSelectGroup with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 pub fn experimental_v2_decode_config_select_group(
   value : Json,
   path~ : String = "selectGroup",
@@ -165,6 +189,14 @@ pub(all) enum ExperimentalV2ConfigSelectOptions {
   OptionsUngrouped(Array[ExperimentalV2ConfigSelectOption])
   OptionsGrouped(Array[ExperimentalV2ConfigSelectGroup])
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ConfigSelectOptions with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigSelectOptions with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_config_select_options(
@@ -229,11 +261,27 @@ pub(all) struct ExperimentalV2ConfigSelect {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ConfigSelect with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigSelect with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Boolean payload of a session configuration option; its field lives flat on
 /// the option object.
 pub(all) struct ExperimentalV2ConfigBoolean {
   current_value : Bool
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ConfigBoolean with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigBoolean with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Payload of a known session configuration option: `type: "select"` or
@@ -242,6 +290,14 @@ pub(all) enum ExperimentalV2ConfigPayload {
   PayloadSelect(ExperimentalV2ConfigSelect)
   PayloadBoolean(ExperimentalV2ConfigBoolean)
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2ConfigPayload with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigPayload with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Known shape of a session configuration option, shared by the `select` and
@@ -254,6 +310,14 @@ pub(all) struct ExperimentalV2SessionConfigOptionKnown {
   payload : ExperimentalV2ConfigPayload
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SessionConfigOptionKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SessionConfigOptionKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// One session configuration option selector with its current state.  The
@@ -409,6 +473,14 @@ pub(all) enum ExperimentalV2ConfigValue {
 } derive(Eq, Debug)
 
 ///|
+pub extend ExperimentalV2ConfigValue with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2ConfigValue with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
 /// Known shape of `session/set_config_option` params.
 pub(all) struct ExperimentalV2SetConfigOptionKnown {
   session_id : String
@@ -416,6 +488,14 @@ pub(all) struct ExperimentalV2SetConfigOptionKnown {
   value : ExperimentalV2ConfigValue
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SetConfigOptionKnown with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SetConfigOptionKnown with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 /// Parameters of `session/set_config_option`.  The `type` discriminator sits
@@ -514,6 +594,14 @@ pub(all) struct ExperimentalV2SetConfigOptionResult {
   config_options : Array[ExperimentalV2SessionConfigOption]
   meta : Json?
 } derive(Eq, Debug)
+
+///|
+pub extend ExperimentalV2SetConfigOptionResult with Eq::{not_equal, equal}
+
+///|
+pub extend ExperimentalV2SetConfigOptionResult with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
 
 ///|
 pub fn experimental_v2_decode_set_config_option_result(
